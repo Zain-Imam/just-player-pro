@@ -18,7 +18,8 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
 import androidx.core.content.ContextCompat;
 import androidx.core.widget.TextViewCompat;
-import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.common.C;
+import androidx.media3.common.Player;
 import androidx.media3.exoplayer.SeekParameters;
 
 import com.brouken.player.PlayerActivity;
@@ -80,7 +81,8 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
 
     // Player behaviors
     private DoubleTapPlayerView playerView;
-    private ExoPlayer player;
+    // The interface rather than ExoPlayer, so the seek works under mpv too
+    private Player player;
 
     /**
      * Sets all optional XML attributes and defaults
@@ -172,7 +174,7 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
      *
      * @param player PlayerView which triggers the event
      */
-    public YouTubeOverlay player(ExoPlayer player) {
+    public YouTubeOverlay player(Player player) {
         this.player = player;
         return this;
     }
@@ -389,7 +391,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
 
     @Override
     public void onDoubleTapProgressUp(float posX, float posY) {
-
         if (PlayerActivity.locked)
             return;
 
@@ -403,7 +404,10 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
             return;
 
         // Forward and end of the video (- 0.5 sec tolerance)
-        if (posX > playerView.getWidth() * 0.65 && current >= (player.getDuration() - 500))
+        // Length is unknown under mpv until the file is open
+        final long duration = player.getDuration();
+        if (duration != C.TIME_UNSET
+                && posX > playerView.getWidth() * 0.65 && current >= (duration - 500))
             return;
 
         // YouTube behavior: show overlay on MOTION_UP
@@ -477,7 +481,10 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
         if (player == null || playerView == null)
             return;
 
-        player.setSeekParameters(SeekParameters.EXACT);
+        // Exact seeking where the engine supports it; mpv seeks exactly anyway.
+        if (player instanceof androidx.media3.exoplayer.ExoPlayer) {
+            ((androidx.media3.exoplayer.ExoPlayer) player).setSeekParameters(SeekParameters.EXACT);
+        }
 
         // Start of the video reached
         if (newPosition <= 0) {
@@ -488,9 +495,9 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
             return;
         }
 
-        // End of the video reached
+        // End of the video reached — again, only if the length is known.
         long total = player.getDuration();
-        if (newPosition >= total) {
+        if (total != C.TIME_UNSET && newPosition >= total) {
             player.seekTo(total);
 
             if (seekListener != null)
