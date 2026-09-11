@@ -9,6 +9,13 @@
         android:name="android.hardware.touchscreen"
         android:required="false" />
 
+    <!-- libmpv declares minSdk 26, but it is an OPTIONAL engine that Media3
+         remains the default over. Overriding keeps Android 7.1 support — which
+         is exactly the old television boxes this player is best on — and the
+         mpv option is disabled at runtime below API 26 so the library is never
+         loaded there. -->
+    <uses-sdk tools:overrideLibrary="dev.jdtech.mpv" />
+
     <uses-permission
         android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
@@ -703,7 +710,7 @@
             android:label="@string/pref_title"
             android:parentActivityName=".PlayerActivity"
             android:screenOrientation="locked"
-            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" >
+            android:theme="@style/Theme.Player.Settings" >
             <intent-filter>
                 <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
 

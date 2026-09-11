@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         def abiFilter = project.findProperty("abiFilter")
-        applicationId "pl.waskysoft.player"
+        applicationId "app.justplayerpro.android"
         minSdkVersion 25
         targetSdkVersion 36
         versionCode 1
@@ -32,7 +32,7 @@ android {
         }
     }
     base {
-        archivesName = "just_player_plus"
+        archivesName = "just_player_pro"
     }
     buildTypes {
         debug {
@@ -99,7 +99,7 @@ android {
 }
 
 dependencies {
-    def media3_version = '1.10.0'
+    def media3_version = '1.11.0'
     def androidxCoreVersion = '1.8.0'
     implementation "androidx.media3:media3-session:$media3_version"
     implementation "androidx.media3:media3-datasource:$media3_version"
@@ -126,6 +126,18 @@ dependencies {
     implementation "androidx.core:core:$androidxCoreVersion"
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'androidx.preference:preference:1.2.1'
+    /*
+     * libmpv, for the alternative playback engine.
+     *
+     * MIT-licensed wrapper around an mpv build carrying FFmpeg, libass and
+     * libplacebo. Adds roughly 25 MB per ABI, which is why per-ABI release
+     * builds matter once this is in — see the README.
+     *
+     * Deliberately NOT Findroid's player class, which is GPL-3.0 and would
+     * relicense this app; only this library is used, and the Player
+     * implementation over it is written here.
+     */
+    implementation 'dev.jdtech.mpv:libmpv:1.0.0'
     implementation 'com.squareup.okhttp3:okhttp:5.3.2'
     implementation 'com.sigpwned:chardet4j:78.1.0'
     implementation project(path: ':doubletapplayerview')

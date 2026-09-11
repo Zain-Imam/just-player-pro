@@ -8,3 +8,11 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Local secrets for development/testing — never commit.
+.env
+.env.*
+!.env.example
+
+# Kotlin build-tool scratch, not source.
+.kotlin/
