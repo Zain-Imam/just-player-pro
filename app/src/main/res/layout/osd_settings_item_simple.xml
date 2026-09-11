@@ -3,6 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?android:attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
     android:gravity="center_vertical"
     android:minWidth="@dimen/osd_settings_item_min_width"
     android:minHeight="@dimen/osd_settings_item_min_height"

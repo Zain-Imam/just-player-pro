@@ -8,7 +8,7 @@ import com.brouken.player.osd.OsdSettingsAdapter;
 public final class SubtitleDelayOsdSettingsItem extends IntegerOsdSettingsItem {
 
     public SubtitleDelayOsdSettingsItem(Context context, int value, IntegerOsdSettingsItem.Listener listener, OsdSettingsAdapter adapter) {
-        super(context.getString(R.string.osd_subtitle_delay_title), "", false, value, listener, adapter, 200);
+        super(context.getString(R.string.osd_subtitle_delay_title), "", false, value, listener, adapter, 100);
     }
 
     @Override
@@ -25,6 +25,8 @@ public final class SubtitleDelayOsdSettingsItem extends IntegerOsdSettingsItem {
 
         if (value < 0 && totalTenths > 0) {
             return "- " + formatted;
+        } else if (value > 0 && totalTenths > 0) {
+            return "+ " + formatted;
         } else {
             return formatted;
         }

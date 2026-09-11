@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        The accent in use, as a theme attribute rather than a colour resource.
+
+        A colour resource cannot change at runtime; a theme attribute can, and an
+        overlay applied to the theme reaches every view inflated afterwards —
+        including the ones the player builds in code. This is what lets the
+        colour follow a preference without a second copy of every drawable.
+    -->
+    <attr name="accentColor" format="color" />
+</resources>

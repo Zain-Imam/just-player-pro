@@ -6,9 +6,24 @@
         <item name="android:windowBackground">@color/black</item>
         <item name="android:windowLayoutInDisplayCutoutMode" tools:ignore="NewApi">shortEdges</item>
         <item name="android:forceDarkAllowed" tools:targetApi="29">false</item>
+        <!-- Carries the brand through the settings screen: category headings,
+             switches, dialog buttons. AppCompat reads colorAccent; the framework
+             attribute is set too so platform dialogs match. -->
+        <item name="accentColor">@color/accent_orange</item>
+        <item name="colorAccent">?attr/accentColor</item>
+        <item name="android:colorAccent">?attr/accentColor</item>
     </style>
 
     <style name="Theme.Player" parent="BaseTheme.Player">
+    </style>
+
+    <!-- The settings screen cannot use Theme.Player: it needs an AppCompat
+         DayNight theme for the preference widgets. It gets the brand accent the
+         same way, so category headings and switches match the rest of the app. -->
+    <style name="Theme.Player.Settings" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="accentColor">@color/accent_orange</item>
+        <item name="colorAccent">?attr/accentColor</item>
+        <item name="android:colorAccent">?attr/accentColor</item>
     </style>
 
     <style name="ExoStyledControls.Button.Center.Secondary" parent="ExoStyledControls.Button.Center">
@@ -31,4 +46,24 @@
         <item name="android:ellipsize">end</item>
         <item name="android:singleLine">true</item> <!-- When focused, line scrolls -->
     </style>
+
+    <!--
+        One overlay per accent, applied at runtime with Theme.applyStyle.
+
+        An overlay rather than eleven full themes: it changes only the three
+        attributes that carry the colour and leaves every other thing the base
+        theme says alone, so the settings screen keeps its DayNight behaviour and
+        the player keeps its cutout and status bar handling.
+    -->
+    <style name="Accent.Red" parent=""><item name="accentColor">@color/accent_red</item><item name="colorAccent">@color/accent_red</item><item name="android:colorAccent">@color/accent_red</item></style>
+    <style name="Accent.Orange" parent=""><item name="accentColor">@color/accent_orange</item><item name="colorAccent">@color/accent_orange</item><item name="android:colorAccent">@color/accent_orange</item></style>
+    <style name="Accent.Yellow" parent=""><item name="accentColor">@color/accent_yellow</item><item name="colorAccent">@color/accent_yellow</item><item name="android:colorAccent">@color/accent_yellow</item></style>
+    <style name="Accent.Lime" parent=""><item name="accentColor">@color/accent_lime</item><item name="colorAccent">@color/accent_lime</item><item name="android:colorAccent">@color/accent_lime</item></style>
+    <style name="Accent.Green" parent=""><item name="accentColor">@color/accent_green</item><item name="colorAccent">@color/accent_green</item><item name="android:colorAccent">@color/accent_green</item></style>
+    <style name="Accent.Cyan" parent=""><item name="accentColor">@color/accent_cyan</item><item name="colorAccent">@color/accent_cyan</item><item name="android:colorAccent">@color/accent_cyan</item></style>
+    <style name="Accent.Blue" parent=""><item name="accentColor">@color/accent_blue</item><item name="colorAccent">@color/accent_blue</item><item name="android:colorAccent">@color/accent_blue</item></style>
+    <style name="Accent.Violet" parent=""><item name="accentColor">@color/accent_violet</item><item name="colorAccent">@color/accent_violet</item><item name="android:colorAccent">@color/accent_violet</item></style>
+    <style name="Accent.Fuchsia" parent=""><item name="accentColor">@color/accent_fuchsia</item><item name="colorAccent">@color/accent_fuchsia</item><item name="android:colorAccent">@color/accent_fuchsia</item></style>
+    <style name="Accent.Pink" parent=""><item name="accentColor">@color/accent_pink</item><item name="colorAccent">@color/accent_pink</item><item name="android:colorAccent">@color/accent_pink</item></style>
+    <style name="Accent.Slate" parent=""><item name="accentColor">@color/accent_slate</item><item name="colorAccent">@color/accent_slate</item><item name="android:colorAccent">@color/accent_slate</item></style>
 </resources>

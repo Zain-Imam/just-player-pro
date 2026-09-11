@@ -34,12 +34,15 @@ public class SubtitleOsdSettingsAdapter extends OsdSettingsAdapter {
     }
 
     public void setSubtitlePosition(int subtitlePosition) {
-        this.items[0] = createPositionItem(subtitlePosition);
-        notifyItemChanged(0);
+        // Index 2: the online-search and change-title rows sit at 0 and 1.
+        this.items[2] = createPositionItem(subtitlePosition);
+        notifyItemChanged(2);
     }
 
     private OsdSettingsItem[] createSubtitleSettingsArray(int subtitlePosition, int subtitleDelay, int size, SubtitleEdgeType edgeType, SubtitleTypeface typeface, boolean embeddedStyles) {
         return new OsdSettingsItem[]{
+                createOnlineSearchItem(),
+                createChangeTitleItem(),
                 createPositionItem(subtitlePosition),
                 createDelayItem(subtitleDelay),
                 createSizeItem(size),
@@ -148,6 +151,22 @@ public class SubtitleOsdSettingsAdapter extends OsdSettingsAdapter {
         return new BooleanOsdSettingsItem(title, labelTrue, labelFalse, embeddedStyles, itemListener, this);
     }
 
+    private OsdSettingsItem createOnlineSearchItem() {
+        String title = context.getString(R.string.online_search_subtitles);
+        @SuppressLint("PrivateResource")
+        Drawable icon = getDrawable(context, androidx.media3.ui.R.drawable.exo_styled_controls_subtitle_on);
+        SimpleOsdSettingsItem.Listener itemListener = position -> listener.onSearchOnlineSubtitles();
+        return new SimpleOsdSettingsItem(title, icon, itemListener);
+    }
+
+    private OsdSettingsItem createChangeTitleItem() {
+        String title = context.getString(R.string.online_change_title);
+        @SuppressLint("PrivateResource")
+        Drawable icon = getDrawable(context, androidx.media3.ui.R.drawable.exo_ic_check);
+        SimpleOsdSettingsItem.Listener itemListener = position -> listener.onChangeTitle();
+        return new SimpleOsdSettingsItem(title, icon, itemListener);
+    }
+
     private OsdSettingsItem createCaptioningPreferenceItem() {
         String title = context.getString(R.string.osd_subtitle_caption_preferences_title);
         @SuppressLint("PrivateResource")
@@ -171,6 +190,10 @@ public class SubtitleOsdSettingsAdapter extends OsdSettingsAdapter {
         void onSubtitleEmbeddedStylesChange(boolean embeddedStyles);
 
         void onOpenCaptionPreferences();
+
+        void onSearchOnlineSubtitles();
+
+        void onChangeTitle();
 
     }
 

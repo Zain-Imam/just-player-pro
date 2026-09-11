@@ -2,7 +2,26 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="green">#3DDC84</color>
+    <!-- The Just Player Pro identity, defined once: the launcher icon, the
+         Android TV banner and the in-app accent all read from here.
+
+         This is TorBox Advanced's default accent, which makes the two apps look
+         related, and it is deliberately not Just Player+ green so the two can
+         sit side by side on a launcher without being mistaken for each other. -->
+    <color name="brand">#F2761E</color>
+
+    <!-- Seek bar. Three shades that cannot be mistaken for one another: the
+         played part is the app's orange, what is buffered ahead is bright grey,
+         and the rest is faint. With played and buffered both white, as they are
+         by default, dragging towards the end of the buffer hid the very thing
+         you were dragging towards. -->
+    <color name="time_bar_buffered">#E6FFFFFF</color>
+    <color name="time_bar_unplayed">#40FFFFFF</color>
+
+    <!-- The rating line on the info card. Fixed, not the accent: a star rating
+         reads as a rating because it is amber, and following the theme colour
+         would make it a pink or a blue number that means nothing at a glance. -->
+    <color name="rating_amber">#F5C518</color>
     <color name="shortcut_background">#F5F5F5</color>
 
     <color name="ui_controls_background">#98000000</color>

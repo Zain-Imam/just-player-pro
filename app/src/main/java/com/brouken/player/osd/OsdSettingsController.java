@@ -20,6 +20,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.brouken.player.PlayerActivity;
 import com.brouken.player.Prefs;
 import com.brouken.player.R;
+import androidx.preference.PreferenceManager;
+import android.content.SharedPreferences;
+
+import com.brouken.player.osd.player.PlayerOsdSettingsAdapter;
 import com.brouken.player.osd.subtitle.SubtitleEdgeType;
 import com.brouken.player.osd.subtitle.SubtitleOsdSettingsAdapter;
 import com.brouken.player.osd.subtitle.SubtitleTypeface;
@@ -31,6 +35,9 @@ public class OsdSettingsController {
 
     private final SubtitleOsdSettingsAdapter subtitleAdapter;
     private final PopupWindow osdSettingsWindow;
+
+    private final PlayerOsdSettingsAdapter playerAdapter;
+    private final PopupWindow playerSettingsWindow;
 
     @SuppressLint("InflateParams")
     public OsdSettingsController(PlayerActivity playerActivity) {
@@ -56,18 +63,136 @@ public class OsdSettingsController {
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
         osdSettingsWindow =
                 new PopupWindow(settingsView, FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, true);
+        playerAdapter = new PlayerOsdSettingsAdapter(context, createPlayerSettingsListener());
+        playerAdapter.setInitialValues(prefs.speed, prefs.playbackEngine, true, true, prefs.adaptiveBuffering);
+
+        View playerPanelView = LayoutInflater.from(context).inflate(R.layout.osd_settings, null);
+        RecyclerView playerList = playerPanelView.findViewById(android.R.id.list);
+        playerList.setAdapter(playerAdapter);
+        playerList.setLayoutManager(new LinearLayoutManager(context));
+        playerSettingsWindow =
+                new PopupWindow(playerPanelView, FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, true);
+
         if (Util.SDK_INT < 23) {
             // Work around issue where tapping outside of the menu area or pressing the back button
             // doesn't dismiss the menu as expected. See: https://github.com/google/ExoPlayer/issues/8272.
             osdSettingsWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            playerSettingsWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
     }
 
+    public void showPlayerSettings() {
+        // Same for the quick panel: one thing on screen at a time.
+        playerActivity.hideOverlayCard();
+        int margin = playerActivity.getResources().getDimensionPixelSize(R.dimen.osd_settings_margin);
+        playerAdapter.setInitialValues(
+                prefs.speed,
+                prefs.playbackEngine,
+                preferences().getBoolean("overlayOnPause", true),
+                preferences().getBoolean("skipSegments", true),
+                prefs.adaptiveBuffering
+        );
+        playerAdapter.notifyDataSetChanged();
+
+        TextView titleTextView = playerSettingsWindow.getContentView().findViewById(android.R.id.text1);
+        titleTextView.setText(R.string.osd_player_title);
+        playerSettingsWindow.showAtLocation(playerActivity.playerView, Gravity.END | Gravity.TOP, margin, margin);
+        focusFirstRow(playerSettingsWindow);
+
+        // Same reason as the subtitle panel: without the delay the controller
+        // comes straight back when the panel is opened from a remote.
+        playerActivity.playerView.postDelayed(playerActivity.playerView::hideController, 100);
+    }
+
+    private void focusFirstRow(final PopupWindow window) {
+        final View content = window.getContentView();
+        content.post(() -> {
+            final RecyclerView list = content.findViewById(android.R.id.list);
+            if (list == null) {
+                return;
+            }
+            final RecyclerView.ViewHolder first = list.findViewHolderForAdapterPosition(0);
+            if (first != null) {
+                first.itemView.requestFocus();
+            } else {
+                list.requestFocus();
+            }
+        });
+    }
+
+    private SharedPreferences preferences() {
+        return PreferenceManager.getDefaultSharedPreferences(playerActivity);
+    }
+
+    private PlayerOsdSettingsAdapter.Listener createPlayerSettingsListener() {
+        return new PlayerOsdSettingsAdapter.Listener() {
+            @Override
+            public void onSpeedChange(float speed) {
+                playerActivity.setSpeed(speed);
+            }
+
+            @Override
+            public void onEngineChange(String engine) {
+                preferences().edit().putString("playbackEngine", engine).apply();
+                prefs.loadUserPreferences();
+                playerSettingsWindow.dismiss();
+                // The engine is chosen when the player is built, so the file has
+                // to be reopened — at the position it is already at.
+                playerActivity.rebuildPlayer();
+            }
+
+            @Override
+            public void onOverlayChange(boolean enabled) {
+                preferences().edit().putBoolean("overlayOnPause", enabled).apply();
+                if (!enabled) {
+                    playerActivity.hideOverlayCard();
+                }
+            }
+
+            @Override
+            public void onSkipChange(boolean enabled) {
+                preferences().edit().putBoolean("skipSegments", enabled).apply();
+                playerActivity.updateSkipEnabled(enabled);
+            }
+
+            @Override
+            public void onAdaptiveBufferingChange(boolean enabled) {
+                preferences().edit().putBoolean("adaptiveBuffering", enabled).apply();
+                prefs.loadUserPreferences();
+                // Buffering is configured on the load control the player is
+                // built with, so this one also needs the player rebuilt.
+                playerSettingsWindow.dismiss();
+                playerActivity.rebuildPlayer();
+            }
+
+            @Override
+            public void onOpenAudioTracks() {
+                playerSettingsWindow.dismiss();
+                playerActivity.showAudioMenu();
+            }
+
+            @Override
+            public void onOpenSubtitleSettings() {
+                playerSettingsWindow.dismiss();
+                showSubtitleSettings();
+            }
+
+            @Override
+            public void onOpenAllSettings() {
+                playerSettingsWindow.dismiss();
+                playerActivity.openSettingsScreen();
+            }
+        };
+    }
+
     public void showSubtitleSettings() {
+        // Nothing may sit under a panel: the card would show through it.
+        playerActivity.hideOverlayCard();
         int margin = playerActivity.getResources().getDimensionPixelSize(R.dimen.osd_settings_margin);
         TextView titleTextView = osdSettingsWindow.getContentView().findViewById(android.R.id.text1);
         titleTextView.setText(R.string.osd_subtitle_title);
         osdSettingsWindow.showAtLocation(playerActivity.playerView, Gravity.END | Gravity.TOP, margin, margin);
+        focusFirstRow(osdSettingsWindow);
 
         // Without delaying hide, controller's UI reappears when
         // using physical button on a remote to open settings
@@ -108,6 +233,18 @@ public class OsdSettingsController {
             @Override
             public void onSubtitleEmbeddedStylesChange(boolean embeddedStyles) {
                 prefs.updateSubtitleStyleEmbedded(embeddedStyles);
+            }
+
+            @Override
+            public void onSearchOnlineSubtitles() {
+                osdSettingsWindow.dismiss();
+                playerActivity.searchOnlineSubtitles();
+            }
+
+            @Override
+            public void onChangeTitle() {
+                osdSettingsWindow.dismiss();
+                playerActivity.reIdentifyOnline();
             }
 
             @Override
