@@ -16,3 +16,6 @@ local.properties
 
 # Kotlin build-tool scratch, not source.
 .kotlin/
+
+# Built APKs staged for a release.
+/release-apks/
