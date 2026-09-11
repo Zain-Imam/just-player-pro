@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shown until the poster arrives, and permanently when there is none. Sized by
+     the ImageView, so it also holds the grid's shape while images load. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#1F1F1F" />
+    <corners android:radius="6dp" />
+</shape>
