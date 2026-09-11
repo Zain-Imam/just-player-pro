@@ -65,24 +65,6 @@ class SubtitleUtils {
         return null;
     }
 
-    /*
-    public static DocumentFile findUriInScope(DocumentFile documentFileTree, Uri uri) {
-        for (DocumentFile file : documentFileTree.listFiles()) {
-            if (file.isDirectory()) {
-                final DocumentFile ret = findUriInScope(file, uri);
-                if (ret != null)
-                    return ret;
-            } else {
-                final Uri fileUri = file.getUri();
-                if (fileUri.toString().equals(uri.toString())) {
-                    return file;
-                }
-            }
-        }
-        return null;
-    }
-    */
-
     public static DocumentFile findUriInScope(Context context, Uri scope, Uri uri) {
         DocumentFile treeUri = DocumentFile.fromTreeUri(context, scope);
         String[] trailScope = getTrailFromUri(scope);

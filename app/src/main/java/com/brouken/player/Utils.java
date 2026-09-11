@@ -194,6 +194,22 @@ class Utils {
         return audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == min;
     }
 
+    public static int volumePercent(final Context context, final AudioManager audioManager) {
+        final int max = getVolume(context, true, audioManager);
+        if (max <= 0) {
+            return 0;
+        }
+        final int volume = getVolume(context, false, audioManager);
+        return Math.round(volume * 100f / max);
+    }
+
+    public static final int BOOST_STEP_MB = 100;
+    public static final int BOOST_STEPS = 10;
+
+    public static int boostedPercent() {
+        return 100 + PlayerActivity.boostLevel * (50 / BOOST_STEPS);
+    }
+
     public static void adjustVolume(final Context context, final AudioManager audioManager, final CustomPlayerView playerView, final boolean raise, boolean canBoost, boolean clear) {
         playerView.removeCallbacks(playerView.textClearRunnable);
 
@@ -206,23 +222,10 @@ class Utils {
             PlayerActivity.boostLevel = 0;
         }
 
-        try {
-            if (PlayerActivity.loudnessEnhancer == null || !PlayerActivity.loudnessEnhancer.hasControl()) {
-                canBoost = false;
-            }
-        } catch (Exception e) {
-            canBoost = false;
-            e.printStackTrace();
-        }
+        canBoost = canBoost && PlayerActivity.canBoostVolume();
 
         if (volume != volumeMax || (PlayerActivity.boostLevel == 0 && !raise)) {
-            if (PlayerActivity.loudnessEnhancer != null) {
-                try {
-                    PlayerActivity.loudnessEnhancer.setEnabled(false);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
+            PlayerActivity.applyBoostLevel(false);
             audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, raise ? AudioManager.ADJUST_RAISE : AudioManager.ADJUST_LOWER, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
             final int volumeNew = getVolume(context, false, audioManager);
             // Custom volume step on Samsung devices (Sound Assistant)
@@ -235,32 +238,21 @@ class Utils {
                 audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE | AudioManager.FLAG_SHOW_UI);
             } else {
                 volumeActive = volumeNew != 0;
-                playerView.setCustomErrorMessage(volumeActive ? " " + volumeNew : "");
+                // As a percentage, so the number means the same on every device.
+                playerView.setCustomErrorMessage(volumeActive
+                        ? " " + volumePercent(context, audioManager) : "");
             }
         } else {
-            if (canBoost && raise && PlayerActivity.boostLevel < 10)
+            if (canBoost && raise && PlayerActivity.boostLevel < BOOST_STEPS)
                 PlayerActivity.boostLevel++;
             else if (!raise && PlayerActivity.boostLevel > 0)
                 PlayerActivity.boostLevel--;
 
-            if (PlayerActivity.loudnessEnhancer != null) {
-                try {
-                    PlayerActivity.loudnessEnhancer.setTargetGain(PlayerActivity.boostLevel * 200);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            playerView.setCustomErrorMessage(" " + (volumeMax + PlayerActivity.boostLevel));
+            playerView.setCustomErrorMessage(" " + boostedPercent());
         }
 
         playerView.setIconVolume(volumeActive);
-        if (PlayerActivity.loudnessEnhancer != null) {
-            try {
-                PlayerActivity.loudnessEnhancer.setEnabled(PlayerActivity.boostLevel > 0);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        PlayerActivity.applyBoostLevel(PlayerActivity.boostLevel > 0);
         playerView.setHighlight(PlayerActivity.boostLevel > 0);
 
         if (clear) {
@@ -339,7 +331,7 @@ class Utils {
         switch (orientation) {
             case VIDEO:
                 if (PlayerActivity.player != null) {
-                    final Format format = PlayerActivity.player.getVideoFormat();
+                    final Format format = PlayerActivity.videoFormat();
                     if (format != null && isPortrait(format))
                         activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
                     else
@@ -863,4 +855,12 @@ class Utils {
             return false;
         }
     }
+    public static void showFocused(final android.app.AlertDialog dialog, final int button) {
+        dialog.show();
+        final android.widget.Button target = dialog.getButton(button);
+        if (target != null) {
+            target.requestFocus();
+        }
+    }
+
 }

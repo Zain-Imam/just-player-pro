@@ -200,7 +200,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         if (!PlayerActivity.controllerVisibleFully) {
             showController();
             return true;
-        } else if (PlayerActivity.haveMedia && PlayerActivity.player != null && PlayerActivity.player.isPlaying()) {
+        } else if (PlayerActivity.haveMedia && PlayerActivity.player != null) {
             hideController();
             return true;
         }
@@ -252,13 +252,21 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                 if (PlayerActivity.haveMedia) {
                     if (gestureScrollX > 0) {
                         if (seekStart + seekChange - SEEK_STEP  * distanceDiff >= 0) {
-                            PlayerActivity.player.setSeekParameters(SeekParameters.PREVIOUS_SYNC);
+                            if (PlayerActivity.exo() != null) {
+
+                                PlayerActivity.exo().setSeekParameters(SeekParameters.PREVIOUS_SYNC);
+
+                            }
                             seekChange -= SEEK_STEP * distanceDiff;
                             position = seekStart + seekChange;
                             PlayerActivity.player.seekTo(position);
                         }
                     } else {
-                        PlayerActivity.player.setSeekParameters(SeekParameters.NEXT_SYNC);
+                        if (PlayerActivity.exo() != null) {
+
+                            PlayerActivity.exo().setSeekParameters(SeekParameters.NEXT_SYNC);
+
+                        }
                         if (seekMax == C.TIME_UNSET) {
                             seekChange += SEEK_STEP * distanceDiff;
                             position = seekStart + seekChange;
@@ -416,6 +424,11 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
     }
 
     public void setIconLock(boolean locked) {
+        // Keep the padlock button in step, however the lock was toggled — the
+        // button and the long-press gesture are two ways into the same state.
+        if (getContext() instanceof PlayerActivity) {
+            ((PlayerActivity) getContext()).updateButtonLock();
+        }
         exoErrorMessage.setCompoundDrawablesWithIntrinsicBounds(locked ? R.drawable.ic_lock_24dp : R.drawable.ic_lock_open_24dp, 0, 0, 0);
     }
 

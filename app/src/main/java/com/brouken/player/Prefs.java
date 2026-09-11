@@ -28,16 +28,14 @@ import java.util.Map;
 import java.util.Set;
 
 public class Prefs {
-    // Previously used
-    // private static final String PREF_KEY_AUDIO_TRACK = "audioTrack";
-    // private static final String PREF_KEY_AUDIO_TRACK_FFMPEG = "audioTrackFfmpeg";
-    // private static final String PREF_KEY_SUBTITLE_TRACK = "subtitleTrack";
 
     private static final String PREF_KEY_MEDIA_URI = "mediaUri";
     private static final String PREF_KEY_MEDIA_TYPE = "mediaType";
     private static final String PREF_KEY_BRIGHTNESS = "brightness";
     private static final String PREF_KEY_FIRST_RUN = "firstRun";
     private static final String PREF_KEY_SUBTITLE_URI = "subtitleUri";
+    private static final String PREF_KEY_SUBTITLE_URIS = "subtitleUris";
+    private static final int MAX_SUBTITLES = 8;
 
     private static final String PREF_KEY_AUDIO_TRACK_ID = "audioTrackId";
     private static final String PREF_KEY_SUBTITLE_TRACK_ID = "subtitleTrackId";
@@ -47,8 +45,14 @@ public class Prefs {
     private static final String PREF_KEY_SCOPE_URI = "scopeUri";
     private static final String PREF_KEY_ASK_SCOPE = "askScope";
     private static final String PREF_KEY_AUTO_PIP = "autoPiP";
+    private static final String PREF_KEY_ASK_RESUME = "askResume";
+    private static final String PREF_KEY_PLAYBACK_ENGINE = "playbackEngine";
+    private static final String PREF_KEY_ADAPTIVE_BUFFERING = "adaptiveBuffering";
+    private static final String PREF_KEY_DOUBLE_TAP_SEEK = "doubleTapSeekSeconds";
     private static final String PREF_KEY_TUNNELING = "tunneling";
     private static final String PREF_KEY_SKIP_SILENCE = "skipSilence";
+    private static final String PREF_KEY_VOLUME_BOOST = "volumeBoost";
+    private static final String PREF_KEY_KEEP_SCREEN_ON = "keepScreenOn";
     private static final String PREF_KEY_FRAMERATE_MATCHING = "frameRateMatching";
     private static final String PREF_KEY_REPEAT_TOGGLE = "repeatToggle";
     private static final String PREF_KEY_SPEED = "speed";
@@ -78,6 +82,7 @@ public class Prefs {
 
     public Uri mediaUri;
     public Uri subtitleUri;
+    public final java.util.List<Uri> subtitleUris = new java.util.ArrayList<>();
     public Uri scopeUri;
     public String mediaType;
     private int currentVideoHeight = 0;
@@ -93,9 +98,15 @@ public class Prefs {
     public boolean firstRun = true;
     public boolean askScope = true;
     public boolean autoPiP = false;
+    public boolean askResume = true;
+    public boolean adaptiveBuffering = true;
+    public String playbackEngine = "media3";
+    public int doubleTapSeekSeconds = 10;
 
     public boolean tunneling = false;
     public boolean skipSilence = false;
+    public boolean volumeBoost = false;
+    public boolean keepScreenOn = false;
     public boolean frameRateMatching = false;
     public boolean repeatToggle = false;
     public String fileAccess = "auto";
@@ -141,6 +152,7 @@ public class Prefs {
         firstRun = mSharedPreferences.getBoolean(PREF_KEY_FIRST_RUN, firstRun);
         if (mSharedPreferences.contains(PREF_KEY_SUBTITLE_URI))
             subtitleUri = Uri.parse(mSharedPreferences.getString(PREF_KEY_SUBTITLE_URI, null));
+        loadSubtitleUris();
         if (mSharedPreferences.contains(PREF_KEY_AUDIO_TRACK_ID))
             audioTrackId = mSharedPreferences.getString(PREF_KEY_AUDIO_TRACK_ID, audioTrackId);
         if (mSharedPreferences.contains(PREF_KEY_SUBTITLE_TRACK_ID))
@@ -159,8 +171,14 @@ public class Prefs {
 
     public void loadUserPreferences() {
         autoPiP = mSharedPreferences.getBoolean(PREF_KEY_AUTO_PIP, autoPiP);
+        askResume = mSharedPreferences.getBoolean(PREF_KEY_ASK_RESUME, askResume);
+        adaptiveBuffering = mSharedPreferences.getBoolean(PREF_KEY_ADAPTIVE_BUFFERING, adaptiveBuffering);
+        playbackEngine = mSharedPreferences.getString(PREF_KEY_PLAYBACK_ENGINE, playbackEngine);
+        doubleTapSeekSeconds = mSharedPreferences.getInt(PREF_KEY_DOUBLE_TAP_SEEK, doubleTapSeekSeconds);
         tunneling = mSharedPreferences.getBoolean(PREF_KEY_TUNNELING, tunneling);
         skipSilence = mSharedPreferences.getBoolean(PREF_KEY_SKIP_SILENCE, skipSilence);
+        volumeBoost = mSharedPreferences.getBoolean(PREF_KEY_VOLUME_BOOST, volumeBoost);
+        keepScreenOn = mSharedPreferences.getBoolean(PREF_KEY_KEEP_SCREEN_ON, keepScreenOn);
         frameRateMatching = mSharedPreferences.getBoolean(PREF_KEY_FRAMERATE_MATCHING, frameRateMatching);
         repeatToggle = mSharedPreferences.getBoolean(PREF_KEY_REPEAT_TOGGLE, repeatToggle);
         fileAccess = mSharedPreferences.getString(PREF_KEY_FILE_ACCESS, fileAccess);
@@ -194,6 +212,10 @@ public class Prefs {
             }
         }
 
+        // Recorded here rather than at the call sites: every media change goes
+        // through this method, so the history cannot quietly miss one.
+        History.record(mSharedPreferences, mediaUri, mediaType);
+
         if (persistentMode) {
             final SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
             if (mediaUri == null)
@@ -208,20 +230,63 @@ public class Prefs {
         }
     }
 
+    private void loadSubtitleUris() {
+        subtitleUris.clear();
+        final String stored = mSharedPreferences.getString(PREF_KEY_SUBTITLE_URIS, null);
+        if (stored == null) {
+            if (subtitleUri != null) {
+                subtitleUris.add(subtitleUri);
+            }
+            return;
+        }
+        try {
+            final JSONArray array = new JSONArray(stored);
+            for (int i = 0; i < array.length(); i++) {
+                final String value = array.optString(i, "");
+                if (!value.isEmpty()) {
+                    subtitleUris.add(Uri.parse(value));
+                }
+            }
+        } catch (JSONException e) {
+            // A corrupt list is not worth a crash; the selected one still works.
+            if (subtitleUri != null) {
+                subtitleUris.add(subtitleUri);
+            }
+        }
+    }
     public void updateSubtitle(final Uri uri) {
         subtitleUri = uri;
         subtitleTrackId = null;
+
+        if (uri == null) {
+            subtitleUris.clear();
+        } else {
+            subtitleUris.remove(uri);
+            subtitleUris.add(uri);
+            // Bounded: a dozen subtitles on one file is already unusual, and
+            // every one of them is a track the player has to open.
+            while (subtitleUris.size() > MAX_SUBTITLES) {
+                subtitleUris.remove(0);
+            }
+        }
+
         if (persistentMode) {
             final SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
-            if (uri == null)
+            if (uri == null) {
                 sharedPreferencesEditor.remove(PREF_KEY_SUBTITLE_URI);
-            else
+                sharedPreferencesEditor.remove(PREF_KEY_SUBTITLE_URIS);
+            } else {
                 sharedPreferencesEditor.putString(PREF_KEY_SUBTITLE_URI, uri.toString());
+                final JSONArray array = new JSONArray();
+                for (final Uri each : subtitleUris) {
+                    array.put(each.toString());
+                }
+                sharedPreferencesEditor.putString(PREF_KEY_SUBTITLE_URIS, array.toString());
+            }
             sharedPreferencesEditor.remove(PREF_KEY_SUBTITLE_TRACK_ID);
             sharedPreferencesEditor.apply();
         }
     }
-
     public void updatePosition(final long position) {
         if (mediaUri == null)
             return;
@@ -359,6 +424,8 @@ public class Prefs {
         this.subtitleVerticalPosition = subtitleVerticalPosition;
         final SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
         sharedPreferencesEditor.putInt(getSubtitleVerticalPositionKey(currentVideoHeight), subtitleVerticalPosition);
+        // Also as the general answer, for video heights not seen yet.
+        sharedPreferencesEditor.putInt(PREF_KEY_SUBTITLE_VERTICAL_POSITION, subtitleVerticalPosition);
         sharedPreferencesEditor.apply();
     }
 
@@ -374,8 +441,9 @@ public class Prefs {
     }
 
     private int getSubtitleVerticalPositionForVideoHeight(int videoHeight) {
+        final int fallback = mSharedPreferences.getInt(PREF_KEY_SUBTITLE_VERTICAL_POSITION, 0);
         String key = getSubtitleVerticalPositionKey(videoHeight);
-        return mSharedPreferences.getInt(key, 0);
+        return mSharedPreferences.getInt(key, fallback);
     }
 
     private String getSubtitleVerticalPositionKey(int videoHeight) {

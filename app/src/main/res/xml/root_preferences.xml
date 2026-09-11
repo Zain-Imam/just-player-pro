@@ -1,21 +1,54 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory app:title="@string/pref_general_header">
+    <!-- Ordered by how often someone actually changes a thing: what plays and
+         how it starts, then gestures, then subtitles, then the online features,
+         then history, and the things that can break playback last. -->
+
+    <PreferenceCategory app:title="@string/pref_appearance_header">
 
         <ListPreference
-            app:defaultValue="auto"
-            app:entries="@array/file_access_entries"
-            app:entryValues="@array/file_access_values"
-            app:key="fileAccess"
-            app:title="@string/pref_file_access"
+            app:key="accentColor"
+            app:defaultValue="orange"
+            app:entries="@array/accent_entries"
+            app:entryValues="@array/accent_values"
+            app:title="@string/pref_accent"
             app:useSimpleSummaryProvider="true" />
 
+        <Preference
+            app:selectable="false"
+            app:summary="@string/pref_accent_note" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_playback_header">
+
         <ListPreference
-            app:key="languageAudio"
-            android:defaultValue="device"
-            app:title="@string/pref_language_audio"
+            app:key="playbackEngine"
+            app:defaultValue="media3"
+            app:entries="@array/playback_engine_entries"
+            app:entryValues="@array/playback_engine_values"
+            app:title="@string/pref_playback_engine"
             app:useSimpleSummaryProvider="true" />
+
+        <Preference
+            app:key="playbackEngineNote"
+            app:selectable="false"
+            app:summary="@string/pref_engine_note" />
+
+        <SwitchPreferenceCompat
+            app:key="adaptiveBuffering"
+            app:defaultValue="true"
+            app:summaryOn="@string/pref_adaptive_buffering_on"
+            app:summaryOff="@string/pref_adaptive_buffering_off"
+            app:title="@string/pref_adaptive_buffering" />
+
+        <SwitchPreferenceCompat
+            app:key="askResume"
+            app:defaultValue="true"
+            app:summaryOn="@string/pref_ask_resume_on"
+            app:summaryOff="@string/pref_ask_resume_off"
+            app:title="@string/pref_ask_resume" />
 
         <SwitchPreferenceCompat
             app:key="frameRateMatching"
@@ -32,6 +65,20 @@
             app:title="@string/pref_auto_pip" />
 
         <SwitchPreferenceCompat
+            app:key="volumeBoost"
+            app:defaultValue="false"
+            app:summaryOn="@string/pref_volume_boost_on"
+            app:summaryOff="@string/pref_volume_boost_off"
+            app:title="@string/pref_volume_boost" />
+
+        <SwitchPreferenceCompat
+            app:key="keepScreenOn"
+            app:defaultValue="false"
+            app:summaryOn="@string/pref_keep_screen_on_on"
+            app:summaryOff="@string/pref_keep_screen_on_off"
+            app:title="@string/pref_keep_screen_on" />
+
+        <SwitchPreferenceCompat
             app:key="skipSilence"
             app:defaultValue="false"
             app:summaryOn="@string/pref_skip_silence_on"
@@ -43,6 +90,30 @@
             app:defaultValue="false"
             app:summary="@string/pref_repeat_toggle_summary"
             app:title="@string/pref_repeat_toggle" />
+
+        <ListPreference
+            app:key="languageAudio"
+            android:defaultValue="device"
+            app:title="@string/pref_language_audio"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_gestures_header">
+
+        <SeekBarPreference
+            app:key="doubleTapSeekSeconds"
+            app:defaultValue="10"
+            android:max="60"
+            app:min="5"
+            app:seekBarIncrement="5"
+            app:showSeekBarValue="true"
+            app:summary="@string/pref_double_tap_seconds_summary"
+            app:title="@string/pref_double_tap_seconds" />
+
+        <Preference
+            app:selectable="false"
+            app:summary="@string/pref_lock_hint" />
 
     </PreferenceCategory>
 
@@ -64,9 +135,114 @@
             app:title="@string/pref_choose_custom_font" />
 
         <Preference
+            app:key="subtitleFolderChoose"
+            app:title="@string/pref_subtitle_folder" />
+
+        <Preference
             app:title="@string/pref_captioning_preferences">
             <intent android:action="android.settings.CAPTIONING_SETTINGS" />
         </Preference>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_online_header">
+
+        <Preference
+            app:selectable="false"
+            app:summary="@string/pref_online_note" />
+
+        <EditTextPreference
+            app:key="apiKeyTmdb"
+            app:title="@string/pref_key_tmdb"
+            app:dialogMessage="@string/pref_key_tmdb_dialog" />
+
+        <ListPreference
+            app:key="subtitleLanguage"
+            app:defaultValue="en"
+            app:entries="@array/subtitle_language_entries"
+            app:entryValues="@array/subtitle_language_values"
+            app:title="@string/pref_subtitle_language"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            app:key="prefillSearch"
+            app:defaultValue="true"
+            app:summaryOn="@string/pref_prefill_on"
+            app:summaryOff="@string/pref_prefill_off"
+            app:title="@string/pref_prefill" />
+
+        <SwitchPreferenceCompat
+            app:key="overlayOnPause"
+            app:defaultValue="true"
+            app:summaryOn="@string/pref_overlay_on"
+            app:summaryOff="@string/pref_overlay_off"
+            app:title="@string/pref_overlay" />
+
+        <SeekBarPreference
+            app:key="overlayDelaySeconds"
+            app:defaultValue="3"
+            android:max="15"
+            app:min="0"
+            app:seekBarIncrement="1"
+            app:showSeekBarValue="true"
+            app:summary="@string/pref_overlay_delay_summary"
+            app:title="@string/pref_overlay_delay" />
+
+        <SwitchPreferenceCompat
+            app:key="skipSegments"
+            app:defaultValue="true"
+            app:summaryOn="@string/pref_skip_on"
+            app:summaryOff="@string/pref_skip_off"
+            app:title="@string/pref_skip" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_subtitle_sources_header">
+
+        <Preference
+            app:selectable="false"
+            app:summary="@string/pref_sources_note" />
+
+        <EditTextPreference
+            app:key="apiKeyOpenSubtitles"
+            app:title="@string/pref_key_opensubtitles"
+            app:dialogMessage="@string/pref_key_opensubtitles_dialog" />
+
+        <EditTextPreference
+            app:key="apiKeyOpenSubtitlesUser"
+            app:title="@string/pref_key_opensubtitles_user" />
+
+        <EditTextPreference
+            app:key="apiKeyOpenSubtitlesPassword"
+            app:title="@string/pref_key_opensubtitles_password" />
+
+        <EditTextPreference
+            app:key="apiKeySubdl"
+            app:title="@string/pref_key_subdl"
+            app:dialogMessage="@string/pref_key_subdl_dialog" />
+
+        <EditTextPreference
+            app:key="apiKeyWyzie"
+            app:title="@string/pref_key_wyzie"
+            app:dialogMessage="@string/pref_key_wyzie_dialog" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_addons_header">
+
+        <Preference
+            app:key="subtitleAddons"
+            app:summary="@string/pref_addons_summary"
+            app:title="@string/pref_addons" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/pref_history_header">
+
+        <Preference
+            app:key="historyOpen"
+            app:title="@string/pref_history"
+            app:icon="@null" />
 
     </PreferenceCategory>
 
@@ -75,6 +251,14 @@
         <Preference
             app:selectable="false"
             app:summary="@string/pref_dangerous_warning" />
+
+        <ListPreference
+            app:defaultValue="auto"
+            app:entries="@array/file_access_entries"
+            app:entryValues="@array/file_access_values"
+            app:key="fileAccess"
+            app:title="@string/pref_file_access"
+            app:useSimpleSummaryProvider="true" />
 
         <ListPreference
             app:defaultValue="1"

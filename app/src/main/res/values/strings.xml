@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name" translatable="false">Just Player+</string>
+    <string name="app_name" translatable="false">Just Player Pro</string>
     <string name="video_resize_fit">Fit</string>
     <string name="video_resize_crop">Crop</string>
+    <string name="video_resize_stretch">Stretch</string>
     <string name="video_orientation_video">Video orientation</string>
     <string name="video_orientation_sensor">Auto-rotate</string>
     <string name="video_orientation_system">Device orientation</string>
@@ -16,19 +17,25 @@
     <string name="delete_confirmation">Delete</string>
     <string name="pref_title">Settings</string>
     <string name="pref_general_header">General</string>
-    <string name="pref_framerate_matching">Auto frame rate matching</string>
-    <string name="pref_framerate_matching_on">Switch display refresh rate to match video frame rate</string>
-    <string name="pref_framerate_matching_off">Do not change display refresh rate</string>
+    <string name="pref_framerate_matching">Match frame rate</string>
+    <string name="pref_framerate_matching_on">Display follows the video</string>
+    <string name="pref_framerate_matching_off">Display rate left alone</string>
     <string name="pref_tunneling">Tunneled playback</string>
     <string name="pref_tunneling_summary">Tunneling provides better support for 4K/HDR content, but may not work on all devices</string>
     <string name="pref_auto_pip">Auto picture-in-picture</string>
-    <string name="pref_auto_pip_on">Switch to PiP when leaving the app</string>
-    <string name="pref_auto_pip_off">Do not automatically switch to PiP</string>
+    <string name="pref_auto_pip_on">Home or a swipe away keeps it playing in a corner</string>
+    <string name="pref_auto_pip_off">Stay in the app</string>
+    <string name="pref_volume_boost">Volume boost</string>
+    <string name="pref_volume_boost_on">About twice as loud as the device alone</string>
+    <string name="pref_volume_boost_off">Device volume only</string>
+    <string name="pref_keep_screen_on">Keep screen on</string>
+    <string name="pref_keep_screen_on_on">Screen stays awake, even when paused</string>
+    <string name="pref_keep_screen_on_off">Screen sleeps when paused</string>
     <string name="pref_skip_silence">Skip silence</string>
-    <string name="pref_skip_silence_on">Skip parts with silence on the audio stream</string>
-    <string name="pref_skip_silence_off">Play content as is</string>
-    <string name="pref_repeat_toggle">Repeat toggle</string>
-    <string name="pref_repeat_toggle_summary">Extra control to allow indefinitely loop video (requires app restart)</string>
+    <string name="pref_skip_silence_on">Silent stretches are skipped</string>
+    <string name="pref_skip_silence_off">Played as is</string>
+    <string name="pref_repeat_toggle">Loop button</string>
+    <string name="pref_repeat_toggle_summary">Adds a repeat control (needs a restart)</string>
     <string name="pref_map_dv7">Dolby Vision profile 7 fallback</string>
     <string name="pref_map_dv7_on">Play Dolby Vision profile 7 content on HDR displays</string>
     <string name="pref_map_dv7_off">Play UHD Blu-ray content containing Dolby Vision as is</string>
@@ -40,8 +47,125 @@
     <string name="pref_file_access">File access</string>
     <string name="pref_file_access_auto">Auto</string>
     <string name="mediastore_empty">No video files found</string>
+    <string name="pref_online_header">Online info and subtitles</string>
+    <string name="pref_online_note">TMDB is required: it turns a file name into a title the subtitle and skip databases understand. The source keys below are optional.</string>
+    <string name="pref_key_tmdb">TMDB key · required</string>
+    <string name="pref_key_tmdb_dialog">Free from themoviedb.org → Settings → API.</string>
+    <string name="pref_key_opensubtitles">OpenSubtitles key · optional</string>
+    <string name="pref_key_opensubtitles_dialog">From opensubtitles.com → My Account → API Consumers. 5 downloads a day, 10 signed in.</string>
+    <string name="pref_key_opensubtitles_user">OpenSubtitles username</string>
+    <string name="pref_key_opensubtitles_password">OpenSubtitles password</string>
+    <string name="pref_key_subdl">SubDL key · optional</string>
+    <string name="pref_key_subdl_dialog">Free from subdl.com/panel/api.</string>
+    <string name="pref_key_wyzie">Wyzie key · optional</string>
+    <string name="pref_key_wyzie_dialog">Free from sub.wyzie.io/redeem.</string>
+    <string name="pref_key_set">Set</string>
+    <string name="pref_key_not_set">Not set</string>
+    <string name="pref_subtitle_language">Subtitle language</string>
+    <string name="pref_overlay">Info card when paused</string>
+    <string name="pref_overlay_on">Shows the film or episode</string>
+    <string name="pref_overlay_off">Hidden</string>
+    <string name="pref_skip">Skip intros and credits</string>
+    <string name="pref_skip_on">Button over intros, recaps and credits</string>
+    <string name="pref_skip_off">Never looked up</string>
+
+    <string name="online_search_subtitles">Search online subtitles…</string>
+    <string name="subtitle_source_title">Subtitles</string>
+    <string name="subtitle_source_file">Load a subtitle file…</string>
+    <string name="online_needs_tmdb">Add a TMDB key in Settings first — it is what turns a file name into something the subtitle sources can be asked about.</string>
+    <string name="online_needs_source">Add at least one subtitle source key in Settings: OpenSubtitles, SubDL or Wyzie.</string>
+    <string name="online_identify_title">Which is this?</string>
+    <string name="online_searching">Searching…</string>
+    <string name="online_identifying">Identifying…</string>
+    <string name="online_no_matches">Nothing found for that title</string>
+    <string name="online_no_subtitles">No subtitles found for this one</string>
+    <string name="online_search_hint">Title to search for</string>
+    <string name="online_clear">Clear</string>
+    <string name="online_change_title">Change title…</string>
+    <string name="subtitle_menu_title">Subtitles</string>
+    <string name="audio_menu_title">Audio track</string>
+    <string name="audio_menu_track">Track %1$d</string>
+    <string name="audio_menu_none">This file has one soundtrack</string>
+    <string name="subtitle_menu_off">Off</string>
+    <string name="subtitle_menu_current">Playing now</string>
+    <string name="subtitle_menu_track">Track %1$d</string>
+    <string name="subtitle_menu_search_detail">Find one online for this episode</string>
+    <string name="subtitle_menu_settings_detail">Size, position, delay and style</string>
+    <string name="online_search">Search</string>
+    <string name="online_season">Season</string>
+    <string name="online_episode">Episode</string>
+    <string name="online_downloading">Downloading…</string>
+    <string name="online_download_failed">That subtitle could not be downloaded</string>
+    <string name="online_saved_to">Loaded, and saved to %1$s</string>
+    <string name="online_loaded">Subtitle loaded</string>
+    <string name="online_skip_intro">Skip intro</string>
+    <string name="online_skip_recap">Skip recap</string>
+    <string name="online_skip_credits">Skip credits</string>
+    <string name="online_change_selection">Identify this file again</string>
+    <string name="pref_playback_header">Playback</string>
+    <string name="pref_gestures_header">Gestures</string>
+    <string name="pref_subtitle_sources_header">Subtitle sources — all optional</string>
+    <string name="pref_double_tap_seconds">Double-tap seek</string>
+    <string name="pref_double_tap_seconds_summary">Seconds per double tap</string>
+    <string name="pref_lock_hint">Lock the screen against accidental touches with the padlock in the playback controls, or by long-pressing the video. Long-press again, or press the padlock, to unlock.</string>
+    <string name="pref_overlay_delay">Card delay</string>
+    <string name="pref_overlay_delay_summary">Seconds after pausing. 0 shows it at once.</string>
+    <string name="pref_prefill">Fill search from file name</string>
+    <string name="pref_prefill_on">Starts with the title from the name</string>
+    <string name="pref_prefill_off">Starts empty — better for id-named files</string>
+    <string name="pref_sources_note">Sources are searched separately, so adding one only widens coverage. Searching is free; only downloads count against daily limits.</string>
+    <string name="button_lock">Lock screen</string>
+    <string name="engine_fallback_mpv">Media3 could not play this — switched to mpv</string>
+    <string name="pref_playback_engine">Playback engine</string>
+    <string name="pref_engine_media3">Media3</string>
+    <string name="pref_engine_auto">Auto</string>
+    <string name="pref_engine_mpv">mpv</string>
+    <string name="pref_engine_mpv_unsupported">mpv needs Android 8.0 or newer</string>
+    <string name="pref_engine_note">Media3 uses the decoders built into the device and is the smoother choice; tunneling, frame-rate matching and skip-silence belong to it alone. mpv carries its own decoders and plays what Media3 cannot: 10-bit H.264, interlaced video, older codecs, styled ASS.
+
+Auto starts on Media3 and switches only for a file Media3 fails on.</string>
+    <string name="pref_media3_only">Media3 only — not used by mpv</string>
+    <string name="pref_adaptive_buffering">Adaptive buffering</string>
+    <string name="pref_adaptive_buffering_on">Sized from memory, battery and source</string>
+    <string name="pref_adaptive_buffering_off">One fixed size</string>
+    <string name="pref_subtitle_folder">Subtitle download folder</string>
+    <string name="pref_subtitle_folder_default">Downloads / Just Player Pro</string>
+    <string name="pref_subtitle_folder_choose">Choose a folder</string>
+    <string name="pref_subtitle_folder_clear">Use the default folder</string>
+    <string name="pref_subtitle_folder_failed">That folder could not be used</string>
+    <string name="resume_title">Play last video?</string>
+    <string name="resume_accept">Play</string>
+    <string name="resume_decline">Not now</string>
+    <string name="pref_ask_resume">Ask before resuming</string>
+    <string name="pref_ask_resume_on">Offers the last video at startup</string>
+    <string name="pref_ask_resume_off">Plays the last video at startup</string>
+    <string name="open_source_title">Play from</string>
+    <string name="open_source_local">Local file</string>
+    <string name="open_source_url">Network URL</string>
+    <string name="open_source_recent">Recently played</string>
+    <string name="open_url_title">Network URL</string>
+    <string name="open_url_hint">https://example.com/video.mkv</string>
+    <string name="open_url_play">Play</string>
+    <string name="open_url_invalid">That does not look like a URL a player can open</string>
+    <string name="pref_history_header">History</string>
+    <string name="pref_history">Recently played URLs</string>
+    <string name="pref_history_summary_empty">Nothing played from a network URL yet</string>
+    <plurals name="pref_addons_summary_count">
+        <item quantity="one">%d addon</item>
+        <item quantity="other">%d addons</item>
+    </plurals>
+    <plurals name="pref_history_summary">
+        <item quantity="one">%d URL</item>
+        <item quantity="other">%d URLs</item>
+    </plurals>
+    <string name="pref_history_empty">Nothing here yet.
+
+URLs you open over the network are remembered so you can return to them without typing them again. Local files are not listed — the file picker already remembers those.</string>
+    <string name="pref_history_clear">Clear history</string>
+    <string name="pref_history_clear_confirm">Forget all remembered URLs? Some may contain sign-in details.</string>
+    <string name="pref_history_cleared">History cleared</string>
     <string name="pref_dangerous_header">Dangerous ⚠️</string>
-    <string name="pref_dangerous_warning">Switching options in this category may break playback of normally compatible content</string>
+    <string name="pref_dangerous_warning">These can break playback of files that otherwise work.</string>
     <string name="pref_shortcuts_header">Shortcuts</string>
     <string name="pref_captioning_preferences">Captioning preferences</string>
     <string name="pref_decoder_priority">Decoder priority</string>
@@ -52,7 +176,7 @@
     <string name="pref_language_track_device">Device languages</string>
     <string name="pref_language_track_default">Default</string>
     <string name="pref_subtitle_header">Subtitle</string>
-    <string name="pref_subtitle_message">Additional subtitle settings are available during playback by long-pressing the subtitles icon</string>
+    <string name="pref_subtitle_message">More subtitle settings during playback: long-press the subtitles icon.</string>
     <string name="pref_custom_subtitle_font">Custom subtitle font</string>
     <string name="pref_choose_custom_font">Choose custom font</string>
     <string name="pref_custom_subtitle_font_not_set">No custom font selected</string>
@@ -60,6 +184,11 @@
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">On</string>
     <string name="osd_item_boolean_false">Off</string>
+    <!-- Quick settings, behind a single tap on the gear. -->
+    <string name="osd_player_title">Quick settings</string>
+    <string name="osd_player_speed_title">Speed</string>
+    <string name="osd_player_speed_normal">Normal</string>
+    <string name="osd_player_all_settings">All settings…</string>
     <string name="osd_subtitle_title">@string/pref_subtitle_header</string>
     <string name="osd_subtitle_position_title">Position</string>
     <string name="osd_subtitle_delay_title">Delay</string>
@@ -78,4 +207,44 @@
     <string name="osd_subtitle_typeface_bold">Bold</string>
     <string name="osd_subtitle_embedded_styles_title">Embedded styles</string>
     <string name="osd_subtitle_caption_preferences_title">@string/pref_captioning_preferences</string>
+
+    <!-- Custom Stremio subtitle addons. -->
+    <string name="pref_addons_header">Subtitle addons</string>
+    <string name="pref_addons">Custom subtitle addons</string>
+    <string name="pref_addons_summary">Stremio subtitle addons · up to 5</string>
+    <string name="pref_addons_note">Paste a Stremio subtitle addon link — the URL its configure page gives you, with or without /manifest.json. No API key is needed, and each addon is checked against a known film before it is saved.
+
+Addon 1 comes set to the official OpenSubtitles addon, which works as-is. Replace or clear it if you prefer your own.</string>
+    <string name="pref_addon_slot">Addon %1$d</string>
+    <string name="pref_addon_dialog_message">Paste the addon URL, or leave empty to remove it.</string>
+    <string name="pref_addon_empty">Not set</string>
+    <string name="pref_addon_unnamed">Addon</string>
+    <string name="pref_addon_checking">Checking the addon…</string>
+    <string name="pref_addon_ok">%1$s added — %2$d subtitles in %3$d languages.</string>
+    <string name="pref_addon_ok_unverified">The test download was throttled, so it could not be confirmed.</string>
+    <string name="pref_addon_invalid">That is not a usable addon URL.</string>
+    <string name="pref_addon_unreachable">The addon did not answer.</string>
+    <string name="pref_addon_not_an_addon">That URL is not a Stremio addon.</string>
+    <string name="pref_addon_no_subtitles_resource">That addon does not provide subtitles.</string>
+    <string name="pref_addon_needs_configuration">That addon needs configuring first — use its configure page and paste the URL it gives you.</string>
+    <string name="pref_addon_fetch_failed">The addon refused a subtitle request.</string>
+    <string name="pref_addon_no_subtitles">The addon returned nothing for a film that has subtitles everywhere, so it would return nothing for your files too.</string>
+    <string name="pref_addon_no_usable_url">The addon returned subtitles with no usable links.</string>
+    <string name="pref_addon_not_downloadable">The addon\'s links did not deliver a subtitle file.</string>
+
+    <!-- Appearance. -->
+    <string name="pref_appearance_header">Appearance</string>
+    <string name="pref_accent">Theme colour</string>
+    <string name="pref_accent_note">Colours the controls, the seek bar and the highlights. The app icon stays orange.</string>
+    <string name="accent_red">Red</string>
+    <string name="accent_orange">Orange</string>
+    <string name="accent_yellow">Yellow</string>
+    <string name="accent_lime">Lime</string>
+    <string name="accent_green">Green</string>
+    <string name="accent_cyan">Cyan</string>
+    <string name="accent_blue">Blue</string>
+    <string name="accent_violet">Violet</string>
+    <string name="accent_fuchsia">Fuchsia</string>
+    <string name="accent_pink">Pink</string>
+    <string name="accent_slate">Slate</string>
 </resources>

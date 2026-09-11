@@ -25,4 +25,93 @@
     <item>2</item>
     <item>0</item>
   </string-array>
+
+    <!-- Subtitle languages offered for online search. The value is the code each
+         source is asked with; SubDL wants it uppercased, which its own call does. -->
+    <string-array name="subtitle_language_entries" translatable="false">
+        <item>English</item>
+        <item>Arabic</item>
+        <item>Chinese</item>
+        <item>Dutch</item>
+        <item>French</item>
+        <item>German</item>
+        <item>Hindi</item>
+        <item>Indonesian</item>
+        <item>Italian</item>
+        <item>Japanese</item>
+        <item>Korean</item>
+        <item>Polish</item>
+        <item>Portuguese</item>
+        <item>Russian</item>
+        <item>Spanish</item>
+        <item>Swedish</item>
+        <item>Thai</item>
+        <item>Turkish</item>
+        <item>Urdu</item>
+        <item>Vietnamese</item>
+    </string-array>
+
+    <string-array name="subtitle_language_values" translatable="false">
+        <item>en</item>
+        <item>ar</item>
+        <item>zh</item>
+        <item>nl</item>
+        <item>fr</item>
+        <item>de</item>
+        <item>hi</item>
+        <item>id</item>
+        <item>it</item>
+        <item>ja</item>
+        <item>ko</item>
+        <item>pl</item>
+        <item>pt</item>
+        <item>ru</item>
+        <item>es</item>
+        <item>sv</item>
+        <item>th</item>
+        <item>tr</item>
+        <item>ur</item>
+        <item>vi</item>
+    </string-array>
+
+    <string-array name="playback_engine_entries">
+        <item>@string/pref_engine_media3</item>
+        <item>@string/pref_engine_auto</item>
+        <item>@string/pref_engine_mpv</item>
+    </string-array>
+
+    <string-array name="playback_engine_values" translatable="false">
+        <item>media3</item>
+        <item>auto</item>
+        <item>mpv</item>
+    </string-array>
+
+    <!-- Accent colours, in torbox-android's order. -->
+    <string-array name="accent_entries">
+        <item>@string/accent_red</item>
+        <item>@string/accent_orange</item>
+        <item>@string/accent_yellow</item>
+        <item>@string/accent_lime</item>
+        <item>@string/accent_green</item>
+        <item>@string/accent_cyan</item>
+        <item>@string/accent_blue</item>
+        <item>@string/accent_violet</item>
+        <item>@string/accent_fuchsia</item>
+        <item>@string/accent_pink</item>
+        <item>@string/accent_slate</item>
+    </string-array>
+
+    <string-array name="accent_values" translatable="false">
+        <item>red</item>
+        <item>orange</item>
+        <item>yellow</item>
+        <item>lime</item>
+        <item>green</item>
+        <item>cyan</item>
+        <item>blue</item>
+        <item>violet</item>
+        <item>fuchsia</item>
+        <item>pink</item>
+        <item>slate</item>
+    </string-array>
 </resources>
