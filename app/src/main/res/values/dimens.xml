@@ -4,7 +4,14 @@
     <dimen name="exo_error_message_text_size" tools:keep="@dimen/exo_error_message_text_size">20sp</dimen>
     <dimen name="exo_error_message_text_padding_vertical" tools:keep="@dimen/exo_error_message_text_padding_vertical">6sp</dimen>
     <dimen name="exo_icon_size" tools:keep="@dimen/exo_icon_size">90dp</dimen>
-    <dimen name="controls_padding">170sp</dimen>
+    <!-- A gutter between the time row and the button strip.
+
+         This used to be 170sp, to push the strip clear of the time text when
+         both were overlapping children of the same frame. The bar is a real row
+         now and reserves the time's width properly, so the old value was simply
+         eating the space the buttons needed: on a phone in portrait it left room
+         for one and a half icons. -->
+    <dimen name="controls_padding">8dp</dimen>
 
     <dimen name="exo_styled_progress_enabled_thumb_size" tools:keep="@dimen/exo_styled_progress_enabled_thumb_size">12dp</dimen>
     <dimen name="exo_styled_progress_dragged_thumb_size" tools:keep="@dimen/exo_styled_progress_dragged_thumb_size">18dp</dimen>

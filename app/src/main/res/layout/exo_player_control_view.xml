@@ -17,53 +17,74 @@
       android:background="@color/exo_bottom_bar_background"
       android:layoutDirection="ltr">
 
-    <LinearLayout android:id="@+id/exo_time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:paddingStart="@dimen/exo_styled_bottom_bar_time_padding"
-        android:paddingEnd="@dimen/exo_styled_bottom_bar_time_padding"
-        android:paddingLeft="@dimen/exo_styled_bottom_bar_time_padding"
-        android:paddingRight="@dimen/exo_styled_bottom_bar_time_padding"
-        android:layout_gravity="center_vertical|start"
+    <!-- The time row and the button strip share one LINE rather than being two
+         overlapping children of the frame.
+
+         As overlapping children the strip sat on top of the time row and ate
+         every touch inside it: in portrait there is not enough width for both,
+         so play/pause and the clock stopped responding while looking perfectly
+         normal. In a row the strip gets whatever width is left and scrolls
+         inside it, so nothing is ever unreachable at any screen size.
+
+         The frame is kept because the extra-controls scroller below is MEANT to
+         overlap — it replaces the strip in the player library's overflow mode. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:layoutDirection="ltr">
 
-      <TextView android:id="@+id/exo_position"
-          style="@style/ExoStyledControls.TimeText.Position"/>
+      <LinearLayout android:id="@+id/exo_time"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:paddingStart="@dimen/exo_styled_bottom_bar_time_padding"
+          android:paddingEnd="@dimen/exo_styled_bottom_bar_time_padding"
+          android:paddingLeft="@dimen/exo_styled_bottom_bar_time_padding"
+          android:paddingRight="@dimen/exo_styled_bottom_bar_time_padding"
+          android:gravity="center_vertical"
+          android:layoutDirection="ltr">
 
-      <TextView
-          style="@style/ExoStyledControls.TimeText.Separator"/>
+        <TextView android:id="@+id/exo_position"
+            style="@style/ExoStyledControls.TimeText.Position"/>
 
-      <TextView android:id="@+id/exo_duration"
-          style="@style/ExoStyledControls.TimeText.Duration"/>
+        <TextView
+            style="@style/ExoStyledControls.TimeText.Separator"/>
 
-    </LinearLayout>
+        <TextView android:id="@+id/exo_duration"
+            style="@style/ExoStyledControls.TimeText.Duration"/>
 
-    <LinearLayout android:id="@+id/exo_basic_controls"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical|end"
-        android:layoutDirection="ltr">
+      </LinearLayout>
 
-      <ImageButton android:id="@+id/exo_vr"
-          style="@style/ExoStyledControls.Button.Bottom.VR"/>
+      <LinearLayout android:id="@+id/exo_basic_controls"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:gravity="end|center_vertical"
+          android:layoutDirection="ltr">
 
-      <ImageButton android:id="@+id/exo_shuffle"
-          style="@style/ExoStyledControls.Button.Bottom.Shuffle"/>
+        <ImageButton android:id="@+id/exo_vr"
+            style="@style/ExoStyledControls.Button.Bottom.VR"/>
 
-      <ImageButton android:id="@+id/exo_repeat_toggle"
-          style="@style/ExoStyledControls.Button.Bottom.RepeatToggle"/>
+        <ImageButton android:id="@+id/exo_shuffle"
+            style="@style/ExoStyledControls.Button.Bottom.Shuffle"/>
 
-      <ImageButton android:id="@+id/exo_subtitle"
-          style="@style/ExoStyledControls.Button.Bottom.CC"/>
+        <ImageButton android:id="@+id/exo_repeat_toggle"
+            style="@style/ExoStyledControls.Button.Bottom.RepeatToggle"/>
 
-      <ImageButton android:id="@+id/exo_settings"
-          style="@style/ExoStyledControls.Button.Bottom.Settings"/>
+        <ImageButton android:id="@+id/exo_subtitle"
+            style="@style/ExoStyledControls.Button.Bottom.CC"/>
 
-      <ImageButton android:id="@+id/exo_fullscreen"
-          style="@style/ExoStyledControls.Button.Bottom.FullScreen"/>
+        <ImageButton android:id="@+id/exo_settings"
+            style="@style/ExoStyledControls.Button.Bottom.Settings"/>
 
-      <ImageButton android:id="@+id/exo_overflow_show"
-          style="@style/ExoStyledControls.Button.Bottom.OverflowShow"/>
+        <ImageButton android:id="@+id/exo_fullscreen"
+            style="@style/ExoStyledControls.Button.Bottom.FullScreen"/>
+
+        <ImageButton android:id="@+id/exo_overflow_show"
+            style="@style/ExoStyledControls.Button.Bottom.OverflowShow"/>
+
+      </LinearLayout>
 
     </LinearLayout>
 
@@ -97,7 +118,11 @@
       app:touch_target_height="@dimen/exo_styled_progress_touch_target_height"
       app:scrubber_enabled_size="@dimen/exo_styled_progress_enabled_thumb_size"
       app:scrubber_dragged_size="@dimen/exo_styled_progress_dragged_thumb_size"
-      app:ad_marker_width="@dimen/marker_width"/>
+      app:ad_marker_width="@dimen/marker_width"
+      app:played_color="?attr/accentColor"
+      app:scrubber_color="?attr/accentColor"
+      app:buffered_color="@color/time_bar_buffered"
+      app:unplayed_color="@color/time_bar_unplayed"/>
 
   <LinearLayout android:id="@+id/exo_minimal_controls"
       android:layout_width="wrap_content"
