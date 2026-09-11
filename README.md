@@ -1,30 +1,228 @@
-# Just Player+
+# Just Player Pro
 
-This is a modified version of [Just Player](https://github.com/moneytoo/Player) with additional features.
+**It plays anything you throw at it.** Two playback engines ship inside the app — Android's own
+Media3/ExoPlayer and a full build of mpv — and the player moves between them on its own, so a file
+that one cannot decode is handled by the other instead of failing.
 
-## Changes compared to the original Just Player app
+A fork of [Just Player+](https://github.com/wasky/just-player-plus), itself a fork of
+[Just Player](https://github.com/moneytoo/Player) by Marcel Dopita. Everything those two do is still
+here; this fork only adds alongside them.
 
-### Additional subtitle settings on the playback screen
+It installs as a separate app (`app.justplayerpro.android`), so Just Player+ can stay installed next
+to it.
 
-* Experimental: Subtitle delay/advance
-* Experimental: Support for MicroDVD and MPL2 subtitles
-* Subtitle settings (size, style, position) can be configured by long-pressing the subtitle icon on the playback screen
-* New `Outline & shadow` subtitle edge style
-* New `Medium` font style in addition to Regular and Bold (requires Android 9+)
-* On Android TV, you can achieve a Netflix / Nova Player–like subtitle style by setting:
-  * Position: `+3`
-  * Size: `-8`
-  * Edge type: `Outline & shadow`
-  * Typeface: `Medium`
-* Custom fonts for subtitles
+> This was tailored to my own use. It is shared in case it is useful, but it is not a product:
+> do not expect new features, a roadmap, or fixes on request. I may add things, I may not.
 
-<img src="https://github.com/user-attachments/assets/b98be7fa-f38c-4ab5-aea0-d580b69f40e1" width="800">
+---
 
-### Other changes
+## The two engines
 
-* Fix subtitle encoding when used as an external player with Nova Video Player
-* The Back button hides media controls instead of quitting the app on Android TV
+| | Media3 / ExoPlayer | mpv |
+|---|---|---|
+| Decoding | the device's own hardware decoders | its own decoders, bundled in the app |
+| Best at | smoothness, battery, TV boxes | anything the device has no decoder for |
+| Version here | 1.11.0 | 0.41.0 with FFmpeg n8.1 |
 
-## How to install
+**Media3** is the default. It hands the bitstream straight to the device's decoders and renders
+zero-copy onto a `SurfaceView`, which is why it plays smoothly on TV boxes where GPU-rendering
+players stutter, and why it is the one that does tunneled playback and display frame-rate matching.
 
-Download the APK file from the [Releases page](https://github.com/wasky/just-player/releases) and open it on your device.
+**mpv** carries its own decoders — **501 of them** — so it does not care what the device supports.
+10-bit and 4:2:2 H.264, interlaced video, VC-1, RealVideo, Cinepak, Indeo, ProRes, DNxHD, FFV1,
+HuffYUV, styled ASS subtitles, DTS, TrueHD, Musepack, APE, ATRAC3, QDM2 — all of it decodes in
+software on any device.
+
+**Auto** (the recommended setting) starts every file on Media3 and switches to mpv only when Media3
+reports it cannot play the video. Nothing is tried twice, and the switch keeps your position.
+
+### About the claim
+
+"Plays anything" is a large thing to say, so here is exactly what backs it:
+
+* The bundled mpv reports **501 decoders** and essentially the whole FFmpeg demuxer set — the same
+  library VLC and mpv on the desktop use. This is not a cut-down build.
+* The only two codecs checked for and *not* found in mpv are **AMR-NB and AMR-WB**, the narrowband
+  speech codecs — and those are exactly the ones Android's own decoders have always provided, so
+  Media3 covers them. The two engines complement each other rather than overlap.
+* Container support comes from FFmpeg's demuxers: MKV, MP4, AVI, TS, FLV, OGG, WMV/ASF, RM, VOB,
+  M2TS, WebM, and the long tail of formats nobody has opened since 2004.
+
+The honest exception: **DRM-protected streams** (Widevine and friends) are not supported by either
+engine here, and nothing in this app tries to work around that.
+
+---
+
+## What this fork adds
+
+### Playback
+
+* **Dual engines** — Media3, mpv, or Auto, chosen in settings. Auto falls back only on a real
+  decode failure.
+* **Adaptive buffering** — a port of my mpv `auto_profile.lua` and `mpv.conf`, applied to *both*
+  engines so they buffer alike. The profile is picked from device memory, battery level and whether
+  the source is a live stream: `device-low` (30s/120s), `device-balanced` (50s/300s),
+  `device-high` (60s/600s) or `live-stream` (5s/15s). Back buffer is held at 25% of the forward
+  buffer at every tier, matching the mpv config rather than approximating it.
+* **Volume boost** — up to 150%, applied through a `LoudnessEnhancer` on Media3 and mpv's own
+  volume on mpv. No restart, and the scale stays 0–100 either way.
+* **Keep screen on** while playing.
+* **Picture-in-picture on Home** — pressing Home drops the film into PiP instead of pausing it.
+* **Double-tap seek step** is configurable (it previously ignored the setting and always used 10s).
+
+### Identifying what you are watching
+
+* **TMDB lookup** turns a release filename into a real title, year, rating, poster and synopsis.
+* **Info card while paused** — poster, title, season/episode, date, rating and synopsis, centred on
+  the picture and sized to it, so on a letterboxed film it stops where the picture stops. It is
+  half-transparent, hides itself during seeking, menus, dialogs, PiP and lock, and the centre
+  controls step aside into the time row while it is up.
+* **Change title…** — when the guess is wrong, search by hand; season and episode are always
+  offered rather than inferred from the filename.
+* **Identity survives regenerated links** — debrid URLs expire, so a file is remembered by path and
+  filename as well as URL. Re-opening the same film through a fresh link keeps its identity, its
+  subtitles and its skip markers.
+* **History with real titles** — the recently-played list and the "Play last video?" prompt show
+  the film's name, not a UUID from the URL.
+
+### Subtitles
+
+* **Online search and download** from OpenSubtitles, SubDL and Wyzie, with the language you set.
+* **Custom Stremio subtitle addons** — up to five, each verified against a known film before it is
+  saved, so a broken addon is caught when you add it and not when you need it. Addon 1 comes
+  pre-filled with the official OpenSubtitles addon and works as-is.
+* **Downloads never restart playback** — the subtitle is attached in place, your position is kept,
+  and the new track is selected automatically.
+* **Named by release, not by file** — a downloaded subtitle appears under the provider's release
+  name rather than the filename it happened to be saved as.
+* **A subtitle button that is always available** — it no longer greys out when a file has no
+  subtitle tracks; it offers to search online instead.
+* **Subtitle folder** — choose where downloaded subtitles are kept.
+* **Styling works on both engines** — size, position, edge style and typeface are translated into
+  mpv's own vocabulary (`sub-pos`, `sub-scale`, `sub-ass-override`…) so the sliders mean the same
+  thing whichever engine is playing, including below the default position.
+
+### Skipping intros and credits
+
+* **Chapters first, databases second.** If the file has chapters naming an intro or the credits,
+  those are used — read from mpv directly, and parsed out of the Matroska container for Media3,
+  which has no chapter API of its own. Otherwise the online markers are used.
+* **Sources merged, not stacked** — markers from chapters, IntroDB, TheIntroDB, SkipDB and AniSkip
+  are clustered by overlap; the most corroborated cluster wins, and ties break by source
+  reliability. Precise bounds beat placeholder ones.
+* A **Skip intro / Skip credits** button appears only while a marker is live, and is reachable with
+  a remote.
+
+### Interface
+
+* **11 accent colours** (orange by default), matching my TorBox Android palette. The chosen colour
+  runs through the controls, the seek bar and every highlight. The launcher icon stays orange.
+* **Quick settings panel** on a single tap of the gear — speed, engine, info card, skip markers,
+  adaptive buffering, audio tracks, subtitle settings, and a way into the full settings screen.
+* **Audio track menu** for files with more than one soundtrack, on both engines.
+* **Rebuilt bottom bar** — play/pause is the leftmost item in the time row, tapping the time
+  toggles remaining-versus-total, and the row shares one line with the button strip so nothing
+  becomes unreachable in portrait.
+* **Tap the timeline to seek there** — anywhere *on* the line, and nothing outside it. The stock bar
+  accepted a press anywhere in a 48dp band the height of the whole bottom bar.
+* **The buffered band stays visible while you drag.** Media3 discards its buffer on a seek outside
+  what it holds, so the white band used to vanish the moment a drag began; it is now held for the
+  length of the drag.
+* **Ask before resuming** — the last file is offered rather than started, and declining keeps it
+  remembered.
+* **Sectioned, shorter settings** with a searchable layout, plus a history screen.
+
+### Inherited from Just Player+ and Just Player
+
+Nothing was removed. Every setting Just Player+ shipped is still present and still works:
+file access mode, preferred audio language, display frame-rate matching, PiP, skip silence, repeat,
+custom subtitle fonts, decoder priority, tunneled playback and Dolby Vision profile 7 mapping —
+along with the gesture controls, the SAF/MediaStore file handling, the Android TV behaviour and the
+subtitle settings reachable by long-pressing the subtitle icon.
+
+Also inherited from [Morveus/just-player-plus](https://github.com/Morveus/just-player-plus):
+subtitle delay applied at render time (so negative delays actually move embedded MKV subtitles
+earlier), 100 ms delay steps, and a `+` prefix on positive delays.
+
+---
+
+## Televisions and remotes
+
+The app is built to be driven entirely with a D-pad:
+
+* Every screen it adds — the quick panel, the track pickers, the search results, the poster
+  picker, the addon settings — takes focus when it opens and is navigable with arrows, because a
+  list that nothing has focused ignores a remote completely.
+* The skip button is focusable. The info card deliberately is not, so it can never swallow a press
+  meant for the controls.
+* Dialogs open with a button already focused — the confirming one, except where agreeing by
+  accident would delete a file, where Cancel has focus instead.
+* Settings that belong to one engine are disabled, and say so, rather than silently doing nothing.
+
+Layouts are in dp and sp throughout and reflow rather than clip, so the same build is used on
+phones in either orientation, on tablets, and on televisions.
+
+---
+
+## Settings that belong to one engine
+
+Most things work identically on both. These four are Media3's alone, and the settings screen
+disables them and says so when mpv is selected:
+
+* Tunneled playback
+* Display frame-rate matching
+* Skip silence
+* Dolby Vision profile 7 → HEVC mapping
+
+Custom subtitle *fonts* are also Media3-only; mpv uses its own font handling. The system equalizer
+hook is Media3-only too, because mpv opens its own audio output and exposes no session to attach to.
+
+Everything else — decoder priority, subtitle size, position, edge style, typeface and embedded
+styles, volume boost, PiP, gestures, chapters, skip markers, online subtitles — works on both.
+
+---
+
+## Building
+
+```
+./gradlew :app:assembleLatestUniversalRelease
+```
+
+The APK lands in `app/build/outputs/apk/latestUniversal/release/just_player_pro.apk`.
+
+Per-architecture builds, which are roughly half the size because they carry one copy of mpv
+instead of four:
+
+```
+./gradlew :app:assembleLatestUniversalRelease -PabiFilter=arm64-v8a
+./gradlew :app:assembleLatestUniversalRelease -PabiFilter=armeabi-v7a
+./gradlew :app:assembleLatestUniversalRelease -PabiFilter=x86_64
+./gradlew :app:assembleLatestUniversalRelease -PabiFilter=x86
+```
+
+Requirements: Android SDK 36, NDK 29, JDK 11+. Minimum supported device is Android 7.1 (API 25);
+the mpv engine additionally needs Android 8.0, and is offered only there.
+
+### Online features need keys
+
+TMDB is required for identification, and everything downstream of it — the info card, skip markers
+and subtitle search — depends on that. The key is free. OpenSubtitles, SubDL and Wyzie keys are
+optional and only enable those sources. All of them are entered in Settings → Online; none are
+compiled into the app.
+
+---
+
+## Credits and licences
+
+* [Just Player](https://github.com/moneytoo/Player) by Marcel Dopita — the original.
+* [Just Player+](https://github.com/wasky/just-player-plus) — the fork this builds on.
+* [Morveus/just-player-plus](https://github.com/Morveus/just-player-plus) — render-time subtitle delay.
+* [libmpv](https://github.com/jarnedemeulemeester/libmpv-android) (`dev.jdtech.mpv:libmpv`), MIT —
+  the mpv engine, bundling mpv, FFmpeg and libass.
+* [AndroidX Media3](https://github.com/androidx/media), Apache 2.0.
+* Skip markers from IntroDB, TheIntroDB, SkipDB and AniSkip. Titles and artwork from TMDB.
+  Subtitles from OpenSubtitles, SubDL, Wyzie and any Stremio addon you add.
+
+This product uses the TMDB API but is not endorsed or certified by TMDB.
+
+Licensed under the same terms as Just Player.
