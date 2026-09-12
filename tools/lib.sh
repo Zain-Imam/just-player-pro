@@ -203,7 +203,14 @@ cleanup() {
 open_film() {
   adb shell "am force-stop $PKG" >/dev/null 2>&1
   adb logcat -c >/dev/null 2>&1
-  CURRENT_SCREEN=""
+  # Something for the interlock to bring back.
+  #
+  # This used to be cleared, and clearing it is what turns a stray Back into
+  # the end of the run: with nothing recorded, require_player has no screen of
+  # this app to restore, so it gives up and stops instead of recovering. The
+  # player activity is this app's own, so starting it can only ever start this
+  # app — which is the whole of what the interlock is protecting.
+  CURRENT_SCREEN="$ACT"
   adb shell "am start -a android.intent.action.VIEW -d $URI -t video/mp2t -n $ACT --grant-read-uri-permission --esa subs file://$SUBS --esa subs.name Smoke" >/dev/null 2>&1
   local waited=0
   while [ $waited -lt 25 ]; do

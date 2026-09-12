@@ -401,6 +401,18 @@ engine_matrix() {
     done
     check "$engine: every scaling mode" "$broke"
 
+    # And a stream, on this engine.
+    #
+    # Everything above is a local file, and the two engines are most unalike
+    # over the network: one does its own TLS and knows nothing of Android's
+    # trust store, the other goes through Android and reaches HLS through a
+    # separate module that has to match the ExoPlayer it is built against.
+    # Both of those have already broken, and neither showed anything on screen
+    # when it did — the player opened, named the file, and sat at 00:00.
+    play_url "$engine: an HLS stream over https" \
+      "https://d2zihajmogu5jn.cloudfront.net/bipbop-advanced/bipbop_16x9_variant.m3u8" \
+      "application/x-mpegURL"
+
     check "$engine: nothing crashed" "$(crashed)"
   done
 
@@ -574,6 +586,19 @@ by_remote_only() {
 
 # ------------------------------------------------ identifying a real film
 
+# Back, but only when there is something for it to close.
+#
+# Pressed at a player with nothing open over it, Back leaves the player — and
+# everything after that is a test pressing at a launcher, which is exactly the
+# thing this harness must never do. It ended a run that way: one blind Back
+# after a card that had already gone.
+back_if_something_is_open() {
+  if dump | grep -qE 'Which is this|Search online|CANCEL|Cancel|Quick settings'; then
+    key KEYCODE_BACK
+    sleep 2
+  fi
+}
+
 online_features() {
   section "identifying a real film, and finding subtitles for it"
 
@@ -614,12 +639,12 @@ online_features() {
       done
       check "identifying finished" "$settled" "still identifying after 30s"
       # Either a card, or the search box it falls back to. Never nothing.
-      if dump | grep -qE 'Which is this|overlay_heading|Search'; then
+      if dump | grep -qE 'Which is this|overlay_heading|Search online'; then
         pass "it showed either the card or the search box"
       else
         pass "it finished quietly (nothing matched, nothing hung)"
       fi
-      key KEYCODE_BACK; sleep 2
+      back_if_something_is_open
     else
       fail "found Show info card"
     fi
@@ -641,8 +666,8 @@ online_features() {
       local results
       results="$(dump | grep -oE 'text="[0-9]+ subtitles"' | head -1)"
       [ -n "$results" ] && pass "it found some: $results"
-      key KEYCODE_BACK; sleep 2
-      key KEYCODE_BACK; sleep 2
+      back_if_something_is_open
+      back_if_something_is_open
     else
       fail "found the online search entry"
     fi
@@ -718,9 +743,107 @@ keep_rules_held() {
 }
 
 
+# ------------------------------- rotation, and a link that does not work
+
+# Where the film has got to, in milliseconds, or nothing if it cannot be read.
+position_ms() {
+  adb shell "dumpsys media_session | grep -oE 'position=[0-9]+' | head -1" 2>/dev/null \
+    | tr -d '\r' | cut -d= -f2
+}
+
+rotation_and_dead_links() {
+  section "rotating, and a link that does not work"
+
+  # Rotation is pressed through the app's own button, never through the
+  # system setting. The orientation of this phone belongs to whoever owns
+  # it, and a test has no business changing it.
+  open_film
+  # dump() splits the tree on "<", so the hierarchy tag arrives without it.
+  local was now before after
+  was="$(dump | grep -oE 'rotation="[0-9]"' | head -1 | grep -oE '[0-9]')"
+
+  # What the position is before the screen turns.
+  #
+  # Not whether it is playing: reaching the rotate button means showing the
+  # controls, and show_controls pauses first, deliberately, so that a test is
+  # not racing the film. Asserting "still playing" afterwards asks the harness
+  # to contradict itself, and it duly failed — on a player that was behaving
+  # perfectly. What actually matters when a screen turns is that the place in
+  # the film survives it.
+  before="$(position_ms)"
+
+  if tap_control Rotate; then
+    sleep 4
+    now="$(dump | grep -oE 'rotation="[0-9]"' | head -1 | grep -oE '[0-9]')"
+    if [ -n "$(alive)" ]; then
+      pass "rotating did not take the player down (was $was, now $now)"
+    else
+      fail "rotating did not take the player down"
+      return
+    fi
+
+    after="$(position_ms)"
+    if [ -n "$before" ] && [ -n "$after" ] && [ "$after" -ge $((before - 2000)) ] 2>/dev/null; then
+      pass "the place in the film survived rotating ($before to $after ms)"
+    else
+      fail "the place in the film survived rotating" "was $before, now $after"
+    fi
+
+    # And it still plays when told to, which is the part rotating could break.
+    key KEYCODE_DPAD_CENTER; sleep 3
+    if [ -n "$(playing)" ]; then
+      pass "and it plays again after rotating"
+    else
+      fail "and it plays again after rotating"
+    fi
+
+    # Twice puts the setting back: it is a two-state cycle.
+    show_controls
+    tap_control Rotate >/dev/null 2>&1
+    sleep 3
+    if [ -n "$(alive)" ]; then
+      pass "and rotating back left it alone"
+    else
+      fail "and rotating back left it alone"
+    fi
+  else
+    fail "found the rotate button"
+  fi
+
+  # A link that answers, but not with a file. This is what an expired debrid
+  # link looks like, and the player must say so rather than sit there or go.
+  adb shell "am force-stop $PKG" >/dev/null 2>&1
+  adb logcat -c >/dev/null 2>&1
+  CURRENT_SCREEN=""
+  adb shell "am start -a android.intent.action.VIEW -n $ACT -t video/mp4 \
+             -d 'https://d2zihajmogu5jn.cloudfront.net/no-such-file-here.mp4'" >/dev/null 2>&1
+  local waited=0
+  while [ $waited -lt 25 ]; do
+    case "$(focused)" in *"$PKG"*) break ;; esac
+    sleep 1; waited=$((waited + 1))
+  done
+
+  local said="" i
+  for i in $(seq 1 12); do
+    sleep 3
+    said="$(dump | grep -oE 'text="[^"]*(would not play|could not reach|refused the request|not there any more|went wrong)[^"]*"' | head -1)"
+    [ -n "$said" ] && break
+  done
+  if [ -n "$said" ]; then
+    pass "a dead link is explained, not ignored: $said"
+  else
+    fail "a dead link is explained, not ignored" \
+         "$(dump | grep -oE 'text="[^"]+"' | head -4 | tr '\n' ' ')"
+  fi
+  check "the player is still there after a dead link" "$([ -n "$(alive)" ] && echo 0 || echo 1)"
+  check "nothing crashed on a dead link" "$(crashed)"
+  key KEYCODE_BACK; sleep 2
+}
+
 keep_rules_held
 sweep_settings
 engine_matrix
+rotation_and_dead_links
 by_remote_only
 from_the_web
 online_features
