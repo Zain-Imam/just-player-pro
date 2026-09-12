@@ -121,6 +121,11 @@ engine here, and nothing in this app tries to work around that.
 * **A subtitle button that is always available** — it no longer greys out when a file has no
   subtitle tracks; it offers to search online instead.
 * **Subtitle folder** — choose where downloaded subtitles are kept.
+* **Position works on both engines, and stays on the picture.** The slider used to do nothing at
+  all on Media3 for a subtitle carrying its own placement — every ASS file and a good many converted
+  SRTs — and on mpv it pushed the text off the edge of the frame, where it was clipped away rather
+  than moved. Both now place the line inside the picture and never in the letterbox, and a cue the
+  file deliberately put at the top is left there.
 * **Styling works on both engines** — size, position, edge style and typeface are translated into
   mpv's own vocabulary (`sub-pos`, `sub-scale`, `sub-ass-override`…) so the sliders mean the same
   thing whichever engine is playing, including below the default position.
@@ -158,7 +163,12 @@ engine here, and nothing in this app tries to work around that.
   whether a track is forced, for the hard of hearing, or an audio description — in one fixed order,
   identically on both engines, so two English soundtracks are never two identical rows.
 * **A second line under the title** saying what is actually playing: `3840×2160 · HEVC · HDR ·
-  E-AC-3 5.1`, built from the tracks the player settled on rather than from the file.
+  E-AC-3 5.1 · Media3`, built from the tracks the player settled on rather than from the file, and
+  ending with the engine — which on Auto is the only way to know which one a file landed on.
+* **Ask for the info card** from the quick panel instead of waiting for a pause, and read the
+  setting to find out what it does rather than turning it on to see.
+* **Test keys and addons** on demand, rather than only as they are typed in: a service that stopped
+  answering last week still looked fine until the evening it was needed.
 * **Errors in words**, with the details behind a button — shareable, or shown as a code a phone can
   scan when there is nothing on the device to share to.
 * **A setup page you open on your phone** — settings offers a PIN-gated local web page so API keys
@@ -251,6 +261,7 @@ styles, volume boost, PiP, gestures, chapters, skip markers, online subtitles �
 | Drag up and down, **right** half | Volume — keep going past 100% for the boost |
 | Drag left and right | Scrub through the film |
 | Long press | Hold for double speed; let go to drop back. While locked, it unlocks |
+| Long press, **two fingers** | Lock the controls. Hold again, with either hand, to unlock |
 | Pinch | Zoom the picture, when the aspect is set to Crop |
 
 ### On the controls
@@ -265,7 +276,7 @@ styles, volume boost, PiP, gestures, chapters, skip markers, online subtitles �
 | Audio button | Pick a soundtrack, on files with more than one |
 | Aspect button | Step through the ten scaling modes: fit, fill, crop, stretch, 4:3, 16:9, 1.85:1, 2.35:1, 2.39:1 |
 | Aspect button, long press | Free zoom — arrows or a pinch resize the picture |
-| Gear, one tap | Quick panel: speed, engine, video quality, info card, skip markers, buffering, sleep timer, tracks |
+| Gear, one tap | Quick panel: speed, engine, video quality, show info card, skip markers, buffering, sleep timer, tracks |
 | Gear, long press | The full settings screen |
 | Padlock | Lock the controls against accidental touches |
 | Folder | Open another file |

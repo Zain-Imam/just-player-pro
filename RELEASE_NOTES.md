@@ -26,6 +26,30 @@ in a different place on each; a subtitle handed over by another app was listed
 on both and switched on by one; mpv reported almost nothing about a track while
 Media3 reported everything.
 
+## Fixed along the way
+
+* **The app no longer disappears mid-film.** A brace written the way desktop
+  Java accepts and Android does not meant the release-name parser failed to
+  load the first time anything touched it — which is as a file opens, on the
+  thread that works out what you are watching. The process died with nothing
+  said. That one bug accounts for the player vanishing, for subtitles that were
+  there a second ago and then were not, and for Change title closing
+  everything. Parsing a name can no longer throw, and a background thread can
+  no longer take the app down with it.
+* **The subtitle position slider does something on Media3.** It had no effect
+  at all on any subtitle carrying its own placement.
+* **Subtitles stay on the picture** on both engines instead of sliding into the
+  letterbox and being drawn on black, or off the frame entirely.
+* **The theme colour list shows colours**, once, rather than a list of names
+  with the colours hiding behind it.
+* **The clock no longer sits on top of the title.**
+* **Locking has its own gesture again** — two fingers held — so the plain hold
+  can be double speed without one of them losing out.
+* **The update check says which of the three things happened**: newer build,
+  nothing newer, or could not ask. And it names the version it found.
+* **The setup page tests addons**, not only keys, and probes one before saving
+  it rather than taking the URL at its word.
+
 ## Playback
 
 * **Video quality.** A stream served as a ladder of bitrates, or a file with
