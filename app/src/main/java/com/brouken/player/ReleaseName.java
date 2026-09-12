@@ -119,10 +119,14 @@ public final class ReleaseName {
             return !title.matches("(?i)[0-9\\s._-]*(p|part\\s*\\d+)?");
         }
 
+        /*
+         * What to ask a database for: the title, and nothing else.
+         *
+         * The year used to be glued on to the end, which asks for a title
+         * containing the digits 2026 and finds nothing. It goes beside the
+         * query as a year instead, which is what the year field is for.
+         */
         public String searchQuery() {
-            if (!isSeries() && year != null) {
-                return cleanTitle + " " + year;
-            }
             return cleanTitle;
         }
     }

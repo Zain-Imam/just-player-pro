@@ -1331,10 +1331,26 @@ public class PlayerActivity extends Activity {
             if (event.getAction() != KeyEvent.ACTION_DOWN) {
                 return true;
             }
-            final int keyCode = lockedKey;
-            if (keyCode == KeyEvent.KEYCODE_BACK
-                    || keyCode == KeyEvent.KEYCODE_DPAD_CENTER
-                    || keyCode == KeyEvent.KEYCODE_ENTER) {
+
+            /*
+             * Held, not pressed.
+             *
+             * OK used to lift the lock on a single press, which is the first
+             * thing anybody does with a remote in their hand — so the lock
+             * lasted exactly one keystroke and then everything worked again,
+             * which reads as the lock not working at all. Holding it is the
+             * same deliberate act as the hold that locks the screen with a
+             * finger, and nothing else gets through.
+             */
+            // A quick press repeats not at all; holding one down repeats from the
+            // first tick onwards, and a synthetic long press carries the flag.
+            final boolean held = event.isLongPress() || event.getRepeatCount() >= 1;
+            final boolean confirm = lockedKey == KeyEvent.KEYCODE_DPAD_CENTER
+                    || lockedKey == KeyEvent.KEYCODE_ENTER
+                    || lockedKey == KeyEvent.KEYCODE_NUMPAD_ENTER
+                    || lockedKey == KeyEvent.KEYCODE_BUTTON_A;
+
+            if (confirm && held) {
                 locked = false;
                 ((CustomPlayerView) playerView).setIconLock(false);
                 updateButtonLock();
@@ -1580,7 +1596,22 @@ public class PlayerActivity extends Activity {
         mPrefs.updateSubtitle(uri);
     }
 
+    /*
+     * True once this engine has actually put a picture on screen.
+     *
+     * Which settles the question of whether it can play the file. The track
+     * list is reported more than once — adding a subtitle changes it, and so
+     * does a stream reconfiguring itself — and one of those reports arriving
+     * without a video group in it was being read as "this engine cannot manage
+     * the video", which is how a film playing perfectly well on Media3 was
+     * interrupted to be handed to mpv.
+     */
+    private boolean pictureSeen;
+
     private boolean tryMpvFallback() {
+        if (pictureSeen) {
+            return false;
+        }
         if (BuildConfig.DEBUG) {
             Utils.log("mpv fallback check: engine=" + mPrefs.playbackEngine
                     + " active=" + mpvFallbackActive
@@ -1938,6 +1969,7 @@ public class PlayerActivity extends Activity {
             notifyAudioSessionUpdate(true);
 
             videoLoading = true;
+            pictureSeen = false;
 
             updateLoading(true);
 
@@ -2219,6 +2251,12 @@ public class PlayerActivity extends Activity {
             }
         }
 
+
+        @Override
+        public void onRenderedFirstFrame() {
+            // The engine has drawn a frame, so it can plainly decode this file.
+            pictureSeen = true;
+        }
 
         @Override
         public void onVideoSizeChanged(@NonNull androidx.media3.common.VideoSize videoSize) {
@@ -2514,6 +2552,13 @@ public class PlayerActivity extends Activity {
             ensureSkipSegments();
             coordinatorLayout.removeCallbacks(overlayShower);
             overlayShower.run();
+        }, () -> {
+            // Nothing matched. Rather than leaving "Identifying" on screen for
+            // ever, hand over the search box, which is what somebody would
+            // reach for next anyway.
+            if (uri.equals(mPrefs.mediaUri)) {
+                reIdentifyOnline();
+            }
         });
     }
 
@@ -2537,7 +2582,19 @@ public class PlayerActivity extends Activity {
         }
     }
 
+    /*
+     * What the card is measured against: the picture, not the frame around it.
+     *
+     * The frame keeps the size the layout gave it in some of the scaling modes
+     * while the picture inside it does not, so a card copying the frame took
+     * the whole width the moment the shape changed. The surface is the picture,
+     * and the card is clamped to the player either way.
+     */
     private android.view.View overlayBounds() {
+        final android.view.View surface = playerView.getVideoSurfaceView();
+        if (surface != null) {
+            return surface;
+        }
         final android.view.View frame =
                 playerView.findViewById(androidx.media3.ui.R.id.exo_content_frame);
         return frame != null ? frame : coordinatorLayout;
@@ -2941,7 +2998,25 @@ public class PlayerActivity extends Activity {
         }
     }
 
+    /*
+     * The picture changed shape, so everything measured against it is stale.
+     *
+     * The card over it and the subtitles on it both work from where the picture
+     * actually is, and stepping through the scaling modes moves it without
+     * necessarily moving the frame around it.
+     */
+    private void remeasureOverPicture() {
+        playerView.post(() -> {
+            if (overlayCard != null) {
+                overlayCard.refresh();
+            }
+            updateSubtitlePictureArea();
+        });
+    }
+
     private void applyVideoShape() {
+        remeasureOverPicture();
+
         final Format format = videoFormat();
         if (format == null) {
             return;
@@ -4185,6 +4260,7 @@ public class PlayerActivity extends Activity {
         }
         androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
                 .edit().putInt(PREF_ASPECT_STEP, aspectStep).apply();
+        remeasureOverPicture();
     }
 
     /*

@@ -316,26 +316,48 @@ public final class OnlineController {
      * the ones it declines to answer.
      */
     public void identifySilently(@Nullable final Uri uri, final OnIdentified callback) {
+        identifySilently(uri, callback, null);
+    }
+
+    /*
+     * The same, but it always answers.
+     *
+     * Every way this can fail — no key, a name that is not a title, a search
+     * that found nothing, a series whose episode is not in the file name — used
+     * to be a quiet return. That is right for something running on its own as a
+     * file opens, and wrong for somebody who pressed a button and is watching
+     * the word "Identifying" not change. Anything that asked out loud passes a
+     * second answer for the case where there is nothing to show, and gets the
+     * search box instead of silence.
+     */
+    public void identifySilently(@Nullable final Uri uri, final OnIdentified callback,
+                                 @Nullable final Runnable ifNotFound) {
         if (!ApiKeys.hasTmdb(context)) {
+            giveUp(ifNotFound);
             return;
         }
         worker.execute(() -> {
             final ReleaseName.Info parsed = ReleaseName.parse(resolvedName());
             if (!parsed.looksLikeTitle()) {
+                giveUp(ifNotFound);
                 return;
             }
-            final List<Tmdb.Candidate> candidates = Tmdb.search(context, parsed.searchQuery());
+            final List<Tmdb.Candidate> candidates =
+                    Tmdb.searchHard(context, parsed.searchQuery(), parsed.year);
             if (candidates.isEmpty()) {
+                giveUp(ifNotFound);
                 return;
             }
             final Tmdb.Candidate candidate = candidates.get(0);
             if (candidate.isSeries && (parsed.season == null || parsed.episode == null)) {
+                giveUp(ifNotFound);
                 return;
             }
             final Identity identity = Tmdb.identify(context, candidate,
                     candidate.isSeries ? parsed.season : null,
                     candidate.isSeries ? parsed.episode : null);
             if (identity == null) {
+                giveUp(ifNotFound);
                 return;
             }
             if (uri != null) {
@@ -345,16 +367,27 @@ public final class OnlineController {
         });
     }
 
+    private void giveUp(@Nullable final Runnable ifNotFound) {
+        if (ifNotFound != null) {
+            main.post(ifNotFound);
+        }
+    }
+
     private void searchTmdb(final Activity activity, final String query,
                             final ReleaseName.Info parsed, final OnIdentified callback) {
         final ProgressDialog progress = progress(activity, R.string.online_identifying);
 
         worker.execute(() -> {
-            final List<Tmdb.Candidate> candidates = Tmdb.search(context, query);
+            final List<Tmdb.Candidate> candidates =
+                    Tmdb.searchHard(context, query, parsed.year);
             main.post(() -> {
                 dismiss(progress);
                 if (candidates.isEmpty()) {
                     toast(R.string.online_no_matches);
+                    // Straight back to the box rather than back to the film:
+                    // the whole reason for typing was that the guess was wrong,
+                    // and one wrong guess is not a reason to stop.
+                    showIdentifyDialog(activity, query, true, callback);
                     return;
                 }
                 chooseCandidate(activity, candidates, parsed, callback);

@@ -112,6 +112,26 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         });
     }
 
+    /*
+     * A lock that actually locks.
+     *
+     * The lock had been enforced by checking it in each gesture, which covers
+     * the ones anybody thought of and none of the others: the controls could
+     * still be brought back by the library's own auto-show, by rebuilding the
+     * player, or by coming back from picture-in-picture — and once they were on
+     * screen, every button on them worked, lock or no lock.
+     *
+     * Every one of those goes through here. Nothing shows the controls while
+     * the screen is locked, so there is nothing to press.
+     */
+    @Override
+    public void showController() {
+        if (PlayerActivity.locked) {
+            return;
+        }
+        super.showController();
+    }
+
     public void clearIcon() {
         exoErrorMessage.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
         setHighlight(false);

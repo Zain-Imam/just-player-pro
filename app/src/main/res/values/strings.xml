@@ -154,8 +154,8 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="pref_double_tap_seconds">Double-tap seek</string>
     <string name="pref_double_tap_seconds_summary">Seconds per double tap</string>
     <string name="unlocked">Unlocked</string>
-    <string name="locked_hint">Locked — press Back or OK to unlock</string>
-    <string name="pref_lock_hint">Lock the screen against accidental touches with the padlock in the controls, or by holding two fingers on the picture. Holding again — with one finger or two — unlocks, and so does the padlock, Back or OK. The volume keys keep working while locked.</string>
+    <string name="locked_hint">Locked — hold OK, or hold two fingers on the picture, to unlock</string>
+    <string name="pref_lock_hint">Lock the screen against accidental touches with the padlock in the controls, or by holding two fingers on the picture. To unlock, hold again — with one finger or two — or hold OK on a remote. A single press does nothing, so the lock cannot be lifted by accident. The volume keys keep working while locked.</string>
     <string name="pref_overlay_delay">Card delay</string>
     <string name="pref_overlay_delay_summary">Seconds after pausing. 0 shows it at once.</string>
     <string name="pref_prefill">Fill search from file name</string>

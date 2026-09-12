@@ -120,6 +120,21 @@ public final class OverlayCard {
         root.post(this::syncToVideo);
     }
 
+    /*
+     * Measure again, because the picture just changed shape.
+     *
+     * A layout listener catches a rotation or a window resize, but stepping
+     * through the scaling modes can leave the frame the same size while the
+     * picture inside it is not, and then the card keeps the width it had.
+     */
+    public void refresh() {
+        if (root == null || root.getVisibility() != View.VISIBLE) {
+            return;
+        }
+        syncToVideo();
+        root.post(this::syncToVideo);
+    }
+
     public void hide() {
         if (root != null) {
             root.setVisibility(View.GONE);

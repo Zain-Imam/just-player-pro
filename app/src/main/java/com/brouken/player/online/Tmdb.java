@@ -75,6 +75,92 @@ public final class Tmdb {
 
     @NonNull
     public static List<Candidate> search(final Context context, final String query) {
+        return search(context, query, null);
+    }
+
+    /*
+     * Ask more than once, in decreasing order of confidence.
+     *
+     * A name out of a file is a guess, and one guess is not enough: the year
+     * may be wrong, the title may carry a subtitle the database does not use,
+     * an anime may be listed under its other name. Asking once and giving up is
+     * how "The Runner 2026" came back with nothing while "The Runner" was there
+     * all along.
+     *
+     * Each rung asks for less than the one above it. The first that answers
+     * wins, and if none do the caller is told so rather than left waiting.
+     */
+    @NonNull
+    public static List<Candidate> searchHard(final Context context,
+                                             final String title,
+                                             @Nullable final String year) {
+        final java.util.LinkedHashSet<String> tried = new java.util.LinkedHashSet<>();
+        final String clean = title == null ? "" : title.trim();
+        if (clean.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 1. The title, with the year beside it.
+        if (year != null) {
+            final List<Candidate> withYear = search(context, clean, year);
+            if (!withYear.isEmpty()) {
+                return withYear;
+            }
+        }
+
+        // 2. The title on its own.
+        tried.add(clean);
+
+        // 3. Without whatever follows a colon or a dash, which is usually a
+        //    subtitle the database files under the main name.
+        final String[] cuts = {":", " - ", " – "};
+        for (final String cut : cuts) {
+            final int at = clean.indexOf(cut);
+            if (at > 2) {
+                tried.add(clean.substring(0, at).trim());
+            }
+        }
+
+        // 4. Without the last word, for a name that kept one too many.
+        final String[] words = clean.split("[ ]+");
+        if (words.length > 2) {
+            final StringBuilder shorter = new StringBuilder();
+            for (int i = 0; i < words.length - 1; i++) {
+                if (shorter.length() > 0) {
+                    shorter.append(' ');
+                }
+                shorter.append(words[i]);
+            }
+            tried.add(shorter.toString());
+        }
+
+        // 5. Letters and digits only, for a name still carrying punctuation.
+        final String bare = clean.replaceAll("[^A-Za-z0-9 ]+", " ")
+                .replaceAll("[ ]+", " ").trim();
+        if (!bare.isEmpty()) {
+            tried.add(bare);
+        }
+
+        for (final String attempt : tried) {
+            final List<Candidate> found = search(context, attempt, null);
+            if (!found.isEmpty()) {
+                return found;
+            }
+        }
+        return new ArrayList<>();
+    }
+
+    /*
+     * The year goes beside the query, never inside it.
+     *
+     * Searching for "The Runner 2026" asks TMDB for a title containing those
+     * words and finds nothing; searching for "The Runner" with 2026 as the year
+     * finds the film. The year was being glued on to the end of the query,
+     * which is why taking it off by hand was what made the search work.
+     */
+    @NonNull
+    public static List<Candidate> search(final Context context, final String query,
+                                         @Nullable final String year) {
         final List<Candidate> results = new ArrayList<>();
         final String key = ApiKeys.get(context, ApiKeys.PREF_TMDB);
         if (key == null || query == null || query.trim().isEmpty()) {
@@ -85,6 +171,10 @@ public final class Tmdb {
         params.put("api_key", key);
         params.put("query", query.trim());
         params.put("include_adult", "false");
+        if (year != null && year.matches("[0-9]{4}")) {
+            // Multi search takes one year for both kinds.
+            params.put("year", year);
+        }
 
         final Http.Result response = Http.get(BASE + "/search/multi" + Http.query(params), null);
         final JSONObject json = response.json();
