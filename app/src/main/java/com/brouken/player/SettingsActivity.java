@@ -331,18 +331,21 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
         private void attachAbout() {
+            final Preference version = findPreference("aboutVersion");
+            if (version != null) {
+                version.setSummary(getString(R.string.pref_about_version,
+                        BuildConfig.VERSION_NAME));
+            }
             final Preference preference = findPreference("aboutProject");
             if (preference == null) {
                 return;
             }
-            preference.setSummary(getString(R.string.pref_about_summary,
-                    BuildConfig.VERSION_NAME));
             preference.setOnPreferenceClickListener(clicked -> {
                 try {
                     startActivity(new Intent(Intent.ACTION_VIEW,
-                            Uri.parse("https://github.com/Zain-Imam/just-player-pro")));
+                            Uri.parse("https://github.com/Zain-Imam")));
                 } catch (Exception ignored) {
-                    // A television with no browser. The address is on the row.
+                    // A television with no browser to open it in.
                 }
                 return true;
             });

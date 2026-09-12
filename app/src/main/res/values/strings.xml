@@ -155,7 +155,7 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="pref_double_tap_seconds_summary">Seconds per double tap</string>
     <string name="unlocked">Unlocked</string>
     <string name="locked_hint">Locked — press Back or OK to unlock</string>
-    <string name="pref_lock_hint">Lock the screen against accidental touches with the padlock in the playback controls, or by long-pressing the video. Long-press again, or press the padlock, to unlock.</string>
+    <string name="pref_lock_hint">Lock the screen against accidental touches with the padlock in the controls, or by holding two fingers on the picture. Holding again — with one finger or two — unlocks, and so does the padlock, Back or OK. The volume keys keep working while locked.</string>
     <string name="pref_overlay_delay">Card delay</string>
     <string name="pref_overlay_delay_summary">Seconds after pausing. 0 shows it at once.</string>
     <string name="pref_prefill">Fill search from file name</string>
@@ -221,9 +221,8 @@ Auto starts on Media3 and switches only for a file Media3 fails on.</string>
     <string name="pref_check_all_title">What answered</string>
     <string name="pref_check_all_none">Nothing is set up yet</string>
     <string name="pref_about_header">About</string>
-    <string name="pref_about_title">Just Player Pro</string>
-    <string name="pref_about_summary">Version %1$s · github.com/Zain-Imam/just-player-pro</string>
-    <string name="pref_about_note">Built by Zain Imam on top of Just Player by Marcel Dopita, with pieces from just-player-plus, Just+ Player and the mpv forks. Tailored to my own use and shared as is.</string>
+    <string name="pref_about_title">Built by</string>
+    <string name="pref_about_version">Version %1$s</string>
     <string name="pref_update">Check for updates</string>
     <string name="pref_update_summary">Asks GitHub whether there is a newer build</string>
     <string name="update_title">Version %1$s is available</string>

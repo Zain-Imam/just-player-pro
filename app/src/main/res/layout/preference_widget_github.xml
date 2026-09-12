@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     The mark sits at the end of the row rather than in front of the title,
+     because the row reads as a sentence: "Built by" and then where to find him.
+-->
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="28dp"
+    android:layout_height="28dp"
+    android:layout_gravity="center_vertical|end"
+    android:contentDescription="@string/pref_about_title"
+    android:src="@drawable/ic_github_24dp" />

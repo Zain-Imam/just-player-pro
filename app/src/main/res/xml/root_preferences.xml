@@ -348,13 +348,14 @@
     <PreferenceCategory app:title="@string/pref_about_header">
 
         <Preference
-            app:key="aboutProject"
-            app:title="@string/pref_about_title"
-            app:summary="@string/pref_about_summary" />
+            app:key="aboutVersion"
+            app:selectable="false"
+            app:title="@string/app_name" />
 
         <Preference
-            app:selectable="false"
-            app:summary="@string/pref_about_note" />
+            app:key="aboutProject"
+            app:title="@string/pref_about_title"
+            app:widgetLayout="@layout/preference_widget_github" />
 
     </PreferenceCategory>
 
