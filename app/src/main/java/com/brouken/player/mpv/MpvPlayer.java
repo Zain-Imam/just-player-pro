@@ -441,6 +441,9 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
             return;
         }
         videoSize = size;
+        // The decoded video is only described once it is decoding, so the track
+        // list is worth re-reading now that it is.
+        updateTracks();
         listeners.sendEvent(Player.EVENT_VIDEO_SIZE_CHANGED, listener ->
                 listener.onVideoSizeChanged(size));
     }
@@ -455,6 +458,12 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
         if (count == null || count <= 0) {
             return;
         }
+
+        // Whether what is on screen is HDR, which is a property of the
+        // decoded video rather than of the track list. Media3 reports it in the
+        // format and the header line reads it from there, so it goes in the
+        // same place here.
+        final String gamma = mpv.getPropertyString("video-params/gamma");
 
         final Integer currentVideo = currentTrackId("video", "vid");
         final Integer currentAudio = currentTrackId("audio", "aid");
@@ -480,6 +489,7 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
             info.codec = mpv.getPropertyString("track-list/" + i + "/codec");
             info.channels = mpv.getPropertyInt("track-list/" + i + "/demux-channel-count");
             info.sampleRate = mpv.getPropertyInt("track-list/" + i + "/demux-samplerate");
+            info.fps = mpv.getPropertyDouble("track-list/" + i + "/demux-fps");
             info.width = mpv.getPropertyInt("track-list/" + i + "/demux-w");
             info.height = mpv.getPropertyInt("track-list/" + i + "/demux-h");
             info.isDefault = isTrue(mpv.getPropertyBoolean("track-list/" + i + "/default"));
@@ -558,6 +568,19 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
             if (info.width != null && info.width > 0 && info.height != null && info.height > 0) {
                 builder.setWidth(info.width).setHeight(info.height);
             }
+            if (info.fps != null && info.fps > 0) {
+                builder.setFrameRate(info.fps.floatValue());
+            }
+            if ("video".equals(info.type) && gamma != null) {
+                final int transfer = "pq".equals(gamma) ? C.COLOR_TRANSFER_ST2084
+                        : "hlg".equals(gamma) ? C.COLOR_TRANSFER_HLG
+                        : Format.NO_VALUE;
+                if (transfer != Format.NO_VALUE) {
+                    builder.setColorInfo(new androidx.media3.common.ColorInfo.Builder()
+                            .setColorTransfer(transfer)
+                            .build());
+                }
+            }
             final Format format = builder.build();
             final TrackGroup group = new TrackGroup(String.valueOf(info.index), format);
             groups.add(new Tracks.Group(group, false, new int[]{C.FORMAT_HANDLED},
@@ -582,6 +605,7 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
         Integer id;
         Integer channels;
         Integer sampleRate;
+        Double fps;
         Integer width;
         Integer height;
         boolean isDefault;

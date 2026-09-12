@@ -176,6 +176,8 @@ public class PlayerActivity extends Activity {
 
     private CoordinatorLayout coordinatorLayout;
     private TextView titleView;
+    private TextView metaView;
+    private LinearLayout titleBar;
     private ImageButton buttonOpen;
     private ImageButton buttonLock;
     private ImageButton buttonPlayPause;
@@ -567,17 +569,42 @@ public class PlayerActivity extends Activity {
         final int titleViewPaddingHorizontal = Utils.dpToPx(14);
         final int titleViewPaddingVertical = getResources().getDimensionPixelOffset(R.dimen.exo_styled_bottom_bar_time_padding);
         FrameLayout centerView = playerView.findViewById(R.id.exo_controls_background);
+        /*
+         * The name, and under it what is actually playing.
+         *
+         * Knowing that a file is 4K HEVC with a 5.1 E-AC-3 track answers most
+         * of the questions that otherwise mean opening two pickers, and it is
+         * the fastest way to tell whether the engine fell back to something it
+         * could decode. The line comes from the same track information both
+         * engines now report, so it reads the same on either.
+         */
+        titleBar = new LinearLayout(this);
+        titleBar.setOrientation(LinearLayout.VERTICAL);
+        titleBar.setBackgroundResource(R.color.ui_controls_background);
+        titleBar.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        titleBar.setPadding(titleViewPaddingHorizontal, titleViewPaddingVertical, titleViewPaddingHorizontal, titleViewPaddingVertical);
+        titleBar.setVisibility(View.GONE);
+
         titleView = new TextView(this);
-        titleView.setBackgroundResource(R.color.ui_controls_background);
         titleView.setTextColor(Color.WHITE);
         titleView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        titleView.setPadding(titleViewPaddingHorizontal, titleViewPaddingVertical, titleViewPaddingHorizontal, titleViewPaddingVertical);
         titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-        titleView.setVisibility(View.GONE);
         titleView.setMaxLines(1);
         titleView.setEllipsize(TextUtils.TruncateAt.END);
         titleView.setTextDirection(View.TEXT_DIRECTION_LOCALE);
-        centerView.addView(titleView);
+        titleBar.addView(titleView);
+
+        metaView = new TextView(this);
+        metaView.setTextColor(0xB3FFFFFF);
+        metaView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        metaView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        metaView.setMaxLines(1);
+        metaView.setEllipsize(TextUtils.TruncateAt.END);
+        metaView.setTextDirection(View.TEXT_DIRECTION_LOCALE);
+        metaView.setVisibility(View.GONE);
+        titleBar.addView(metaView);
+
+        centerView.addView(titleBar);
 
         titleView.setOnLongClickListener(view -> {
             // Prevent FileUriExposedException
@@ -670,7 +697,7 @@ public class PlayerActivity extends Activity {
                     view.setPadding(0, windowInsets.getSystemWindowInsetTop(), 0, windowInsets.getSystemWindowInsetBottom());
                 }
 
-                Utils.setViewParams(titleView, paddingLeft + titleViewPaddingHorizontal, titleViewPaddingVertical, paddingRight + titleViewPaddingHorizontal, titleViewPaddingVertical,
+                Utils.setViewParams(titleBar, paddingLeft + titleViewPaddingHorizontal, titleViewPaddingVertical, paddingRight + titleViewPaddingHorizontal, titleViewPaddingVertical,
                         marginLeft, windowInsets.getSystemWindowInsetTop(), marginRight, 0);
 
                 Utils.setViewParams(findViewById(R.id.exo_bottom_bar), paddingLeft, 0, paddingRight, bottomBarPaddingBottom,
@@ -1908,7 +1935,7 @@ public class PlayerActivity extends Activity {
                 resolveTitleFromServer(mPrefs.mediaUri);
             }
             autoIdentify(mPrefs.mediaUri);
-            titleView.setVisibility(View.VISIBLE);
+            titleBar.setVisibility(View.VISIBLE);
 
             updateButtons(true);
 
@@ -2001,7 +2028,7 @@ public class PlayerActivity extends Activity {
             player.release();
             player = null;
         }
-        titleView.setVisibility(View.GONE);
+        titleBar.setVisibility(View.GONE);
         updateButtons(false);
     }
 
@@ -2184,6 +2211,7 @@ public class PlayerActivity extends Activity {
             selectPendingSubtitle(tracks);
             applyCarriedTracks(tracks);
             keepSubtitleButtonEnabled();
+            updateMetaLine();
             logEngineState("tracks");
             final boolean unplayable = hasUnplayableVideo(tracks);
             if (BuildConfig.DEBUG) {
@@ -3370,6 +3398,91 @@ public class PlayerActivity extends Activity {
             // A device that refuses the effect simply plays at normal volume.
             Utils.log("Volume boost unavailable: " + e);
         }
+    }
+
+    /*
+     * What is playing, in one line: 3840×2160 · HEVC · HDR · E-AC-3 5.1.
+     *
+     * Built from the selected tracks rather than from the file, so it says what
+     * the player settled on and not what was asked for — which is the whole use
+     * of it when a device quietly fell back to a lower profile. Hidden when
+     * there is nothing worth saying.
+     */
+    void updateMetaLine() {
+        if (metaView == null) {
+            return;
+        }
+        if (player == null) {
+            metaView.setVisibility(View.GONE);
+            return;
+        }
+
+        final StringBuilder line = new StringBuilder();
+
+        Format video = null;
+        Format audio = null;
+        for (final Tracks.Group group : player.getCurrentTracks().getGroups()) {
+            for (int i = 0; i < group.length; i++) {
+                if (!group.isTrackSelected(i)) {
+                    continue;
+                }
+                if (group.getType() == C.TRACK_TYPE_VIDEO && video == null) {
+                    video = group.getTrackFormat(i);
+                } else if (group.getType() == C.TRACK_TYPE_AUDIO && audio == null) {
+                    audio = group.getTrackFormat(i);
+                }
+            }
+        }
+
+        // The size the surface is actually being handed, which is the one the
+        // engine reports even when the track carried no dimensions.
+        final androidx.media3.common.VideoSize size = player.getVideoSize();
+        if (size.width > 0 && size.height > 0) {
+            appendMeta(line, size.width + "\u00d7" + size.height);
+        } else if (video != null && video.width > 0 && video.height > 0) {
+            appendMeta(line, video.width + "\u00d7" + video.height);
+        }
+
+        if (video != null) {
+            appendMeta(line, TrackNames.codec(video));
+            if (video.frameRate > 0) {
+                appendMeta(line, Math.round(video.frameRate * 100) / 100f + " fps");
+            }
+            if (video.colorInfo != null && video.colorInfo.colorTransfer != Format.NO_VALUE
+                    && (video.colorInfo.colorTransfer == C.COLOR_TRANSFER_ST2084
+                    || video.colorInfo.colorTransfer == C.COLOR_TRANSFER_HLG)) {
+                appendMeta(line, "HDR");
+            }
+        }
+
+        if (audio != null) {
+            final StringBuilder sound = new StringBuilder();
+            final String codec = TrackNames.codec(audio);
+            if (codec != null) {
+                sound.append(codec);
+            }
+            if (audio.channelCount == 6) {
+                sound.append(sound.length() > 0 ? " " : "").append("5.1");
+            } else if (audio.channelCount == 8) {
+                sound.append(sound.length() > 0 ? " " : "").append("7.1");
+            } else if (audio.channelCount > 0) {
+                sound.append(sound.length() > 0 ? " " : "").append(audio.channelCount).append("ch");
+            }
+            appendMeta(line, sound.toString());
+        }
+
+        metaView.setText(line.toString());
+        metaView.setVisibility(line.length() == 0 ? View.GONE : View.VISIBLE);
+    }
+
+    private static void appendMeta(final StringBuilder line, final String part) {
+        if (part == null || part.isEmpty()) {
+            return;
+        }
+        if (line.length() > 0) {
+            line.append("  \u00b7  ");
+        }
+        line.append(part);
     }
 
     private void applyKeepScreenOn(final boolean isPlaying) {
