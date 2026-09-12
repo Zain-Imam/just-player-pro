@@ -65,7 +65,7 @@ public class OsdSettingsController {
                 new PopupWindow(settingsView, com.brouken.player.Panels.width(context), FrameLayout.LayoutParams.MATCH_PARENT, true);
         playerAdapter = new PlayerOsdSettingsAdapter(context, createPlayerSettingsListener());
         playerAdapter.setInitialValues(prefs.speed, prefs.playbackEngine, true, true,
-                prefs.adaptiveBuffering, 0, false);
+                prefs.adaptiveBuffering, 0, false, 0);
 
         View playerPanelView = LayoutInflater.from(context).inflate(R.layout.osd_settings, null);
         RecyclerView playerList = playerPanelView.findViewById(android.R.id.list);
@@ -97,7 +97,8 @@ public class OsdSettingsController {
                 preferences().getBoolean("skipSegments", true),
                 prefs.adaptiveBuffering,
                 playerActivity.sleepMinutesLeft(),
-                playerActivity.sleepAtEndOfFile()
+                playerActivity.sleepAtEndOfFile(),
+                playerActivity.videoTrackCount()
         );
         playerAdapter.notifyDataSetChanged();
 
@@ -176,6 +177,12 @@ public class OsdSettingsController {
             public void onSleepChange(int minutes) {
                 playerActivity.setSleepTimer(minutes);
                 playerSettingsWindow.dismiss();
+            }
+
+            @Override
+            public void onOpenVideoTracks() {
+                playerSettingsWindow.dismiss();
+                playerActivity.showVideoMenu();
             }
 
             @Override

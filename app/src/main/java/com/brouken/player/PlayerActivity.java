@@ -3566,6 +3566,120 @@ public class PlayerActivity extends Activity {
     }
 
 
+    /*
+     * Which video track, where a file has more than one.
+     *
+     * Two things end up here. A stream served as a ladder of bitrates shows one
+     * entry per rung, and a file that genuinely carries several video tracks —
+     * a commentary angle, a different cut — shows one per track. Auto is the
+     * first row and is what the player does when nothing is chosen: on a ladder
+     * it follows the connection, and forcing a rung is what someone does when
+     * it keeps guessing wrong.
+     */
+    public void showVideoMenu() {
+        hideOverlayCard();
+        final List<VideoChoice> choices = new ArrayList<>();
+        final Tracks tracks = player == null ? Tracks.EMPTY : player.getCurrentTracks();
+
+        choices.add(VideoChoice.auto(this, !hasOverrideType(C.TRACK_TYPE_VIDEO)));
+        for (final Tracks.Group group : tracks.getGroups()) {
+            if (group.getType() != C.TRACK_TYPE_VIDEO) {
+                continue;
+            }
+            for (int i = 0; i < group.length; i++) {
+                choices.add(VideoChoice.track(this, group, i,
+                        group.getTrackFormat(i), group.isTrackSelected(i)));
+            }
+        }
+
+        if (choices.size() < 2) {
+            Utils.showText(playerView, getString(R.string.video_menu_none));
+            return;
+        }
+
+        com.brouken.player.online.ListPicker.show(this, getString(R.string.video_menu_title),
+                choices, index -> choices.get(index).run());
+    }
+
+    public int videoTrackCount() {
+        if (player == null) {
+            return 0;
+        }
+        int count = 0;
+        for (final Tracks.Group group : player.getCurrentTracks().getGroups()) {
+            if (group.getType() == C.TRACK_TYPE_VIDEO) {
+                count += group.length;
+            }
+        }
+        return count;
+    }
+
+    private static final class VideoChoice implements com.brouken.player.online.ListPicker.Row {
+
+        private final String title;
+        private final String detail;
+        private final Runnable action;
+
+        private VideoChoice(String title, String detail, Runnable action) {
+            this.title = title;
+            this.detail = detail;
+            this.action = action;
+        }
+
+        static VideoChoice auto(final PlayerActivity activity, final boolean current) {
+            return new VideoChoice(activity.getString(R.string.video_menu_auto),
+                    current ? activity.getString(R.string.subtitle_menu_current) : null,
+                    () -> {
+                        if (activity.player == null) {
+                            return;
+                        }
+                        activity.player.setTrackSelectionParameters(
+                                activity.player.getTrackSelectionParameters().buildUpon()
+                                        .clearOverridesOfType(C.TRACK_TYPE_VIDEO)
+                                        .build());
+                    });
+        }
+
+        static VideoChoice track(final PlayerActivity activity, final Tracks.Group group,
+                                 final int index, final Format format, final boolean selected) {
+            // A rung on a ladder is recognised by its height, not by a name it
+            // does not have, so the resolution leads and the rest follows it.
+            final String name = format.height > 0
+                    ? format.height + "p"
+                    : TrackNames.title(activity, format, index, C.TRACK_TYPE_VIDEO);
+            return new VideoChoice(name, TrackNames.detail(activity, format, selected),
+                    () -> {
+                        if (activity.player == null) {
+                            return;
+                        }
+                        final List<Integer> selection = new ArrayList<>();
+                        selection.add(index);
+                        activity.player.setTrackSelectionParameters(
+                                activity.player.getTrackSelectionParameters().buildUpon()
+                                        .setTrackTypeDisabled(C.TRACK_TYPE_VIDEO, false)
+                                        .setOverrideForType(new TrackSelectionOverride(
+                                                group.getMediaTrackGroup(), selection))
+                                        .build());
+                    });
+        }
+
+        @NonNull
+        @Override
+        public String title() {
+            return title;
+        }
+
+        @Nullable
+        @Override
+        public String detail() {
+            return detail;
+        }
+
+        void run() {
+            action.run();
+        }
+    }
+
     public void showAudioMenu() {
         hideOverlayCard();
         final List<AudioChoice> choices = new ArrayList<>();

@@ -200,6 +200,9 @@ Auto starts on Media3 and switches only for a file Media3 fails on.</string>
     <string name="open_url_play">Play</string>
     <string name="open_url_invalid">That does not look like a URL a player can open</string>
     <string name="pref_history_header">History</string>
+    <string name="video_menu_title">Video quality</string>
+    <string name="video_menu_auto">Auto</string>
+    <string name="video_menu_none">This file has only one video track</string>
     <string name="track_forced">Forced</string>
     <string name="track_hearing_impaired">For the hard of hearing</string>
     <string name="track_visual_impaired">Audio description</string>

@@ -36,7 +36,8 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
     public void setInitialValues(final float speed, final String engine,
                                  final boolean overlayOnPause, final boolean skipSegments,
                                  final boolean adaptiveBuffering,
-                                 final int sleepMinutes, final boolean sleepAtEnd) {
+                                 final int sleepMinutes, final boolean sleepAtEnd,
+                                 final int videoTracks) {
         final List<OsdSettingsItem> items = new ArrayList<>();
         items.add(createSpeedItem(speed));
         items.add(createEngineItem(engine));
@@ -44,6 +45,11 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
         items.add(createSkipItem(skipSegments));
         items.add(createBufferingItem(adaptiveBuffering));
         items.add(createSleepItem(sleepMinutes, sleepAtEnd));
+        if (videoTracks > 1) {
+            // Nothing to choose between on a file with one video track, and a row
+            // that opens a list of one is a row worth not having.
+            items.add(createVideoTrackItem());
+        }
         items.add(createAudioTrackItem());
         items.add(createSubtitleSettingsItem());
         items.add(createAllSettingsItem());
@@ -151,6 +157,12 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
                 value, itemListener, this);
     }
 
+    private OsdSettingsItem createVideoTrackItem() {
+        final Drawable icon = getDrawable(R.drawable.ic_video_quality_24dp);
+        return new SimpleOsdSettingsItem(context.getString(R.string.video_menu_title), icon,
+                position -> listener.onOpenVideoTracks());
+    }
+
     private OsdSettingsItem createAudioTrackItem() {
         @SuppressLint("PrivateResource")
         // Our own audio mark rather than the library play circle, which is a
@@ -191,6 +203,8 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
         void onAdaptiveBufferingChange(boolean enabled);
 
         void onSleepChange(int minutes);
+
+        void onOpenVideoTracks();
 
         void onOpenAudioTracks();
 
