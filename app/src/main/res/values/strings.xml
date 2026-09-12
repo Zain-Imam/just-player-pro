@@ -66,6 +66,7 @@
     <string name="pref_key_subdl_dialog">Free from subdl.com/panel/api.</string>
     <string name="pref_key_wyzie">Wyzie key · optional</string>
     <string name="pref_key_wyzie_dialog">Free from sub.wyzie.io/redeem.</string>
+    <string name="pref_key_checking">Checking the key…</string>
     <string name="pref_key_set">Set</string>
     <string name="pref_key_not_set">Not set</string>
     <string name="pref_subtitle_language">Subtitle language</string>

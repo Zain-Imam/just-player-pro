@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.preference.EditTextPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
@@ -142,9 +143,63 @@ public class SettingsActivity extends AppCompatActivity {
             );
         }
 
+        /*
+         * A key is asked about before it is kept.
+         *
+         * A mistyped key used to sit there looking fine until the first search
+         * came back with nothing, which reads as the service being down rather
+         * than as a typo. The service is asked first, and the key is only
+         * written if it answers. Clearing is always allowed.
+         */
+        private void attachKeyChecks(final String... keys) {
+            for (final String key : keys) {
+                final EditTextPreference preference = findPreference(key);
+                if (preference == null) {
+                    continue;
+                }
+                preference.setOnPreferenceChangeListener((changed, newValue) -> {
+                    final String value = newValue == null ? "" : newValue.toString().trim();
+                    if (value.isEmpty()) {
+                        return true;
+                    }
+                    checkThenSave((EditTextPreference) changed, key, value);
+                    // Not yet: written by checkThenSave once the service agrees.
+                    return false;
+                });
+            }
+        }
+
+        private void checkThenSave(final EditTextPreference preference,
+                                   final String key, final String value) {
+            final android.content.Context context = requireContext().getApplicationContext();
+            android.widget.Toast.makeText(context, R.string.pref_key_checking,
+                    android.widget.Toast.LENGTH_SHORT).show();
+            new Thread(() -> {
+                final com.brouken.player.online.KeyCheck.Result result =
+                        com.brouken.player.online.KeyCheck.check(key, value);
+                final android.os.Handler handler =
+                        new android.os.Handler(android.os.Looper.getMainLooper());
+                handler.post(() -> {
+                    if (!isAdded()) {
+                        return;
+                    }
+                    if (result.ok) {
+                        preference.setText(value);
+                    }
+                    android.widget.Toast.makeText(context, result.message,
+                            android.widget.Toast.LENGTH_LONG).show();
+                });
+            }).start();
+        }
+
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
+
+            attachKeyChecks(com.brouken.player.online.ApiKeys.PREF_TMDB,
+                    com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES,
+                    com.brouken.player.online.ApiKeys.PREF_SUBDL,
+                    com.brouken.player.online.ApiKeys.PREF_WYZIE);
 
             subtitleFolderChoose = findPreference("subtitleFolderChoose");
             if (subtitleFolderChoose != null) {

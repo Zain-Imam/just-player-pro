@@ -1504,6 +1504,7 @@ public class PlayerActivity extends Activity {
 
         // Rebuilt rather than patched: the engine is chosen when the player is
         // constructed, so the whole player has to come back with the new one.
+        captureTrackSelection();
         releasePlayer();
         initializePlayer();
         return true;
@@ -1515,6 +1516,102 @@ public class PlayerActivity extends Activity {
         }
         return "mpv".equals(mPrefs.playbackEngine)
                 || ("auto".equals(mPrefs.playbackEngine) && mpvFallbackActive);
+    }
+
+    /*
+     * Carry the chosen tracks across a change of engine.
+     *
+     * The two engines number their tracks differently -- Media3 uses the id out
+     * of the container, mpv its own -- so the remembered id means something
+     * else on the other side and the film came back in another language. The
+     * language is carried instead, with the position among tracks of that kind
+     * as a fallback for files that label nothing.
+     */
+    private String carryAudioLanguage;
+    private int carryAudioIndex = -1;
+    private String carryTextLanguage;
+    private int carryTextIndex = -1;
+    private boolean carryTracks;
+
+    private void captureTrackSelection() {
+        if (player == null) {
+            return;
+        }
+        carryAudioLanguage = null;
+        carryAudioIndex = -1;
+        carryTextLanguage = null;
+        carryTextIndex = -1;
+        carryTracks = true;
+
+        int audio = 0;
+        int text = 0;
+        for (final Tracks.Group group : player.getCurrentTracks().getGroups()) {
+            for (int i = 0; i < group.length; i++) {
+                if (group.getType() == C.TRACK_TYPE_AUDIO) {
+                    if (group.isTrackSelected(i)) {
+                        carryAudioLanguage = group.getTrackFormat(i).language;
+                        carryAudioIndex = audio;
+                    }
+                    audio++;
+                } else if (group.getType() == C.TRACK_TYPE_TEXT) {
+                    if (group.isTrackSelected(i)) {
+                        carryTextLanguage = group.getTrackFormat(i).language;
+                        carryTextIndex = text;
+                    }
+                    text++;
+                }
+            }
+        }
+    }
+
+    private void applyCarriedTracks(final Tracks tracks) {
+        if (!carryTracks || player == null) {
+            return;
+        }
+        carryTracks = false;
+        applyCarriedTrack(tracks, C.TRACK_TYPE_AUDIO, carryAudioLanguage, carryAudioIndex);
+        applyCarriedTrack(tracks, C.TRACK_TYPE_TEXT, carryTextLanguage, carryTextIndex);
+    }
+
+    private void applyCarriedTrack(final Tracks tracks, final int type,
+                                   @Nullable final String language, final int wantedIndex) {
+        if (wantedIndex < 0) {
+            return;
+        }
+        Tracks.Group byIndex = null;
+        int byIndexTrack = -1;
+        int seen = 0;
+        for (final Tracks.Group group : tracks.getGroups()) {
+            if (group.getType() != type) {
+                continue;
+            }
+            for (int i = 0; i < group.length; i++) {
+                final String candidate = group.getTrackFormat(i).language;
+                if (language != null && language.equals(candidate)) {
+                    select(group, i, type);
+                    return;
+                }
+                if (seen == wantedIndex) {
+                    byIndex = group;
+                    byIndexTrack = i;
+                }
+                seen++;
+            }
+        }
+        if (byIndex != null) {
+            select(byIndex, byIndexTrack, type);
+        }
+    }
+
+    private void select(final Tracks.Group group, final int index, final int type) {
+        final java.util.List<Integer> selection = new ArrayList<>();
+        selection.add(index);
+        player.setTrackSelectionParameters(
+                player.getTrackSelectionParameters().buildUpon()
+                        .setTrackTypeDisabled(type, false)
+                        .setOverrideForType(new TrackSelectionOverride(
+                                group.getMediaTrackGroup(), selection))
+                        .build());
     }
 
     @Nullable
@@ -2010,6 +2107,7 @@ public class PlayerActivity extends Activity {
         @Override
         public void onTracksChanged(@NonNull Tracks tracks) {
             selectPendingSubtitle(tracks);
+            applyCarriedTracks(tracks);
             keepSubtitleButtonEnabled();
             logEngineState("tracks");
             final boolean unplayable = hasUnplayableVideo(tracks);
@@ -3538,6 +3636,7 @@ public class PlayerActivity extends Activity {
             return;
         }
         mpvFallbackActive = false;
+        captureTrackSelection();
         releasePlayer();
         initializePlayer();
     }
