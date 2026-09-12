@@ -28,6 +28,21 @@ Media3 reported everything.
 
 ## Fixed along the way
 
+* **Every HLS stream died the moment it started, on the Media3 engine.** The
+  player opened, showed the title, and sat at 00:00 — no error, no dialog,
+  nothing to say the stream had gone. ExoPlayer here is a patched build kept in
+  the repository; the rest of Media3 comes from Maven, and the two had drifted
+  a version apart, so `HlsMediaSource` called a method that no longer existed
+  and the playback thread was killed by `NoSuchMethodError`. DASH and
+  SmoothStreaming were broken in the same way by different missing methods.
+  They are back in step, and a test now reads every Media3 module and checks
+  each call it makes into the others is really there — the answer costs a
+  second at build time instead of a black screen at midnight.
+* **The quick panel could not be driven with a remote.** It opened with the
+  focus nowhere at all: the rows are laid out a frame after the panel appears,
+  the one attempt to focus them came before that and was dropped, and so every
+  arrow press afterwards went nowhere. Back was the only way out. It waits for
+  the rows now, on both panels.
 * **The mpv engine could not open an https address at all.** It does its own
   TLS and knows nothing of Android's trust store, so every stream over https —
   which today is every stream — failed the handshake and then went looking for

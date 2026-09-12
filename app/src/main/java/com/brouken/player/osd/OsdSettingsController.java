@@ -112,17 +112,62 @@ public class OsdSettingsController {
         playerActivity.playerView.postDelayed(playerActivity.playerView::hideController, 100);
     }
 
+    /**
+     * Put the focus on the first row, once there is a first row to put it on.
+     *
+     * This used to post once and take whatever it found. What it found was an
+     * empty list: the panel is shown and the rows are laid out a frame or two
+     * later, so the single attempt asked a RecyclerView with no children to
+     * take focus, which it cannot, and the request was quietly dropped.
+     *
+     * On a touchscreen nothing looked wrong, because a finger does not need
+     * focus. On a remote it meant the quick panel opened with the focus
+     * nowhere at all: every arrow press went to a view that was not there, the
+     * panel would not move, and the only way out was Back. The panel was
+     * unusable on a television, which is the one place it is needed most.
+     *
+     * So it now waits for the rows to exist and takes the first one, and gives
+     * up after a fixed number of frames rather than watching forever.
+     */
     private void focusFirstRow(final PopupWindow window) {
         final View content = window.getContentView();
-        content.post(() -> {
-            final RecyclerView list = content.findViewById(android.R.id.list);
-            if (list == null) {
-                return;
-            }
-            final RecyclerView.ViewHolder first = list.findViewHolderForAdapterPosition(0);
-            if (first != null) {
-                first.itemView.requestFocus();
-            } else {
+        final RecyclerView list = content.findViewById(android.R.id.list);
+        if (list == null) {
+            return;
+        }
+        list.post(new Runnable() {
+            private int framesLeft = 20;
+
+            @Override
+            public void run() {
+                // Not while it is still being dismissed, or already gone.
+                if (!window.isShowing()) {
+                    return;
+                }
+
+                final RecyclerView.ViewHolder first =
+                        list.findViewHolderForAdapterPosition(0);
+                final View row = first != null ? first.itemView
+                        : (list.getChildCount() > 0 ? list.getChildAt(0) : null);
+                if (row != null && row.requestFocus()) {
+                    return;
+                }
+
+                // Keep waiting for a row rather than settling for the list.
+                //
+                // The list will take the focus itself the moment it is asked,
+                // long before it has any rows in it — and once it has it, this
+                // stops asking and the arrows have nothing to move between.
+                // That looked like a fix and was not one: the panel opened with
+                // the focus on the list as a whole, and every arrow press was
+                // swallowed exactly as before.
+                if (--framesLeft > 0) {
+                    list.post(this);
+                    return;
+                }
+
+                // Out of frames. The list itself is better than nothing: Back
+                // still closes the panel, and the rows can be reached.
                 list.requestFocus();
             }
         });
