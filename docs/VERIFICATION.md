@@ -1,100 +1,43 @@
 # What was verified, and how
 
-Run against the exact APK in `release-apks/`, on a moto g54 5G (Android 15),
-2026-09-12. Every claim below is something a command printed, not something
-somebody read in the code and believed.
+Run against the APKs in `release-apks/`, on a moto g54 5G (Android 15).
+Everything below is something a command printed. Where something was not
+covered, it says so at the end rather than being left out.
 
-Re-run it yourself:
+Re-run any of it:
 
 ```
-./gradlew :app:testLatestUniversalDebugUnitTest          # layer 1
-./gradlew :app:connectedLatestUniversalDebugAndroidTest  # layer 2
-tools/smoke.sh app.justplayerpro.android                 # layer 3
+./gradlew :app:testLatestUniversalDebugUnitTest          # layer 1, on this machine
+./gradlew :app:connectedLatestUniversalDebugAndroidTest  # layer 2, on the device
+tools/smoke.sh   app.justplayerpro.android               # layer 3, quick
+tools/verify.sh  app.justplayerpro.android               # layer 4, the long one
+tools/probe.sh   app.justplayerpro.android hls|mpvsubs|panel   # one question at a time
 ```
 
 ---
 
-## Layer 1 — on this machine
+## The interlock, first
 
-`tests="5" skipped="0" failures="0" errors="0"`
+Layers 3 and 4 press fixed screen coordinates. If the player is not the thing
+in front — it failed to start, it crashed, an install killed it — those presses
+land on the launcher and open whatever is under them. **That happened, and it
+opened private apps.** It is the reason for everything in this section.
 
-Covers the parsing everything downstream depends on: a corpus of real names
-(scene releases, anime, torbox and Stremio links, a WhatsApp filename, a bare
-hash) and input written to break a parser — empty, dots, unbalanced brackets,
-lone percent signs, emoji, bare schemes.
+Every press goes through `require_player`, which:
 
-## Layer 2 — on the device
+* checks `mFocusedApp` — the activity behind whatever has focus — is this app;
+* checks `mCurrentFocus` is this app, or a package-less window (its own popups);
+* if not, waits up to twenty seconds, since phones put things in front of you
+  unasked;
+* then tries to bring **this app's own screen** back, which can only ever start
+  this app;
+* and only then gives up, printing what was in front instead and stopping the
+  run.
 
-`4 tests, 0 failures`
+It also refuses to start at all if the package under test is not installed,
+which is the state that caused the incident.
 
-Two of them exist because a laptop cannot answer the question:
-
-* **Every class holding a regular expression is loaded and every pattern in it
-  compiled, on the phone.** Android uses ICU and rejects patterns desktop Java
-  accepts. That is exactly how a pattern that passed on this machine killed the
-  app on the phone — it failed in a static initialiser, on the thread that works
-  out what is playing, and took the process with it.
-* **The same name corpus, parsed on the device**, so the two engines of regular
-  expression cannot disagree quietly.
-
-**This test was proved to have teeth**, not assumed to: the old broken pattern
-was put back and the suite failed with the same error the phone gave —
-`ReleaseName would not load: java.lang.ExceptionInInitializerError`. Then it was
-restored and the suite passed again.
-
-## Layer 3 — the player, driven
-
-`39 passed, 0 failed` — three consecutive runs, the last against the shipped
-arm64 APK.
-
-| What it proves | |
-|---|---|
-| It opens, plays, and does not crash | PASS |
-| The header names the file, format **and engine** (`1920×1080 · H.264 · AAC 2ch · Media3`) | PASS |
-| A subtitle handed over on the intent is listed **under the name the launcher gave it** | PASS |
-| The subtitle picker reaches the trailing edge (to x=1020 of 1080) | PASS |
-| Off is offered, and turning subtitles off survives | PASS |
-| The audio picker shows the channel layout and the codec, not "Track 1" | PASS |
-| The quick panel carries Speed, Playback engine, Sleep timer, Show info card, Audio track | PASS |
-| The quick panel reaches the trailing edge (to x=1060 of 1080) | PASS |
-| Asking for the info card **always stops saying "Identifying"** | PASS |
-| Eleven presses of the frame button — every scaling mode — breaks nothing | PASS |
-| Locked: back does not leave the player | PASS |
-| Locked: nothing starts or stops playing | PASS |
-| Locked: the controls stay hidden | PASS |
-| Locked: holding OK lifts it, a single press does not | PASS |
-| Every screen in settings opens and comes back: theme, engine, addons, URLs, About | PASS |
-| The update check answers rather than hanging | PASS |
-| Nothing crashed at any point | PASS |
-| The run left the settings as it found them | PASS |
-
-### Two bugs this suite found that reading the code had not
-
-* **Back walked out of a locked player.** From Android 13 back is not a key
-  event, so a lock that works by swallowing key events never saw it — and back
-  is the first button anybody presses, and on a television it is how you leave
-  everything.
-* **A single press of OK lifted the lock**, so on a remote the lock lasted
-  exactly one keystroke. It has to be held now, like the two-finger hold that
-  sets it.
-
----
-
-## The interlock
-
-The driven suite presses fixed screen coordinates. If the player is not the
-thing in front — it failed to start, it crashed, an install killed it — those
-presses land on the launcher and open whatever is under them. **That happened
-once, and opened private apps.**
-
-Every press now goes through `require_player`, which asks two questions and
-stops the run rather than guessing:
-
-* `mFocusedApp` — the activity behind whatever has focus — must be this app.
-* `mCurrentFocus` must be this app, or a package-less window (its own popups
-  and dialogs). Any other package, and the run stops.
-
-Both halves were proved:
+Proved, not assumed:
 
 ```
 GUARD REFUSED
@@ -103,42 +46,156 @@ GUARD REFUSED
 exit=3
 ```
 
-and the run that found the back bug stopped itself the same way rather than
-pressing on.
+### The one exception, named
 
-The suite also refuses to start at all if the package under test is not
-installed, which is the state that caused the incident.
+This phone's Security Hub puts a **"Potentially risky website"** page in front
+whenever the player fetches from a host it does not recognise — a subtitle
+source, a test stream. It steals focus and the run stops behind it.
 
-**Audit of the whole session's runs** — every activity started, from logcat:
+`dismiss_security_prompt` presses **"Cancel and exit"** and nothing else. Never
+"Continue anyway", never "Add site to allow list". A test does not get to change
+what a phone trusts. It is the only place anything outside the player is ever
+pressed, and it only ever declines.
+
+### What was changed on the device
+
+Only this app was touched:
+
+* the release build was installed and reinstalled;
+* it was granted the storage permissions it declares — `READ_MEDIA_VIDEO` and
+  `MANAGE_EXTERNAL_STORAGE` — which is what the first run asks for anyway, and
+  without which a handed-over subtitle file cannot be read at all. Revoke them
+  in Settings if you would rather;
+* its playback engine was moved between Media3, mpv and back to Auto, and every
+  switch in settings was toggled and toggled back;
+* a test video and subtitle were pushed to /sdcard/Movies and deleted after.
+
+The phone's own risky-site warning was declined twice, which grants nothing.
+
+### Audit of what was opened
+
+Every activity this session started, from logcat:
 
 ```
-7  cmp=app.justplayerpro.android/com.brouken.player.SettingsActivity
-1  cmp=app.justplayerpro.android/com.brouken.player.PlayerActivity
+app.justplayerpro.android/com.brouken.player.PlayerActivity
+app.justplayerpro.android/com.brouken.player.SettingsActivity
 ```
 
-Nothing else was opened. Test media was deleted; the settings-drift check
-reported no lasting change.
+One stray tap, before the interlock existed, opened the GitHub app; it was
+closed with HOME. Nothing else was opened, and no other app's data was touched.
+
+---
+
+## Layer 1 — on this machine
+
+`tests=5 failures=0 errors=0`
+
+The parsing everything downstream depends on: a corpus of real names — scene
+releases, anime, torbox and Stremio links, a WhatsApp filename, a bare hash —
+and input written to break a parser: empty, dots, unbalanced brackets, lone
+percent signs, emoji, bare schemes.
+
+## Layer 2 — on the device
+
+`4 tests, 0 failures`
+
+Two of these exist because a laptop cannot answer the question:
+
+* **Every class holding a regular expression is loaded and every pattern in it
+  compiled, on the phone.** Android uses ICU and rejects patterns desktop Java
+  accepts. That is exactly how a pattern that passed here killed the app there.
+* **The same name corpus, parsed on the device**, so the two engines of regular
+  expression cannot disagree quietly.
+
+**This was proved to have teeth**: the old broken pattern was put back and the
+suite failed with the same error the phone gave —
+`ReleaseName would not load: java.lang.ExceptionInInitializerError` — then
+restored, and it passed.
+
+## Layer 3 — the quick driven suite
+
+`39 passed, 0 failed`, three consecutive runs, the last against the shipped APK.
+
+Opens and plays · header names format and engine · intent subtitle listed under
+the launcher's name · pickers reach the trailing edge · Off works · audio track
+described not numbered · quick panel carries every row · "Identifying" always
+stops · eleven presses through every scaling mode · locked: back does not exit,
+nothing plays or seeks, controls stay hidden, held-OK lifts it and a single
+press does not · every settings screen opens and returns · update check answers
+· zero crashes · settings unchanged by the run.
+
+## Layer 4 — the long one
+
+Configured from `.env` through the app's own setup page, which tests that page
+at the same time. **No key is ever printed**; the file is parsed by hand rather
+than sourced, because sourcing `NAME:value` lines makes the shell try to run
+them and print every secret in the failure.
+
+All four services answered live:
+
+```
+TMDB accepted the key
+OpenSubtitles accepted the key
+SubDL accepted the key
+Wyzie accepted the key
+the built-in addon answers: OpenSubtitles v3 · 90 subtitles
+```
+
+Then: **every setting** in the app found, pressed and survived — 36 rows,
+switches toggled and toggled back so the run changes nothing; **both engines**
+end to end — plays, header names the right one, the launcher's subtitle is
+listed, the audio track is described, the arrows seek, every scaling mode;
+**driven by arrows and OK alone**, as a remote would, with focus walked along
+the controls and into the quick panel; **playing from the web**, a plain MP4
+and an HLS stream; and **a real film identified** against TMDB with a real
+subtitle search behind it.
+
+---
+
+## What the long run found that reading the code had not
+
+Six real bugs, all now fixed:
+
+1. **The mpv engine could not open an https address at all.** It does its own
+   TLS and knows nothing of Android's trust store, so every stream over https —
+   which today is every stream — failed the handshake and then went looking for
+   youtube-dl, which is not on a phone either. Debrid links, Stremio's,
+   anything. Now given the device's own certificates; verified by playing an
+   HLS stream over https on that engine, which before reported "Failed to open"
+   every time.
+2. **An HLS link with its own mime type was refused.** Anything that sets a type
+   sends `application/x-mpegURL`; the app claimed only `video/*` and so was not
+   offered at all.
+3. **Sidecar subtitles never reached mpv.** They were added straight after
+   `loadfile`, which only asks for the file — it opens later and the track list
+   is built then, so the addition applied to nothing.
+4. **A subtitle handed over as a file path went missing silently** under scoped
+   storage.
+5. **Back walked out of a locked player**, because from Android 13 back is not a
+   key event and the lock worked by swallowing key events.
+6. **A single press of OK lifted the lock**, so on a remote it lasted one
+   keystroke.
+
+And one thing that is the phone, not the player: this device's Security Hub
+intercepts unfamiliar hosts with a full-screen warning. If a stream will not
+start and there is a "Potentially risky website" page behind it, that is why.
 
 ---
 
 ## What this does not prove
 
-Being straight about the edges, because a list of passes with no limits on it
-is not worth much:
-
-* **One device, one screen, one orientation.** A moto g54 in portrait, Android
-  15. Not a television, not a tablet, not Android 8.
-* **The release build has no TMDB key**, so "Show info card" was exercised down
-  its no-key path. The with-key path — identify, TMDB search, results list,
-  subtitle download — was driven by hand earlier in the session and worked, but
-  is not in the automated suite.
+* **One device, one orientation.** A moto g54 in portrait, Android 15. Not a
+  television, not a tablet, not Android 8.
 * **Subtitle rendering is not asserted.** Media3 draws cues on a canvas, so
-  nothing in the view hierarchy says where the text is. Position and the
-  letterbox clamp were verified by eye from screenshots, on both engines, not by
-  a test.
-* **The mpv engine is not covered by the driven suite.** Switching engines
-  rebuilds the player mid-run; that was verified by hand.
-* **Heat and battery** were measured once, on this device, on one file.
-
-Everything in the first table is checked on every run. Everything in this last
-list is checked by somebody watching.
+  nothing in the view hierarchy says where the text is. Position, and the clamp
+  that keeps it out of the letterbox, were verified by eye from screenshots on
+  both engines.
+* **A bare `file://` subtitle on shared storage still fails with no storage
+  permission granted.** The app asks for storage access on first run; without
+  it, the operating system will not open a `.srt` that is not a media file, and
+  no copying trick gets round that. Granting it fixes it.
+* **The heat and battery figures** were measured once, on this device, on one
+  file.
+* **The settings sweep presses every row and checks the app survives.** It does
+  not check that each setting then does what it says — that a toggled switch
+  changes playback. That is what a person watching is for.
