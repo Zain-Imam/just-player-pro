@@ -2235,7 +2235,13 @@ public class PlayerActivity extends Activity {
                 } else {
                     errorToShow = exoPlaybackException;
                 }
+                return;
             }
+            // Anything that is not an ExoPlayer failure -- which is everything
+            // mpv raises -- used to fall through here and say nothing at all.
+            PlaybackError.show(PlayerActivity.this, error,
+                    useMpvEngine() ? "mpv" : "media3",
+                    mPrefs.mediaUri == null ? null : mPrefs.mediaUri.toString());
         }
     }
 
