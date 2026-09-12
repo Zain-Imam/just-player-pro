@@ -20,9 +20,14 @@ player you already use.
 
 | | Media3 / ExoPlayer | mpv |
 |---|---|---|
-| Decoding | the device's own hardware decoders | its own decoders, bundled in the app |
+| Decoding | the device's own hardware decoders | the device's where it has one, its own 501 where it does not |
 | Best at | smoothness, battery, TV boxes | anything the device has no decoder for |
 | Version here | 1.11.0 | 0.41.0 with FFmpeg n8.1 |
+
+Both engines reach for the chip first. mpv asks for the zero-copy path before the copying one, which
+on a 1080p film is the difference between about 1.5 processor cores and about 0.95 — measured, on
+the same file, over the same seven minutes. Media3 is still the lighter of the two, at about 0.8,
+because it never touches the frame at all.
 
 **Media3** is the default. It hands the bitstream straight to the device's decoders and renders
 zero-copy onto a `SurfaceView`, which is why it plays smoothly on TV boxes where GPU-rendering
@@ -68,11 +73,29 @@ engine here, and nothing in this app tries to work around that.
   volume on mpv. No restart, and the scale stays 0–100 either way.
 * **Keep screen on** while playing.
 * **Picture-in-picture on Home** — pressing Home drops the film into PiP instead of pausing it.
-* **Double-tap seek step** is configurable (it previously ignored the setting and always used 10s).
+* **Double-tap seek step** is configurable, and the arrows on a remote use the same setting rather
+  than a fixed ten seconds.
+* **Hold the picture for double speed**, let go to drop back.
+* **Sleep timer** — a set number of minutes or at the end of the file, fading the sound out over the
+  last thirty seconds rather than cutting it.
+* **Ten scaling modes** — fit, fill, crop, stretch and the fixed ratios (4:3, 16:9, 1.85:1, 2.35:1,
+  2.39:1), stepped through from the frame button, with free zoom on a long press.
+* **A clock on screen** while the controls are up.
+* **Volume keys change the film, not the ringtone**, when that is what you want.
+* **Video track picker** — a stream served as a ladder of bitrates, or a file carrying more than one
+  video track, gets a list with Auto at the top.
+* **Check for updates** — an entry in settings that asks the releases page whether there is a newer
+  build and offers to fetch it. Never automatic; nothing reaches the network on its own.
 
 ### Identifying what you are watching
 
 * **TMDB lookup** turns a release filename into a real title, year, rating, poster and synopsis.
+* **Titles pulled out of links, not just filenames.** Query strings and tokens are dropped, the last
+  segment that looks like a name rather than an id is taken, percent-encoding is undone (twice,
+  where a name has been through two services), and what is left is parsed: brackets, checksums,
+  release groups, resolutions, codecs and sources come out, `S01E02`, `1x02`, `EP1089`,
+  `Episode 12`, `Season 3` and the anime `Title - 08` form all go in. Whatever the launching app
+  called it wins over the address.
 * **Info card while paused** — poster, title, season/episode, date, rating and synopsis, centred on
   the picture and sized to it, so on a letterboxed film it stops where the picture stops. It is
   half-transparent, hides itself during seeking, menus, dialogs, PiP and lock, and the centre
@@ -101,6 +124,14 @@ engine here, and nothing in this app tries to work around that.
 * **Styling works on both engines** — size, position, edge style and typeface are translated into
   mpv's own vocabulary (`sub-pos`, `sub-scale`, `sub-ass-override`…) so the sliders mean the same
   thing whichever engine is playing, including below the default position.
+* **Subtitles handed over by another app are kept.** Stremio, Nuvio, torbox-android and the rest
+  each pass them in a slightly different shape — an array of Uri, a list of Uri, an array of plain
+  strings, a list of strings, or one on its own — and all of them are read, along with the several
+  spellings of the name and language keys. The one the launcher asked to have on is switched on,
+  under both engines, and carries its name and language into the picker.
+* **A language order rather than a single language** — `jpn, eng, spa`, and the first one the file
+  actually has is the one that opens. There is one for audio and one for subtitles, and both engines
+  read the same list.
 
 ### Skipping intros and credits
 
@@ -120,6 +151,18 @@ engine here, and nothing in this app tries to work around that.
 * **Quick settings panel** on a single tap of the gear — speed, engine, info card, skip markers,
   adaptive buffering, audio tracks, subtitle settings, and a way into the full settings screen.
 * **Audio track menu** for files with more than one soundtrack, on both engines.
+* **Panels along the edge, not boxes in the middle.** The track lists and both settings panels slide
+  in along the trailing edge at full height, all the same width, barely dimming the film — because
+  what is being chosen is almost always a decision about what is on screen at that moment.
+* **Tracks described properly.** Resolution, channel layout, codec, sample rate, bit rate, and
+  whether a track is forced, for the hard of hearing, or an audio description — in one fixed order,
+  identically on both engines, so two English soundtracks are never two identical rows.
+* **A second line under the title** saying what is actually playing: `3840×2160 · HEVC · HDR ·
+  E-AC-3 5.1`, built from the tracks the player settled on rather than from the file.
+* **Errors in words**, with the details behind a button — shareable, or shown as a code a phone can
+  scan when there is nothing on the device to share to.
+* **A setup page you open on your phone** — settings offers a PIN-gated local web page so API keys
+  and addon URLs can be typed on a keyboard instead of a D-pad.
 * **Rebuilt bottom bar** — play/pause is the leftmost item in the time row, tapping the time
   toggles remaining-versus-total, and the row shares one line with the button strip so nothing
   becomes unreachable in portrait.
@@ -147,7 +190,16 @@ earlier rather than just shortening them, in 100 ms steps with a `+` prefix on p
 
 ## Televisions and remotes
 
-The app is built to be driven entirely with a D-pad:
+The app is built to be driven entirely with a D-pad, and — as of 2.0 — to behave *identically*
+whichever is being used. A pile of things used to be switched on by asking whether the device was a
+television, when what they actually depended on was whether a key had been pressed: holding the
+frame button to zoom, keys reaching the player at all, back closing the controls, lifting the lock,
+whether the settings button was live before a file was open. A phone with a remote plugged into it
+answered no to that question and got the wrong behaviour. They are all unconditional now.
+
+What is left of the television test is the handful of things a television genuinely cannot do: it
+has no rotation, no day-and-night setting, no document picker, and it reports a headphone unplug
+that never happened.
 
 * Every screen it adds — the quick panel, the track pickers, the search results, the poster
   picker, the addon settings — takes focus when it opens and is navigable with arrows, because a
@@ -157,6 +209,11 @@ The app is built to be driven entirely with a D-pad:
 * Dialogs open with a button already focused — the confirming one, except where agreeing by
   accident would delete a file, where Cancel has focus instead.
 * Settings that belong to one engine are disabled, and say so, rather than silently doing nothing.
+* The lock can be lifted by a key or by a long press on the picture, on any device. While locked,
+  the volume keys still work: a lock is there to stop a pocket changing the film, and a pocket does
+  not press volume buttons.
+* Where a value could have been hard-coded for one input method it is not. The arrows seek by the
+  step set in settings, the same step the double tap uses.
 
 Layouts are in dp and sp throughout and reflow rather than clip, so the same build is used on
 phones in either orientation, on tablets, and on televisions.
@@ -193,7 +250,7 @@ styles, volume boost, PiP, gestures, chapters, skip markers, online subtitles �
 | Drag up and down, **left** half | Brightness |
 | Drag up and down, **right** half | Volume — keep going past 100% for the boost |
 | Drag left and right | Scrub through the film |
-| Long press | Lock the controls. Long press again, or tap the padlock, to unlock |
+| Long press | Hold for double speed; let go to drop back. While locked, it unlocks |
 | Pinch | Zoom the picture, when the aspect is set to Crop |
 
 ### On the controls
@@ -206,8 +263,9 @@ styles, volume boost, PiP, gestures, chapters, skip markers, online subtitles �
 | Subtitle button | Pick a track, or search online for one |
 | Subtitle button, long press | Subtitle size, position, delay, edge and typeface |
 | Audio button | Pick a soundtrack, on files with more than one |
-| Aspect button | Fit, Crop or Stretch |
-| Gear, one tap | Quick panel: speed, engine, info card, skip markers, buffering, tracks |
+| Aspect button | Step through the ten scaling modes: fit, fill, crop, stretch, 4:3, 16:9, 1.85:1, 2.35:1, 2.39:1 |
+| Aspect button, long press | Free zoom — arrows or a pinch resize the picture |
+| Gear, one tap | Quick panel: speed, engine, video quality, info card, skip markers, buffering, sleep timer, tracks |
 | Gear, long press | The full settings screen |
 | Padlock | Lock the controls against accidental touches |
 | Folder | Open another file |
@@ -217,15 +275,20 @@ styles, volume boost, PiP, gestures, chapters, skip markers, online subtitles �
 | Button | What it does |
 |---|---|
 | Up / Down | Show and hide the controls |
-| Left / Right, controls hidden | Jump back and forward ten seconds |
+| Left / Right, controls hidden | Jump back and forward by the step set in Settings — the same one the double tap uses |
 | Left / Right, **on the timeline** | Drag the scrubber. A press is one second; hold it and the step grows, so you can cross a film and still stop on the second you want |
 | OK, on the timeline | Play or pause |
 | OK, on a button | Press it |
 | Back | Hide the controls; again to leave |
 | Back or OK, while locked | Unlock |
+| Volume, while locked | Still changes the volume: the lock is for pockets, not for buttons |
 
 The Skip intro and Skip credits buttons take focus while they are on screen, so
 OK skips without hunting for them.
+
+Every one of these works the same on a phone with a keyboard or a remote plugged into it as it does
+on a television, and every gesture works the same on a television with a touchscreen. Nothing is
+switched on by asking what kind of device it is.
 
 ### Setting up the online features
 
@@ -311,11 +374,27 @@ This stands on other people's work, and it would be poor form not to say so.
   feature-complete Just Player fork going, and worth a look in its own right. Ideas and code from it
   are noted in the release notes as they land.
 
+The mpv-based players solved several of the same problems first, and reading how they did it saved a
+lot of guessing. Nothing was copied from the AGPL one; the ideas are theirs and the code here is not.
+
+* **[mpvNova](https://github.com/Laskco/mpvNova)** (MIT) — how a launcher's subtitles and start
+  position are taken off an intent, and that a `content://` handed to a native player has to be
+  turned into something it can actually open.
+* **[mpvEx](https://github.com/marlboro-advance/mpvEx)** and
+  **[mpvRex](https://github.com/sfsakhawat999/mpvRex)** (Apache 2.0) — the shape of a release-name
+  parser, itself after [kahari-parser](https://github.com/GizmoH2o/kahari-parser); and the decoder
+  fallback order that turned out to be the whole of the difference in battery and heat on the mpv
+  engine here.
+* **[mpvRx](https://github.com/Riteshp2001/mpvRx)** (AGPL, so read rather than used) — the several
+  shapes a launching app can put subtitles in, all of which now get read.
+
 ### Libraries and services
 
 * [libmpv](https://github.com/jarnedemeulemeester/libmpv-android) (`dev.jdtech.mpv:libmpv`), MIT —
   the mpv engine, bundling mpv, FFmpeg and libass.
 * [AndroidX Media3](https://github.com/androidx/media), Apache 2.0.
+* [zxing](https://github.com/zxing/zxing) core, Apache 2.0 — the encoder behind the error code, and
+  nothing else.
 * Skip markers from IntroDB, TheIntroDB, SkipDB and AniSkip. Titles and artwork from TMDB.
   Subtitles from OpenSubtitles, SubDL, Wyzie and any Stremio addon you add.
 
