@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">Just Player Pro</string>
+    <string name="video_resize_16_9" translatable="false">16:9</string>
+    <string name="video_resize_4_3" translatable="false">4:3</string>
+    <string name="video_resize_16_10" translatable="false">16:10</string>
+    <string name="video_resize_2_1" translatable="false">2:1</string>
+    <string name="video_resize_235" translatable="false">2.35:1</string>
+    <string name="video_resize_239" translatable="false">2.39:1</string>
+    <string name="video_resize_5_4" translatable="false">5:4</string>
     <string name="video_resize_fit">Fit</string>
     <string name="video_resize_crop">Crop</string>
     <string name="video_resize_stretch">Stretch</string>
@@ -28,6 +35,12 @@
     <string name="pref_volume_boost">Volume boost</string>
     <string name="pref_volume_boost_on">About twice as loud as the device alone</string>
     <string name="pref_volume_boost_off">Device volume only</string>
+    <string name="pref_clock">Show the time</string>
+    <string name="pref_clock_on">A clock in the corner while playing</string>
+    <string name="pref_clock_off">No clock</string>
+    <string name="pref_volume_keys">Volume keys change this app only</string>
+    <string name="pref_volume_keys_on">The film gets quieter, the device does not</string>
+    <string name="pref_volume_keys_off">The volume keys work as they normally do</string>
     <string name="pref_keep_screen_on">Keep screen on</string>
     <string name="pref_keep_screen_on_on">Screen stays awake, even when paused</string>
     <string name="pref_keep_screen_on_off">Screen sleeps when paused</string>

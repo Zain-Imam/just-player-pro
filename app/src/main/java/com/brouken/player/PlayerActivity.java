@@ -510,26 +510,16 @@ public class PlayerActivity extends Activity {
             }
         }
 
+        updateClock();
+
         buttonAspectRatio = new ImageButton(this, null, 0, R.style.ExoStyledControls_Button_Bottom);
         buttonAspectRatio.setId(Integer.MAX_VALUE - 100);
         buttonAspectRatio.setContentDescription(getString(R.string.button_crop));
         updatebuttonAspectRatioIcon();
         buttonAspectRatio.setOnClickListener(view -> {
             playerView.setScale(1.f);
-            switch (playerView.getResizeMode()) {
-                case AspectRatioFrameLayout.RESIZE_MODE_FIT:
-                    playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
-                    Utils.showText(playerView, getString(R.string.video_resize_crop));
-                    break;
-                case AspectRatioFrameLayout.RESIZE_MODE_ZOOM:
-                    playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
-                    Utils.showText(playerView, getString(R.string.video_resize_stretch));
-                    break;
-                default:
-                    playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
-                    Utils.showText(playerView, getString(R.string.video_resize_fit));
-                    break;
-            }
+            aspectStep = (aspectStep + 1) % (3 + FORCED_ASPECTS.length);
+            applyAspectStep(true);
             updatebuttonAspectRatioIcon();
             resetHideCallbacks();
         });
@@ -1149,6 +1139,9 @@ public class PlayerActivity extends Activity {
                 return true;
             case KeyEvent.KEYCODE_VOLUME_UP:
             case KeyEvent.KEYCODE_VOLUME_DOWN:
+                if (adjustPlayerVolume(keyCode == KeyEvent.KEYCODE_VOLUME_UP)) {
+                    return true;
+                }
                 Utils.adjustVolume(this, mAudioManager, playerView, keyCode == KeyEvent.KEYCODE_VOLUME_UP, event.getRepeatCount() == 0, true);
                 return true;
             case KeyEvent.KEYCODE_BUTTON_START:
@@ -1837,6 +1830,8 @@ public class PlayerActivity extends Activity {
 
         if (haveMedia) {
 
+            aspectStep = androidx.preference.PreferenceManager
+                    .getDefaultSharedPreferences(this).getInt(PREF_ASPECT_STEP, 0);
             playerView.setResizeMode(mPrefs.resizeMode);
 
             if (mPrefs.resizeMode == AspectRatioFrameLayout.RESIZE_MODE_ZOOM) {
@@ -2850,6 +2845,12 @@ public class PlayerActivity extends Activity {
             updateButtonRotation();
         }
 
+        // A forced shape is re-applied here: the player sets the frame from
+        // the file whenever a size arrives, which would undo it.
+        if (aspectStep >= 3) {
+            applyAspectStep(false);
+        }
+
         updateSubtitleViewMargin(format);
 
         if (mPrefs.refreshSubtitleVerticalPositionForVideoHeight(format.height)) {
@@ -3282,6 +3283,7 @@ public class PlayerActivity extends Activity {
         updateSubtitleStyle(this);
         applyVolumeBoost();
         applyKeepScreenOn(player != null && player.isPlaying());
+        updateClock();
         if (onlineController != null && !onlineController.skipEnabled()) {
             updateSkipEnabled(false);
         }
@@ -3788,6 +3790,126 @@ public class PlayerActivity extends Activity {
 
     public boolean sleepAtEndOfFile() {
         return sleepTimer != null && sleepTimer.isAtEndOfFile();
+    }
+
+    /*
+     * Ten ways to fit the picture to the screen.
+     *
+     * The first three are the library's own -- fit inside, crop to fill, and
+     * stretch. The rest force a shape regardless of what the file claims, which
+     * is what rescues a film encoded with the wrong ratio, or one with the black
+     * bars baked into the picture. A forced shape has to be re-applied whenever
+     * the video size arrives, because the player sets the frame from the file
+     * and would otherwise overwrite it.
+     */
+    private static final float[] FORCED_ASPECTS =
+            {16f / 9f, 4f / 3f, 16f / 10f, 2f, 2.35f, 2.39f, 5f / 4f};
+    private static final int[] FORCED_ASPECT_NAMES = {
+            R.string.video_resize_16_9, R.string.video_resize_4_3,
+            R.string.video_resize_16_10, R.string.video_resize_2_1,
+            R.string.video_resize_235, R.string.video_resize_239,
+            R.string.video_resize_5_4};
+    private static final String PREF_ASPECT_STEP = "aspectStep";
+
+    private int aspectStep;
+
+    private void applyAspectStep(final boolean announce) {
+        final AspectRatioFrameLayout frame =
+                playerView.findViewById(androidx.media3.ui.R.id.exo_content_frame);
+        final int forced = aspectStep - 3;
+
+        if (forced >= 0 && forced < FORCED_ASPECTS.length) {
+            playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
+            if (frame != null) {
+                frame.setAspectRatio(FORCED_ASPECTS[forced]);
+            }
+            if (announce) {
+                Utils.showText(playerView, getString(FORCED_ASPECT_NAMES[forced]));
+            }
+        } else {
+            final int mode = aspectStep == 1 ? AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                    : aspectStep == 2 ? AspectRatioFrameLayout.RESIZE_MODE_FILL
+                    : AspectRatioFrameLayout.RESIZE_MODE_FIT;
+            playerView.setResizeMode(mode);
+            mPrefs.resizeMode = mode;
+            if (announce) {
+                Utils.showText(playerView, getString(aspectStep == 1
+                        ? R.string.video_resize_crop
+                        : aspectStep == 2 ? R.string.video_resize_stretch
+                        : R.string.video_resize_fit));
+            }
+        }
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
+                .edit().putInt(PREF_ASPECT_STEP, aspectStep).apply();
+    }
+
+    /*
+     * A clock in the corner, for watching in bed.
+     *
+     * Sits above the title so it does not collide with it, hides itself with
+     * the rest of the furniture in picture-in-picture, and ticks on the minute
+     * rather than every second.
+     */
+    private TextView clockView;
+    private final Runnable clockTick = new Runnable() {
+        @Override
+        public void run() {
+            if (clockView == null) {
+                return;
+            }
+            clockView.setText(android.text.format.DateFormat.getTimeFormat(PlayerActivity.this)
+                    .format(new java.util.Date()));
+            clockView.postDelayed(this, 20_000);
+        }
+    };
+
+    private void updateClock() {
+        final boolean wanted = androidx.preference.PreferenceManager
+                .getDefaultSharedPreferences(this).getBoolean("alwaysOnClock", false);
+        if (!wanted) {
+            if (clockView != null) {
+                clockView.removeCallbacks(clockTick);
+                clockView.setVisibility(View.GONE);
+            }
+            return;
+        }
+        if (clockView == null) {
+            clockView = new TextView(this);
+            clockView.setTextColor(Color.WHITE);
+            clockView.setShadowLayer(4, 0, 0, Color.BLACK);
+            clockView.setTextSize(14);
+            final FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            params.gravity = Gravity.TOP | Gravity.END;
+            final int margin = Utils.dpToPx(12);
+            params.setMargins(margin, margin, margin, margin);
+            clockView.setLayoutParams(params);
+            coordinatorLayout.addView(clockView);
+        }
+        clockView.setVisibility(View.VISIBLE);
+        clockView.removeCallbacks(clockTick);
+        clockTick.run();
+    }
+
+    /*
+     * Volume keys that quieten the film rather than the device.
+     *
+     * Off by default, because the keys belonging to the device is what everyone
+     * expects. On, it is the player's own volume that moves, which is the one
+     * thing that does not also turn down an alarm.
+     */
+    private boolean adjustPlayerVolume(final boolean up) {
+        if (player == null || !androidx.preference.PreferenceManager
+                .getDefaultSharedPreferences(this)
+                .getBoolean("volumeKeysPlayerOnly", false)) {
+            return false;
+        }
+        final float step = 0.07f;
+        final float volume = Math.max(0f, Math.min(1f,
+                player.getVolume() + (up ? step : -step)));
+        player.setVolume(volume);
+        Utils.showText(playerView, " " + Math.round(volume * 100) + "%");
+        return true;
     }
 
     public void updateSkipEnabled(final boolean enabled) {

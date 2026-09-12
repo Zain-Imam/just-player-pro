@@ -72,6 +72,20 @@
             app:title="@string/pref_volume_boost" />
 
         <SwitchPreferenceCompat
+            app:key="alwaysOnClock"
+            app:defaultValue="false"
+            app:summaryOn="@string/pref_clock_on"
+            app:summaryOff="@string/pref_clock_off"
+            app:title="@string/pref_clock" />
+
+        <SwitchPreferenceCompat
+            app:key="volumeKeysPlayerOnly"
+            app:defaultValue="false"
+            app:summaryOn="@string/pref_volume_keys_on"
+            app:summaryOff="@string/pref_volume_keys_off"
+            app:title="@string/pref_volume_keys" />
+
+        <SwitchPreferenceCompat
             app:key="keepScreenOn"
             app:defaultValue="false"
             app:summaryOn="@string/pref_keep_screen_on_on"
