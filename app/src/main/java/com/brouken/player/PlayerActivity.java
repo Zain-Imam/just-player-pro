@@ -325,7 +325,7 @@ public class PlayerActivity extends Activity {
                 Bundle bundle = launchIntent.getExtras();
                 if (bundle != null) {
                     apiAccess = bundle.containsKey(API_POSITION) || bundle.containsKey(API_RETURN_RESULT)
-                            || bundle.containsKey(API_SUBS) || bundle.containsKey(API_SUBS_ENABLE);
+                            || LaunchSubtitles.present(bundle);
                     if (apiAccess) {
                         mPrefs.setPersistent(false);
                     } else if (bundle.containsKey(API_TITLE)) {
@@ -338,32 +338,37 @@ public class PlayerActivity extends Activity {
                 mPrefs.updateMedia(this, uri, type);
 
                 if (bundle != null) {
-                    Uri defaultSub = null;
-                    Parcelable[] subsEnable = bundle.getParcelableArray(API_SUBS_ENABLE);
-                    if (subsEnable != null && subsEnable.length > 0) {
-                        defaultSub = (Uri) subsEnable[0];
-                    }
+                    /*
+                     * Whatever the launcher sent, in whatever shape it sent it.
+                     *
+                     * The names and the languages are matched to the files by
+                     * position, so the conversion has to keep the order it was
+                     * given even where a file fails to convert.
+                     */
+                    final List<Uri> given = LaunchSubtitles.uris(bundle, LaunchSubtitles.FILES);
+                    final List<Uri> toEnable =
+                            LaunchSubtitles.uris(bundle, LaunchSubtitles.ENABLE);
+                    final String[] subsName =
+                            LaunchSubtitles.strings(bundle, LaunchSubtitles.NAMES);
+                    final String[] subsLanguage =
+                            LaunchSubtitles.strings(bundle, LaunchSubtitles.LANGUAGES);
 
-                    Parcelable[] subParcelableArray = bundle.getParcelableArray(API_SUBS);
-                    if (subParcelableArray == null) subParcelableArray = new Parcelable[0];
-
-                    List<Uri> subUriList = new ArrayList<>(subParcelableArray.length);
-                    for (Parcelable parcelable : subParcelableArray) {
-                        Uri element = (Uri) parcelable;
-                        subUriList.add(element);
-                    }
-
-                    List<Uri> subs = new SubtitleConverter().convertSubtitles(this, subUriList);
-                    String[] subsName = bundle.getStringArray(API_SUBS_NAME);
+                    final List<Uri> subs = new SubtitleConverter().convertSubtitles(this, given);
 
                     for (int i = 0; i < subs.size(); i++) {
-                        Uri sub = subs.get(i);
-                        String name = null;
-                        if (subsName != null && subsName.length > i) {
-                            name = subsName[i];
+                        final Uri sub = subs.get(i);
+                        if (sub == null) {
+                            continue;
                         }
-                        boolean selected = sub.equals(defaultSub) || subs.size() == 1;
-                        apiSubs.add(SubtitleUtils.buildSubtitle(this, sub, name, selected));
+                        String name = subsName.length > i ? subsName[i] : null;
+                        final String language = subsLanguage.length > i ? subsLanguage[i] : null;
+                        // The converted file is a copy, so what the launcher
+                        // asked for is matched against what it handed over.
+                        final Uri original = given.size() > i ? given.get(i) : sub;
+                        final boolean selected = toEnable.contains(original)
+                                || toEnable.contains(sub)
+                                || (toEnable.isEmpty() && subs.size() == 1);
+                        apiSubs.add(SubtitleUtils.buildSubtitle(this, sub, name, language, selected));
                     }
                 }
 

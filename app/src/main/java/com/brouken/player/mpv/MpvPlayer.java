@@ -188,11 +188,33 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
         final String uri = item.localConfiguration.uri.toString();
         mpv.command(new String[]{"loadfile", uri});
 
-        // Subtitles handed over as sidecar files, the way the rest of the app
-        // already supplies them.
+        /*
+         * Subtitles handed over as sidecar files, the way the rest of the app
+         * already supplies them.
+         *
+         * The one the launching app asked to have on is added with "select"
+         * rather than "auto", which is what the other engine does with the same
+         * flag: a subtitle sent by Stremio or Nuvio was appearing in the list on
+         * both engines and switched on only on one of them. The name and the
+         * language go with it, or the picker shows a row called Track 2.
+         */
         for (final MediaItem.SubtitleConfiguration subtitle :
                 item.localConfiguration.subtitleConfigurations) {
-            mpv.command(new String[]{"sub-add", subtitle.uri.toString(), "auto"});
+            final String flag =
+                    (subtitle.selectionFlags & C.SELECTION_FLAG_DEFAULT) != 0 ? "select" : "auto";
+            final String title = subtitle.label;
+            if (title != null && !title.isEmpty()) {
+                mpv.command(new String[]{"sub-add", subtitle.uri.toString(), flag, title});
+            } else {
+                mpv.command(new String[]{"sub-add", subtitle.uri.toString(), flag});
+            }
+            if (subtitle.language != null && !subtitle.language.isEmpty()) {
+                final Integer count = mpv.getPropertyInt("track-list/count");
+                if (count != null && count > 0) {
+                    mpv.setPropertyString("track-list/" + (count - 1) + "/lang",
+                            subtitle.language);
+                }
+            }
         }
 
         if (pendingStartPositionMs != C.TIME_UNSET && pendingStartPositionMs > 0) {

@@ -260,8 +260,17 @@ class SubtitleUtils {
     }
 
     public static MediaItem.SubtitleConfiguration buildSubtitle(Context context, Uri uri, String subtitleName, boolean selected) {
+        return buildSubtitle(context, uri, subtitleName, null, selected);
+    }
+
+    // The language the launching app said it was, where it said so at all. A
+    // subtitle downloaded to a cache file has a name that tells nobody
+    // anything, and the language was in the intent all along.
+    public static MediaItem.SubtitleConfiguration buildSubtitle(Context context, Uri uri, String subtitleName, String language, boolean selected) {
         final String subtitleMime = SubtitleUtils.getSubtitleMime(uri);
-        final String subtitleLanguage = SubtitleUtils.getSubtitleLanguage(uri);
+        final String subtitleLanguage = language == null || language.trim().isEmpty()
+                ? SubtitleUtils.getSubtitleLanguage(uri)
+                : language.trim();
         if (subtitleLanguage == null && subtitleName == null)
             subtitleName = Utils.getFileName(context, uri, false);
 
