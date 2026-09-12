@@ -652,8 +652,19 @@ public class PlayerActivity extends Activity {
                     params.height = getResources().getDimensionPixelSize(R.dimen.exo_styled_bottom_bar_height) + windowInsets.getSystemWindowInsetBottom();
                     exoBottomBar.setLayoutParams(params);
 
-                    findViewById(R.id.exo_left).getLayoutParams().width = left;
-                    findViewById(R.id.exo_right).getLayoutParams().width = right;
+                    /*
+                     * The controls use the whole width the screen has.
+                     *
+                     * These two spacers reserved the navigation bar's width at
+                     * the sides, which in landscape left a band of nothing at
+                     * one end of the bottom bar while the seek bar above it ran
+                     * edge to edge -- so the row looked misaligned and short of
+                     * the screen. The seek bar was never inset, so matching it
+                     * is what makes the two agree. The bar's height still
+                     * accounts for the navigation bar underneath it.
+                     */
+                    findViewById(R.id.exo_left).getLayoutParams().width = 0;
+                    findViewById(R.id.exo_right).getLayoutParams().width = 0;
 
                     bottomBarPaddingBottom = windowInsets.getSystemWindowInsetBottom();
                     progressBarMarginBottom = windowInsets.getSystemWindowInsetBottom();
@@ -2041,6 +2052,22 @@ public class PlayerActivity extends Activity {
         @SuppressLint("SourceLockedOrientationActivity")
         @Override
         public void onPlaybackStateChanged(int state) {
+            /*
+             * The spinner is for every wait, not only the first one.
+             *
+             * It was shown when a file was opened and hidden when playback
+             * became ready, and nothing brought it back -- so a stall halfway
+             * through a film was a still picture and no explanation. Shown
+             * after a short delay so that the momentary rebuffer after a seek
+             * does not flash it.
+             */
+            coordinatorLayout.removeCallbacks(showLoading);
+            if (state == Player.STATE_BUFFERING) {
+                coordinatorLayout.postDelayed(showLoading, 300);
+            } else {
+                updateLoading(false);
+            }
+
             boolean isNearEnd = false;
             final long duration = player.getDuration();
             if (duration != C.TIME_UNSET) {
@@ -3028,6 +3055,8 @@ public class PlayerActivity extends Activity {
             playerView.setControllerShowTimeoutMs(PlayerActivity.CONTROLLER_TIMEOUT);
         }
     }
+
+    private final Runnable showLoading = () -> updateLoading(true);
 
     private void updateLoading(final boolean enableLoading) {
         if (enableLoading) {
