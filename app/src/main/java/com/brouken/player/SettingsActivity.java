@@ -346,6 +346,14 @@ public class SettingsActivity extends AppCompatActivity {
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
             useFullWidth(getPreferenceScreen());
 
+            final Preference update = findPreference("checkUpdate");
+            if (update != null) {
+                update.setOnPreferenceClickListener(clicked -> {
+                    new Updater(requireActivity()).check(false);
+                    return true;
+                });
+            }
+
             attachAccentSwatches();
             attachSetupServer();
 

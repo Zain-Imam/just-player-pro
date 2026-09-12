@@ -278,6 +278,11 @@
     <PreferenceCategory app:title="@string/pref_history_header">
 
         <Preference
+            app:key="checkUpdate"
+            app:title="@string/pref_update"
+            app:summary="@string/pref_update_summary" />
+
+        <Preference
             app:key="historyOpen"
             app:title="@string/pref_history"
             app:icon="@null" />
