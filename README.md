@@ -181,6 +181,85 @@ styles, volume boost, PiP, gestures, chapters, skip markers, online subtitles �
 
 ---
 
+## Using it
+
+### On the picture
+
+| Gesture | What it does |
+|---|---|
+| Tap | Show or hide the controls |
+| Double tap, left or right third | Jump back or forward. The step is yours to set in Settings |
+| Double tap, middle | Play or pause |
+| Drag up and down, **left** half | Brightness |
+| Drag up and down, **right** half | Volume — keep going past 100% for the boost |
+| Drag left and right | Scrub through the film |
+| Long press | Lock the controls. Long press again, or tap the padlock, to unlock |
+| Pinch | Zoom the picture, when the aspect is set to Crop |
+
+### On the controls
+
+| Control | What it does |
+|---|---|
+| Play/pause, far left of the clock | Play or pause |
+| The clock | Tap it to swap between time remaining and total running time |
+| The timeline | Tap anywhere **on the line** to seek there; drag the circle to scrub |
+| Subtitle button | Pick a track, or search online for one |
+| Subtitle button, long press | Subtitle size, position, delay, edge and typeface |
+| Audio button | Pick a soundtrack, on files with more than one |
+| Aspect button | Fit, Crop or Stretch |
+| Gear, one tap | Quick panel: speed, engine, info card, skip markers, buffering, tracks |
+| Gear, long press | The full settings screen |
+| Padlock | Lock the controls against accidental touches |
+| Folder | Open another file |
+
+### With a remote
+
+| Button | What it does |
+|---|---|
+| Up / Down | Show and hide the controls |
+| Left / Right, controls hidden | Jump back and forward ten seconds |
+| Left / Right, **on the timeline** | Drag the scrubber. A press is one second; hold it and the step grows, so you can cross a film and still stop on the second you want |
+| OK, on the timeline | Play or pause |
+| OK, on a button | Press it |
+| Back | Hide the controls; again to leave |
+| Back or OK, while locked | Unlock |
+
+The Skip intro and Skip credits buttons take focus while they are on screen, so
+OK skips without hunting for them.
+
+### Setting up the online features
+
+Everything online hangs off **TMDB**, which turns a file name into a title the
+subtitle and skip databases understand. The key is free: themoviedb.org →
+Settings → API. Paste it into **Settings → Online** and it is checked before it
+is kept, so a typo is caught there rather than looking like an empty search
+later.
+
+Subtitles work with no key at all — a Stremio addon comes set up and ready.
+OpenSubtitles, SubDL and Wyzie keys are optional and simply add more to choose
+from. You can add up to five addons of your own under **Custom subtitle
+addons**; each is tested against a known film before it is saved.
+
+Two switches worth knowing:
+
+* **Identify files** — automatic by default, which is what fills the info card,
+  the skip markers and the titles in history. Set it to *Only when I ask* and
+  nothing reaches the network until you say so.
+* **Search subtitles automatically** — off by default, so a search only happens
+  when you press search.
+
+If the guess is wrong, **Change title…** in the subtitle results lets you search
+by hand, and it always offers season and episode.
+
+### Choosing an engine
+
+Leave it on **Auto** unless you have a reason not to. It starts every file on
+Media3 and moves to mpv only when Media3 says it cannot play the video, keeping
+your position across the switch.
+
+Pick one by hand and it stays picked — and if that engine cannot play something,
+the player offers you the other one rather than just failing.
+
 ## Building
 
 ```
