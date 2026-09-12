@@ -71,6 +71,13 @@ public final class Accent {
         return COLORS[indexOf(stored(context))];
     }
 
+    // Any accent by name, for showing all of them at once rather than whichever
+    // one is in use.
+    @ColorInt
+    public static int colorOf(@NonNull final Context context, @Nullable final String key) {
+        return context.getResources().getColor(COLORS[indexOf(key)]);
+    }
+
     public static String stored(@NonNull final Context context) {
         final String value = PreferenceManager.getDefaultSharedPreferences(context)
                 .getString(PREF_KEY, DEFAULT);

@@ -66,8 +66,8 @@ and enter this PIN when it asks:
 
 %2$s
 
-This page closes when you leave this screen.</string>
-    <string name="pref_setup_phone_done">Done</string>
+Nothing is shown on the phone until the PIN is entered. The page stops when you press the button below, or when you leave this screen.</string>
+    <string name="pref_setup_phone_stop">Stop the page</string>
     <string name="pref_setup_phone_failed">Could not start the page. This device may not allow it, or it is not on a network — enter the keys here instead.</string>
     <string name="pref_online_note">TMDB is required: it turns a file name into a title the subtitle and skip databases understand. Subtitles themselves work without any key, through the Stremio addon below — the source keys are optional and simply give you more to choose from.</string>
     <string name="pref_key_tmdb">TMDB key · required</string>

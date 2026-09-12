@@ -181,6 +181,65 @@ public class SettingsActivity extends AppCompatActivity {
          */
         private com.brouken.player.online.SetupServer setupServer;
 
+        /*
+         * Show the colours, not only their names.
+         *
+         * A list reading Red, Orange, Yellow tells you nothing about what any
+         * of them actually looks like, and two of the eleven are close enough
+         * that the name is no help at all. Each row carries a disc of its own
+         * colour, and the list is our own dialog because a ListPreference will
+         * not put a drawable beside an entry.
+         */
+        private void attachAccentSwatches() {
+            final ListPreference preference = findPreference("accentColor");
+            if (preference == null) {
+                return;
+            }
+            preference.setOnPreferenceClickListener(clicked -> {
+                final String[] names = getResources().getStringArray(R.array.accent_entries);
+                final String[] values = getResources().getStringArray(R.array.accent_values);
+                final int current = Math.max(0, java.util.Arrays.asList(values)
+                        .indexOf(preference.getValue()));
+
+                final android.widget.ArrayAdapter<String> adapter =
+                        new android.widget.ArrayAdapter<String>(requireContext(),
+                                android.R.layout.simple_list_item_single_choice, names) {
+                            @NonNull
+                            @Override
+                            public View getView(int position, View convertView,
+                                                @NonNull android.view.ViewGroup parent) {
+                                final View view = super.getView(position, convertView, parent);
+                                final android.widget.TextView text =
+                                        (android.widget.TextView) view;
+                                final android.graphics.drawable.Drawable disc =
+                                        androidx.core.content.ContextCompat.getDrawable(
+                                                requireContext(), R.drawable.accent_swatch);
+                                if (disc != null) {
+                                    disc.mutate().setColorFilter(
+                                            new android.graphics.PorterDuffColorFilter(
+                                                    Accent.colorOf(requireContext(), values[position]),
+                                                    android.graphics.PorterDuff.Mode.SRC_IN));
+                                    text.setCompoundDrawablesWithIntrinsicBounds(
+                                            disc, null, null, null);
+                                    text.setCompoundDrawablePadding(Utils.dpToPx(16));
+                                }
+                                return view;
+                            }
+                        };
+
+                new android.app.AlertDialog.Builder(requireContext())
+                        .setTitle(R.string.pref_accent)
+                        .setSingleChoiceItems(adapter, current, (dialog, which) -> {
+                            preference.setValue(values[which]);
+                            dialog.dismiss();
+                            requireActivity().recreate();
+                        })
+                        .setNegativeButton(android.R.string.cancel, null)
+                        .show();
+                return true;
+            });
+        }
+
         private void attachSetupServer() {
             final Preference preference = findPreference("setupFromPhone");
             if (preference == null) {
@@ -202,18 +261,28 @@ public class SettingsActivity extends AppCompatActivity {
                             .show();
                     return true;
                 }
-                new android.app.AlertDialog.Builder(requireContext())
-                        .setTitle(R.string.pref_setup_phone_title)
-                        .setMessage(getString(R.string.pref_setup_phone_body,
-                                address, setupServer.pin()))
-                        .setPositiveButton(R.string.pref_setup_phone_done, (dialog, which) -> {
-                            stopSetupServer();
-                            // Whatever the page wrote is read back into the list.
-                            setPreferenceScreen(null);
-                            onCreatePreferences(null, null);
-                        })
-                        .setOnCancelListener(dialog -> stopSetupServer())
-                        .show();
+                final android.app.AlertDialog dialog =
+                        new android.app.AlertDialog.Builder(requireContext())
+                                .setTitle(R.string.pref_setup_phone_title)
+                                .setMessage(getString(R.string.pref_setup_phone_body,
+                                        address, setupServer.pin()))
+                                .setCancelable(false)
+                                .setPositiveButton(R.string.pref_setup_phone_stop, (d, which) -> {
+                                    stopSetupServer();
+                                    // Whatever the page wrote is read back in.
+                                    setPreferenceScreen(null);
+                                    onCreatePreferences(null, null);
+                                })
+                                .create();
+                dialog.show();
+                // Red, because it is the button that takes the page away: the
+                // phone loses it the moment this is pressed.
+                final android.widget.Button stop =
+                        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE);
+                if (stop != null) {
+                    stop.setTextColor(0xFFFF5252);
+                    stop.requestFocus();
+                }
                 return true;
             });
         }
@@ -277,6 +346,7 @@ public class SettingsActivity extends AppCompatActivity {
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
             useFullWidth(getPreferenceScreen());
 
+            attachAccentSwatches();
             attachSetupServer();
 
             attachKeyChecks(com.brouken.player.online.ApiKeys.PREF_TMDB,

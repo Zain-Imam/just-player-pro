@@ -126,7 +126,9 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
 
     private OsdSettingsItem createAudioTrackItem() {
         @SuppressLint("PrivateResource")
-        final Drawable icon = getDrawable(androidx.media3.ui.R.drawable.exo_icon_circular_play);
+        // Our own audio mark rather than the library play circle, which is a
+        // dark glyph and looked like a hole beside the white icons around it.
+        final Drawable icon = getDrawable(R.drawable.ic_audio_track_24dp);
         return new SimpleOsdSettingsItem(context.getString(R.string.audio_menu_title), icon,
                 position -> listener.onOpenAudioTracks());
     }

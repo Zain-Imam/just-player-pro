@@ -1168,7 +1168,9 @@ public class PlayerActivity extends Activity {
                     if (playerView.keySeekStart == -1) {
                         playerView.keySeekStart = pos;
                     }
-                    long seekTo = pos - 10_000;
+                    // The step the user set, not a fixed ten seconds: the same
+                    // setting the double tap uses, so both mean the same thing.
+                    long seekTo = pos - mPrefs.doubleTapSeekSeconds * 1000L;
                     if (seekTo < 0)
                         seekTo = 0;
                     if (exo() != null) {
@@ -1193,7 +1195,7 @@ public class PlayerActivity extends Activity {
                     if (playerView.keySeekStart == -1) {
                         playerView.keySeekStart = pos;
                     }
-                    long seekTo = pos + 10_000;
+                    long seekTo = pos + mPrefs.doubleTapSeekSeconds * 1000L;
                     long seekMax = player.getDuration();
                     if (seekMax != C.TIME_UNSET && seekTo > seekMax)
                         seekTo = seekMax;
@@ -2826,7 +2828,7 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    void updateSubtitleStyle(final Context context) {
+    public void updateSubtitleStyle(final Context context) {
         if (player instanceof com.brouken.player.mpv.MpvPlayer) {
             ((com.brouken.player.mpv.MpvPlayer) player).setSubtitleStyle(
                     mPrefs.subtitleVerticalPosition,

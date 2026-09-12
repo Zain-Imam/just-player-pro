@@ -205,9 +205,19 @@ public class OsdSettingsController {
 
     private SubtitleOsdSettingsAdapter.Listener createSubtitleSettingsListener() {
         return new SubtitleOsdSettingsAdapter.Listener() {
+            /*
+             * Applied here, not left to the preference listener.
+             *
+             * Writing the value and waiting for the shared-preferences callback
+             * to notice worked on a phone and did nothing on a television: the
+             * arrows moved the number and the subtitles stayed where they were.
+             * Asking the player to restyle itself is immediate and does not
+             * depend on a callback arriving.
+             */
             @Override
             public void onSubtitlePositionChange(int position) {
                 prefs.updateSubtitleVerticalPosition(position);
+                playerActivity.updateSubtitleStyle(playerActivity);
             }
 
             @Override
@@ -218,16 +228,19 @@ public class OsdSettingsController {
             @Override
             public void onSubtitleSizeChange(int size) {
                 prefs.updateSubtitleSize(size);
+                playerActivity.updateSubtitleStyle(playerActivity);
             }
 
             @Override
             public void onSubtitleEdgeTypeChange(SubtitleEdgeType edgeType) {
                 prefs.updateSubtitleEdgeType(edgeType);
+                playerActivity.updateSubtitleStyle(playerActivity);
             }
 
             @Override
             public void onSubtitleTypefaceChange(SubtitleTypeface typeface) {
                 prefs.updateSubtitleTypeface(typeface);
+                playerActivity.updateSubtitleStyle(playerActivity);
             }
 
             @Override
