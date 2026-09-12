@@ -538,7 +538,10 @@ public class PlayerActivity extends Activity {
             updatebuttonAspectRatioIcon();
             resetHideCallbacks();
         });
-        if (isTvBox && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        // Holding the frame button starts free zoom. A touchscreen can also
+        // pinch, but there is no reason the other way in should exist only on a
+        // television: the same hold does the same thing on a phone.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             buttonAspectRatio.setOnLongClickListener(v -> {
                 scaleStart();
                 updatebuttonAspectRatioIcon();
@@ -962,7 +965,7 @@ public class PlayerActivity extends Activity {
                     }
                 }
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && isTvBox) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     if (visibility == View.VISIBLE) {
                         if (player != null /*&& player.isPlaying()*/) {
                             //noinspection DataFlowIssue
@@ -1030,9 +1033,7 @@ public class PlayerActivity extends Activity {
     public void onStart() {
         super.onStart();
         alive = true;
-        if (!(isTvBox && Build.VERSION.SDK_INT >= 31)) {
-            updateSubtitleStyle(this);
-        }
+        updateSubtitleStyle(this);
         if (Build.VERSION.SDK_INT >= 31) {
             playerView.removeCallbacks(barsHider);
             Utils.toggleSystemUi(this, playerView, true);
@@ -1078,9 +1079,10 @@ public class PlayerActivity extends Activity {
     public void onResume() {
         super.onResume();
         restorePlayStateAllowed = true;
-        if (isTvBox && Build.VERSION.SDK_INT >= 31) {
-            updateSubtitleStyle(this);
-        }
+        // Again here, not only in onStart: on Android 12 and later a television
+        // restyles between the two, and doing it in both places costs nothing
+        // and removes a device test that had no business existing.
+        updateSubtitleStyle(this);
     }
 
     @Override
@@ -1272,13 +1274,11 @@ public class PlayerActivity extends Activity {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     return super.onKeyDown(keyCode, event);
                 } else {
-                    if (isTvBox) {
-                        if (controllerVisible && player != null /*&& player.isPlaying()*/) {
-                            playerView.hideController();
-                            return true;
-                        } else {
-                            onBackPressed();
-                        }
+                    if (controllerVisible && player != null /*&& player.isPlaying()*/) {
+                        playerView.hideController();
+                        return true;
+                    } else {
+                        onBackPressed();
                     }
                 }
                 break;
@@ -1318,19 +1318,29 @@ public class PlayerActivity extends Activity {
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         /*
-         * A way out of the lock on a television.
+         * A way out of the lock with a key.
          *
          * Unlocking was wired to a tap on the on-screen message, and that was
          * only ever attached on a device with a touchscreen — so a remote could
          * lock the player and then had no way back at all, which read as the
          * lock button doing nothing. Back or OK lifts it; anything else shows
-         * the padlock, so it is clear why the film is ignoring the remote.
+         * the padlock, so it is clear why the film is ignoring what is being
+         * pressed. The tap still works too, on anything that can tap.
          */
-        if (locked && isTvBox) {
+        if (locked) {
+            final int lockedKey = event.getKeyCode();
+            // The volume is not part of what a lock is for: it exists to stop a
+            // sleeve or a pocket changing the film, and a volume key is a
+            // deliberate press on a button nothing else reaches.
+            if (lockedKey == KeyEvent.KEYCODE_VOLUME_UP
+                    || lockedKey == KeyEvent.KEYCODE_VOLUME_DOWN
+                    || lockedKey == KeyEvent.KEYCODE_VOLUME_MUTE) {
+                return super.dispatchKeyEvent(event);
+            }
             if (event.getAction() != KeyEvent.ACTION_DOWN) {
                 return true;
             }
-            final int keyCode = event.getKeyCode();
+            final int keyCode = lockedKey;
             if (keyCode == KeyEvent.KEYCODE_BACK
                     || keyCode == KeyEvent.KEYCODE_DPAD_CENTER
                     || keyCode == KeyEvent.KEYCODE_ENTER) {
@@ -1373,7 +1383,7 @@ public class PlayerActivity extends Activity {
             return true;
         }
 
-        if (isTvBox && !controllerVisibleFully) {
+        if (!controllerVisibleFully) {
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
                 onKeyDown(event.getKeyCode(), event);
             } else if (event.getAction() == KeyEvent.ACTION_UP) {
@@ -3282,11 +3292,10 @@ public class PlayerActivity extends Activity {
             Utils.setButtonEnabled(this, buttonPiP, enable);
         }
         Utils.setButtonEnabled(this, buttonAspectRatio, enable);
-        if (isTvBox) {
-            Utils.setButtonEnabled(this, exoSettings, true);
-        } else {
-            Utils.setButtonEnabled(this, exoSettings, enable);
-        }
+        // Always reachable: the panel it opens carries the engine, the buffering
+        // and the way through to the full settings, all of which are worth
+        // getting at before a file is open rather than only after.
+        Utils.setButtonEnabled(this, exoSettings, true);
     }
 
     private void scaleStart() {

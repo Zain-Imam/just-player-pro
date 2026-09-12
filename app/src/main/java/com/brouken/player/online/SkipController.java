@@ -256,12 +256,11 @@ public final class SkipController {
         button.setText(labelFor(segment.kind));
         button.setVisibility(View.VISIBLE);
         // A remote reaches nothing it has not been pointed at, and this button
-        // comes and goes on its own while the controls are usually hidden --
-        // so on a television it takes focus for as long as it is up, and gives
-        // it back when it goes.
-        if (isTelevision(button.getContext())) {
-            button.post(button::requestFocus);
-        }
+        // comes and goes on its own while the controls are usually hidden -- so
+        // it takes focus for as long as it is up, and gives it back when it
+        // goes. A touchscreen is in touch mode and quietly refuses the request,
+        // which is the right answer there and needs no test for it.
+        button.post(button::requestFocus);
         // After layout: the button has no height until it has been measured,
         // and the card it is dodging may be mid-appearance.
         button.post(this::clearOfCard);
@@ -274,9 +273,7 @@ public final class SkipController {
         undoUntil = host.positionSeconds() + UNDO_WINDOW_SECONDS;
         button.setText(R.string.skip_undo);
         button.setVisibility(View.VISIBLE);
-        if (isTelevision(button.getContext())) {
-            button.post(button::requestFocus);
-        }
+        button.post(button::requestFocus);
         button.post(this::clearOfCard);
     }
 
@@ -284,13 +281,6 @@ public final class SkipController {
         if (button != null) {
             button.setVisibility(View.GONE);
         }
-    }
-
-    private static boolean isTelevision(final android.content.Context context) {
-        final android.app.UiModeManager mode = (android.app.UiModeManager)
-                context.getSystemService(android.content.Context.UI_MODE_SERVICE);
-        return mode != null && mode.getCurrentModeType()
-                == android.content.res.Configuration.UI_MODE_TYPE_TELEVISION;
     }
 
     private int labelFor(final SkipSegments.Kind kind) {

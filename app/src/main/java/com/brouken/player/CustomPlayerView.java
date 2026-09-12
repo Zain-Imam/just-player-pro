@@ -100,15 +100,16 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
 
         mScaleDetector = new ScaleGestureDetector(context, this);
 
-        if (!Utils.isTvBox(getContext())) {
-            exoErrorMessage.setOnClickListener(v -> {
-                if (PlayerActivity.locked) {
-                    PlayerActivity.locked = false;
-                    Utils.showText(CustomPlayerView.this, "", MESSAGE_TIMEOUT_LONG);
-                    setIconLock(false);
-                }
-            });
-        }
+        // Tapping the padlock lifts the lock, wherever there is something to
+        // tap with. A television simply never delivers the click, and the key
+        // route in the activity is what answers there.
+        exoErrorMessage.setOnClickListener(v -> {
+            if (PlayerActivity.locked) {
+                PlayerActivity.locked = false;
+                Utils.showText(CustomPlayerView.this, "", MESSAGE_TIMEOUT_LONG);
+                setIconLock(false);
+            }
+        });
     }
 
     public void clearIcon() {
