@@ -31,6 +31,84 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
     private float startX;
     private long startTime;
 
+    /** The running time, which the stock bar keeps to itself. */
+    private long durationMs;
+
+    @Override
+    public void setDuration(final long duration) {
+        durationMs = duration;
+        super.setDuration(duration);
+    }
+
+    /** Whether a remote is currently dragging the scrubber. */
+    private boolean keyScrubbing;
+    private int keyRepeats;
+    private float keyX;
+
+    /*
+     * Scrubbing with a remote, in seconds rather than in leaps.
+     *
+     * The stock bar moves by a fraction of the running time per press, which on
+     * a long film is nearly three minutes a step and makes it impossible to
+     * stop anywhere in particular. Holding a direction now drags the scrubber:
+     * a single press is a second, and the step grows the longer it is held, so
+     * a whole film is still crossable without letting go.
+     */
+    private static final long[] KEY_STEP_MS = {1_000, 5_000, 15_000};
+    private static final int[] KEY_STEP_AFTER = {10, 30};
+
+    @Override
+    public boolean onKeyDown(final int keyCode, final android.view.KeyEvent event) {
+        final boolean back = keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT;
+        final boolean forward = keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
+
+        if (!back && !forward) {
+            // Nothing to commit means OK belongs to whatever handles play and
+            // pause, rather than being swallowed here and doing nothing at all.
+            if (!keyScrubbing && isConfirmKey(keyCode)) {
+                return false;
+            }
+            return super.onKeyDown(keyCode, event);
+        }
+        if (!isEnabled() || durationMs <= 0 || progressBar == null || progressBar.width() <= 0) {
+            return super.onKeyDown(keyCode, event);
+        }
+
+        if (!keyScrubbing) {
+            keyScrubbing = true;
+            keyRepeats = 0;
+            keyX = scrubberBar != null ? scrubberBar.right : progressBar.left;
+            dispatchToSuper(MotionEvent.ACTION_DOWN, keyX);
+        }
+
+        final long step = KEY_STEP_MS[keyRepeats < KEY_STEP_AFTER[0] ? 0
+                : keyRepeats < KEY_STEP_AFTER[1] ? 1 : 2];
+        keyRepeats++;
+
+        final float perMs = (float) progressBar.width() / durationMs;
+        keyX = Math.max(progressBar.left,
+                Math.min(progressBar.right, keyX + (forward ? step : -step) * perMs));
+        dispatchToSuper(MotionEvent.ACTION_MOVE, keyX);
+        return true;
+    }
+
+    @Override
+    public boolean onKeyUp(final int keyCode, final android.view.KeyEvent event) {
+        if (keyScrubbing && (keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT
+                || keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT)) {
+            keyScrubbing = false;
+            dispatchToSuper(MotionEvent.ACTION_UP, keyX);
+            return true;
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
+    private static boolean isConfirmKey(final int keyCode) {
+        return keyCode == android.view.KeyEvent.KEYCODE_DPAD_CENTER
+                || keyCode == android.view.KeyEvent.KEYCODE_ENTER
+                || keyCode == android.view.KeyEvent.KEYCODE_NUMPAD_ENTER;
+    }
+
     public CustomDefaultTimeBar(Context context) {
         this(context, null);
     }

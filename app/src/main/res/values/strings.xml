@@ -115,6 +115,8 @@
     <string name="pref_subtitle_sources_header">Subtitle sources — all optional</string>
     <string name="pref_double_tap_seconds">Double-tap seek</string>
     <string name="pref_double_tap_seconds_summary">Seconds per double tap</string>
+    <string name="unlocked">Unlocked</string>
+    <string name="locked_hint">Locked — press Back or OK to unlock</string>
     <string name="pref_lock_hint">Lock the screen against accidental touches with the padlock in the playback controls, or by long-pressing the video. Long-press again, or press the padlock, to unlock.</string>
     <string name="pref_overlay_delay">Card delay</string>
     <string name="pref_overlay_delay_summary">Seconds after pausing. 0 shows it at once.</string>
@@ -129,6 +131,10 @@
     <string name="pref_engine_auto">Auto</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">mpv needs Android 8.0 or newer</string>
+    <string name="engine_failed_title">This engine could not play the file</string>
+    <string name="engine_failed_message">%1$s could not play this. %2$s very likely can — that is why there are two.</string>
+    <string name="engine_failed_try">Try %1$s</string>
+    <string name="engine_failed_auto">Always use Auto</string>
     <string name="pref_engine_note">Media3 uses the decoders built into the device and is the smoother choice; tunneling, frame-rate matching and skip-silence belong to it alone. mpv carries its own decoders and plays what Media3 cannot: 10-bit H.264, interlaced video, older codecs, styled ASS.
 
 Auto starts on Media3 and switches only for a file Media3 fails on.</string>

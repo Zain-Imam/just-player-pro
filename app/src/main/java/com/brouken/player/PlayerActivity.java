@@ -868,8 +868,14 @@ public class PlayerActivity extends Activity {
                 Utils.toggleSystemUi(PlayerActivity.this, playerView, visibility == View.VISIBLE);
                 if (visibility == View.VISIBLE) {
                     // Because when using dpad controls, focus resets to first item in bottom controls bar.
-                    final View focusTarget = exoPlayPause != null && exoPlayPause.isEnabled()
-                            ? exoPlayPause : buttonPlayPause;
+                    // The one in the time row first: the centre button is hidden
+                    // unless the info card is up, and focusing something nobody
+                    // can see is what sent the remote to the middle of the row.
+                    final View focusTarget =
+                            buttonPlayPause != null && buttonPlayPause.getVisibility() == View.VISIBLE
+                                    ? buttonPlayPause
+                                    : (exoPlayPause != null && exoPlayPause.isEnabled()
+                                            ? exoPlayPause : buttonPlayPause);
                     if (focusTarget != null) {
                         focusTarget.requestFocus();
                     }
@@ -1252,6 +1258,35 @@ public class PlayerActivity extends Activity {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        /*
+         * A way out of the lock on a television.
+         *
+         * Unlocking was wired to a tap on the on-screen message, and that was
+         * only ever attached on a device with a touchscreen — so a remote could
+         * lock the player and then had no way back at all, which read as the
+         * lock button doing nothing. Back or OK lifts it; anything else shows
+         * the padlock, so it is clear why the film is ignoring the remote.
+         */
+        if (locked && isTvBox) {
+            if (event.getAction() != KeyEvent.ACTION_DOWN) {
+                return true;
+            }
+            final int keyCode = event.getKeyCode();
+            if (keyCode == KeyEvent.KEYCODE_BACK
+                    || keyCode == KeyEvent.KEYCODE_DPAD_CENTER
+                    || keyCode == KeyEvent.KEYCODE_ENTER) {
+                locked = false;
+                ((CustomPlayerView) playerView).setIconLock(false);
+                updateButtonLock();
+                Utils.showText(playerView, getString(R.string.unlocked));
+                resetHideCallbacks();
+            } else {
+                ((CustomPlayerView) playerView).setIconLock(true);
+                Utils.showText(playerView, getString(R.string.locked_hint));
+            }
+            return true;
+        }
+
         if (isScaling) {
             final int keyCode = event.getKeyCode();
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
@@ -2159,6 +2194,9 @@ public class PlayerActivity extends Activity {
                 return;
             }
             updateLoading(false);
+            if (offerOtherEngine()) {
+                return;
+            }
             if (error instanceof ExoPlaybackException) {
                 final ExoPlaybackException exoPlaybackException = (ExoPlaybackException) error;
                 if (exoPlaybackException.type == ExoPlaybackException.TYPE_SOURCE) {
@@ -2172,6 +2210,45 @@ public class PlayerActivity extends Activity {
                 }
             }
         }
+    }
+
+    /*
+     * When one engine cannot play a file, offer the other one.
+     *
+     * On Auto this never comes up: the fallback has already tried the other
+     * engine by the time an error reaches the user. On a fixed engine it used
+     * to be a bare error message, with nothing to say that the other one would
+     * very likely play the file — which is the whole reason there are two.
+     */
+    private boolean offerOtherEngine() {
+        if (!haveMedia || "auto".equals(mPrefs.playbackEngine)
+                || !com.brouken.player.mpv.MpvPlayer.isSupported()) {
+            return false;
+        }
+        final boolean onMpv = "mpv".equals(mPrefs.playbackEngine);
+        final String other = onMpv ? "media3" : "mpv";
+
+        Utils.showFocused(new AlertDialog.Builder(this)
+                .setTitle(R.string.engine_failed_title)
+                .setMessage(getString(R.string.engine_failed_message,
+                        getString(onMpv ? R.string.pref_engine_mpv : R.string.pref_engine_media3),
+                        getString(onMpv ? R.string.pref_engine_media3 : R.string.pref_engine_mpv)))
+                .setNegativeButton(android.R.string.cancel, null)
+                .setNeutralButton(R.string.engine_failed_auto, (dialog, which) -> {
+                    switchEngine("auto");
+                })
+                .setPositiveButton(getString(R.string.engine_failed_try,
+                        getString(onMpv ? R.string.pref_engine_media3 : R.string.pref_engine_mpv)),
+                        (dialog, which) -> switchEngine(other))
+                .create(), AlertDialog.BUTTON_POSITIVE);
+        return true;
+    }
+
+    private void switchEngine(final String engine) {
+        androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
+                .edit().putString("playbackEngine", engine).apply();
+        mPrefs.loadUserPreferences();
+        rebuildPlayer();
     }
 
     public void enableRotation() {
