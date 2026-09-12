@@ -50,6 +50,7 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
             // that opens a list of one is a row worth not having.
             items.add(createVideoTrackItem());
         }
+        items.add(createInfoCardItem());
         items.add(createAudioTrackItem());
         items.add(createSubtitleSettingsItem());
         items.add(createAllSettingsItem());
@@ -163,6 +164,13 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
                 position -> listener.onOpenVideoTracks());
     }
 
+    private OsdSettingsItem createInfoCardItem() {
+        @SuppressLint("PrivateResource")
+        final Drawable icon = getDrawable(R.drawable.ic_info_card_24dp);
+        return new SimpleOsdSettingsItem(context.getString(R.string.osd_info_card), icon,
+                position -> listener.onShowInfoCard());
+    }
+
     private OsdSettingsItem createAudioTrackItem() {
         @SuppressLint("PrivateResource")
         // Our own audio mark rather than the library play circle, which is a
@@ -203,6 +211,8 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
         void onAdaptiveBufferingChange(boolean enabled);
 
         void onSleepChange(int minutes);
+
+        void onShowInfoCard();
 
         void onOpenVideoTracks();
 

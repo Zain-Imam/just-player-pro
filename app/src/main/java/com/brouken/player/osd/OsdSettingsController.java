@@ -180,6 +180,12 @@ public class OsdSettingsController {
             }
 
             @Override
+            public void onShowInfoCard() {
+                playerSettingsWindow.dismiss();
+                playerActivity.showOverlayCardNow();
+            }
+
+            @Override
             public void onOpenVideoTracks() {
                 playerSettingsWindow.dismiss();
                 playerActivity.showVideoMenu();
