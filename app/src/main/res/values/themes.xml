@@ -26,6 +26,19 @@
         <item name="android:colorAccent">?attr/accentColor</item>
     </style>
 
+    <!--
+        A list that comes in from the side rather than over the middle.
+
+        A picker in the centre of the screen covers the one thing being chosen
+        for. Sliding in along the edge leaves the film visible, which matters
+        when the choice is a subtitle track or an audio language and the answer
+        is on screen.
+    -->
+    <style name="PanelAnimation" parent="">
+        <item name="android:windowEnterAnimation">@anim/panel_in</item>
+        <item name="android:windowExitAnimation">@anim/panel_out</item>
+    </style>
+
     <style name="ExoStyledControls.Button.Center.Secondary" parent="ExoStyledControls.Button.Center">
         <item name="android:layout_width">60dp</item>
         <item name="android:layout_height">60dp</item>

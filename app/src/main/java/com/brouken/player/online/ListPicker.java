@@ -61,6 +61,7 @@ public final class ListPicker {
             onPicked.onPicked(index);
         }));
 
+        asPanel(activity, dialog);
         dialog.show();
 
         // A television focuses nothing until something asks; an unfocused list
@@ -73,6 +74,41 @@ public final class ListPicker {
         });
 
         return dialog;
+    }
+
+    /*
+     * The list arrives along the edge, not over the middle.
+     *
+     * What is being chosen — a subtitle track, an audio language, one of a
+     * dozen search results — is usually a decision about what is on screen at
+     * that moment. A dialog in the centre covers exactly that. The same list,
+     * given the full height of one side, leaves the film visible while it is
+     * being read, and on a television it gives the remote a single column to
+     * travel down instead of a floating box in the middle of nowhere.
+     */
+    private static void asPanel(final Activity activity, final AlertDialog dialog) {
+        final android.view.Window window = dialog.getWindow();
+        if (window == null) {
+            return;
+        }
+
+        final int width = com.brouken.player.Panels.width(activity);
+
+        final android.view.WindowManager.LayoutParams params = window.getAttributes();
+        params.gravity = android.view.Gravity.END | android.view.Gravity.TOP;
+        params.width = width;
+        params.height = android.view.WindowManager.LayoutParams.MATCH_PARENT;
+        params.windowAnimations = R.style.PanelAnimation;
+        // Barely dimmed: the whole point is that the film stays watchable.
+        params.dimAmount = 0.2f;
+        window.setAttributes(params);
+
+        window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(
+                androidx.core.content.ContextCompat.getColor(activity, R.color.ui_panel_background)));
+
+        // Flush to the edge, so it reads as part of the screen rather than as a
+        // card floating near it.
+        window.getDecorView().setPadding(0, 0, 0, 0);
     }
 
     private static final class Separator extends RecyclerView.ItemDecoration {

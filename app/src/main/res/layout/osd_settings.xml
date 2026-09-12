@@ -4,14 +4,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/rounded_controls_background"
-    android:padding="4dp">
+    android:background="@color/ui_panel_background"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp">
 
     <TextView
         android:id="@android:id/text1"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="20dp"
         android:textAlignment="center"
         android:textColor="@color/osd_settings_title_text"
         android:textSize="@dimen/osd_settings_title_text_size"
@@ -21,11 +22,17 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Title" />
 
+    <!-- Bounded top and bottom rather than wrapping: the panel is now the full
+         height of the screen, and a list longer than it has to scroll instead
+         of running off the end of it. -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@android:id/list"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_marginTop="12dp"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@android:id/text1" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

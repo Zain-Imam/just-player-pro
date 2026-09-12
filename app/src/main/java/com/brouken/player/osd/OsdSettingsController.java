@@ -62,7 +62,7 @@ public class OsdSettingsController {
         recyclerView.setAdapter(subtitleAdapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(context));
         osdSettingsWindow =
-                new PopupWindow(settingsView, FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, true);
+                new PopupWindow(settingsView, com.brouken.player.Panels.width(context), FrameLayout.LayoutParams.MATCH_PARENT, true);
         playerAdapter = new PlayerOsdSettingsAdapter(context, createPlayerSettingsListener());
         playerAdapter.setInitialValues(prefs.speed, prefs.playbackEngine, true, true,
                 prefs.adaptiveBuffering, 0, false);
@@ -72,7 +72,12 @@ public class OsdSettingsController {
         playerList.setAdapter(playerAdapter);
         playerList.setLayoutManager(new LinearLayoutManager(context));
         playerSettingsWindow =
-                new PopupWindow(playerPanelView, FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, true);
+                new PopupWindow(playerPanelView, com.brouken.player.Panels.width(context), FrameLayout.LayoutParams.MATCH_PARENT, true);
+
+        // The same edge, the same width, the same slide in as the track lists:
+        // opening one after the other should not move the panel about.
+        osdSettingsWindow.setAnimationStyle(R.style.PanelAnimation);
+        playerSettingsWindow.setAnimationStyle(R.style.PanelAnimation);
 
         if (Util.SDK_INT < 23) {
             // Work around issue where tapping outside of the menu area or pressing the back button
@@ -85,7 +90,6 @@ public class OsdSettingsController {
     public void showPlayerSettings() {
         // Same for the quick panel: one thing on screen at a time.
         playerActivity.hideOverlayCard();
-        int margin = playerActivity.getResources().getDimensionPixelSize(R.dimen.osd_settings_margin);
         playerAdapter.setInitialValues(
                 prefs.speed,
                 prefs.playbackEngine,
@@ -99,7 +103,7 @@ public class OsdSettingsController {
 
         TextView titleTextView = playerSettingsWindow.getContentView().findViewById(android.R.id.text1);
         titleTextView.setText(R.string.osd_player_title);
-        playerSettingsWindow.showAtLocation(playerActivity.playerView, Gravity.END | Gravity.TOP, margin, margin);
+        playerSettingsWindow.showAtLocation(playerActivity.playerView, Gravity.END | Gravity.TOP, 0, 0);
         focusFirstRow(playerSettingsWindow);
 
         // Same reason as the subtitle panel: without the delay the controller
@@ -197,10 +201,9 @@ public class OsdSettingsController {
     public void showSubtitleSettings() {
         // Nothing may sit under a panel: the card would show through it.
         playerActivity.hideOverlayCard();
-        int margin = playerActivity.getResources().getDimensionPixelSize(R.dimen.osd_settings_margin);
         TextView titleTextView = osdSettingsWindow.getContentView().findViewById(android.R.id.text1);
         titleTextView.setText(R.string.osd_subtitle_title);
-        osdSettingsWindow.showAtLocation(playerActivity.playerView, Gravity.END | Gravity.TOP, margin, margin);
+        osdSettingsWindow.showAtLocation(playerActivity.playerView, Gravity.END | Gravity.TOP, 0, 0);
         focusFirstRow(osdSettingsWindow);
 
         // Without delaying hide, controller's UI reappears when
