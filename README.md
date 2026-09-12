@@ -33,6 +33,9 @@ because it never touches the frame at all.
 zero-copy onto a `SurfaceView`, which is why it plays smoothly on TV boxes where GPU-rendering
 players stutter, and why it is the one that does tunneled playback and display frame-rate matching.
 
+**mpv** streams over https like anything else — it is given the device's own
+certificates, without which it could not open a TLS address at all.
+
 **mpv** carries its own decoders — **501 of them** — so it does not care what the device supports.
 10-bit and 4:2:2 H.264, interlaced video, VC-1, RealVideo, Cinepak, Indeo, ProRes, DNxHD, FFV1,
 HuffYUV, styled ASS subtitles, DTS, TrueHD, Musepack, APE, ATRAC3, QDM2 — all of it decodes in

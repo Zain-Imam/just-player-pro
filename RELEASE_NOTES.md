@@ -28,6 +28,24 @@ Media3 reported everything.
 
 ## Fixed along the way
 
+* **The mpv engine could not open an https address at all.** It does its own
+  TLS and knows nothing of Android's trust store, so every stream over https —
+  which today is every stream — failed the handshake and then went looking for
+  youtube-dl, which is not on a phone either. What you saw was a stream that
+  never started, on one engine, with no reason given. It is given the device's
+  own certificates now.
+* **An HLS link with its own mime type was refused.** A browser, Stremio or
+  anything else that sets a type sends `application/x-mpegURL`; the app claimed
+  only `video/*` and so was not offered at all. The `.m3u8` path patterns only
+  ever helped when nobody set a type.
+* **A subtitle handed over as a file path went missing without a word.** Under
+  scoped storage a `.srt` on shared storage is not a media file, so mpv said
+  "Permission denied" and Media3 listed a track with nothing in it. A copy is
+  taken through the content resolver, which honours whatever the intent granted.
+* **Sidecar subtitles never reached mpv at all.** They were added immediately
+  after `loadfile`, which only asks for the file — it is opened later, and the
+  track list is built then, so the addition applied to nothing.
+
 * **The app no longer disappears mid-film.** A brace written the way desktop
   Java accepts and Android does not meant the release-name parser failed to
   load the first time anything touched it — which is as a file opens, on the
