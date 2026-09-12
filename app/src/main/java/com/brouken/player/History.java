@@ -118,13 +118,43 @@ final class History {
             return null;
         }
         final String place = withoutQuery(uri);
-        for (final Entry entry : load(preferences)) {
-            if (place.equals(withoutQuery(entry.uri)) && entry.name != null
-                    && !entry.name.equals(displayName(entry.uri))) {
+        final java.util.List<Entry> entries = load(preferences);
+        for (final Entry entry : entries) {
+            if (place.equals(withoutQuery(entry.uri)) && resolved(entry)) {
                 return entry.name;
             }
         }
+        // A regenerated link is a different host and a different path, so the
+        // one thing it still shares with the entry that was stored is the file
+        // name on the end of it. Without this the prompt fell back to showing
+        // the identifier out of the URL, which is what it was trying to avoid.
+        final String file = lastSegment(uri);
+        if (file != null) {
+            for (final Entry entry : entries) {
+                if (file.equals(lastSegment(entry.uri)) && resolved(entry)) {
+                    return entry.name;
+                }
+            }
+        }
         return null;
+    }
+
+    private static boolean resolved(final Entry entry) {
+        return entry.name != null && !entry.name.equals(displayName(entry.uri));
+    }
+
+    @Nullable
+    private static String lastSegment(@Nullable final Uri uri) {
+        if (uri == null) {
+            return null;
+        }
+        final String path = uri.getPath();
+        if (path == null || path.isEmpty()) {
+            return null;
+        }
+        final int slash = path.lastIndexOf('/');
+        final String name = slash < 0 ? path : path.substring(slash + 1);
+        return name.isEmpty() ? null : name;
     }
     private static String withoutQuery(@NonNull final Uri uri) {
         final String scheme = uri.getScheme();

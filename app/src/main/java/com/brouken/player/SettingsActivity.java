@@ -151,6 +151,25 @@ public class SettingsActivity extends AppCompatActivity {
          * than as a typo. The service is asked first, and the key is only
          * written if it answers. Clearing is always allowed.
          */
+        /*
+         * Nothing here has an icon, so nothing should be indented for one.
+         *
+         * The preference list leaves a gap at the start of every row for an
+         * icon whether or not there is one, which pushed all the text inwards
+         * and wasted the width — most visible on a wide screen, where the
+         * settings ended up as a narrow column with an empty margin beside it.
+         */
+        private void useFullWidth(final androidx.preference.PreferenceGroup group) {
+            group.setIconSpaceReserved(false);
+            for (int i = 0; i < group.getPreferenceCount(); i++) {
+                final Preference preference = group.getPreference(i);
+                preference.setIconSpaceReserved(false);
+                if (preference instanceof androidx.preference.PreferenceGroup) {
+                    useFullWidth((androidx.preference.PreferenceGroup) preference);
+                }
+            }
+        }
+
         private void attachKeyChecks(final String... keys) {
             for (final String key : keys) {
                 final EditTextPreference preference = findPreference(key);
@@ -195,6 +214,7 @@ public class SettingsActivity extends AppCompatActivity {
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
+            useFullWidth(getPreferenceScreen());
 
             attachKeyChecks(com.brouken.player.online.ApiKeys.PREF_TMDB,
                     com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES,

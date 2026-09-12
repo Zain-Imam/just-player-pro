@@ -204,7 +204,17 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             hideController();
             return true;
         }
-        return false;
+
+        /*
+         * With nothing open, the controls stay.
+         *
+         * PlayerView refuses to show its controls while no player is attached,
+         * so once they were hidden there was no way to bring them back: the
+         * first tap on the empty screen put the app in a state where it looked
+         * broken and only force-stopping it helped. The tap is swallowed
+         * instead, which leaves the one thing on screen on screen.
+         */
+        return true;
     }
 
     @Override
