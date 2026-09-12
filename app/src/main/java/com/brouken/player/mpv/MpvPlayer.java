@@ -175,6 +175,43 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
         load();
     }
 
+    /*
+     * Sidecar subtitles are added once the file is open, not before.
+     *
+     * "loadfile" only asks; the file is opened some time afterwards and the
+     * track list is built then. A sub-add issued in between is applied to
+     * nothing, and the subtitle another app handed over simply never appeared in
+     * the picker on this engine — which is most of the reason for accepting one
+     * in the first place.
+     *
+     * They are held here and added when mpv says the file is loaded.
+     */
+    private final List<MediaItem.SubtitleConfiguration> pendingSubtitles = new ArrayList<>();
+
+    private void addPendingSubtitles() {
+        if (mpv == null || pendingSubtitles.isEmpty()) {
+            return;
+        }
+        for (final MediaItem.SubtitleConfiguration subtitle : pendingSubtitles) {
+            final String flag =
+                    (subtitle.selectionFlags & C.SELECTION_FLAG_DEFAULT) != 0 ? "select" : "auto";
+            final String title = subtitle.label;
+            if (title != null && !title.isEmpty()) {
+                mpv.command(new String[]{"sub-add", subtitle.uri.toString(), flag, title});
+            } else {
+                mpv.command(new String[]{"sub-add", subtitle.uri.toString(), flag});
+            }
+            if (subtitle.language != null && !subtitle.language.isEmpty()) {
+                final Integer count = mpv.getPropertyInt("track-list/count");
+                if (count != null && count > 0) {
+                    mpv.setPropertyString("track-list/" + (count - 1) + "/lang",
+                            subtitle.language);
+                }
+            }
+        }
+        pendingSubtitles.clear();
+    }
+
     private void load() {
         loadWhenSurfaceReady = false;
         if (mpv == null || mediaItems.isEmpty()) {
@@ -198,24 +235,8 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
          * both engines and switched on only on one of them. The name and the
          * language go with it, or the picker shows a row called Track 2.
          */
-        for (final MediaItem.SubtitleConfiguration subtitle :
-                item.localConfiguration.subtitleConfigurations) {
-            final String flag =
-                    (subtitle.selectionFlags & C.SELECTION_FLAG_DEFAULT) != 0 ? "select" : "auto";
-            final String title = subtitle.label;
-            if (title != null && !title.isEmpty()) {
-                mpv.command(new String[]{"sub-add", subtitle.uri.toString(), flag, title});
-            } else {
-                mpv.command(new String[]{"sub-add", subtitle.uri.toString(), flag});
-            }
-            if (subtitle.language != null && !subtitle.language.isEmpty()) {
-                final Integer count = mpv.getPropertyInt("track-list/count");
-                if (count != null && count > 0) {
-                    mpv.setPropertyString("track-list/" + (count - 1) + "/lang",
-                            subtitle.language);
-                }
-            }
-        }
+        pendingSubtitles.clear();
+        pendingSubtitles.addAll(item.localConfiguration.subtitleConfigurations);
 
         if (pendingStartPositionMs != C.TIME_UNSET && pendingStartPositionMs > 0) {
             // `start` is a relative-time option, not a number, so it is written
@@ -415,6 +436,7 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
     public void event(int eventId) {
         handler.post(() -> {
             if (eventId == MPVLib.MpvEvent.MPV_EVENT_FILE_LOADED) {
+                addPendingSubtitles();
                 updateTracks();
                 updateVideoSize();
                 setPlaybackState(Player.STATE_READY);
