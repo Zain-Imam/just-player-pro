@@ -46,9 +46,70 @@ public class SubtitleConverter {
         String scheme = sourceUri.getScheme();
         if (scheme != null && (scheme.equals("http") || scheme.equals("https"))) {
             convertSubtitleFromHttp(context, countDownLatch, results, positionOnResults, sourceUri);
-        } else {
-            results[positionOnResults] = sourceUri;
+            return;
+        }
+
+        /*
+         * A path an app hands over is not always a path this app may open.
+         *
+         * Some launchers pass a subtitle as file:///sdcard/… rather than as a
+         * content URI. Under scoped storage a .srt on shared storage is not a
+         * media file, so there is no permission for it: mpv, which opens the
+         * path itself, answers "Permission denied" and the subtitle silently
+         * never appears, while Media3 lists the track and then finds nothing in
+         * it. Neither says why.
+         *
+         * The content resolver honours whatever the intent granted, so it is
+         * asked first, and what it gives back is copied somewhere this app can
+         * certainly read. A few kilobytes, once, and both engines can open it.
+         */
+        if ("file".equals(scheme) && !canReadDirectly(sourceUri)) {
+            final Uri copied = copyIntoCache(context, sourceUri);
+            results[positionOnResults] = copied != null ? copied : sourceUri;
             countDownLatch.countDown();
+            return;
+        }
+
+        results[positionOnResults] = sourceUri;
+        countDownLatch.countDown();
+    }
+
+    private static boolean canReadDirectly(final Uri uri) {
+        final String path = uri.getPath();
+        if (path == null) {
+            return false;
+        }
+        try {
+            return new File(path).canRead();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private Uri copyIntoCache(final Context context, final Uri sourceUri) {
+        final String path = sourceUri.getPath();
+        final String name = path == null ? "handed-over.srt" : new File(path).getName();
+        try (java.io.InputStream in = context.getContentResolver().openInputStream(sourceUri)) {
+            if (in == null) {
+                return null;
+            }
+            final File dir = new File(context.getCacheDir(), "subtitles");
+            if (!dir.exists() && !dir.mkdirs()) {
+                return null;
+            }
+            final File out = new File(dir, System.currentTimeMillis() + "-" + name);
+            try (java.io.OutputStream sink = new java.io.FileOutputStream(out)) {
+                final byte[] chunk = new byte[8192];
+                int read;
+                while ((read = in.read(chunk)) > 0) {
+                    sink.write(chunk, 0, read);
+                }
+            }
+            return out.length() > 0 ? Uri.fromFile(out) : null;
+        } catch (Exception e) {
+            // No permission for it by either route; the engines will say so.
+            Log.w("SubtitleConverter", "Could not copy a handed-over subtitle: " + e);
+            return null;
         }
     }
 

@@ -80,14 +80,42 @@ in_front() {
   esac
 }
 
+# The phone's own security page, not the player's.
+#
+# Motorola's Security Hub puts "Potentially risky website" in front whenever
+# this app fetches from a host it does not recognise — a subtitle source, a test
+# stream. It steals focus and the run grinds to a halt behind it.
+#
+# It is dismissed by DECLINING: "Cancel and exit" only. Never "Continue anyway",
+# never "Add site to allow list" — a test does not get to change what a phone
+# trusts. This is the one place anything outside the player is pressed, it is
+# named here so it can be audited, and it only ever says no.
+dismiss_security_prompt() {
+  case "$(focused)" in
+    *securityhub*|*PhishingDetection*) ;;
+    *) return 1 ;;
+  esac
+  local at
+  at="$(bounds_of text 'Cancel and exit' | awk 'NF==4 {print int(($1+$3)/2), int(($2+$4)/2)}')"
+  if [ -z "$at" ]; then
+    return 1
+  fi
+  adb shell "input tap $at" >/dev/null 2>&1
+  sleep 3
+  echo "        (declined the phone's risky-site warning)"
+  return 0
+}
+
 require_player() {
   local n
   in_front && return 0
+  dismiss_security_prompt >/dev/null 2>&1 && in_front && return 0
 
   # A phone puts things in front of you unasked: a security scanner, a system
   # dialog, an update notice. Wait for it to go.
   for n in 1 2 3 4 5 6 7 8 9 10; do
     sleep 2
+    dismiss_security_prompt
     in_front && return 0
   done
 
