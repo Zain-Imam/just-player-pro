@@ -190,12 +190,31 @@ public class SettingsActivity extends AppCompatActivity {
          * colour, and the list is our own dialog because a ListPreference will
          * not put a drawable beside an entry.
          */
-        private void attachAccentSwatches() {
-            final ListPreference preference = findPreference("accentColor");
-            if (preference == null) {
+        /*
+         * A preference that opens its own dialog opens it whether or not
+         * anybody asked.
+         *
+         * A click listener on a ListPreference is not a replacement for its
+         * dialog, it is an addition to one: the library calls onClick before it
+         * consults the listener, so the plain list of names was already on its
+         * way when the list of colours was built. The plain one arrived second,
+         * because it goes through a fragment transaction, and landed on top —
+         * which looked like the colours only appearing after a press of back.
+         *
+         * This is the hook meant for the job: answer for the preference, and
+         * the library does not open anything of its own.
+         */
+        @Override
+        public void onDisplayPreferenceDialog(@NonNull Preference preference) {
+            if (preference instanceof ListPreference && "accentColor".equals(preference.getKey())) {
+                showAccentSwatches((ListPreference) preference);
                 return;
             }
-            preference.setOnPreferenceClickListener(clicked -> {
+            super.onDisplayPreferenceDialog(preference);
+        }
+
+        private void showAccentSwatches(final ListPreference preference) {
+            {
                 final String[] names = getResources().getStringArray(R.array.accent_entries);
                 final String[] values = getResources().getStringArray(R.array.accent_values);
                 final int current = Math.max(0, java.util.Arrays.asList(values)
@@ -236,6 +255,95 @@ public class SettingsActivity extends AppCompatActivity {
                         })
                         .setNegativeButton(android.R.string.cancel, null)
                         .show();
+            }
+        }
+
+        /*
+         * Ask everything whether it still works, without changing anything.
+         *
+         * A key and an addon were only ever checked as they were typed in, so a
+         * service that stopped answering last week still looked fine here and
+         * the first sign of it was an empty subtitle search in the evening.
+         * This asks all of them and says which answered.
+         */
+        private void attachCheckEverything() {
+            final Preference preference = findPreference("checkEverything");
+            if (preference == null) {
+                return;
+            }
+            preference.setOnPreferenceClickListener(clicked -> {
+                final android.content.Context context = requireContext().getApplicationContext();
+                android.widget.Toast.makeText(context, R.string.pref_checking_all,
+                        android.widget.Toast.LENGTH_SHORT).show();
+
+                new Thread(() -> {
+                    final StringBuilder report = new StringBuilder();
+
+                    for (final String key : new String[]{
+                            com.brouken.player.online.ApiKeys.PREF_TMDB,
+                            com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES,
+                            com.brouken.player.online.ApiKeys.PREF_SUBDL,
+                            com.brouken.player.online.ApiKeys.PREF_WYZIE}) {
+                        final String value = com.brouken.player.online.ApiKeys.get(context, key);
+                        if (value == null || value.isEmpty()) {
+                            continue;
+                        }
+                        final com.brouken.player.online.KeyCheck.Result result =
+                                com.brouken.player.online.KeyCheck.check(key, value);
+                        report.append(result.ok ? "\u2713 " : "\u2717 ")
+                                .append(result.message).append('\n');
+                    }
+
+                    for (int slot = 1; slot <= com.brouken.player.online.SubtitleAddons.MAX; slot++) {
+                        final String url = PreferenceManager.getDefaultSharedPreferences(context)
+                                .getString(com.brouken.player.online.SubtitleAddons.key(slot), "");
+                        if (url == null || url.isEmpty()) {
+                            continue;
+                        }
+                        final com.brouken.player.online.SubtitleAddons.Probe probe =
+                                com.brouken.player.online.SubtitleAddons.probe(url);
+                        report.append(probe.accepted() ? "\u2713 " : "\u2717 ")
+                                .append("Addon ").append(slot).append(": ")
+                                .append(probe.accepted()
+                                        ? (probe.name == null ? "answered" : probe.name)
+                                        : probe.verdict.name().toLowerCase(Locale.US)
+                                                .replace('_', ' '))
+                                .append('\n');
+                    }
+
+                    final String text = report.length() == 0
+                            ? getString(R.string.pref_check_all_none)
+                            : report.toString().trim();
+
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                        if (!isAdded()) {
+                            return;
+                        }
+                        Utils.showFocused(new android.app.AlertDialog.Builder(requireContext())
+                                .setTitle(R.string.pref_check_all_title)
+                                .setMessage(text)
+                                .setPositiveButton(android.R.string.ok, null)
+                                .create(), android.app.AlertDialog.BUTTON_POSITIVE);
+                    });
+                }).start();
+                return true;
+            });
+        }
+
+        private void attachAbout() {
+            final Preference preference = findPreference("aboutProject");
+            if (preference == null) {
+                return;
+            }
+            preference.setSummary(getString(R.string.pref_about_summary,
+                    BuildConfig.VERSION_NAME));
+            preference.setOnPreferenceClickListener(clicked -> {
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW,
+                            Uri.parse("https://github.com/Zain-Imam/just-player-pro")));
+                } catch (Exception ignored) {
+                    // A television with no browser. The address is on the row.
+                }
                 return true;
             });
         }
@@ -354,8 +462,9 @@ public class SettingsActivity extends AppCompatActivity {
                 });
             }
 
-            attachAccentSwatches();
             attachSetupServer();
+            attachCheckEverything();
+            attachAbout();
 
             attachKeyChecks(com.brouken.player.online.ApiKeys.PREF_TMDB,
                     com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES,
