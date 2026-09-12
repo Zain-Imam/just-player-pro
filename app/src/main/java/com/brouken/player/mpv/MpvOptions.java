@@ -157,6 +157,23 @@ public final class MpvOptions {
 
         // -- network --------------------------------------------------------
 
+        /*
+         * Certificates, without which https does not work at all here.
+         *
+         * mpv does its own TLS and knows nothing of Android's trust store, so
+         * every https stream failed the handshake on this engine. The device's
+         * own certificates are gathered into the one file gnutls wants.
+         */
+        final String certificates = CaBundle.path(context);
+        if (certificates != null) {
+            mpv.setOptionString("tls-verify", "yes");
+            mpv.setOptionString("tls-ca-file", certificates);
+        }
+
+        // Nothing to hand a stream off to, and looking for one costs a second
+        // of staring at a black screen before the error appears.
+        mpv.setOptionString("ytdl", "no");
+
         mpv.setOptionString("network-timeout", "30");
         mpv.setOptionString("stream-lavf-o-append", "reconnect=1");
         mpv.setOptionString("stream-lavf-o-append", "reconnect_streamed=1");

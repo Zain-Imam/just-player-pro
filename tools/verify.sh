@@ -423,7 +423,7 @@ from_the_web() {
     "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_30MB.mp4" \
     "video/mp4"
   play_url "an HLS stream" \
-    "https://devstreams.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8" \
+    "https://d2zihajmogu5jn.cloudfront.net/bipbop-advanced/bipbop_16x9_variant.m3u8" \
     "application/x-mpegURL"
 }
 

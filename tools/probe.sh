@@ -17,7 +17,7 @@ case "${2:-}" in
     adb shell "am force-stop $PKG" >/dev/null 2>&1
     adb logcat -c >/dev/null 2>&1
     CURRENT_SCREEN=""
-    adb shell "am start -a android.intent.action.VIEW -n $ACT -t application/x-mpegurl -d 'https://devstreams.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8'" 2>&1 | tail -2
+    adb shell "am start -a android.intent.action.VIEW -n $ACT -t application/x-mpegurl -d 'https://d2zihajmogu5jn.cloudfront.net/bipbop-advanced/bipbop_16x9_variant.m3u8'" 2>&1 | tail -2
     for i in $(seq 1 25); do
       sleep 2
       case "$(focused)" in *"$PKG"*) break ;; esac
