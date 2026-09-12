@@ -74,13 +74,10 @@ final class PosterPicker {
         dialog.show();
 
         // On a television nothing is focused until something asks to be, and an
-        // unfocused grid ignores the remote entirely.
-        grid.post(() -> {
-            final RecyclerView.ViewHolder first = grid.findViewHolderForAdapterPosition(0);
-            if (first != null) {
-                first.itemView.requestFocus();
-            }
-        });
+        // unfocused grid ignores the remote entirely. The tiles are not laid
+        // out yet at this point, which is why asking once was not enough —
+        // see Panels.
+        com.brouken.player.Panels.focusFirstRow(grid);
 
         return dialog;
     }

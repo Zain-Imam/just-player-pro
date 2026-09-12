@@ -73,13 +73,9 @@ public final class ListPicker {
         sizePanel(activity, dialog);
 
         // A television focuses nothing until something asks; an unfocused list
-        // ignores the remote entirely.
-        list.post(() -> {
-            final RecyclerView.ViewHolder first = list.findViewHolderForAdapterPosition(0);
-            if (first != null) {
-                first.itemView.requestFocus();
-            }
-        });
+        // ignores the remote entirely. And the rows do not exist yet at this
+        // point, which is why asking once was not enough — see Panels.
+        com.brouken.player.Panels.focusFirstRow(list);
 
         return dialog;
     }
