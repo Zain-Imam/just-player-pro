@@ -210,6 +210,27 @@ sweep_settings() {
           fail "opened its picker and came back: $title"
         fi
         continue ;;
+      "Built by")
+        # This one is not pressed, and that is deliberate.
+        #
+        # It does exactly what it says: it hands off to whatever opens
+        # github.com, so pressing it puts the GitHub app or a browser in front
+        # of the phone. The interlock then correctly refuses to press anything
+        # further and stops the run — after another application has been opened,
+        # which is the one thing this harness must never do.
+        #
+        # So the row is checked for being there, and where it points is checked
+        # by asking the system which application would answer it. That is the
+        # whole of what pressing it would do, established without doing it.
+        if adb shell "cmd package query-activities -a android.intent.action.VIEW \
+                      -d https://github.com/Zain-Imam" 2>/dev/null \
+             | grep -qE "packageName=(com.github.android|com.android.chrome|.*browser.*)"; then
+          pass "points at a handler for github.com/Zain-Imam, without opening it: $title"
+        else
+          fail "points at a handler for github.com/Zain-Imam, without opening it: $title" \
+               "nothing on this device answers that address"
+        fi
+        continue ;;
       "Test keys and addons")
         tap $at
         local settled=1 i
@@ -431,6 +452,27 @@ from_the_web() {
 
 # A television has no touchscreen. Everything reachable by finger has to be
 # reachable by arrows, and pressing OK on a focused button has to press it.
+# Whatever holds the focus right now, named well enough to tell it from the
+# next thing.
+#
+# A panel row is a ViewGroup and carries no text of its own — the label and the
+# value are children of it — so asking for text alone comes back empty for every
+# row and makes "it moved" impossible to see. Its position on screen does tell
+# them apart, so that is the fallback: text or description where there is one,
+# and where there is not, where the thing is.
+focused_row() {
+  local node
+  node="$(dump | grep -F 'focused="true"' | head -1)"
+  [ -z "$node" ] && return 0
+  local named
+  named="$(echo "$node" | grep -oE '(text|content-desc)="[^"]+"' | grep -v '=""' | head -1)"
+  if [ -n "$named" ]; then
+    echo "$named"
+  else
+    echo "$node" | grep -oE 'bounds="[^"]+"' | head -1
+  fi
+}
+
 by_remote_only() {
   section "driven by arrows and OK alone, as a remote would"
 
@@ -492,14 +534,35 @@ by_remote_only() {
       else
         fail "OK opens the quick panel"
       fi
-      # And the panel itself is navigable.
-      key KEYCODE_DPAD_DOWN; sleep 1
-      key KEYCODE_DPAD_DOWN; sleep 1
-      focus="$(dump | grep -F 'focused="true"' | grep -oE 'text="[^"]+"' | head -1)"
-      if [ -n "$focus" ]; then
-        pass "the panel takes focus and moves: $focus"
+      # And the panel itself is navigable, which is two separate questions.
+      #
+      # Something has to hold the focus the moment it opens, and an arrow has
+      # to move that focus somewhere else. Asking only the second question is
+      # how this passed while broken: a panel that opens with the focus nowhere
+      # swallows every arrow press, and a remote has no way in.
+      local first second
+      first="$(focused_row)"
+      if [ -n "$first" ]; then
+        pass "the panel takes the focus when it opens: $first"
       else
-        fail "the panel takes focus and moves"
+        fail "the panel takes the focus when it opens" \
+             "nothing inside it is focused, so the arrows have nothing to move"
+      fi
+
+      key KEYCODE_DPAD_DOWN; sleep 1
+      second="$(focused_row)"
+      if [ -n "$second" ] && [ "$second" != "$first" ]; then
+        pass "the arrows move the focus down the panel: $first to $second"
+      else
+        fail "the arrows move the focus down the panel" \
+             "was $first, is now ${second:-nothing}"
+      fi
+
+      key KEYCODE_DPAD_UP; sleep 1
+      if [ "$(focused_row)" = "$first" ]; then
+        pass "and back up again"
+      else
+        fail "and back up again" "expected $first, got $(focused_row)"
       fi
       key KEYCODE_BACK; sleep 2 ;;
     *)
@@ -590,6 +653,72 @@ online_features() {
   adb shell "content delete --uri content://media/external/video/media/$rid" >/dev/null 2>&1
 }
 
+# ------------------------------- the names R8 is not allowed to change
+
+# Four things in the player are reached by name at run time, not by a method
+# call, because the fields they live in are private to Media3:
+#
+#   DefaultTimeBar.seekBounds, .progressBar, .scrubberBar  — so a touch on the
+#     timeline can be told from one merely near it, and
+#   PlayerControlView.trackNameProvider                    — so audio tracks
+#     read "English · 5.1 · EAC3" instead of "Track 2".
+#
+# Reflection by name is invisible to R8, which renames private fields freely,
+# so app/proguard-rules.pro tells it not to. If a rule and a field ever stop
+# matching — an aar rebuilt, a rule edited — the lookups return nothing, both
+# of them catch the failure and carry on, and the release build quietly behaves
+# differently from the debug one with nothing in the log.
+#
+# The mapping file says what R8 actually did, so it is asked directly.
+keep_rules_held() {
+  section "the names R8 was told to leave alone"
+
+  local mapping="app/build/outputs/mapping/latestUniversalRelease/mapping.txt"
+  if [ ! -f "$mapping" ]; then
+    fail "the release mapping file is there to check" \
+         "no $mapping — build the release first"
+    return
+  fi
+
+  local pair name owner renamed
+  for pair in \
+      "androidx.media3.ui.DefaultTimeBar:seekBounds" \
+      "androidx.media3.ui.DefaultTimeBar:progressBar" \
+      "androidx.media3.ui.DefaultTimeBar:scrubberBar" \
+      "androidx.media3.ui.PlayerControlView:trackNameProvider"; do
+    owner="${pair%%:*}"
+    name="${pair##*:}"
+    # R8 lists what it renamed. A member it left alone is either written as
+    # mapping to itself or not written at all — beside these three, sibling
+    # fields with no rule of their own show up renamed ("bufferedBar -> l"),
+    # which is what being renamed looks like. So the question is not whether
+    # the name appears, it is whether it appears pointing somewhere else.
+    renamed="$(awk -v owner="$owner" -v field="$name" '
+          $0 ~ "^"owner" ->"  { inside = 1; next }
+          /^[^ ]/             { inside = 0 }
+          inside && $0 ~ " "field" -> " {
+            sub(/.* -> /, ""); sub(/;?$/, ""); if ($0 != field) print $0
+          }' "$mapping")"
+    if [ -z "$renamed" ]; then
+      pass "kept its name through R8: $owner.$name"
+    else
+      fail "kept its name through R8: $owner.$name" \
+           "R8 renamed it to '$renamed', so looking it up by name finds nothing"
+    fi
+
+    # And the rule itself, since a rule that has been deleted or misspelled
+    # renames the field on the next build and nothing here would say why.
+    if grep -q "$name" app/proguard-rules.pro; then
+      pass "the rule for it is still in proguard-rules.pro: $name"
+    else
+      fail "the rule for it is still in proguard-rules.pro: $name" \
+           "nothing tells R8 to leave this name alone"
+    fi
+  done
+}
+
+
+keep_rules_held
 sweep_settings
 engine_matrix
 by_remote_only

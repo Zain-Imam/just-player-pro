@@ -53,6 +53,7 @@ case "${2:-}" in
 
   panel)
     echo "== the quick panel under a D-pad"
+    prepare
     open_film
     key KEYCODE_DPAD_CENTER; sleep 2
     tap_control Settings || echo "could not open the panel"
