@@ -92,7 +92,16 @@ public final class Languages {
                 spellings.add(iso1);
             }
         }
-        return String.join(",", spellings);
+        // Built by hand rather than with String.join, which arrived in API 26
+        // and this app still runs on 25.
+        final StringBuilder list = new StringBuilder();
+        for (final String spelling : spellings) {
+            if (list.length() > 0) {
+                list.append(',');
+            }
+            list.append(spelling);
+        }
+        return list.toString();
     }
 
     private static String preference(final Context context, final String key) {

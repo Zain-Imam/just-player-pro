@@ -75,7 +75,7 @@ public final class LaunchSubtitles {
                 addStrings(found, list.toArray(new String[0]));
             }
             // A single one, not an array of one.
-            final Object single = bundle.get(key);
+            final Object single = value(bundle, key);
             if (single instanceof Uri) {
                 add(found, (Uri) single);
             } else if (single instanceof CharSequence) {
@@ -102,7 +102,7 @@ public final class LaunchSubtitles {
             if (list != null && !list.isEmpty()) {
                 return list.toArray(new String[0]);
             }
-            final Object single = bundle.get(key);
+            final Object single = value(bundle, key);
             if (single instanceof CharSequence) {
                 return new String[]{single.toString()};
             }
@@ -150,6 +150,22 @@ public final class LaunchSubtitles {
             } else if (item != null) {
                 add(into, parse(item.toString()));
             }
+        }
+    }
+
+    /*
+     * Reading one value out of a bundle without trusting it.
+     *
+     * A bundle arrives as bytes and is only unpacked when something asks for a
+     * key. Asking for one whose class this app does not have throws, and a
+     * player that crashes because another app put something unexpected in an
+     * extra is worse than a player that ignores it.
+     */
+    private static Object value(final Bundle bundle, final String key) {
+        try {
+            return bundle.get(key);
+        } catch (Exception e) {
+            return null;
         }
     }
 
