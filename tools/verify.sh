@@ -790,11 +790,17 @@ rotation_and_dead_links() {
     fi
 
     # And it still plays when told to, which is the part rotating could break.
-    key KEYCODE_DPAD_CENTER; sleep 3
+    #
+    # Pressed as a bare OK this was wrong twice over: with the controls up, OK
+    # activates whatever has the focus — which is the rotate button that was
+    # just pressed — and if the film was playing anyway, OK pauses it. So the
+    # play control is found by name and pressed, which does one thing only.
+    tap_control Play Pause >/dev/null 2>&1
+    sleep 3
     if [ -n "$(playing)" ]; then
       pass "and it plays again after rotating"
     else
-      fail "and it plays again after rotating"
+      fail "and it plays again after rotating" "the play control did not start it"
     fi
 
     # Twice puts the setting back: it is a two-state cycle.
