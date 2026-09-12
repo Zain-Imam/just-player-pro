@@ -53,7 +53,7 @@ public final class SetupServer {
     // The badge, drawn rather than fetched: serving the launcher icon meant a
     // second request and a resource decode that came back empty on the device.
     private static final String MARK =
-            "<svg viewBox=\"0 0 108 108\" xmlns=\"http://www.w3.org/2000/svg\">"
+            "<svg width=\"56\" height=\"56\" viewBox=\"0 0 108 108\" xmlns=\"http://www.w3.org/2000/svg\">"
                     + "<path d=\"M54 6 L98 84 a12 12 0 0 1 -10 18 H20 a12 12 0 0 1 -10 -18 Z\""
                     + " fill=\"#F2761E\"/>"
                     + "<path d=\"M44 40 L74 60 L44 80 Z\" fill=\"#fff\"/></svg>";
@@ -344,7 +344,7 @@ public final class SetupServer {
                 + ".banner{padding:14px;border-radius:10px;margin:16px 0;font-size:15px}"
                 + ".banner.ok{background:#14351a;border:1px solid #2f6b39}"
                 + ".banner.bad{background:#3a1a1a;border:1px solid #7a3030}"
-                + ".center{text-align:center}img{width:96px;height:96px}"
+                + ".center{text-align:center}svg{width:56px;height:56px;display:inline-block}"
                 + "small{color:#777;font-size:13px}"
                 + "</style></head><body>";
     }

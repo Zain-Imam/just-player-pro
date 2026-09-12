@@ -138,6 +138,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
+                endSpeedBoost();
                 if (handleTouch) {
                     if (gestureOrientation == Orientation.HORIZONTAL) {
                         setCustomErrorMessage(null);
@@ -320,18 +321,47 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         return true;
     }
 
+    /*
+     * Hold the picture to run at double speed, let go to drop back.
+     *
+     * The hold used to lock the controls, which is what the padlock in the bar
+     * is for and is a strange thing to reach for by accident. While locked it
+     * still unlocks, so a long press is never a dead end.
+     */
     @Override
     public void onLongPress(MotionEvent motionEvent) {
-        if (PlayerActivity.locked || (getPlayer() != null && getPlayer().isPlaying())) {
-            PlayerActivity.locked = !PlayerActivity.locked;
+        if (PlayerActivity.locked) {
+            PlayerActivity.locked = false;
             isHandledLongPress = true;
             Utils.showText(this, "", MESSAGE_TIMEOUT_LONG);
-            setIconLock(PlayerActivity.locked);
-
-            if (PlayerActivity.locked && PlayerActivity.controllerVisible) {
-                hideController();
-            }
+            setIconLock(false);
+            return;
         }
+        final Player player = getPlayer();
+        if (player == null || !player.isPlaying() || speedBoosted) {
+            return;
+        }
+        speedBoosted = true;
+        isHandledLongPress = true;
+        speedBeforeBoost = player.getPlaybackParameters().speed;
+        player.setPlaybackSpeed(SPEED_BOOST);
+        Utils.showText(this, "2×", MESSAGE_TIMEOUT_LONG);
+    }
+
+    private static final float SPEED_BOOST = 2f;
+    private boolean speedBoosted;
+    private float speedBeforeBoost = 1f;
+
+    private void endSpeedBoost() {
+        if (!speedBoosted) {
+            return;
+        }
+        speedBoosted = false;
+        final Player player = getPlayer();
+        if (player != null) {
+            player.setPlaybackSpeed(speedBeforeBoost);
+        }
+        setCustomErrorMessage(null);
     }
 
     @Override

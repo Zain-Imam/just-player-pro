@@ -213,6 +213,14 @@ URLs you open over the network are remembered so you can return to them without 
     <string name="osd_item_boolean_true">On</string>
     <string name="osd_item_boolean_false">Off</string>
     <!-- Quick settings, behind a single tap on the gear. -->
+    <string name="osd_sleep_title">Sleep timer</string>
+    <string name="osd_sleep_off">Off</string>
+    <string name="osd_sleep_end">End of file</string>
+    <string name="osd_sleep_minutes">%1$d min</string>
+    <string name="sleep_set">Sleeping in %1$d min</string>
+    <string name="sleep_end_set">Sleeping at the end of this file</string>
+    <string name="sleep_off">Sleep timer off</string>
+    <string name="sleep_done">Sleep timer — paused</string>
     <string name="osd_player_title">Quick settings</string>
     <string name="osd_player_speed_title">Speed</string>
     <string name="osd_player_speed_normal">Normal</string>

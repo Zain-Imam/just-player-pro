@@ -35,19 +35,46 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
 
     public void setInitialValues(final float speed, final String engine,
                                  final boolean overlayOnPause, final boolean skipSegments,
-                                 final boolean adaptiveBuffering) {
+                                 final boolean adaptiveBuffering,
+                                 final int sleepMinutes, final boolean sleepAtEnd) {
         final List<OsdSettingsItem> items = new ArrayList<>();
         items.add(createSpeedItem(speed));
         items.add(createEngineItem(engine));
         items.add(createOverlayItem(overlayOnPause));
         items.add(createSkipItem(skipSegments));
         items.add(createBufferingItem(adaptiveBuffering));
+        items.add(createSleepItem(sleepMinutes, sleepAtEnd));
         items.add(createAudioTrackItem());
         items.add(createSubtitleSettingsItem());
         items.add(createAllSettingsItem());
         this.items = items.toArray(new OsdSettingsItem[0]);
     }
 
+
+    // Off, a set number of minutes, or when the file finishes.
+    static final int[] SLEEP_MINUTES = {0, 15, 30, 45, 60, 90, -1};
+
+    private OsdSettingsItem createSleepItem(final int currentMinutes, final boolean endOfFile) {
+        final ChoiceOsdSettingsItem.Element[] elements =
+                new ChoiceOsdSettingsItem.Element[SLEEP_MINUTES.length];
+        int selected = 0;
+        for (int i = 0; i < SLEEP_MINUTES.length; i++) {
+            final int minutes = SLEEP_MINUTES[i];
+            elements[i] = new ChoiceOsdSettingsItem.Element(
+                    minutes == 0 ? context.getString(R.string.osd_sleep_off)
+                            : minutes < 0 ? context.getString(R.string.osd_sleep_end)
+                            : context.getString(R.string.osd_sleep_minutes, minutes));
+            if (minutes < 0 && endOfFile) {
+                selected = i;
+            } else if (minutes > 0 && !endOfFile && currentMinutes > 0
+                    && minutes >= currentMinutes) {
+                selected = Math.min(selected == 0 ? i : selected, i);
+            }
+        }
+        return new ChoiceOsdSettingsItem(context.getString(R.string.osd_sleep_title),
+                elements, selected,
+                (position, index) -> listener.onSleepChange(SLEEP_MINUTES[index]), this);
+    }
     private OsdSettingsItem createSpeedItem(final float speed) {
         final ChoiceOsdSettingsItem.Element[] elements =
                 new ChoiceOsdSettingsItem.Element[SPEEDS.length];
@@ -162,6 +189,8 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
         void onSkipChange(boolean enabled);
 
         void onAdaptiveBufferingChange(boolean enabled);
+
+        void onSleepChange(int minutes);
 
         void onOpenAudioTracks();
 

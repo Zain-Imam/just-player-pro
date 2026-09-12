@@ -2156,6 +2156,9 @@ public class PlayerActivity extends Activity {
                 }
             } else if (state == Player.STATE_ENDED) {
                 playbackFinished = true;
+                if (sleepTimer != null) {
+                    sleepTimer.onPlaybackEnded(player);
+                }
                 if (apiAccess) {
                     finish();
                 }
@@ -3747,6 +3750,44 @@ public class PlayerActivity extends Activity {
         captureTrackSelection();
         releasePlayer();
         initializePlayer();
+    }
+
+    /*
+     * The sleep timer, driven from the quick panel.
+     *
+     * Minutes counts down and fades the sound over the last half minute;
+     * minus one waits for the file to finish instead. Either way it pauses
+     * rather than closing, so the film is still there in the morning.
+     */
+    private SleepTimer sleepTimer;
+
+    public void setSleepTimer(final int minutes) {
+        if (sleepTimer == null) {
+            sleepTimer = new SleepTimer(() -> {
+                if (player != null) {
+                    player.pause();
+                }
+                Utils.showText(playerView, getString(R.string.sleep_done), 4000);
+            });
+        }
+        if (minutes < 0) {
+            sleepTimer.setEndOfFile(player);
+            Utils.showText(playerView, getString(R.string.sleep_end_set));
+        } else if (minutes == 0) {
+            sleepTimer.cancel(player);
+            Utils.showText(playerView, getString(R.string.sleep_off));
+        } else {
+            sleepTimer.setMinutes(minutes, player);
+            Utils.showText(playerView, getString(R.string.sleep_set, minutes));
+        }
+    }
+
+    public int sleepMinutesLeft() {
+        return sleepTimer == null ? 0 : sleepTimer.minutesLeft();
+    }
+
+    public boolean sleepAtEndOfFile() {
+        return sleepTimer != null && sleepTimer.isAtEndOfFile();
     }
 
     public void updateSkipEnabled(final boolean enabled) {

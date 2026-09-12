@@ -64,7 +64,8 @@ public class OsdSettingsController {
         osdSettingsWindow =
                 new PopupWindow(settingsView, FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT, true);
         playerAdapter = new PlayerOsdSettingsAdapter(context, createPlayerSettingsListener());
-        playerAdapter.setInitialValues(prefs.speed, prefs.playbackEngine, true, true, prefs.adaptiveBuffering);
+        playerAdapter.setInitialValues(prefs.speed, prefs.playbackEngine, true, true,
+                prefs.adaptiveBuffering, 0, false);
 
         View playerPanelView = LayoutInflater.from(context).inflate(R.layout.osd_settings, null);
         RecyclerView playerList = playerPanelView.findViewById(android.R.id.list);
@@ -90,7 +91,9 @@ public class OsdSettingsController {
                 prefs.playbackEngine,
                 preferences().getBoolean("overlayOnPause", false),
                 preferences().getBoolean("skipSegments", true),
-                prefs.adaptiveBuffering
+                prefs.adaptiveBuffering,
+                playerActivity.sleepMinutesLeft(),
+                playerActivity.sleepAtEndOfFile()
         );
         playerAdapter.notifyDataSetChanged();
 
@@ -163,6 +166,12 @@ public class OsdSettingsController {
                 // built with, so this one also needs the player rebuilt.
                 playerSettingsWindow.dismiss();
                 playerActivity.rebuildPlayer();
+            }
+
+            @Override
+            public void onSleepChange(int minutes) {
+                playerActivity.setSleepTimer(minutes);
+                playerSettingsWindow.dismiss();
             }
 
             @Override
