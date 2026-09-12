@@ -118,12 +118,24 @@ public final class MpvOptions {
         mpv.setOptionString("sub-ass-override", "scale");
         mpv.setOptionString("embeddedfonts", "yes");
 
-        final String subtitleLanguage = PreferenceManager
-                .getDefaultSharedPreferences(context)
-                .getString("subtitleLanguage", "en");
-        if (subtitleLanguage != null && !subtitleLanguage.isEmpty()) {
-            mpv.setOptionString("slang", subtitleLanguage);
+        // Both orders come from the same place the other engine reads, so a
+        // file opens on the same audio track and the same subtitles either way.
+        final String slang = com.brouken.player.Languages.forMpv(
+                com.brouken.player.Languages.subtitle(context));
+        if (!slang.isEmpty()) {
+            mpv.setOptionString("slang", slang);
         }
+
+        final String alang = com.brouken.player.Languages.forMpv(
+                com.brouken.player.Languages.audio(context));
+        if (!alang.isEmpty()) {
+            mpv.setOptionString("alang", alang);
+        }
+
+        // When nothing in the order above matches, pick nothing — mpv would
+        // otherwise fall back to whichever subtitle track came first, which is
+        // a track the other engine would have left alone.
+        mpv.setOptionString("subs-fallback", "no");
 
         // -- network --------------------------------------------------------
 

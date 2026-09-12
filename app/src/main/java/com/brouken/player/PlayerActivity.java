@@ -1714,29 +1714,27 @@ public class PlayerActivity extends Activity {
                     .setTunnelingEnabled(true)
             );
         }
-        switch (mPrefs.languageAudio) {
-            case Prefs.TRACK_DEFAULT:
-                break;
-            case Prefs.TRACK_DEVICE:
-                trackSelector.setParameters(trackSelector.buildUponParameters()
-                        .setPreferredAudioLanguages(Utils.getDeviceLanguages())
-                );
-                break;
-            default:
-                trackSelector.setParameters(trackSelector.buildUponParameters()
-                        .setPreferredAudioLanguages(mPrefs.languageAudio)
-                );
+        // The same order of preference the other engine is given, from the same
+        // place: a file with three audio tracks should open on the same one
+        // whichever engine is playing it.
+        final String[] audioLanguages = Languages.audio(this);
+        if (audioLanguages.length > 0) {
+            trackSelector.setParameters(trackSelector.buildUponParameters()
+                    .setPreferredAudioLanguages(audioLanguages)
+            );
         }
+
         final CaptioningManager captioningManager = (CaptioningManager) getSystemService(Context.CAPTIONING_SERVICE);
         if (!captioningManager.isEnabled()) {
             trackSelector.setParameters(trackSelector.buildUponParameters()
                     .setIgnoredTextSelectionFlags(C.SELECTION_FLAG_DEFAULT)
             );
         }
-        Locale locale = captioningManager.getLocale();
-        if (locale != null) {
+
+        final String[] textLanguages = Languages.subtitle(this);
+        if (textLanguages.length > 0) {
             trackSelector.setParameters(trackSelector.buildUponParameters()
-                    .setPreferredTextLanguage(locale.getISO3Language())
+                    .setPreferredTextLanguages(textLanguages)
             );
         }
 

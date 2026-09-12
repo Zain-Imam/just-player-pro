@@ -111,6 +111,13 @@
             app:title="@string/pref_language_audio"
             app:useSimpleSummaryProvider="true" />
 
+        <EditTextPreference
+            app:key="languageAudioPriority"
+            app:defaultValue=""
+            app:title="@string/pref_language_audio_priority"
+            app:summary="@string/pref_language_audio_priority_summary"
+            app:dialogMessage="@string/pref_language_priority_hint" />
+
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/pref_gestures_header">
@@ -201,6 +208,13 @@
             app:entryValues="@array/subtitle_language_values"
             app:title="@string/pref_subtitle_language"
             app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="languageSubtitlePriority"
+            app:defaultValue=""
+            app:title="@string/pref_language_subtitle_priority"
+            app:summary="@string/pref_language_subtitle_priority_summary"
+            app:dialogMessage="@string/pref_language_priority_hint" />
 
         <SwitchPreferenceCompat
             app:key="prefillSearch"

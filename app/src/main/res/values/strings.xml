@@ -200,6 +200,11 @@ Auto starts on Media3 and switches only for a file Media3 fails on.</string>
     <string name="open_url_play">Play</string>
     <string name="open_url_invalid">That does not look like a URL a player can open</string>
     <string name="pref_history_header">History</string>
+    <string name="pref_language_audio_priority">Audio language order</string>
+    <string name="pref_language_audio_priority_summary">Tried before the setting above</string>
+    <string name="pref_language_subtitle_priority">Subtitle language order</string>
+    <string name="pref_language_subtitle_priority_summary">Tried before the language chosen for searching</string>
+    <string name="pref_language_priority_hint">Languages separated by commas, best first — for example: jpn, eng, spa. The first one the file actually has is the one that plays.</string>
     <string name="pref_update">Check for updates</string>
     <string name="pref_update_summary">Asks GitHub whether there is a newer build</string>
     <string name="update_title">Version %1$s is available</string>
