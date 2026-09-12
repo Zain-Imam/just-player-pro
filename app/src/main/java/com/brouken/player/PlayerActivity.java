@@ -964,20 +964,9 @@ public class PlayerActivity extends Activity {
                     }
                 }
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    if (visibility == View.VISIBLE) {
-                        if (player != null /*&& player.isPlaying()*/) {
-                            //noinspection DataFlowIssue
-                            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
-                                    OnBackInvokedDispatcher.PRIORITY_DEFAULT,
-                                    (OnBackInvokedCallback) onBackInvokedCallback
-                            );
-                        }
-                    } else {
-                        //noinspection DataFlowIssue
-                        getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback((OnBackInvokedCallback) onBackInvokedCallback);
-                    }
-                }
+                // Registration no longer follows the controls: the callback is
+                // what stops back leaving a locked player, and the controls are
+                // hidden exactly when it is locked.
             }
         });
 
@@ -1032,6 +1021,9 @@ public class PlayerActivity extends Activity {
     public void onStart() {
         super.onStart();
         alive = true;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerBackHandling(true);
+        }
         updateSubtitleStyle(this);
         if (Build.VERSION.SDK_INT >= 31) {
             playerView.removeCallbacks(barsHider);
@@ -1094,6 +1086,9 @@ public class PlayerActivity extends Activity {
     public void onStop() {
         super.onStop();
         alive = false;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerBackHandling(false);
+        }
         if (Build.VERSION.SDK_INT >= 31) {
             playerView.removeCallbacks(barsHider);
         }
@@ -4570,13 +4565,59 @@ public class PlayerActivity extends Activity {
         }
     }
 
+    /*
+     * Back, on a locked screen, must not be the way out.
+     *
+     * From Android 13 onwards back is not a key event at all, so the lock — which
+     * works by swallowing key events — never saw it, and the one button everybody
+     * presses first closed the film. Worse on a television, where back is how you
+     * leave everything.
+     *
+     * The callback is registered for as long as there is a player rather than
+     * only while the controls are up, and it decides: locked, it says so and
+     * stays; controls up, it puts them away; otherwise it leaves, which is what
+     * back is for.
+     */
     private Object createOnBackInvokedCallback() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return (OnBackInvokedCallback) () -> playerView.hideController();
+            return (OnBackInvokedCallback) () -> {
+                if (locked) {
+                    ((CustomPlayerView) playerView).setIconLock(true);
+                    Utils.showText(playerView, getString(R.string.locked_hint));
+                    return;
+                }
+                if (controllerVisible) {
+                    playerView.hideController();
+                    return;
+                }
+                finish();
+            };
         } else {
             return null;
         }
     }
+
+    @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
+    private void registerBackHandling(final boolean wanted) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
+                || onBackInvokedCallback == null) {
+            return;
+        }
+        if (wanted == backHandlingRegistered) {
+            return;
+        }
+        backHandlingRegistered = wanted;
+        if (wanted) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                    OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                    (OnBackInvokedCallback) onBackInvokedCallback);
+        } else {
+            getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(
+                    (OnBackInvokedCallback) onBackInvokedCallback);
+        }
+    }
+
+    private boolean backHandlingRegistered;
 
     private final SharedPreferences.OnSharedPreferenceChangeListener preferenceListener = (sharedPreferences, key) -> {
         if (key == null) return;
