@@ -38,6 +38,13 @@ Media3 reported everything.
   They are back in step, and a test now reads every Media3 module and checks
   each call it makes into the others is really there — the answer costs a
   second at build time instead of a black screen at midnight.
+* **On the mpv engine, a file that would not open said nothing at all.** No
+  error, no dialog, no message — the player opened, showed the name, and sat at
+  00:00 for as long as you left it. An expired debrid link, a dead host, a 403,
+  a file it had no permission to read: every one of them looked exactly like a
+  file that was merely slow. It now says so, and says which: a refused request
+  reads "The server refused the request. A link from a debrid service may have
+  expired", a host that cannot be reached says that instead.
 * **The quick panel could not be driven with a remote.** It opened with the
   focus nowhere at all: the rows are laid out a frame after the panel appears,
   the one attempt to focus them came before that and was dropped, and so every
