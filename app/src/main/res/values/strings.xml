@@ -48,7 +48,14 @@
     <string name="pref_file_access_auto">Auto</string>
     <string name="mediastore_empty">No video files found</string>
     <string name="pref_online_header">Online info and subtitles</string>
-    <string name="pref_online_note">TMDB is required: it turns a file name into a title the subtitle and skip databases understand. The source keys below are optional.</string>
+    <string name="pref_identify_auto">Automatically</string>
+    <string name="pref_identify_manual">Only when I ask</string>
+    <string name="pref_identify">Identify files</string>
+    <string name="pref_identify_note">Automatic looks the film up as it starts, which is what fills the info card, the skip markers and the titles in history. Manual does nothing until you ask, from the quick settings panel.</string>
+    <string name="pref_auto_search">Search subtitles automatically</string>
+    <string name="pref_auto_search_on">Searches as soon as a file is identified</string>
+    <string name="pref_auto_search_off">Only when you press search</string>
+    <string name="pref_online_note">TMDB is required: it turns a file name into a title the subtitle and skip databases understand. Subtitles themselves work without any key, through the Stremio addon below — the source keys are optional and simply give you more to choose from.</string>
     <string name="pref_key_tmdb">TMDB key · required</string>
     <string name="pref_key_tmdb_dialog">Free from themoviedb.org → Settings → API.</string>
     <string name="pref_key_opensubtitles">OpenSubtitles key · optional</string>
@@ -73,7 +80,7 @@
     <string name="subtitle_source_title">Subtitles</string>
     <string name="subtitle_source_file">Load a subtitle file…</string>
     <string name="online_needs_tmdb">Add a TMDB key in Settings first — it is what turns a file name into something the subtitle sources can be asked about.</string>
-    <string name="online_needs_source">Add at least one subtitle source key in Settings: OpenSubtitles, SubDL or Wyzie.</string>
+    <string name="online_needs_source">No subtitle source is set up. Add a Stremio addon, or a key for OpenSubtitles, SubDL or Wyzie, in Settings.</string>
     <string name="online_identify_title">Which is this?</string>
     <string name="online_searching">Searching…</string>
     <string name="online_identifying">Identifying…</string>
@@ -214,7 +221,7 @@ URLs you open over the network are remembered so you can return to them without 
     <string name="pref_addons_summary">Stremio subtitle addons · up to 5</string>
     <string name="pref_addons_note">Paste a Stremio subtitle addon link — the URL its configure page gives you, with or without /manifest.json. No API key is needed, and each addon is checked against a known film before it is saved.
 
-Addon 1 comes set to the official OpenSubtitles addon, which works as-is. Replace or clear it if you prefer your own.</string>
+Addon 1 comes set to the official OpenSubtitles addon, which works as-is. The others are yours to fill in — OpenSubtitles PRO, SubSource Subtitles and SubSense are the ones people usually add.</string>
     <string name="pref_addon_slot">Addon %1$d</string>
     <string name="pref_addon_dialog_message">Paste the addon URL, or leave empty to remove it.</string>
     <string name="pref_addon_empty">Not set</string>

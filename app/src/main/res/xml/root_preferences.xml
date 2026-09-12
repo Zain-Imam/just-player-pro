@@ -25,7 +25,7 @@
 
         <ListPreference
             app:key="playbackEngine"
-            app:defaultValue="media3"
+            app:defaultValue="auto"
             app:entries="@array/playback_engine_entries"
             app:entryValues="@array/playback_engine_values"
             app:title="@string/pref_playback_engine"
@@ -157,6 +157,25 @@
             app:dialogMessage="@string/pref_key_tmdb_dialog" />
 
         <ListPreference
+            app:key="identifyMode"
+            app:defaultValue="auto"
+            app:entries="@array/identify_mode_entries"
+            app:entryValues="@array/identify_mode_values"
+            app:title="@string/pref_identify"
+            app:useSimpleSummaryProvider="true" />
+
+        <Preference
+            app:selectable="false"
+            app:summary="@string/pref_identify_note" />
+
+        <SwitchPreferenceCompat
+            app:key="subtitleAutoSearch"
+            app:defaultValue="false"
+            app:summaryOn="@string/pref_auto_search_on"
+            app:summaryOff="@string/pref_auto_search_off"
+            app:title="@string/pref_auto_search" />
+
+        <ListPreference
             app:key="subtitleLanguage"
             app:defaultValue="en"
             app:entries="@array/subtitle_language_entries"
@@ -173,7 +192,7 @@
 
         <SwitchPreferenceCompat
             app:key="overlayOnPause"
-            app:defaultValue="true"
+            app:defaultValue="false"
             app:summaryOn="@string/pref_overlay_on"
             app:summaryOff="@string/pref_overlay_off"
             app:title="@string/pref_overlay" />

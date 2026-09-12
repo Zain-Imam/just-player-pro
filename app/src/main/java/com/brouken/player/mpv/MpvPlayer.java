@@ -836,6 +836,14 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
         final double position = SUB_POS_DEFAULT - verticalPosition;
         set("sub-pos", String.valueOf(Math.max(0, Math.min(150, position))));
 
+        // Let subtitles leave the picture and sit in the black bars, which is
+        // where Media3 draws them: its subtitle view is a separate view over the
+        // whole player. mpv clips them to the video frame unless told otherwise,
+        // so dragging them down made them disappear behind the picture instead
+        // of moving into the letterbox.
+        set("sub-use-margins", "yes");
+        set("sub-ass-force-margins", "yes");
+
         final double scale = 1.0 + sizeStep * (SUB_SIZE_STEP / SUB_SIZE_DEFAULT);
         set("sub-scale", String.valueOf(Math.max(0.2, scale)));
 

@@ -74,6 +74,16 @@
         <item>vi</item>
     </string-array>
 
+    <string-array name="identify_mode_entries">
+        <item>@string/pref_identify_auto</item>
+        <item>@string/pref_identify_manual</item>
+    </string-array>
+
+    <string-array name="identify_mode_values" translatable="false">
+        <item>auto</item>
+        <item>manual</item>
+    </string-array>
+
     <string-array name="playback_engine_entries">
         <item>@string/pref_engine_media3</item>
         <item>@string/pref_engine_auto</item>

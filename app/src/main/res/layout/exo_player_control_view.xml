@@ -45,14 +45,26 @@
           android:gravity="center_vertical"
           android:layoutDirection="ltr">
 
-        <TextView android:id="@+id/exo_position"
-            style="@style/ExoStyledControls.TimeText.Position"/>
+        <!-- The clock is its own clickable thing rather than the whole row.
+             Tapping it toggles remaining against total, and while the row
+             carried the click the ripple lit up the play/pause button beside
+             it as though that had been pressed. -->
+        <LinearLayout android:id="@+id/time_text"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:layoutDirection="ltr">
 
-        <TextView
-            style="@style/ExoStyledControls.TimeText.Separator"/>
+          <TextView android:id="@+id/exo_position"
+              style="@style/ExoStyledControls.TimeText.Position"/>
 
-        <TextView android:id="@+id/exo_duration"
-            style="@style/ExoStyledControls.TimeText.Duration"/>
+          <TextView
+              style="@style/ExoStyledControls.TimeText.Separator"/>
+
+          <TextView android:id="@+id/exo_duration"
+              style="@style/ExoStyledControls.TimeText.Duration"/>
+
+        </LinearLayout>
 
       </LinearLayout>
 
@@ -74,6 +86,11 @@
 
         <ImageButton android:id="@+id/exo_subtitle"
             style="@style/ExoStyledControls.Button.Bottom.CC"/>
+
+        <ImageButton android:id="@+id/audio_track"
+            style="@style/ExoStyledControls.Button.Bottom"
+            android:src="@drawable/ic_audio_track_24dp"
+            android:contentDescription="@string/audio_menu_title"/>
 
         <ImageButton android:id="@+id/exo_settings"
             style="@style/ExoStyledControls.Button.Bottom.Settings"/>

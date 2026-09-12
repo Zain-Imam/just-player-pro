@@ -67,7 +67,7 @@ public final class OnlineController {
     }
 
     public boolean overlayEnabled() {
-        return preferences().getBoolean("overlayOnPause", true);
+        return preferences().getBoolean("overlayOnPause", false);
     }
 
     public int overlayDelaySeconds() {
@@ -80,6 +80,19 @@ public final class OnlineController {
 
     public boolean skipEnabled() {
         return preferences().getBoolean("skipSegments", true);
+    }
+
+    // Whether a file is looked up as it starts, or only when asked. What the
+    // info card, the skip markers and the titles in history all hang off.
+    public boolean identifiesAutomatically() {
+        return !"manual".equals(preferences().getString("identifyMode", "auto"));
+    }
+
+    // Identifying a file and searching it for subtitles used to be one action,
+    // so the card could not appear without a subtitle search and a search began
+    // without being asked for. They are separate now.
+    public boolean autoSearchSubtitles() {
+        return preferences().getBoolean("subtitleAutoSearch", false);
     }
 
     private SharedPreferences preferences() {
@@ -287,6 +300,47 @@ public final class OnlineController {
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
             input.setText("");
             input.requestFocus();
+        });
+    }
+
+    /*
+     * Work out what a file is without asking anybody anything.
+     *
+     * No dialog, no progress, no toast: this runs as a file starts, and the
+     * answer is what fills the info card, the skip markers and the title in the
+     * history list. Anything uncertain is dropped rather than guessed at — a
+     * name that does not parse as a title, a search that returns nothing, or a
+     * series whose episode is not in the file name. Getting it wrong silently
+     * is worse than leaving the card empty, and "Change title…" is there for
+     * the ones it declines to answer.
+     */
+    public void identifySilently(@Nullable final Uri uri, final OnIdentified callback) {
+        if (!ApiKeys.hasTmdb(context)) {
+            return;
+        }
+        worker.execute(() -> {
+            final ReleaseName.Info parsed = ReleaseName.parse(resolvedName());
+            if (!parsed.looksLikeTitle()) {
+                return;
+            }
+            final List<Tmdb.Candidate> candidates = Tmdb.search(context, parsed.searchQuery());
+            if (candidates.isEmpty()) {
+                return;
+            }
+            final Tmdb.Candidate candidate = candidates.get(0);
+            if (candidate.isSeries && (parsed.season == null || parsed.episode == null)) {
+                return;
+            }
+            final Identity identity = Tmdb.identify(context, candidate,
+                    candidate.isSeries ? parsed.season : null,
+                    candidate.isSeries ? parsed.episode : null);
+            if (identity == null) {
+                return;
+            }
+            if (uri != null) {
+                remember(uri, identity);
+            }
+            main.post(() -> callback.onIdentified(identity));
         });
     }
 

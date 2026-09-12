@@ -40,9 +40,13 @@ public final class ApiKeys {
         return has(context, PREF_TMDB);
     }
 
+    // Addons count as a source. They need no key, and the one that ships already
+    // set up does return subtitles, so requiring a key here switched the search
+    // off for anyone who had not gone looking for one.
     public static boolean hasAnySubtitleSource(final Context context) {
         return has(context, PREF_OPENSUBTITLES)
                 || has(context, PREF_SUBDL)
-                || has(context, PREF_WYZIE);
+                || has(context, PREF_WYZIE)
+                || SubtitleAddons.any(context);
     }
 }

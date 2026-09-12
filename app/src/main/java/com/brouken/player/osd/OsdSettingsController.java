@@ -88,7 +88,7 @@ public class OsdSettingsController {
         playerAdapter.setInitialValues(
                 prefs.speed,
                 prefs.playbackEngine,
-                preferences().getBoolean("overlayOnPause", true),
+                preferences().getBoolean("overlayOnPause", false),
                 preferences().getBoolean("skipSegments", true),
                 prefs.adaptiveBuffering
         );

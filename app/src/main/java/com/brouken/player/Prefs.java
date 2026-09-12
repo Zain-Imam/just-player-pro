@@ -100,7 +100,7 @@ public class Prefs {
     public boolean autoPiP = false;
     public boolean askResume = true;
     public boolean adaptiveBuffering = true;
-    public String playbackEngine = "media3";
+    public String playbackEngine = "auto";
     public int doubleTapSeekSeconds = 10;
 
     public boolean tunneling = false;
@@ -116,6 +116,7 @@ public class Prefs {
     public boolean subtitleStyleEmbedded = true;
     public int subtitleVerticalPosition = 0;
     public int subtitleSize = 0;
+    private String subtitleEngine = "media3";
     public SubtitleEdgeType subtitleEdgeType = SubtitleEdgeType.Default;
     public SubtitleTypeface subtitleTypeface = SubtitleTypeface.Regular;
     public boolean subtitleCustomFontEnabled;
@@ -425,7 +426,7 @@ public class Prefs {
         final SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
         sharedPreferencesEditor.putInt(getSubtitleVerticalPositionKey(currentVideoHeight), subtitleVerticalPosition);
         // Also as the general answer, for video heights not seen yet.
-        sharedPreferencesEditor.putInt(PREF_KEY_SUBTITLE_VERTICAL_POSITION, subtitleVerticalPosition);
+        sharedPreferencesEditor.putInt(PREF_KEY_SUBTITLE_VERTICAL_POSITION + engineSuffix(), subtitleVerticalPosition);
         sharedPreferencesEditor.apply();
     }
 
@@ -441,23 +442,47 @@ public class Prefs {
     }
 
     private int getSubtitleVerticalPositionForVideoHeight(int videoHeight) {
-        final int fallback = mSharedPreferences.getInt(PREF_KEY_SUBTITLE_VERTICAL_POSITION, 0);
+        final int fallback = mSharedPreferences.getInt(PREF_KEY_SUBTITLE_VERTICAL_POSITION + engineSuffix(), 0);
         String key = getSubtitleVerticalPositionKey(videoHeight);
         return mSharedPreferences.getInt(key, fallback);
     }
 
     private String getSubtitleVerticalPositionKey(int videoHeight) {
+        final String base = PREF_KEY_SUBTITLE_VERTICAL_POSITION + engineSuffix();
         if (videoHeight > 0) {
-            return PREF_KEY_SUBTITLE_VERTICAL_POSITION + "_" + videoHeight;
+            return base + "_" + videoHeight;
         } else {
-            return PREF_KEY_SUBTITLE_VERTICAL_POSITION;
+            return base;
         }
+    }
+
+    // The two engines draw subtitles at different sizes and sit them in
+    // different places, so a position that reads well under one is wrong under
+    // the other. Each keeps its own. Media3 keeps the unsuffixed keys so
+    // anything already set carries over.
+    private String engineSuffix() {
+        return "mpv".equals(subtitleEngine) ? "_mpv" : "";
+    }
+
+    private String subtitleSizeKey() {
+        return PREF_KEY_SUBTITLE_SIZE + engineSuffix();
+    }
+
+    public boolean setSubtitleEngine(final String engine) {
+        final String normalized = "mpv".equals(engine) ? "mpv" : "media3";
+        if (normalized.equals(subtitleEngine)) {
+            return false;
+        }
+        subtitleEngine = normalized;
+        subtitleSize = mSharedPreferences.getInt(subtitleSizeKey(), 0);
+        subtitleVerticalPosition = getSubtitleVerticalPositionForVideoHeight(currentVideoHeight);
+        return true;
     }
 
     public void updateSubtitleSize(final int subtitleSize) {
         this.subtitleSize = subtitleSize;
         final SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
-        sharedPreferencesEditor.putInt(PREF_KEY_SUBTITLE_SIZE, subtitleSize);
+        sharedPreferencesEditor.putInt(subtitleSizeKey(), subtitleSize);
         sharedPreferencesEditor.apply();
     }
 

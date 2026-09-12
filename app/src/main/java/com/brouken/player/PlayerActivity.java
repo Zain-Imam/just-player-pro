@@ -179,6 +179,7 @@ public class PlayerActivity extends Activity {
     private ImageButton buttonOpen;
     private ImageButton buttonLock;
     private ImageButton buttonPlayPause;
+    private ImageButton buttonAudioTrack;
     private ImageButton buttonPiP;
     private ImageButton buttonAspectRatio;
     private ImageButton buttonRotation;
@@ -738,6 +739,13 @@ public class PlayerActivity extends Activity {
         final ImageButton exoSubtitle = exoBasicControls.findViewById(R.id.exo_subtitle);
         exoBasicControls.removeView(exoSubtitle);
 
+        // Audio tracks sit beside subtitles in the controls rather than being
+        // buried in the settings panel: on a dual-language file it is reached
+        // as often as the subtitle button next to it.
+        buttonAudioTrack = exoBasicControls.findViewById(R.id.audio_track);
+        exoBasicControls.removeView(buttonAudioTrack);
+        buttonAudioTrack.setOnClickListener(view -> showAudioMenu());
+
         exoSettings = exoBasicControls.findViewById(R.id.exo_settings);
         exoBasicControls.removeView(exoSettings);
         final ImageButton exoRepeat = exoBasicControls.findViewById(R.id.exo_repeat_toggle);
@@ -782,13 +790,14 @@ public class PlayerActivity extends Activity {
             exoTime.addView(cardControls, 1);
         }
 
-        if (exoTime != null) {
-            exoTime.setClickable(true);
-            exoTime.setFocusable(true);
+        final View timeText = playerView.findViewById(R.id.time_text);
+        if (timeText != null) {
+            timeText.setClickable(true);
+            timeText.setFocusable(true);
             final android.util.TypedValue highlight = new android.util.TypedValue();
             getTheme().resolveAttribute(android.R.attr.selectableItemBackground, highlight, true);
-            exoTime.setBackgroundResource(highlight.resourceId);
-            exoTime.setOnClickListener(view -> {
+            timeText.setBackgroundResource(highlight.resourceId);
+            timeText.setOnClickListener(view -> {
                 showRemainingTime = !showRemainingTime;
                 startDurationTicker();
                 updateDurationText();
@@ -797,6 +806,7 @@ public class PlayerActivity extends Activity {
         }
         controls.addView(buttonOpen);
         controls.addView(exoSubtitle);
+        controls.addView(buttonAudioTrack);
         controls.addView(buttonAspectRatio);
         controls.addView(exoSettings);
         controls.addView(buttonLock);
@@ -1628,7 +1638,11 @@ public class PlayerActivity extends Activity {
         if (mPrefs.adaptiveBuffering) {
             playerBuilder.setLoadControl(BufferProfile.create(this, mPrefs.mediaUri));
         }
-        if (useMpvEngine()) {
+        final boolean mpv = useMpvEngine();
+        // Subtitle size and position are remembered per engine, so the settings
+        // have to follow whichever one is about to play.
+        mPrefs.setSubtitleEngine(mpv ? "mpv" : "media3");
+        if (mpv) {
             player = new com.brouken.player.mpv.MpvPlayer(this,
                     new com.brouken.player.mpv.MpvOptions(mPrefs.mediaUri));
         } else {
@@ -1736,8 +1750,11 @@ public class PlayerActivity extends Activity {
                 titleView.setText(apiTitle);
             } else {
                 titleView.setText(Utils.getFileName(this, mPrefs.mediaUri, false));
+                // For a link this also resolves the real name first, and only
+                // then identifies; a local file already has its name.
                 resolveTitleFromServer(mPrefs.mediaUri);
             }
+            autoIdentify(mPrefs.mediaUri);
             titleView.setVisibility(View.VISIBLE);
 
             updateButtons(true);
@@ -3469,6 +3486,38 @@ public class PlayerActivity extends Activity {
 
             ensureSkipSegments();
             updateOverlayCard(player != null && player.isPlaying());
+            autoIdentify(uri);
+        });
+    }
+
+    /*
+     * Look the file up as it starts, unless asked not to.
+     *
+     * The card, the skip markers and the titles in history all need to know
+     * what the film is. That used to happen only inside the subtitle search,
+     * which meant the card could not appear without searching for subtitles
+     * first. This asks the same question quietly and on its own.
+     */
+    private void autoIdentify(final Uri uri) {
+        if (onlineController == null || uri == null
+                || !onlineController.identifiesAutomatically()
+                || onlineController.remembered(uri) != null) {
+            return;
+        }
+        onlineController.identifySilently(uri, identity -> {
+            if (!uri.equals(mPrefs.mediaUri)) {
+                return;
+            }
+            if (identity.title != null && !identity.title.isEmpty()) {
+                History.rename(androidx.preference.PreferenceManager
+                        .getDefaultSharedPreferences(this), uri, identity.title);
+            }
+            skipLoadedFor = null;
+            ensureSkipSegments();
+            updateOverlayCard(player != null && player.isPlaying());
+            if (onlineController.autoSearchSubtitles()) {
+                onlineController.searchSubtitles(this, false);
+            }
         });
     }
 
