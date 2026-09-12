@@ -24,6 +24,7 @@ public final class PlaybackError {
                 .setTitle(R.string.error_title)
                 .setMessage(plain)
                 .setPositiveButton(android.R.string.ok, null)
+                .setNegativeButton(R.string.error_code, (dialog, which) -> showCode(activity, details))
                 .setNeutralButton(R.string.error_share, (dialog, which) -> share(activity, details))
                 .create(), AlertDialog.BUTTON_POSITIVE);
     }
@@ -88,6 +89,45 @@ public final class PlaybackError {
         return text.toString();
     }
 
+    /*
+     * The same details as a square, for a screen you cannot copy off.
+     *
+     * A television has nowhere to share to. Reading a version string and an
+     * error code off it by eye and typing them into a phone is what this
+     * replaces.
+     */
+    private static void showCode(final Activity activity, final String details) {
+        final int size = Math.round(Math.min(
+                activity.getResources().getDisplayMetrics().widthPixels,
+                activity.getResources().getDisplayMetrics().heightPixels) * 0.6f);
+        final android.graphics.Bitmap code = QrCode.of(details, size);
+        if (code == null) {
+            showDetails(activity, details);
+            return;
+        }
+
+        final android.widget.ImageView image = new android.widget.ImageView(activity);
+        image.setImageBitmap(code);
+        image.setAdjustViewBounds(true);
+        final int pad = Math.round(16 * activity.getResources().getDisplayMetrics().density);
+        image.setPadding(pad, pad, pad, pad);
+        image.setBackgroundColor(android.graphics.Color.WHITE);
+
+        Utils.showFocused(new AlertDialog.Builder(activity)
+                .setTitle(R.string.error_code)
+                .setView(image)
+                .setPositiveButton(android.R.string.ok, null)
+                .create(), AlertDialog.BUTTON_POSITIVE);
+    }
+
+    private static void showDetails(final Activity activity, final String details) {
+        Utils.showFocused(new AlertDialog.Builder(activity)
+                .setTitle(R.string.error_title)
+                .setMessage(details)
+                .setPositiveButton(android.R.string.ok, null)
+                .create(), AlertDialog.BUTTON_POSITIVE);
+    }
+
     private static void share(final Activity activity, final String details) {
         final Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("text/plain");
@@ -98,11 +138,7 @@ public final class PlaybackError {
                     activity.getString(R.string.error_share)));
         } catch (Exception ignored) {
             // Nothing to share with: a television with no mail or messaging app.
-            Utils.showFocused(new AlertDialog.Builder(activity)
-                    .setTitle(R.string.error_title)
-                    .setMessage(details)
-                    .setPositiveButton(android.R.string.ok, null)
-                    .create(), AlertDialog.BUTTON_POSITIVE);
+            showDetails(activity, details);
         }
     }
 }

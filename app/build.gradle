@@ -158,6 +158,15 @@ dependencies {
     implementation 'dev.jdtech.mpv:libmpv:1.0.0'
     implementation 'com.squareup.okhttp3:okhttp:5.3.2'
     implementation 'com.sigpwned:chardet4j:78.1.0'
+    /*
+     * Only the encoder, and only for one screen.
+     *
+     * A television that cannot share, mail or message has no way to get an
+     * error report off itself and onto the phone in your hand. A square on
+     * screen is the way out, and writing a correct QR encoder - Reed-Solomon
+     * and all - is not a thing to do by hand for one dialog.
+     */
+    implementation 'com.google.zxing:core:3.5.3'
     implementation project(path: ':doubletapplayerview')
     implementation project(path: ':android-file-chooser')
     implementation fileTree(dir: "libs", include: ["lib-*.aar"])
