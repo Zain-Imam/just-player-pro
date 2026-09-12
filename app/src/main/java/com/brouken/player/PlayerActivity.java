@@ -437,11 +437,10 @@ public class PlayerActivity extends Activity {
                 scrubbingStart = player.getCurrentPosition();
                 // Keep the buffered band on screen for the length of the drag.
                 PlayerActivity.this.timeBar.holdBufferedPosition(player.getBufferedPosition());
-                if (exo() != null) {
-
-                    exo().setSeekParameters(SeekParameters.CLOSEST_SYNC);
-
-                }
+                // Both engines snap to the nearest keyframe while the bar is
+                // being dragged, so the same drag finishes in the same place
+                // whichever one is playing.
+                seekToKeyframes(SeekParameters.CLOSEST_SYNC);
                 reportScrubbing(position);
             }
 
@@ -1232,11 +1231,7 @@ public class PlayerActivity extends Activity {
                     long seekTo = pos - mPrefs.doubleTapSeekSeconds * 1000L;
                     if (seekTo < 0)
                         seekTo = 0;
-                    if (exo() != null) {
-
-                        exo().setSeekParameters(SeekParameters.PREVIOUS_SYNC);
-
-                    }
+                    seekToKeyframes(SeekParameters.PREVIOUS_SYNC);
                     player.seekTo(seekTo);
                     final String message = Utils.formatMilisSign(seekTo - playerView.keySeekStart) + "\n" + Utils.formatMilis(seekTo);
                     playerView.setCustomErrorMessage(message);
@@ -1258,11 +1253,7 @@ public class PlayerActivity extends Activity {
                     long seekMax = player.getDuration();
                     if (seekMax != C.TIME_UNSET && seekTo > seekMax)
                         seekTo = seekMax;
-                    if (PlayerActivity.exo() != null) {
-
-                        PlayerActivity.exo().setSeekParameters(SeekParameters.NEXT_SYNC);
-
-                    }
+                    seekToKeyframes(SeekParameters.NEXT_SYNC);
                     player.seekTo(seekTo);
                     final String message = Utils.formatMilisSign(seekTo - playerView.keySeekStart) + "\n" + Utils.formatMilis(seekTo);
                     playerView.setCustomErrorMessage(message);
@@ -3510,6 +3501,23 @@ public class PlayerActivity extends Activity {
             line.append("  \u00b7  ");
         }
         line.append(part);
+    }
+
+    /*
+     * Seek to a keyframe rather than to the exact moment asked for.
+     *
+     * Landing exactly means decoding everything since the last keyframe, which
+     * on a long GOP is most of a second and makes a drag feel detached from the
+     * finger. Media3 has had this since the beginning; mpv, asked for an
+     * absolute seek, was exact, so the same drag on the same file finished in
+     * two different places depending on the engine.
+     */
+    private static void seekToKeyframes(final SeekParameters parameters) {
+        if (exo() != null) {
+            exo().setSeekParameters(parameters);
+        } else if (player instanceof com.brouken.player.mpv.MpvPlayer) {
+            ((com.brouken.player.mpv.MpvPlayer) player).setKeyframeSeeking(true);
+        }
     }
 
     private void applyKeepScreenOn(final boolean isPlaying) {

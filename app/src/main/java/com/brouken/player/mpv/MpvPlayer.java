@@ -281,13 +281,30 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
         final long target = Math.max(0, positionMs);
         final long from = this.positionMs;
         this.positionMs = target;
-        mpv.command(new String[]{"seek", String.valueOf(target / 1000.0), "absolute"});
+        mpv.command(new String[]{"seek", String.valueOf(target / 1000.0),
+                keyframeSeeking ? "absolute+keyframes" : "absolute"});
 
         final Player.PositionInfo oldPosition = positionInfo(from);
         final Player.PositionInfo newPosition = positionInfo(target);
         listeners.sendEvent(Player.EVENT_POSITION_DISCONTINUITY, listener ->
                 listener.onPositionDiscontinuity(oldPosition, newPosition,
                         Player.DISCONTINUITY_REASON_SEEK));
+    }
+
+    /*
+     * Land where the other engine lands.
+     *
+     * Media3 is told to snap to the nearest keyframe while the bar is being
+     * dragged and while the arrows are seeking, because landing exactly costs a
+     * decode of everything since the last keyframe and the drag stops feeling
+     * attached to the finger. mpv, asked for an absolute seek, is exact — so the
+     * same drag on the same file finished in two different places depending on
+     * which engine was playing. It is told the same thing at the same moments.
+     */
+    private boolean keyframeSeeking;
+
+    public void setKeyframeSeeking(final boolean keyframes) {
+        keyframeSeeking = keyframes;
     }
 
     private Player.PositionInfo positionInfo(final long atMs) {
