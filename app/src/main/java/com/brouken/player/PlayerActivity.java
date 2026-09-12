@@ -2447,6 +2447,12 @@ public class PlayerActivity extends Activity {
     }
 
 
+    // Longer than the controls take to go: there is a synopsis on the card,
+    // and three and a half seconds is not enough to read one.
+    private static final long OVERLAY_TIMEOUT = 8_000L;
+
+    private final Runnable overlayHider = this::hideOverlayCard;
+
     private final Runnable overlayShower = () -> {
         if (onlineController == null || mPrefs.mediaUri == null) {
             return;
@@ -2472,7 +2478,44 @@ public class PlayerActivity extends Activity {
         setCardControlsVisible(true);
 
         playerView.hideController();
+
+        // It goes the way the controls go: shown, read, gone. Leaving it up
+        // over a paused film means it is still there when you come back to the
+        // room and want to see what you paused on.
+        coordinatorLayout.removeCallbacks(overlayHider);
+        coordinatorLayout.postDelayed(overlayHider, OVERLAY_TIMEOUT);
     };
+
+    /*
+     * Show the card because it was asked for, not because the film was paused.
+     *
+     * The card had one way in: pause a film, with the setting on, and wait. So
+     * there was no way to simply ask what you are watching, and no way to find
+     * out what the setting did without turning it on and pausing. This is the
+     * plain verb — it looks the film up if that has not happened yet, and puts
+     * the card on screen either way.
+     */
+    public void showOverlayCardNow() {
+        if (onlineController == null || mPrefs.mediaUri == null) {
+            return;
+        }
+        if (onlineController.remembered(mPrefs.mediaUri) != null) {
+            coordinatorLayout.removeCallbacks(overlayShower);
+            overlayShower.run();
+            return;
+        }
+        Utils.showText(playerView, getString(R.string.online_identifying));
+        final Uri uri = mPrefs.mediaUri;
+        onlineController.identifySilently(uri, identity -> {
+            if (!uri.equals(mPrefs.mediaUri)) {
+                return;
+            }
+            skipLoadedFor = null;
+            ensureSkipSegments();
+            coordinatorLayout.removeCallbacks(overlayShower);
+            overlayShower.run();
+        });
+    }
 
     private void updateOverlayCard(final boolean isPlaying) {
         if (onlineController == null) {
@@ -2502,6 +2545,7 @@ public class PlayerActivity extends Activity {
 
     public void hideOverlayCard() {
         coordinatorLayout.removeCallbacks(overlayShower);
+        coordinatorLayout.removeCallbacks(overlayHider);
         if (overlayCard != null) {
             overlayCard.hide();
         }
@@ -2918,6 +2962,7 @@ public class PlayerActivity extends Activity {
         }
 
         updateSubtitleViewMargin(format);
+        updateSubtitlePictureArea();
 
         if (mPrefs.refreshSubtitleVerticalPositionForVideoHeight(format.height)) {
             updateSubtitleStyle(this);
@@ -2963,6 +3008,8 @@ public class PlayerActivity extends Activity {
             cueModifier.setSubtitleTypeface(mPrefs.subtitleTypeface, typeface);
             cueModifier.setSubtitleEdgeType(mPrefs.subtitleEdgeType);
             cueModifier.setShadowColor(edgeColor);
+            cueModifier.setVerticalPosition(mPrefs.subtitleVerticalPosition);
+            updateSubtitlePictureArea();
             final Player player = PlayerActivity.player;
             if (player != null && player.isCommandAvailable(Player.COMMAND_GET_TEXT)) {
                 subtitleView.setCues(cueModifier.modifyCues(player.getCurrentCues().cues));
@@ -2974,6 +3021,42 @@ public class PlayerActivity extends Activity {
     private void updateSubtitleBottomPaddingFraction(int subtitleVerticalPosition) {
         float bottomPaddingFraction = SubtitleView.DEFAULT_BOTTOM_PADDING_FRACTION + (subtitleVerticalPosition * 0.01f);
         playerView.getSubtitleView().setBottomPaddingFraction(bottomPaddingFraction);
+    }
+
+    /*
+     * Tell the subtitles where the picture is.
+     *
+     * The subtitle view covers the whole player while the picture covers only
+     * part of it, so a subtitle moved down went into the letterbox and was
+     * drawn on black. Measured from the two views rather than worked out from
+     * the aspect ratio, because a forced shape or a zoom moves the picture and
+     * this then follows it.
+     */
+    void updateSubtitlePictureArea() {
+        final SubtitleView subtitleView = playerView.getSubtitleView();
+        final View surface = playerView.getVideoSurfaceView();
+        if (subtitleView == null || surface == null) {
+            return;
+        }
+        subtitleView.post(() -> {
+            final int height = subtitleView.getHeight();
+            if (height <= 0 || surface.getHeight() <= 0) {
+                return;
+            }
+            final int[] subtitleAt = new int[2];
+            final int[] pictureAt = new int[2];
+            subtitleView.getLocationOnScreen(subtitleAt);
+            surface.getLocationOnScreen(pictureAt);
+
+            final float top = (pictureAt[1] - subtitleAt[1]) / (float) height;
+            final float bottom = top + surface.getHeight() / (float) height;
+            playerView.cueModifier.setPictureArea(top, bottom);
+
+            if (player != null && player.isCommandAvailable(Player.COMMAND_GET_TEXT)) {
+                subtitleView.setCues(
+                        playerView.cueModifier.modifyCues(player.getCurrentCues().cues));
+            }
+        });
     }
 
     public void updateSubtitleDelay(int delayMs) {
@@ -3488,6 +3571,11 @@ public class PlayerActivity extends Activity {
             }
             appendMeta(line, sound.toString());
         }
+
+        // Which engine, always. On Auto there is otherwise no way to know which
+        // one a file ended up on, and that is the first thing worth knowing
+        // when something looks wrong.
+        appendMeta(line, player instanceof com.brouken.player.mpv.MpvPlayer ? "mpv" : "Media3");
 
         metaView.setText(line.toString());
         metaView.setVisibility(line.length() == 0 ? View.GONE : View.VISIBLE);
@@ -4126,6 +4214,7 @@ public class PlayerActivity extends Activity {
             if (clockView != null) {
                 clockView.removeCallbacks(clockTick);
                 clockView.setVisibility(View.GONE);
+                reserveRoomForClock();
             }
             return;
         }
@@ -4145,6 +4234,28 @@ public class PlayerActivity extends Activity {
         clockView.setVisibility(View.VISIBLE);
         clockView.removeCallbacks(clockTick);
         clockTick.run();
+        reserveRoomForClock();
+    }
+
+    /*
+     * The clock sits in the corner the title bar also reaches into.
+     *
+     * The clock has to stay outside the controls — the whole point of it is
+     * that it is there when they are not — so instead the title and the line of
+     * detail under it stop short of it. Measured rather than guessed, because
+     * "18:42" and "6:42 PM" are not the same width.
+     */
+    private void reserveRoomForClock() {
+        if (clockView == null || titleView == null || metaView == null) {
+            return;
+        }
+        clockView.post(() -> {
+            final int reserve = clockView.getVisibility() == View.VISIBLE
+                    ? clockView.getWidth() + Utils.dpToPx(24)
+                    : 0;
+            titleView.setPadding(0, 0, reserve, 0);
+            metaView.setPadding(0, 0, reserve, 0);
+        });
     }
 
     /*
