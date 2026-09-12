@@ -24,3 +24,6 @@ local.properties
 # losing them means no user can ever install an update over this build.
 /keystore/
 /keystore.properties
+
+# Video the smoke test downloads to drive the player with.
+/.smoke-media/
