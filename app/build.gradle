@@ -129,7 +129,8 @@ android {
 }
 
 dependencies {
-    def media3_version = '1.11.0'
+    // Must match the patched aars in libs/ - see the note below before raising it.
+    def media3_version = '1.10.0'
     def androidxCoreVersion = '1.8.0'
     implementation "androidx.media3:media3-session:$media3_version"
     implementation "androidx.media3:media3-datasource:$media3_version"
@@ -137,6 +138,25 @@ dependencies {
     implementation "androidx.media3:media3-common:$media3_version"
     implementation "androidx.media3:media3-container:$media3_version"
     implementation "androidx.media3:media3-extractor:$media3_version"
+    /*
+     * These four exclude media3-exoplayer because ExoPlayer itself comes from
+     * libs/lib-exoplayer-release.aar, a patched build. The player calls
+     * DefaultRenderersFactory.setMapDV7ToHevc(), PlayerView.showProgress() and
+     * PlayerView.hideControllerImmediately(), none of which exist upstream, so
+     * the aars cannot simply be dropped for the published modules.
+     *
+     * Which is why media3_version above cannot be raised on its own. These
+     * modules are compiled against ExoPlayer, so they have to be the version
+     * the aars were built from, and nothing warns you when they are not.
+     * Raised to 1.11.0 while the aars stayed at 1.10.0, HlsMediaSource called
+     * BaseMediaSource.getBandwidthMeter(), which 1.10.0 has not got, and every
+     * HLS stream killed the playback thread with NoSuchMethodError: the player
+     * opened, showed the title, and sat at 00:00 saying nothing at all. DASH,
+     * SmoothStreaming and RTSP all go through the same door.
+     *
+     * To move Media3 up, rebuild the aars in libs/ from the matching AndroidX
+     * Media tag with the patches applied, and change this with them.
+     */
     implementation("androidx.media3:media3-exoplayer-dash:$media3_version") {
         exclude group: "androidx.media3", module: "media3-exoplayer"
     }
