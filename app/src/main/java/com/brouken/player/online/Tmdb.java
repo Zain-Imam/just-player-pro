@@ -205,7 +205,6 @@ public final class Tmdb {
         String episodeTitle = null;
         String episodeOverview = null;
         String airDate = null;
-        String still = null;
         double rating = show.optDouble("vote_average", 0);
 
         if (ep != null) {
@@ -214,7 +213,6 @@ public final class Tmdb {
             episodeTitle = nullIfEmpty(ep.optString("name", ""));
             episodeOverview = nullIfEmpty(ep.optString("overview", ""));
             airDate = nullIfEmpty(ep.optString("air_date", ""));
-            still = nullIfEmpty(ep.optString("still_path", ""));
             final double epRating = ep.optDouble("vote_average", 0);
             if (epRating > 0) {
                 rating = epRating;
@@ -224,7 +222,16 @@ public final class Tmdb {
         return new Identity(true, candidate.id, episodeImdb, parentImdb, showTitle, episodeTitle,
                 season, episode, showYear,
                 episodeOverview != null ? episodeOverview : nullIfEmpty(show.optString("overview", "")),
-                still != null ? still : nullIfEmpty(show.optString("poster_path", "")),
+                // The show poster, not the still from this episode.
+                //
+                // A still is a frame out of the middle of the episode: on a
+                // card that sits over the paused film it reads as a second
+                // screenshot rather than as the thing being watched, and for
+                // half the episodes ever made it is a dark corridor. The
+                // poster is the picture a series is recognised by, and it is
+                // the same picture a film gets, so the card looks the same
+                // whichever is playing.
+                nullIfEmpty(show.optString("poster_path", "")),
                 airDate != null ? airDate : nullIfEmpty(firstAir),
                 rating);
     }
