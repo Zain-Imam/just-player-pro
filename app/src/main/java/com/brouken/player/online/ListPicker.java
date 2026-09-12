@@ -44,6 +44,10 @@ public final class ListPicker {
                             final List<? extends Row> rows, final OnPicked onPicked,
                             final int actionLabel, @Nullable final Runnable action) {
         final RecyclerView list = new RecyclerView(activity);
+        // Fills the panel rather than hugging its rows, so the buttons sit at the
+        // bottom of the screen instead of floating under the last entry.
+        list.setLayoutParams(new ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         list.setLayoutManager(new LinearLayoutManager(activity));
         list.addItemDecoration(new Separator(activity));
 
@@ -61,8 +65,12 @@ public final class ListPicker {
             onPicked.onPicked(index);
         }));
 
-        asPanel(activity, dialog);
+        dressPanel(activity, dialog);
         dialog.show();
+        // The size has to be set after the window exists: a floating dialog
+        // clamps a full-height request made before it is shown back to whatever
+        // its contents happen to need.
+        sizePanel(activity, dialog);
 
         // A television focuses nothing until something asks; an unfocused list
         // ignores the remote entirely.
@@ -86,26 +94,27 @@ public final class ListPicker {
      * being read, and on a television it gives the remote a single column to
      * travel down instead of a floating box in the middle of nowhere.
      */
-    private static void asPanel(final Activity activity, final AlertDialog dialog) {
+    private static void dressPanel(final Activity activity, final AlertDialog dialog) {
         final android.view.Window window = dialog.getWindow();
         if (window == null) {
             return;
         }
-
-        final int width = com.brouken.player.Panels.width(activity);
-
-        final android.view.WindowManager.LayoutParams params = window.getAttributes();
-        params.gravity = android.view.Gravity.END | android.view.Gravity.TOP;
-        params.width = width;
-        params.height = android.view.WindowManager.LayoutParams.MATCH_PARENT;
-        params.windowAnimations = R.style.PanelAnimation;
-        // Barely dimmed: the whole point is that the film stays watchable.
-        params.dimAmount = 0.2f;
-        window.setAttributes(params);
-
+        // Before the window is shown, or the entrance is not animated at all.
+        window.setWindowAnimations(R.style.PanelAnimation);
         window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(
                 androidx.core.content.ContextCompat.getColor(activity, R.color.ui_panel_background)));
+        // Barely dimmed: the whole point is that the film stays watchable.
+        window.setDimAmount(0.2f);
+    }
 
+    private static void sizePanel(final Activity activity, final AlertDialog dialog) {
+        final android.view.Window window = dialog.getWindow();
+        if (window == null) {
+            return;
+        }
+        window.setLayout(com.brouken.player.Panels.width(activity),
+                android.view.WindowManager.LayoutParams.MATCH_PARENT);
+        window.setGravity(android.view.Gravity.END | android.view.Gravity.TOP);
         // Flush to the edge, so it reads as part of the screen rather than as a
         // card floating near it.
         window.getDecorView().setPadding(0, 0, 0, 0);
