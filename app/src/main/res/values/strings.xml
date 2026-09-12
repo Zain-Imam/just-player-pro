@@ -55,6 +55,20 @@
     <string name="pref_auto_search">Search subtitles automatically</string>
     <string name="pref_auto_search_on">Searches as soon as a file is identified</string>
     <string name="pref_auto_search_off">Only when you press search</string>
+    <string name="pref_setup_phone">Set up from your phone</string>
+    <string name="pref_setup_phone_summary">Type the keys on a phone on the same network instead of with a remote</string>
+    <string name="pref_setup_phone_title">Open this on your phone</string>
+    <string name="pref_setup_phone_body">Go to
+
+%1$s
+
+and enter this PIN when it asks:
+
+%2$s
+
+This page closes when you leave this screen.</string>
+    <string name="pref_setup_phone_done">Done</string>
+    <string name="pref_setup_phone_failed">Could not start the page. This device may not allow it, or it is not on a network — enter the keys here instead.</string>
     <string name="pref_online_note">TMDB is required: it turns a file name into a title the subtitle and skip databases understand. Subtitles themselves work without any key, through the Stremio addon below — the source keys are optional and simply give you more to choose from.</string>
     <string name="pref_key_tmdb">TMDB key · required</string>
     <string name="pref_key_tmdb_dialog">Free from themoviedb.org → Settings → API.</string>

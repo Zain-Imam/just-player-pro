@@ -148,6 +148,11 @@
     <PreferenceCategory app:title="@string/pref_online_header">
 
         <Preference
+            app:key="setupFromPhone"
+            app:title="@string/pref_setup_phone"
+            app:summary="@string/pref_setup_phone_summary" />
+
+        <Preference
             app:selectable="false"
             app:summary="@string/pref_online_note" />
 

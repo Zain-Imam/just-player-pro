@@ -170,6 +170,67 @@ public class SettingsActivity extends AppCompatActivity {
             }
         }
 
+        /*
+         * Hand the typing to a phone.
+         *
+         * A key is thirty-odd characters and an addon URL is longer, which on a
+         * television means a D-pad and an on-screen keyboard. The page only
+         * exists while this screen does, and it asks for a PIN shown here
+         * before it accepts anything. Everything can still be typed in by hand,
+         * which is what happens anyway if the page cannot be opened.
+         */
+        private com.brouken.player.online.SetupServer setupServer;
+
+        private void attachSetupServer() {
+            final Preference preference = findPreference("setupFromPhone");
+            if (preference == null) {
+                return;
+            }
+            preference.setOnPreferenceClickListener(clicked -> {
+                if (setupServer != null) {
+                    setupServer.stop();
+                }
+                setupServer = new com.brouken.player.online.SetupServer(
+                        requireContext(), saved -> {
+                });
+                final String address = setupServer.start();
+                if (address == null) {
+                    setupServer = null;
+                    new android.app.AlertDialog.Builder(requireContext())
+                            .setMessage(R.string.pref_setup_phone_failed)
+                            .setPositiveButton(android.R.string.ok, null)
+                            .show();
+                    return true;
+                }
+                new android.app.AlertDialog.Builder(requireContext())
+                        .setTitle(R.string.pref_setup_phone_title)
+                        .setMessage(getString(R.string.pref_setup_phone_body,
+                                address, setupServer.pin()))
+                        .setPositiveButton(R.string.pref_setup_phone_done, (dialog, which) -> {
+                            stopSetupServer();
+                            // Whatever the page wrote is read back into the list.
+                            setPreferenceScreen(null);
+                            onCreatePreferences(null, null);
+                        })
+                        .setOnCancelListener(dialog -> stopSetupServer())
+                        .show();
+                return true;
+            });
+        }
+
+        private void stopSetupServer() {
+            if (setupServer != null) {
+                setupServer.stop();
+                setupServer = null;
+            }
+        }
+
+        @Override
+        public void onDestroyView() {
+            stopSetupServer();
+            super.onDestroyView();
+        }
+
         private void attachKeyChecks(final String... keys) {
             for (final String key : keys) {
                 final EditTextPreference preference = findPreference(key);
@@ -215,6 +276,8 @@ public class SettingsActivity extends AppCompatActivity {
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
             useFullWidth(getPreferenceScreen());
+
+            attachSetupServer();
 
             attachKeyChecks(com.brouken.player.online.ApiKeys.PREF_TMDB,
                     com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES,
