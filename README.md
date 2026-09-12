@@ -358,6 +358,28 @@ instead of four:
 Requirements: Android SDK 36, NDK 29, JDK 11+. Minimum supported device is Android 7.1 (API 25);
 the mpv engine additionally needs Android 8.0, and is offered only there.
 
+### Media3 is pinned to the aars, and cannot be raised on its own
+
+ExoPlayer and the player view do not come from Maven here. They come from
+`app/libs/lib-exoplayer-release.aar` and `lib-ui-release.aar`, patched builds — the player calls
+`DefaultRenderersFactory.setMapDV7ToHevc()`, `PlayerView.showProgress()` and
+`PlayerView.hideControllerImmediately()`, none of which exist upstream. The four decoder extensions
+beside them are not published to Maven at all.
+
+Everything else Media3 does come from Maven, at `media3_version` in `app/build.gradle`, and those
+modules are compiled against the ExoPlayer of their own version. **So that number and the version
+the aars were built from have to match, and nothing enforces it.** Nothing warns, either: they are
+separate artefacts, so javac and R8 both accept a call to a method that is not there, and the
+program only finds out when it runs the line.
+
+It has already gone wrong once. Raised to 1.11.0 while the aars stayed at 1.10.0, `HlsMediaSource`
+called a method added after 1.10.0, and every HLS stream killed the playback thread with
+`NoSuchMethodError` — the player opened, showed the title, and sat at 00:00 saying nothing.
+
+To move Media3 up, rebuild all six aars from the matching AndroidX Media tag with the patches
+applied, and change `media3_version` with them. `Media3LinkageTest` checks the two agree, reading
+every class file and resolving every call between them, and fails the build if they do not.
+
 Release builds are signed from `keystore.properties`, which is not in the repository. Without it the
 build falls back to the debug key, which is fine for building and testing but produces an APK that
 cannot be installed over a released one. Copy `keystore.properties.example` and point it at your own
