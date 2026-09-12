@@ -323,11 +323,16 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
     }
 
     /*
-     * Hold the picture to run at double speed, let go to drop back.
+     * One finger held runs at double speed; two fingers held lock the screen.
      *
-     * The hold used to lock the controls, which is what the padlock in the bar
-     * is for and is a strange thing to reach for by accident. While locked it
-     * still unlocks, so a long press is never a dead end.
+     * Both used to want the same gesture. Holding for speed is what everything
+     * else with a video in it now does, and it is the one reached for often, so
+     * it keeps the plain hold. Locking is a deliberate act done once before
+     * putting the phone in a pocket, and asking for a second finger is no
+     * hardship for something done that rarely — while making it impossible to
+     * trigger by accident, which is half of what a lock is for.
+     *
+     * Either gesture unlocks, so a hold is never a dead end.
      */
     @Override
     public void onLongPress(MotionEvent motionEvent) {
@@ -338,6 +343,17 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             setIconLock(false);
             return;
         }
+
+        if (motionEvent.getPointerCount() > 1) {
+            PlayerActivity.locked = true;
+            isHandledLongPress = true;
+            hideController();
+            setIconLock(true);
+            Utils.showText(this, getContext().getString(R.string.locked_hint),
+                    MESSAGE_TIMEOUT_LONG);
+            return;
+        }
+
         final Player player = getPlayer();
         if (player == null || !player.isPlaying() || speedBoosted) {
             return;
