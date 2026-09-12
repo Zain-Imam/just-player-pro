@@ -39,6 +39,7 @@
     </queries>
 
     <application
+        android:name=".App"
         android:allowBackup="false"
         android:appCategory="video"
         android:banner="@mipmap/banner"

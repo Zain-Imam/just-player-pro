@@ -222,7 +222,10 @@ public final class ReleaseName {
      * "(2008)", so a year is pulled out before this runs.
      */
     private static final Pattern BRACKETS =
-            Pattern.compile("\\[[^\\[\\]]{0,60}]|\\{[^{}]{0,60}}|【[^【】]{0,60}】|（[^（）]{0,60}）");
+            Pattern.compile("\\[[^\\[\\]]{0,60}\\]"
+                    + "|\\{[^\\{\\}]{0,60}\\}"
+                    + "|【[^【】]{0,60}】"
+                    + "|（[^（）]{0,60}）");
 
     // A CRC32 left in the name by the muxer, which is eight hex digits and looks
     // like a word to everything downstream.
@@ -280,8 +283,25 @@ public final class ReleaseName {
             "\\.(mkv|mp4|avi|mov|m4v|ts|m2ts|webm|flv|wmv|mpg|mpeg|ogv|3gp|divx|m3u8)$",
             Pattern.CASE_INSENSITIVE);
 
+    /*
+     * Never throws.
+     *
+     * Everything downstream of this - the info card, the skip markers, the
+     * history list, the search box - runs on a background thread as a file
+     * opens, and a name this could not handle used to take the whole app with
+     * it. A name that cannot be parsed is a name that is not used.
+     */
     @NonNull
     public static Info parse(@Nullable final String rawName) {
+        try {
+            return parseOrThrow(rawName);
+        } catch (Throwable error) {
+            return new Info("", null, null, null, null, null, null, null, null, null, null);
+        }
+    }
+
+    @NonNull
+    private static Info parseOrThrow(@Nullable final String rawName) {
         final String raw = fromLink(rawName);
         if (raw.isEmpty()) {
             return new Info("", null, null, null, null, null, null, null, null, null, null);

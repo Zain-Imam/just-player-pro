@@ -38,7 +38,8 @@ public final class OnlineController {
     private final Context context;
     private final Host host;
     private final Handler main = new Handler(Looper.getMainLooper());
-    private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    // Named, and unable to take the app down with it: see Background.
+    private final ExecutorService worker = com.brouken.player.Background.single("online");
 
     public interface Host {
         @Nullable
