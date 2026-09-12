@@ -133,6 +133,7 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="online_download_failed">That subtitle could not be downloaded</string>
     <string name="online_saved_to">Loaded, and saved to %1$s</string>
     <string name="online_loaded">Subtitle loaded</string>
+    <string name="skip_undo">Undo skip</string>
     <string name="online_skip_intro">Skip intro</string>
     <string name="online_skip_recap">Skip recap</string>
     <string name="online_skip_credits">Skip credits</string>

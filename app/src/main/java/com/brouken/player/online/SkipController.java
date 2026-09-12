@@ -45,6 +45,11 @@ public final class SkipController {
     @Nullable
     private SkipSegments.Segment skipped;
 
+    /** Where the film was before the last skip, while undo is still offered. */
+    private double undoAt = -1;
+    private static final double UNDO_WINDOW_SECONDS = 8;
+    private double undoUntil = -1;
+
     private boolean running;
     private int restingBottomMargin;
 
@@ -145,10 +150,18 @@ public final class SkipController {
             }
         }
 
+        // The undo offer lasts a few seconds of playback and then goes.
+        if (undoAt >= 0 && position > undoUntil) {
+            undoAt = -1;
+            hideButton();
+        }
+
         if (inside == null) {
             if (showing != null) {
                 showing = null;
-                hideButton();
+                if (undoAt < 0) {
+                    hideButton();
+                }
             }
             return;
         }
@@ -217,12 +230,25 @@ public final class SkipController {
             }
             parent.addView(button);
             button.setOnClickListener(v -> {
+                if (undoAt >= 0) {
+                    // The same button undoes the skip it just made, for a few
+                    // seconds afterwards -- a marker that was wrong, or cut a
+                    // scene short, otherwise leaves nowhere to go but the
+                    // scrubber.
+                    final double back = undoAt;
+                    undoAt = -1;
+                    skipped = null;
+                    host.seekToSeconds(back);
+                    hideButton();
+                    return;
+                }
                 final SkipSegments.Segment current = showing;
                 if (current != null) {
                     skipped = current;
+                    undoAt = host.positionSeconds();
                     host.seekToSeconds(current.end + 0.5);
                     showing = null;
-                    hideButton();
+                    showUndo();
                 }
             });
         }
@@ -238,6 +264,19 @@ public final class SkipController {
         }
         // After layout: the button has no height until it has been measured,
         // and the card it is dodging may be mid-appearance.
+        button.post(this::clearOfCard);
+    }
+
+    private void showUndo() {
+        if (button == null) {
+            return;
+        }
+        undoUntil = host.positionSeconds() + UNDO_WINDOW_SECONDS;
+        button.setText(R.string.skip_undo);
+        button.setVisibility(View.VISIBLE);
+        if (isTelevision(button.getContext())) {
+            button.post(button::requestFocus);
+        }
         button.post(this::clearOfCard);
     }
 

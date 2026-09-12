@@ -22,7 +22,7 @@ public final class SkipSegments {
     private static final double CLOSE_ENOUGH = 30;
 
     private static final String[] SOURCE_ORDER =
-            {"chapters", "introdb", "theintrodb", "skipdb", "aniskip"};
+            {"chapters", "introdb", "theintrodb", "skipdb", "skipme", "introhater", "aniskip"};
 
     private SkipSegments() {
     }
@@ -97,6 +97,8 @@ public final class SkipSegments {
         theIntroDb(raw, qs, durationSeconds);
         skipDb(raw, qs);
         aniSkip(raw, Subtitles.withTt(imdbId), season, episode);
+        skipMe(raw, imdbId, season, episode);
+        introHater(raw, imdbId, season, episode);
 
         return merge(raw);
     }
@@ -150,6 +152,77 @@ public final class SkipSegments {
             return Kind.PREVIEW;
         }
         return null;
+    }
+
+    /*
+     * Two more databases, asked the same way as the rest.
+     *
+     * Every source is merged rather than trusted in turn, so another one is
+     * another vote: where they agree the bounds get sharper, and a source that
+     * is alone in claiming something loses to the ones that agree.
+     */
+    private static void skipMe(final List<Raw> out, final String imdbId,
+                               final Integer season, final Integer episode) {
+        if (imdbId == null || imdbId.isEmpty()) {
+            return;
+        }
+        final StringBuilder url = new StringBuilder("https://db.skipme.workers.dev/v1/movies/")
+                .append(Subtitles.withTt(imdbId));
+        if (season != null && episode != null) {
+            url.append("/").append(season).append("/").append(episode);
+        }
+        final java.util.Map<String, String> headers = Http.params();
+        headers.put("User-Agent", "SkipMe.db/0.0");
+
+        final JSONObject body = Http.get(url.toString(), headers).json();
+        if (body == null) {
+            return;
+        }
+        final JSONArray segments = body.optJSONArray("segments");
+        for (int i = 0; segments != null && i < segments.length(); i++) {
+            final JSONObject seg = segments.optJSONObject(i);
+            if (seg == null) {
+                continue;
+            }
+            final Kind kind = kindOfChapter(seg.optString("category", ""));
+            if (kind == null) {
+                continue;
+            }
+            add(out, kind, seg.optDouble("start", -1), seg.optDouble("end", -1),
+                    "skipme", true, true);
+        }
+    }
+
+    private static void introHater(final List<Raw> out, final String imdbId,
+                                   final Integer season, final Integer episode) {
+        if (imdbId == null || imdbId.isEmpty()) {
+            return;
+        }
+        final StringBuilder url = new StringBuilder("https://introhater.com/api/v1/segments/")
+                .append(Subtitles.withTt(imdbId));
+        if (season != null && episode != null) {
+            url.append("/").append(season).append("/").append(episode);
+        }
+        final java.util.Map<String, String> params = Http.params();
+        params.put("key", "introhater_mpv_client");
+
+        final JSONObject body = Http.get(url + Http.query(params), null).json();
+        if (body == null) {
+            return;
+        }
+        final JSONArray segments = body.optJSONArray("segments");
+        for (int i = 0; segments != null && i < segments.length(); i++) {
+            final JSONObject seg = segments.optJSONObject(i);
+            if (seg == null) {
+                continue;
+            }
+            final Kind kind = kindOfChapter(seg.optString("type", ""));
+            if (kind == null) {
+                continue;
+            }
+            add(out, kind, seg.optDouble("start", -1), seg.optDouble("end", -1),
+                    "introhater", true, true);
+        }
     }
 
     private static void introDb(final List<Raw> out, final String qs) {
