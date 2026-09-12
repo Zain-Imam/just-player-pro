@@ -31,13 +31,25 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
     private float startX;
     private long startTime;
 
-    /** The running time, which the stock bar keeps to itself. */
+    /** The running time and the playhead, which the stock bar keeps to itself. */
     private long durationMs;
+    private long positionMs;
+
+    /** How long a run of presses stays one gesture. */
+    private static final long KEY_SESSION_MS = 2_000;
+    private long keyTargetMs = -1;
+    private long keyLastAt;
 
     @Override
     public void setDuration(final long duration) {
         durationMs = duration;
         super.setDuration(duration);
+    }
+
+    @Override
+    public void setPosition(final long position) {
+        positionMs = position;
+        super.setPosition(position);
     }
 
     /** Whether a remote is currently dragging the scrubber. */
@@ -63,10 +75,25 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
         final boolean forward = keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
 
         if (!back && !forward) {
-            // Nothing to commit means OK belongs to whatever handles play and
-            // pause, rather than being swallowed here and doing nothing at all.
+            /*
+             * OK on the bar plays and pauses.
+             *
+             * The bar used to swallow it and do nothing, and handing it back
+             * did not help either: the activity only acts on OK while the
+             * controls are hidden, and they are plainly not hidden if the bar
+             * has focus. So it is answered here.
+             */
             if (!keyScrubbing && isConfirmKey(keyCode)) {
-                return false;
+                final androidx.media3.common.Player player = PlayerActivity.player;
+                if (player == null) {
+                    return false;
+                }
+                if (player.isPlaying()) {
+                    player.pause();
+                } else {
+                    player.play();
+                }
+                return true;
             }
             return super.onKeyDown(keyCode, event);
         }
@@ -74,30 +101,63 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
             return super.onKeyDown(keyCode, event);
         }
 
+        removeCallbacks(commitKeyScrub);
+        final long now = SystemClock.uptimeMillis();
         if (!keyScrubbing) {
             keyScrubbing = true;
             keyRepeats = 0;
-            keyX = scrubberBar != null ? scrubberBar.right : progressBar.left;
-            dispatchToSuper(MotionEvent.ACTION_DOWN, keyX);
+            // Carried on from where the last run of presses left off, unless
+            // that was long enough ago to be a new gesture. Re-reading the
+            // scrubber every time threw presses away, because the player has
+            // not moved yet when the next one arrives.
+            if (keyTargetMs < 0 || now - keyLastAt > KEY_SESSION_MS) {
+                keyTargetMs = positionMs;
+            }
+            dispatchToSuper(MotionEvent.ACTION_DOWN, xFor(keyTargetMs));
         }
+        keyLastAt = now;
 
         final long step = KEY_STEP_MS[keyRepeats < KEY_STEP_AFTER[0] ? 0
                 : keyRepeats < KEY_STEP_AFTER[1] ? 1 : 2];
         keyRepeats++;
 
-        final float perMs = (float) progressBar.width() / durationMs;
-        keyX = Math.max(progressBar.left,
-                Math.min(progressBar.right, keyX + (forward ? step : -step) * perMs));
+        keyTargetMs = Math.max(0, Math.min(durationMs,
+                keyTargetMs + (forward ? step : -step)));
+        keyX = xFor(keyTargetMs);
         dispatchToSuper(MotionEvent.ACTION_MOVE, keyX);
         return true;
     }
+
+    private float xFor(final long ms) {
+        if (progressBar == null || durationMs <= 0) {
+            return 0;
+        }
+        return progressBar.left + (float) ms / durationMs * progressBar.width();
+    }
+
+    /*
+     * The seek is committed a moment after the last press, not on every one.
+     *
+     * Committing each press separately meant the next one re-read the scrubber
+     * before the player had moved, so half of a run of taps was thrown away:
+     * five presses moved two and a half seconds rather than five. Holding the
+     * key still scrubs continuously, and a run of taps now adds up exactly.
+     */
+    private static final long KEY_COMMIT_DELAY_MS = 350;
+
+    private final Runnable commitKeyScrub = () -> {
+        if (keyScrubbing) {
+            keyScrubbing = false;
+            dispatchToSuper(MotionEvent.ACTION_UP, keyX);
+        }
+    };
 
     @Override
     public boolean onKeyUp(final int keyCode, final android.view.KeyEvent event) {
         if (keyScrubbing && (keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT
                 || keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT)) {
-            keyScrubbing = false;
-            dispatchToSuper(MotionEvent.ACTION_UP, keyX);
+            removeCallbacks(commitKeyScrub);
+            postDelayed(commitKeyScrub, KEY_COMMIT_DELAY_MS);
             return true;
         }
         return super.onKeyUp(keyCode, event);

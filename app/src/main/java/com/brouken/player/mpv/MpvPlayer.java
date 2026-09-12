@@ -383,7 +383,8 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
                 if (playbackState != Player.STATE_IDLE) {
                     setPlaybackState(Player.STATE_ENDED);
                 }
-            } else if (eventId == MPVLib.MpvEvent.MPV_EVENT_PLAYBACK_RESTART) {
+            }
+            if (eventId == MPVLib.MpvEvent.MPV_EVENT_PLAYBACK_RESTART) {
                 if (!isBuffering) {
                     setPlaybackState(Player.STATE_READY);
                 }
