@@ -62,20 +62,38 @@ public final class MpvOptions {
         final int priority = Integer.parseInt(PreferenceManager
                 .getDefaultSharedPreferences(context)
                 .getString("decoderPriority", "1"));
+        /*
+         * Ask for the zero-copy path first, and only then for the safe one.
+         *
+         * "auto-safe" sounds like the right answer and is not: the only method
+         * on its safe list here is mediacodec-copy, which decodes on the chip
+         * and then hauls every frame back through main memory before handing it
+         * to the GPU. Measured against the other engine on the same file, that
+         * was the whole of the difference - roughly twice the processor time
+         * and a degree and a half warmer for a 1080p film.
+         *
+         * Plain "mediacodec" keeps the frame on the GPU. It is tried first, the
+         * copying path catches anything that refuses, and software decoding
+         * catches the rest, so nothing that used to play stops playing.
+         */
         final String hwdec;
         switch (priority) {
             case 2:  // prefer app decoders
                 hwdec = "no";
                 break;
             case 0:  // device decoders only
-                hwdec = "mediacodec";
+                hwdec = "mediacodec,mediacodec-copy";
                 break;
             case 1:
             default:
-                hwdec = "auto-safe";
+                hwdec = "mediacodec,mediacodec-copy,no";
                 break;
         }
         mpv.setOptionString("hwdec", hwdec);
+        // The codec list is left at mpv default on purpose. Forcing every codec
+        // through the chip is how a rare format that MediaCodec claims and then
+        // decodes badly gets played badly, and decoding the rare formats in
+        // software is the whole reason this engine is here.
         mpv.setOptionString("vd-lavc-threads", "0");
 
         mpv.setOptionString("framedrop", "decoder");
