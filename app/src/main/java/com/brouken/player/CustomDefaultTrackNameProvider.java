@@ -3,7 +3,6 @@ package com.brouken.player;
 import android.content.res.Resources;
 
 import androidx.media3.common.Format;
-import androidx.media3.common.MimeTypes;
 import androidx.media3.ui.DefaultTrackNameProvider;
 
 class CustomDefaultTrackNameProvider extends DefaultTrackNameProvider {
@@ -15,16 +14,16 @@ class CustomDefaultTrackNameProvider extends DefaultTrackNameProvider {
     public String getTrackName(Format format) {
         String trackName = super.getTrackName(format);
         if (format.sampleMimeType != null) {
-            String sampleFormat = formatNameFromMime(format.sampleMimeType);
+            // The same table the track pickers use, so a codec is spelled the
+            // same way wherever it appears.
+            String sampleFormat = TrackNames.fromMime(format.sampleMimeType);
             if (sampleFormat == null) {
-                sampleFormat = formatNameFromMime(format.codecs);
+                sampleFormat = TrackNames.fromMime(format.codecs);
             }
             if (sampleFormat == null) {
                 sampleFormat = format.sampleMimeType;
             }
-            if (sampleFormat != null) {
-                trackName += " (" + sampleFormat + ")";
-            }
+            trackName += " (" + sampleFormat + ")";
         }
         if (format.label != null) {
             if (!trackName.startsWith(format.label)) { // HACK
@@ -32,72 +31,5 @@ class CustomDefaultTrackNameProvider extends DefaultTrackNameProvider {
             }
         }
         return trackName;
-    }
-
-    private String formatNameFromMime(final String mimeType) {
-        if (mimeType == null) {
-            return null;
-        }
-        switch (mimeType) {
-            case MimeTypes.AUDIO_DTS:
-                return "DTS";
-            case MimeTypes.AUDIO_DTS_HD:
-                return "DTS-HD";
-            case MimeTypes.AUDIO_DTS_EXPRESS:
-                return "DTS Express";
-            case MimeTypes.AUDIO_TRUEHD:
-                return "TrueHD";
-            case MimeTypes.AUDIO_AC3:
-                return "AC-3";
-            case MimeTypes.AUDIO_E_AC3:
-                return "E-AC-3";
-            case MimeTypes.AUDIO_E_AC3_JOC:
-                return "E-AC-3-JOC";
-            case MimeTypes.AUDIO_AC4:
-                return "AC-4";
-            case MimeTypes.AUDIO_AAC:
-                return "AAC";
-            case MimeTypes.AUDIO_MPEG:
-                return "MP3";
-            case MimeTypes.AUDIO_MPEG_L2:
-                return "MP2";
-            case MimeTypes.AUDIO_VORBIS:
-                return "Vorbis";
-            case MimeTypes.AUDIO_OPUS:
-                return "Opus";
-            case MimeTypes.AUDIO_FLAC:
-                return "FLAC";
-            case MimeTypes.AUDIO_ALAC:
-                return "ALAC";
-            case MimeTypes.AUDIO_WAV:
-                return "WAV";
-            case MimeTypes.AUDIO_AMR:
-                return "AMR";
-            case MimeTypes.AUDIO_AMR_NB:
-                return "AMR-NB";
-            case MimeTypes.AUDIO_AMR_WB:
-                return "AMR-WB";
-            case MimeTypes.AUDIO_IAMF:
-                return "IAMF";
-            case MimeTypes.AUDIO_MPEGH_MHA1:
-            case MimeTypes.AUDIO_MPEGH_MHM1:
-                return "MPEG-H";
-
-            case MimeTypes.APPLICATION_PGS:
-                return "PGS";
-            case MimeTypes.APPLICATION_SUBRIP:
-                return "SRT";
-            case MimeTypes.TEXT_SSA:
-                return "SSA";
-            case MimeTypes.TEXT_VTT:
-                return "VTT";
-            case MimeTypes.APPLICATION_TTML:
-                return "TTML";
-            case MimeTypes.APPLICATION_TX3G:
-                return "TX3G";
-            case MimeTypes.APPLICATION_DVBSUBS:
-                return "DVB";
-        }
-        return null;
     }
 }

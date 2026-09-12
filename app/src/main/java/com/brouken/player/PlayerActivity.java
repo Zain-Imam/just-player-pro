@@ -3429,16 +3429,9 @@ public class PlayerActivity extends Activity {
 
         static SubtitleChoice track(final PlayerActivity activity, final Tracks.Group group,
                                     final int index, final Format format, final boolean selected) {
-            String name = format.label;
-            if (name == null || name.isEmpty()) {
-                name = format.language == null
-                        ? activity.getString(R.string.subtitle_menu_track, index + 1)
-                        : new java.util.Locale(format.language).getDisplayLanguage();
-            }
-            final String detail = selected
-                    ? activity.getString(R.string.subtitle_menu_current)
-                    : format.language;
-            return new SubtitleChoice(name, detail,
+            return new SubtitleChoice(
+                    TrackNames.title(activity, format, index, C.TRACK_TYPE_TEXT),
+                    TrackNames.detail(activity, format, selected),
                     () -> activity.selectTextTrack(group, index));
         }
 
@@ -3517,31 +3510,13 @@ public class PlayerActivity extends Activity {
         @NonNull
         @Override
         public String title() {
-            if (format.label != null && !format.label.isEmpty()) {
-                return format.label;
-            }
-            if (format.language != null && !format.language.isEmpty()) {
-                return new java.util.Locale(format.language).getDisplayLanguage();
-            }
-            return activity.getString(R.string.audio_menu_track, index + 1);
+            return TrackNames.title(activity, format, index, C.TRACK_TYPE_AUDIO);
         }
 
         @Nullable
         @Override
         public String detail() {
-            final StringBuilder sb = new StringBuilder();
-            if (selected) {
-                sb.append(activity.getString(R.string.subtitle_menu_current));
-            }
-            if (format.channelCount > 0) {
-                if (sb.length() > 0) sb.append("  ·  ");
-                sb.append(format.channelCount).append("ch");
-            }
-            if (format.codecs != null) {
-                if (sb.length() > 0) sb.append("  ·  ");
-                sb.append(format.codecs);
-            }
-            return sb.length() == 0 ? null : sb.toString();
+            return TrackNames.detail(activity, format, selected);
         }
 
         void select() {

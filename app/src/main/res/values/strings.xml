@@ -200,6 +200,11 @@ Auto starts on Media3 and switches only for a file Media3 fails on.</string>
     <string name="open_url_play">Play</string>
     <string name="open_url_invalid">That does not look like a URL a player can open</string>
     <string name="pref_history_header">History</string>
+    <string name="track_forced">Forced</string>
+    <string name="track_hearing_impaired">For the hard of hearing</string>
+    <string name="track_visual_impaired">Audio description</string>
+    <string name="track_mono">Mono</string>
+    <string name="track_stereo">Stereo</string>
     <string name="pref_language_audio_priority">Audio language order</string>
     <string name="pref_language_audio_priority_summary">Tried before the setting above</string>
     <string name="pref_language_subtitle_priority">Subtitle language order</string>

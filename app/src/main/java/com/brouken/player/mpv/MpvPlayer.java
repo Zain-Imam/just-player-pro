@@ -474,6 +474,21 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
             info.language = mpv.getPropertyString("track-list/" + i + "/lang");
             info.id = mpv.getPropertyInt("track-list/" + i + "/id");
 
+            // Everything the track list knows about the stream, so a track
+            // reads the same in the picker on this engine as on the other:
+            // "English - 5.1, E-AC-3, 640 kb/s" rather than just "English".
+            info.codec = mpv.getPropertyString("track-list/" + i + "/codec");
+            info.channels = mpv.getPropertyInt("track-list/" + i + "/demux-channel-count");
+            info.sampleRate = mpv.getPropertyInt("track-list/" + i + "/demux-samplerate");
+            info.width = mpv.getPropertyInt("track-list/" + i + "/demux-w");
+            info.height = mpv.getPropertyInt("track-list/" + i + "/demux-h");
+            info.isDefault = isTrue(mpv.getPropertyBoolean("track-list/" + i + "/default"));
+            info.forced = isTrue(mpv.getPropertyBoolean("track-list/" + i + "/forced"));
+            info.hearingImpaired =
+                    isTrue(mpv.getPropertyBoolean("track-list/" + i + "/hearing-impaired"));
+            info.visualImpaired =
+                    isTrue(mpv.getPropertyBoolean("track-list/" + i + "/visual-impaired"));
+
             final Integer current = type.equals("video") ? currentVideo
                     : type.equals("audio") ? currentAudio : currentSub;
             if (current != null && info.id != null) {
@@ -491,24 +506,59 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
 
         final ImmutableList.Builder<Tracks.Group> groups = ImmutableList.builder();
         for (final TrackInfo info : found) {
-            final String mime;
-            switch (info.type) {
-                case "video":
-                    mime = androidx.media3.common.MimeTypes.BASE_TYPE_VIDEO + "/unknown";
-                    break;
-                case "audio":
-                    mime = androidx.media3.common.MimeTypes.BASE_TYPE_AUDIO + "/unknown";
-                    break;
-                default:
-                    mime = androidx.media3.common.MimeTypes.BASE_TYPE_TEXT + "/unknown";
-                    break;
+            // A real mime type where the codec name gives one away, so the
+            // picker can print "E-AC-3" rather than the raw ffmpeg spelling.
+            String mime = MpvCodecs.mimeFor(info.type, info.codec);
+            if (mime == null) {
+                switch (info.type) {
+                    case "video":
+                        mime = androidx.media3.common.MimeTypes.BASE_TYPE_VIDEO + "/unknown";
+                        break;
+                    case "audio":
+                        mime = androidx.media3.common.MimeTypes.BASE_TYPE_AUDIO + "/unknown";
+                        break;
+                    default:
+                        mime = androidx.media3.common.MimeTypes.BASE_TYPE_TEXT + "/unknown";
+                        break;
+                }
             }
-            final Format format = new Format.Builder()
+
+            int selectionFlags = 0;
+            if (info.isDefault) {
+                selectionFlags |= C.SELECTION_FLAG_DEFAULT;
+            }
+            if (info.forced) {
+                selectionFlags |= C.SELECTION_FLAG_FORCED;
+            }
+
+            int roleFlags = 0;
+            if (info.hearingImpaired) {
+                roleFlags |= C.ROLE_FLAG_DESCRIBES_MUSIC_AND_SOUND;
+            }
+            if (info.visualImpaired) {
+                roleFlags |= C.ROLE_FLAG_DESCRIBES_VIDEO;
+            }
+
+            final Format.Builder builder = new Format.Builder()
                     .setId(info.id == null ? String.valueOf(info.index) : String.valueOf(info.id))
                     .setSampleMimeType(mime)
                     .setLanguage(info.language)
                     .setLabel(info.title)
-                    .build();
+                    .setSelectionFlags(selectionFlags)
+                    .setRoleFlags(roleFlags);
+            if (info.codec != null && !info.codec.isEmpty()) {
+                builder.setCodecs(info.codec);
+            }
+            if (info.channels != null && info.channels > 0) {
+                builder.setChannelCount(info.channels);
+            }
+            if (info.sampleRate != null && info.sampleRate > 0) {
+                builder.setSampleRate(info.sampleRate);
+            }
+            if (info.width != null && info.width > 0 && info.height != null && info.height > 0) {
+                builder.setWidth(info.width).setHeight(info.height);
+            }
+            final Format format = builder.build();
             final TrackGroup group = new TrackGroup(String.valueOf(info.index), format);
             groups.add(new Tracks.Group(group, false, new int[]{C.FORMAT_HANDLED},
                     new boolean[]{info.selected}));
@@ -528,8 +578,21 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
         String type;
         String title;
         String language;
+        String codec;
         Integer id;
+        Integer channels;
+        Integer sampleRate;
+        Integer width;
+        Integer height;
+        boolean isDefault;
+        boolean forced;
+        boolean hearingImpaired;
+        boolean visualImpaired;
         boolean selected;
+    }
+
+    private static boolean isTrue(final Boolean value) {
+        return value != null && value;
     }
 
     @Nullable
