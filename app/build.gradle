@@ -2,6 +2,16 @@ plugins {
     id 'com.android.application'
 }
 
+// Release signing, kept out of the repository. Without keystore.properties the
+// release build falls back to the debug key so anyone can still build it, but
+// the published APKs must be signed with the real one: Android will not install
+// an update signed by a different key.
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
 android {
     namespace 'com.brouken.player'
     compileSdk = 36
@@ -14,6 +24,14 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        if (keystorePropertiesFile.exists()) {
+            release {
+                storeFile = rootProject.file(keystoreProperties['storeFile'])
+                storePassword = keystoreProperties['storePassword']
+                keyAlias = keystoreProperties['keyAlias']
+                keyPassword = keystoreProperties['keyPassword']
+            }
+        }
     }
 
     defaultConfig {
@@ -22,7 +40,7 @@ android {
         minSdkVersion 25
         targetSdkVersion 36
         versionCode 1
-        versionName "3.1"
+        versionName "1.0.0"
         if (abiFilter) {
             def abiCodeMap = ["x86": 1, "x86_64": 2, "armeabi-v7a": 3, "arm64-v8a": 4]
             versionCode = versionCode * 10 + abiCodeMap[abiFilter]
@@ -42,7 +60,7 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig = signingConfigs.debug
+            signingConfig = keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
         }
     }
     flavorDimensions "targetSdk", "distribution"

@@ -6,8 +6,8 @@
          Android TV banner and the in-app accent all read from here.
 
          This is TorBox Advanced's default accent, which makes the two apps look
-         related, and it is deliberately not Just Player+ green so the two can
-         sit side by side on a launcher without being mistaken for each other. -->
+         related, and distinct enough from other players to sit beside them on a
+         launcher without being mistaken for one. -->
     <color name="brand">#F2761E</color>
 
     <!-- Seek bar. Three shades that cannot be mistaken for one another: the

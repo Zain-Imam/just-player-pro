@@ -19,3 +19,8 @@ local.properties
 
 # Built APKs staged for a release.
 /release-apks/
+
+# Release signing. The keystore and its passwords never go in the repository;
+# losing them means no user can ever install an update over this build.
+/keystore/
+/keystore.properties

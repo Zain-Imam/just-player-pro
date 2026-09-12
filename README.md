@@ -4,12 +4,12 @@
 Media3/ExoPlayer and a full build of mpv — and the player moves between them on its own, so a file
 that one cannot decode is handled by the other instead of failing.
 
-A fork of [Just Player+](https://github.com/wasky/just-player-plus), itself a fork of
-[Just Player](https://github.com/moneytoo/Player) by Marcel Dopita. Everything those two do is still
-here; this fork only adds alongside them.
+Built on [Just Player](https://github.com/moneytoo/Player) by Marcel Dopita, whose strengths are
+kept intact: no ads, no tracking, barely any permissions, and playback that hands the bitstream
+straight to the device's decoders.
 
-It installs as a separate app (`app.justplayerpro.android`), so Just Player+ can stay installed next
-to it.
+It installs as a separate app (`app.justplayerpro.android`), so it can sit alongside any other
+player you already use.
 
 > This was tailored to my own use. It is shared in case it is useful, but it is not a product:
 > do not expect new features, a roadmap, or fixes on request. I may add things, I may not.
@@ -132,17 +132,16 @@ engine here, and nothing in this app tries to work around that.
   remembered.
 * **Sectioned, shorter settings** with a searchable layout, plus a history screen.
 
-### Inherited from Just Player+ and Just Player
+### Inherited from upstream
 
-Nothing was removed. Every setting Just Player+ shipped is still present and still works:
+Nothing was removed. Every setting the projects this builds on shipped is still present and works:
 file access mode, preferred audio language, display frame-rate matching, PiP, skip silence, repeat,
 custom subtitle fonts, decoder priority, tunneled playback and Dolby Vision profile 7 mapping —
 along with the gesture controls, the SAF/MediaStore file handling, the Android TV behaviour and the
 subtitle settings reachable by long-pressing the subtitle icon.
 
-Also inherited from [Morveus/just-player-plus](https://github.com/Morveus/just-player-plus):
-subtitle delay applied at render time (so negative delays actually move embedded MKV subtitles
-earlier), 100 ms delay steps, and a `+` prefix on positive delays.
+Subtitle delay is applied at render time, so negative delays actually move embedded MKV subtitles
+earlier rather than just shortening them, in 100 ms steps with a `+` prefix on positive values.
 
 ---
 
@@ -203,6 +202,11 @@ instead of four:
 Requirements: Android SDK 36, NDK 29, JDK 11+. Minimum supported device is Android 7.1 (API 25);
 the mpv engine additionally needs Android 8.0, and is offered only there.
 
+Release builds are signed from `keystore.properties`, which is not in the repository. Without it the
+build falls back to the debug key, which is fine for building and testing but produces an APK that
+cannot be installed over a released one. Copy `keystore.properties.example` and point it at your own
+keystore if you are building your own releases.
+
 ### Online features need keys
 
 TMDB is required for identification, and everything downstream of it — the info card, skip markers
@@ -212,11 +216,24 @@ compiled into the app.
 
 ---
 
-## Credits and licences
+## Thanks
 
-* [Just Player](https://github.com/moneytoo/Player) by Marcel Dopita — the original.
-* [Just Player+](https://github.com/wasky/just-player-plus) — the fork this builds on.
-* [Morveus/just-player-plus](https://github.com/Morveus/just-player-plus) — render-time subtitle delay.
+This stands on other people's work, and it would be poor form not to say so.
+
+* **[Just Player](https://github.com/moneytoo/Player)** by Marcel Dopita — the original, and still
+  the foundation: the player core, the gesture controls, the file handling and the Android TV
+  behaviour all come from here.
+* **[just-player-plus](https://github.com/wasky/just-player-plus)** by Michal Wolski — the subtitle
+  settings panel, custom subtitle fonts, the Outline & shadow edge style, the Medium typeface,
+  MicroDVD and MPL2 support, and the TV back-button behaviour.
+* **[Morveus/just-player-plus](https://github.com/Morveus/just-player-plus)** — subtitle delay
+  applied at render time, which is the reason negative delays work on embedded MKV subtitles at all.
+* **[Just+ Player](https://github.com/just-plus-player/just-plus-player)** — the most
+  feature-complete Just Player fork going, and worth a look in its own right. Ideas and code from it
+  are noted in the release notes as they land.
+
+### Libraries and services
+
 * [libmpv](https://github.com/jarnedemeulemeester/libmpv-android) (`dev.jdtech.mpv:libmpv`), MIT —
   the mpv engine, bundling mpv, FFmpeg and libass.
 * [AndroidX Media3](https://github.com/androidx/media), Apache 2.0.
@@ -225,4 +242,4 @@ compiled into the app.
 
 This product uses the TMDB API but is not endorsed or certified by TMDB.
 
-Licensed under the same terms as Just Player.
+Released into the public domain under the Unlicense, like Just Player.
