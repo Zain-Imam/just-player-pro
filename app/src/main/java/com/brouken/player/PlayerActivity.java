@@ -728,6 +728,19 @@ public class PlayerActivity extends Activity {
 
                     @Override
                     public String mediaName() {
+                        /*
+                         * What the launching app called it, first.
+                         *
+                         * Stremio, Nuvio and the rest hand over a title along
+                         * with the link, and it is a better answer than
+                         * anything that can be dug out of a URL whose last
+                         * segment is a hash behind a signed query string. The
+                         * name is still parsed afterwards, since what arrives
+                         * is as often a release name as a title.
+                         */
+                        if (apiTitle != null && !apiTitle.trim().isEmpty()) {
+                            return apiTitle.trim();
+                        }
                         return mPrefs.mediaUri == null
                                 ? null
                                 : Utils.getFileName(PlayerActivity.this, mPrefs.mediaUri, true);
