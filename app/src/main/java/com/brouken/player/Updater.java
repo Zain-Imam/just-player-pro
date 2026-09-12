@@ -37,6 +37,9 @@ public final class Updater {
     private final Activity activity;
     private final Handler main = new Handler(Looper.getMainLooper());
 
+    /** The page answered, and said there is nothing released at all. */
+    private volatile boolean nothingPublished;
+
     public Updater(final Activity activity) {
         this.activity = activity;
     }
@@ -48,16 +51,29 @@ public final class Updater {
                 if (activity.isFinishing()) {
                     return;
                 }
+                /*
+                 * Say which of the three things happened, not one word for all
+                 * of them.
+                 *
+                 * "You have the newest" is the answer to a question that was
+                 * asked and answered. It is not the answer when the page could
+                 * not be reached, and it is not the answer when there is
+                 * nothing published to compare against — and reading it in
+                 * either of those cases is how you learn not to trust it. The
+                 * version it found is named, so the answer can be checked.
+                 */
                 if (release == null) {
                     if (!quiet) {
-                        toast(activity.getString(R.string.update_failed));
+                        toast(activity.getString(nothingPublished
+                                ? R.string.update_none_published
+                                : R.string.update_failed, BuildConfig.VERSION_NAME));
                     }
                     return;
                 }
                 if (!isNewer(release.version, BuildConfig.VERSION_NAME)) {
                     if (!quiet) {
                         toast(activity.getString(R.string.update_none,
-                                BuildConfig.VERSION_NAME));
+                                BuildConfig.VERSION_NAME, release.version));
                     }
                     return;
                 }
@@ -166,12 +182,20 @@ public final class Updater {
 
     @Nullable
     private Release fetch() {
+        nothingPublished = false;
         try {
             final HttpURLConnection connection =
                     (HttpURLConnection) new URL(RELEASES).openConnection();
             connection.setRequestProperty("Accept", "application/vnd.github+json");
             connection.setConnectTimeout(15_000);
             connection.setReadTimeout(15_000);
+
+            // A repository with no releases answers 404 here, which is a real
+            // answer and not a failure to get one.
+            if (connection.getResponseCode() == 404) {
+                nothingPublished = true;
+                return null;
+            }
 
             final StringBuilder body = new StringBuilder();
             try (InputStream in = connection.getInputStream()) {
@@ -211,7 +235,11 @@ public final class Updater {
             if (release.apk == null) {
                 release.apk = universal;
             }
-            return release.version.isEmpty() ? null : release;
+            if (release.version.isEmpty()) {
+                nothingPublished = true;
+                return null;
+            }
+            return release;
         } catch (Exception e) {
             return null;
         }

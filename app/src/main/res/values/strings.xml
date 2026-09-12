@@ -108,8 +108,8 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="pref_key_not_set">Not set</string>
     <string name="pref_subtitle_language">Subtitle language</string>
     <string name="pref_overlay">Info card when paused</string>
-    <string name="pref_overlay_on">Shows the film or episode</string>
-    <string name="pref_overlay_off">Hidden</string>
+    <string name="pref_overlay_on">Looks the film up as it opens, and shows its poster, rating and synopsis whenever you pause</string>
+    <string name="pref_overlay_off">No card on pause. You can still ask for it from the quick panel while watching.</string>
     <string name="pref_skip">Skip intros and credits</string>
     <string name="pref_skip_on">Button over intros, recaps and credits</string>
     <string name="pref_skip_off">Never looked up</string>
@@ -201,6 +201,7 @@ Auto starts on Media3 and switches only for a file Media3 fails on.</string>
     <string name="open_url_invalid">That does not look like a URL a player can open</string>
     <string name="pref_history_header">History</string>
     <string name="error_code">Show a code</string>
+    <string name="osd_info_card">Show info card</string>
     <string name="video_menu_title">Video quality</string>
     <string name="video_menu_auto">Auto</string>
     <string name="video_menu_none">This file has only one video track</string>
@@ -214,6 +215,15 @@ Auto starts on Media3 and switches only for a file Media3 fails on.</string>
     <string name="pref_language_subtitle_priority">Subtitle language order</string>
     <string name="pref_language_subtitle_priority_summary">Tried before the language chosen for searching</string>
     <string name="pref_language_priority_hint">Languages separated by commas, best first — for example: jpn, eng, spa. The first one the file actually has is the one that plays.</string>
+    <string name="pref_check_all">Test keys and addons</string>
+    <string name="pref_check_all_summary">Asks every service whether it still answers</string>
+    <string name="pref_checking_all">Checking…</string>
+    <string name="pref_check_all_title">What answered</string>
+    <string name="pref_check_all_none">Nothing is set up yet</string>
+    <string name="pref_about_header">About</string>
+    <string name="pref_about_title">Just Player Pro</string>
+    <string name="pref_about_summary">Version %1$s · github.com/Zain-Imam/just-player-pro</string>
+    <string name="pref_about_note">Built by Zain Imam on top of Just Player by Marcel Dopita, with pieces from just-player-plus, Just+ Player and the mpv forks. Tailored to my own use and shared as is.</string>
     <string name="pref_update">Check for updates</string>
     <string name="pref_update_summary">Asks GitHub whether there is a newer build</string>
     <string name="update_title">Version %1$s is available</string>
@@ -222,7 +232,8 @@ Auto starts on Media3 and switches only for a file Media3 fails on.</string>
     <string name="update_open">Open the page</string>
     <string name="update_downloading">Downloading…</string>
     <string name="update_failed">Could not check for an update.</string>
-    <string name="update_none">Version %1$s is the newest there is.</string>
+    <string name="update_none">You have %1$s. The newest published is %2$s.</string>
+    <string name="update_none_published">Nothing has been published yet. You have %1$s.</string>
     <string name="pref_history">Recently played URLs</string>
     <string name="pref_history_summary_empty">Nothing played from a network URL yet</string>
     <plurals name="pref_addons_summary_count">
