@@ -233,16 +233,47 @@ public final class SetupServer {
         if (field == null) {
             return "Nothing to test";
         }
+        final boolean addon = field.startsWith("subtitleAddon");
+
         String entered = value(form, "value");
         if (entered == null || entered.isEmpty()) {
-            // Empty means "the one already saved", so Test works on a key that
-            // is set but not shown.
-            entered = ApiKeys.get(context, field);
+            // Empty means "the one already saved", so Test works on something
+            // that is set but not shown.
+            entered = addon
+                    ? PreferenceManager.getDefaultSharedPreferences(context)
+                            .getString(field, "")
+                    : ApiKeys.get(context, field);
         }
         if (entered == null || entered.isEmpty()) {
             return "Nothing entered";
         }
-        return KeyCheck.check(field, entered).message;
+        return addon ? describe(entered) : KeyCheck.check(field, entered).message;
+    }
+
+    /*
+     * An addon is checked here the same way it is checked in the app.
+     *
+     * It used to be taken at its word from this page and only really tried when
+     * the same URL was typed into settings, so an addon added from a phone went
+     * unverified until the evening it was needed. Both routes ask it for a real
+     * subtitle now.
+     */
+    private String describe(final String entered) {
+        final String normalized = SubtitleAddons.normalizeUrl(entered);
+        if (normalized == null) {
+            return "Not an addon URL";
+        }
+        final SubtitleAddons.Probe probe = SubtitleAddons.probe(normalized);
+        if (!probe.accepted()) {
+            return "Rejected: " + readable(probe);
+        }
+        return (probe.name == null ? "Addon" : probe.name)
+                + " · " + probe.subtitles + " subtitles"
+                + (probe.downloadVerified ? "" : " · download not proved");
+    }
+
+    private static String readable(final SubtitleAddons.Probe probe) {
+        return probe.verdict.name().toLowerCase(java.util.Locale.US).replace("_", " ");
     }
 
     private String save(final Map<String, String> form) {
@@ -280,6 +311,12 @@ public final class SetupServer {
             final String normalized = SubtitleAddons.normalizeUrl(entered);
             if (normalized == null) {
                 bad.append("Addon ").append(slot).append(": not an addon URL · ");
+                continue;
+            }
+            final SubtitleAddons.Probe probe = SubtitleAddons.probe(normalized);
+            if (!probe.accepted()) {
+                bad.append("Addon ").append(slot).append(": ")
+                        .append(readable(probe)).append(" · ");
                 continue;
             }
             editor.putString(key, normalized);
@@ -372,7 +409,8 @@ public final class SetupServer {
                 .append("<h1>Just Player Pro</h1></div>");
 
         if (good != null) {
-            html.append("<div class=\"banner ok\">Saved: ").append(escape(good)).append("</div>");
+            html.append("<div class=\"banner ok\">Saved: ").append(escape(good))
+                    .append(". The player has it — you can close this page now.</div>");
         }
         if (bad != null) {
             html.append("<div class=\"banner bad\">Not saved: ").append(escape(bad)).append("</div>");
@@ -405,9 +443,12 @@ public final class SetupServer {
             final String saved = PreferenceManager.getDefaultSharedPreferences(context)
                     .getString(key, "");
             html.append("<label>Addon ").append(slot).append("</label>")
-                    .append("<input name=\"").append(key)
+                    .append("<div class=\"row\"><input name=\"").append(key)
                     .append("\" autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\"")
-                    .append(" value=\"").append(escape(saved == null ? "" : saved)).append("\">");
+                    .append(" value=\"").append(escape(saved == null ? "" : saved)).append("\">")
+                    .append("<button type=\"button\" onclick=\"t('").append(key)
+                    .append("')\">Test</button></div>")
+                    .append("<div class=\"res\" id=\"r_").append(key).append("\"></div>");
         }
 
         html.append("<button class=\"wide\" type=\"submit\">Check and save</button></form>")
