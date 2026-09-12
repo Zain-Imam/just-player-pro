@@ -9,6 +9,9 @@
          related, and distinct enough from other players to sit beside them on a
          launcher without being mistaken for one. -->
     <color name="brand">#F2761E</color>
+    <!-- Behind the badge in the launcher icon. The badge carries the colour; a
+         white field keeps its gradient edges readable under any launcher mask. -->
+    <color name="ic_launcher_background">#FFFFFFFF</color>
 
     <!-- Seek bar. Three shades that cannot be mistaken for one another: the
          played part is the app's orange, what is buffered ahead is bright grey,

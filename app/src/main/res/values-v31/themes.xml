@@ -1,0 +1,12 @@
+<resources>
+
+    <!-- The launch screen on Android 12 and up, where the system draws it
+         rather than the app. Black because the player itself is black: a white
+         splash would flash before the first frame. The icon is the launcher
+         badge, so the two never drift apart. -->
+    <style name="Theme.Player" parent="BaseTheme.Player">
+        <item name="android:windowSplashScreenBackground">@color/black</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+    </style>
+
+</resources>
