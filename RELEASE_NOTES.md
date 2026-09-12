@@ -59,8 +59,8 @@ Media3 reported everything.
   press, on any device.
 * **Sleep timer**, by minutes or at the end of the file, fading out over the
   last thirty seconds instead of cutting.
-* **Hold the picture for double speed.** The hold used to lock the controls,
-  which is what the padlock is for.
+* **Hold the picture for double speed**, and hold it with two fingers to lock.
+  One gesture used to have to be both.
 * **A clock on screen** while the controls are up.
 * **Volume keys can change the film** rather than the ringtone.
 * **The arrows seek by the step set in Settings**, not a fixed ten seconds.
@@ -100,10 +100,11 @@ Media3 reported everything.
   out; `S01E02`, `1x02`, `EP1089`, `Episode 12`, `Season 3` and the anime
   `Title - 08` form all go in, along with an episode title where there is one.
   Whatever the launching app called it wins over the address.
-* **A second line under the title** — `3840×2160 · HEVC · HDR · E-AC-3 5.1` —
-  built from the tracks the player settled on rather than from the file, which
-  is the quickest way to notice a device quietly falling back to something
-  lesser.
+* **A second line under the title** — `3840×2160 · HEVC · HDR · E-AC-3 5.1 ·
+  Media3` — built from the tracks the player settled on rather than from the
+  file, which is the quickest way to notice a device quietly falling back to
+  something lesser. It ends with the engine, which on Auto is the only way to
+  know which one a file landed on.
 * **Tracks described properly, identically on both engines.** Resolution,
   channel layout, codec, sample rate, bit rate, and whether a track is forced,
   for the hard of hearing, or an audio description. Two English soundtracks are
@@ -127,6 +128,11 @@ Media3 reported everything.
   own.
 * **While locked, the volume keys still work.** A lock is there to stop a pocket
   changing the film, and a pocket does not press volume buttons.
+* **Ask for the info card** from the quick panel rather than waiting for a
+  pause, and read the setting to find out what it does rather than turning it
+  on to see.
+* **Test keys and addons** from Settings, on demand.
+* **An About row** with the version and a mark that opens the repository.
 
 ## Which APK
 
