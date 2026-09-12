@@ -15,12 +15,37 @@ public final class MpvOptions {
     @Nullable
     private final Uri uri;
 
+    /** Headers the launching app asked to be sent with the stream. */
+    private final java.util.Map<String, String> headers = new java.util.LinkedHashMap<>();
+
     public MpvOptions(@Nullable final Uri uri) {
         this.uri = uri;
     }
 
+    public MpvOptions withHeaders(final java.util.Map<String, String> extra) {
+        headers.clear();
+        if (extra != null) {
+            headers.putAll(extra);
+        }
+        return this;
+    }
+
     public void applyTo(final MPVLib mpv, final Context context) {
         // -- core performance and battery -----------------------------------
+
+        // The same request headers Media3 is given, in mpv's own form: a
+        // stream behind a token plays on one engine and not the other if only
+        // one of them is told.
+        if (!headers.isEmpty()) {
+            final StringBuilder fields = new StringBuilder();
+            for (final java.util.Map.Entry<String, String> header : headers.entrySet()) {
+                if (fields.length() > 0) {
+                    fields.append(",");
+                }
+                fields.append(header.getKey()).append(": ").append(header.getValue());
+            }
+            mpv.setOptionString("http-header-fields", fields.toString());
+        }
 
         mpv.setOptionString("osd-level", "0");
         mpv.setOptionString("osd-bar", "no");

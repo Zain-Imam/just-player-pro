@@ -233,6 +233,13 @@ public class PlayerActivity extends Activity {
     static final String API_SUBS_NAME = "subs.name";
     static final String API_TITLE = "title";
     static final String API_END_BY = "end_by";
+    /* Extras a launching app can add, beyond the ones above. */
+    static final String API_HEADERS = "headers";
+    static final String API_IMDB = "imdb_id";
+    static final String API_TMDB = "tmdb_id";
+
+    /** Request headers the launching app asked to be sent with the stream. */
+    private final HashMap<String, String> apiHeaders = new HashMap<>();
     boolean apiAccess;
     boolean apiAccessPartial;
     String apiTitle;
@@ -323,6 +330,7 @@ public class PlayerActivity extends Activity {
                         apiAccessPartial = true;
                     }
                     apiTitle = bundle.getString(API_TITLE);
+                    readApiHeaders(bundle);
                 }
 
                 mPrefs.updateMedia(this, uri, type);
@@ -1762,6 +1770,12 @@ public class PlayerActivity extends Activity {
                 String userInfo = mPrefs.mediaUri.getUserInfo();
                 if (userInfo != null && userInfo.length() > 0 && userInfo.contains(":")) {
                     headers.put("Authorization", "Basic " + Base64.encodeToString(userInfo.getBytes(), Base64.NO_WRAP));
+                }
+                // Whatever the app that launched us asked to be sent. A stream
+                // behind a token or a referer check cannot be played without
+                // them, which is how most front-ends hand over a link.
+                headers.putAll(apiHeaders);
+                if (!headers.isEmpty()) {
                     DefaultHttpDataSource.Factory defaultHttpDataSourceFactory = new DefaultHttpDataSource.Factory();
                     defaultHttpDataSourceFactory.setDefaultRequestProperties(headers);
                     DefaultMediaSourceFactory networkMediaSourceFactory =
@@ -1782,7 +1796,8 @@ public class PlayerActivity extends Activity {
         mPrefs.setSubtitleEngine(mpv ? "mpv" : "media3");
         if (mpv) {
             player = new com.brouken.player.mpv.MpvPlayer(this,
-                    new com.brouken.player.mpv.MpvOptions(mPrefs.mediaUri));
+                    new com.brouken.player.mpv.MpvOptions(mPrefs.mediaUri)
+                            .withHeaders(apiHeaders));
         } else {
             player = playerBuilder.build();
         }
@@ -3917,6 +3932,46 @@ public class PlayerActivity extends Activity {
         Utils.showText(playerView, " " + Math.round(volume * 100) + "%");
         return true;
     }
+
+    /*
+     * Extras from the app that launched us.
+     *
+     * Headers arrive the way every player that takes them accepts: a flat array
+     * of name, value, name, value. A stream behind a token or a referer check
+     * cannot be played without them, and that is how a front-end usually hands
+     * a link over. A Bundle of strings is accepted too, since some send that.
+     *
+     * An IMDb or TMDB id saves asking a database what the file is, and is far
+     * more reliable than reading it off the file name.
+     */
+    private void readApiHeaders(final Bundle bundle) {
+        apiHeaders.clear();
+        apiImdbId = bundle.getString(API_IMDB);
+        apiTmdbId = bundle.getString(API_TMDB);
+
+        final Object raw = bundle.get(API_HEADERS);
+        if (raw instanceof String[]) {
+            final String[] pairs = (String[]) raw;
+            for (int i = 0; i + 1 < pairs.length; i += 2) {
+                if (pairs[i] != null && pairs[i + 1] != null) {
+                    apiHeaders.put(pairs[i], pairs[i + 1]);
+                }
+            }
+        } else if (raw instanceof Bundle) {
+            final Bundle headers = (Bundle) raw;
+            for (final String key : headers.keySet()) {
+                final String value = headers.getString(key);
+                if (value != null) {
+                    apiHeaders.put(key, value);
+                }
+            }
+        }
+    }
+
+    @Nullable
+    private String apiImdbId;
+    @Nullable
+    private String apiTmdbId;
 
     public void updateSkipEnabled(final boolean enabled) {
         if (enabled) {
