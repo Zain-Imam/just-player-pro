@@ -45,7 +45,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @UnstableApi
-public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver {
+public final class MpvPlayer extends BasePlayer
+        implements MPVLib.EventObserver, MPVLib.LogObserver {
 
     private static final String TAG = "MpvPlayer";
 
@@ -98,6 +99,9 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
     @Nullable
     private PlaybackException error;
 
+    /** Whether mpv has actually opened the current file. See event(). */
+    private boolean fileOpened;
+
     private boolean released;
     private boolean renderedFirstFrame;
 
@@ -128,6 +132,8 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
         observe(PROP_SID, MPVLib.MpvFormat.MPV_FORMAT_STRING);
 
         mpv.addObserver(this);
+        // mpv says why a file would not open; the event carries only an id.
+        mpv.addLogObserver(this);
     }
 
     private void observe(final String property, final int format) {
@@ -161,6 +167,7 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
             return;
         }
         error = null;
+        fileOpened = false;
         renderedFirstFrame = false;
         setPlaybackState(Player.STATE_BUFFERING);
 
@@ -223,6 +230,12 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
         }
 
         final String uri = item.localConfiguration.uri.toString();
+        // Nothing has opened yet. If the end of the file arrives before the
+        // file does, it never opened at all — see event().
+        fileOpened = false;
+        synchronized (complaints) {
+            complaints.setLength(0);
+        }
         mpv.command(new String[]{"loadfile", uri});
 
         /*
@@ -436,12 +449,32 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
     public void event(int eventId) {
         handler.post(() -> {
             if (eventId == MPVLib.MpvEvent.MPV_EVENT_FILE_LOADED) {
+                fileOpened = true;
                 addPendingSubtitles();
                 updateTracks();
                 updateVideoSize();
                 setPlaybackState(Player.STATE_READY);
             } else if (eventId == MPVLib.MpvEvent.MPV_EVENT_END_FILE) {
-                if (playbackState != Player.STATE_IDLE) {
+                /*
+                 * The end of a file that never began is a failure, not an end.
+                 *
+                 * This used to report STATE_ENDED whatever had happened, and
+                 * nothing ever set the error, so getPlayerError() could only
+                 * ever return null. A file mpv could not open — an expired
+                 * debrid link, a dead host, a 403, a path with no permission —
+                 * produced no error, no dialog and no message of any kind. The
+                 * player opened, named the file, and sat at 00:00 for as long
+                 * as you left it. Every unopenable file on this engine behaved
+                 * that way.
+                 *
+                 * mpv says why in its log, but the binding hands over only the
+                 * event id, so the distinction is drawn from order instead: an
+                 * end-file before any file-loaded means the file never opened.
+                 * That is exactly the case that had nothing to show for it.
+                 */
+                if (!fileOpened) {
+                    reportFailedToOpen();
+                } else if (playbackState != Player.STATE_IDLE) {
                     setPlaybackState(Player.STATE_ENDED);
                 }
             }
@@ -455,6 +488,89 @@ public final class MpvPlayer extends BasePlayer implements MPVLib.EventObserver 
                 notifyFirstFrame();
             }
         });
+    }
+
+    /**
+     * Everything mpv has complained about since the file was asked for.
+     *
+     * The event callback carries an id and nothing else, so on its own all this
+     * engine could ever report is "something went wrong". mpv does say what
+     * went wrong — "HTTP error 403 Forbidden", "Permission denied", "Failed to
+     * open" — it says it in its log, so the log is where it is read from.
+     *
+     * All of them are kept, not one. Taking the last turned a refused link into
+     * a connection problem, because mpv says "HTTP error 403 Forbidden" and
+     * then "Failed to open" and the summary arrives last. Taking the first was
+     * no better: mpv warns "client removed during hook handling" before it has
+     * even tried, so the first complaint is often about nothing at all. What
+     * matters is whether a reason appears anywhere among them, so they are read
+     * together and the most specific one wins.
+     *
+     * Written from mpv's thread, read from the main one. Capped, because a
+     * stream that fails slowly can complain for a long time.
+     */
+    private static final int COMPLAINTS_LIMIT = 4000;
+    private final StringBuilder complaints = new StringBuilder();
+
+    @Override
+    public void logMessage(final String prefix, final int level, final String text) {
+        if (text == null || level > MPVLib.MpvLogLevel.MPV_LOG_LEVEL_WARN) {
+            return;
+        }
+        synchronized (complaints) {
+            if (complaints.length() < COMPLAINTS_LIMIT) {
+                complaints.append(text.trim()).append('\n');
+            }
+        }
+    }
+
+    private String complaints() {
+        synchronized (complaints) {
+            return complaints.toString();
+        }
+    }
+
+    /**
+     * Say that the file would not open, in the terms the rest of the app uses.
+     *
+     * The code chosen here is what decides which sentence the person watching
+     * reads, so mpv's own words are matched to one. A refused request and a
+     * link that has expired are the same thing to a debrid service, and that is
+     * worth saying rather than "something went wrong".
+     */
+    private void reportFailedToOpen() {
+        if (error != null) {
+            return;
+        }
+        final String all = complaints();
+        final String said = all.toLowerCase();
+        final int code;
+        if (said.contains("404") || said.contains("not found")) {
+            code = PlaybackException.ERROR_CODE_IO_FILE_NOT_FOUND;
+        } else if (said.contains("403") || said.contains("401")
+                || said.contains("http error")) {
+            code = PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS;
+        } else if (said.contains("permission denied")) {
+            code = PlaybackException.ERROR_CODE_IO_NO_PERMISSION;
+        } else if (said.contains("failed to open") || said.contains("connection")
+                || said.contains("timed out") || said.contains("resolve")) {
+            code = PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED;
+        } else if (said.contains("no video or audio streams")
+                || said.contains("unrecognized file format")) {
+            code = PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED;
+        } else {
+            code = PlaybackException.ERROR_CODE_IO_UNSPECIFIED;
+        }
+
+        error = new PlaybackException(
+                all.isEmpty() ? "mpv could not open the file" : all.trim(),
+                null,
+                code);
+        setPlaybackState(Player.STATE_IDLE);
+        listeners.sendEvent(Player.EVENT_PLAYER_ERROR,
+                listener -> listener.onPlayerError(error));
+        listeners.sendEvent(Player.EVENT_PLAYER_ERROR,
+                listener -> listener.onPlayerErrorChanged(error));
     }
 
     private void notifyFirstFrame() {
