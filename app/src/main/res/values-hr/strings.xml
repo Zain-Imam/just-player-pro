@@ -6,7 +6,6 @@
     <string name="onboarding_open_description">Dodirni za otvaranje video datoteke. Dodirni dugo za učitavanje vanjskih titlova.</string>
     <string name="onboarding_open_title">Odaberi video</string>
     <string name="video_orientation_sensor">Automatsko okretanje</string>
-    <string name="video_orientation_video">Položaj videa</string>
     <string name="video_resize_crop">Obreži</string>
     <string name="video_resize_fit">Prilagodi</string>
     <string name="request_scope">Za automatsko učitavanje vanjskih titlova ili za omogućavanje preskakanja na sljedeću datoteku u mapi, odobri %s pristup najvišoj mapi koja sadrži tvoja videa (npr. Filmovi).</string>
@@ -41,7 +40,6 @@
     <string name="pref_decoder_priority_prefer_device">Daj prednost dekoderima uređaja (standardno)</string>
     <string name="pref_decoder_priority_prefer_app">Daj prednost dekoderima programa</string>
     <string name="pref_decoder_priority_only_device">Samo dekoderi uređaja</string>
-    <string name="video_orientation_system">Usmjerenje uređaja</string>
     <string name="pref_map_dv7">Dolby Vision profile 7 rezerva</string>
     <string name="pref_map_dv7_on">Reproduciraj Dolby Vision profile 7 sadržaj na HDR ekranima</string>
     <string name="pref_language_audio">Standardna audio traka</string>

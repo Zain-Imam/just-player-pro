@@ -2,7 +2,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="video_resize_fit">Kecocokan</string>
     <string name="video_resize_crop">Pangkas</string>
-    <string name="video_orientation_video">Orientasi video</string>
     <string name="video_orientation_sensor">Rotasi otomatis</string>
     <string name="onboarding_open_title">Pilih video untuk diputar</string>
     <string name="onboarding_open_description">Ketuk untuk membuka file video. Ketuk panjang untuk memuat subtitle eksternal.</string>
@@ -38,7 +37,6 @@
     <string name="mediastore_empty">Tidak ditemukan file video yang diindeks. Untuk mengakses file video di penyimpanan tertentu, aktifkan pemindaian media otomatis di pengaturan sistem.</string>
     <string name="pref_language_audio">Trek audio default</string>
     <string name="pref_file_access">Akses file</string>
-    <string name="video_orientation_system">Orientasi perangkat</string>
     <string name="pref_decoder_priority_only_device">Hanya dekoder perangkat</string>
     <string name="pref_dangerous_warning">Mengganti opsi dalam kategori ini dapat merusak pemutaran konten yang biasanya kompatibel</string>
     <string name="pref_captioning_preferences">Preferensi teks</string>

@@ -229,6 +229,13 @@
             app:title="@string/pref_prefill" />
 
         <SwitchPreferenceCompat
+            app:key="linkSubtitleAndInfo"
+            app:defaultValue="true"
+            app:summaryOn="@string/pref_link_titles_on"
+            app:summaryOff="@string/pref_link_titles_off"
+            app:title="@string/pref_link_titles" />
+
+        <SwitchPreferenceCompat
             app:key="overlayOnPause"
             app:defaultValue="false"
             app:summaryOn="@string/pref_overlay_on"

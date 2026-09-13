@@ -9,7 +9,6 @@
     <string name="onboarding_open_description">タップして動画ファイルを開く。長押して外部の字幕を読み込む。</string>
     <string name="onboarding_open_title">再生する動画を選択</string>
     <string name="video_orientation_sensor">自動回転</string>
-    <string name="video_orientation_video">映像の向き</string>
     <string name="video_resize_fit">丁度収める</string>
     <string name="video_resize_crop">切り抜く</string>
     <string name="shortcut_videos">動画</string>
@@ -40,7 +39,6 @@
     <string name="pref_skip_silence_off">コンテンツをそのまま再生する</string>
     <string name="pref_general_header">全般</string>
     <string name="pref_decoder_priority">優先するデコーダー</string>
-    <string name="video_orientation_system">端末の向き</string>
     <string name="pref_map_dv7">Dolby Vision profile 7の縮退運用</string>
     <string name="pref_map_dv7_on">Dolby Vision profile 7のコンテンツをHDRディスプレイで再生する</string>
     <string name="pref_map_dv7_off">Dolby Visionを含むUHD Blu-rayコンテンツをそのまま再生する</string>

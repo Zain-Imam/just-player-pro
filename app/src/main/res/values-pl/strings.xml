@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="video_resize_fit">Dopasuj</string>
-    <string name="video_orientation_video">Orientacja wideo</string>
     <string name="error_details">Szczegóły</string>
     <string name="open_subtitles">Wczytaj napisy</string>
     <string name="onboarding_open_description">Dotknij aby otworzyć plik wideo. Przytrzymaj aby załadować zewnętrzne napisy.</string>
@@ -15,7 +14,6 @@
     <string name="request_scope">Aby automatycznie ładować napisy lub włączyć przewijanie do następnego pliku w folderze, zezwol %s na dostęp do folderu zawierającego twoje filmy (np. Movies).</string>
     <string name="pref_title">Ustawienia</string>
     <string name="pref_general_header">Główne</string>
-    <string name="video_orientation_system">Orientacja urządzenia</string>
     <string name="pref_auto_pip_off">Nie aktywuj PiP automatycznie</string>
     <string name="pref_auto_pip_on">Aktywuj PiP po wyjściu z aplikacji</string>
     <string name="pref_skip_silence">Pomiń sekcje bez dźwięku</string>

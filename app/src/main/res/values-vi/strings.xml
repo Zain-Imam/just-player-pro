@@ -2,7 +2,6 @@
 <resources>
     <string name="video_resize_fit">Vừa vặn</string>
     <string name="video_resize_crop">Cắt bỏ</string>
-    <string name="video_orientation_video">Hướng video</string>
     <string name="video_orientation_sensor">Tự động xoay</string>
     <string name="onboarding_open_title">Chọn một video để phát</string>
     <string name="onboarding_open_description">Nhấn để mở tệp video. Nhấn và giữ để tải phụ đề bên ngoài.</string>
@@ -41,7 +40,6 @@
     <string name="pref_decoder_priority_only_device">Chỉ bộ giải mã thiết bị</string>
     <string name="mediastore_empty">Không tìm thấy tệp video</string>
     <string name="pref_decoder_priority">Bộ giải mã ưu tiên</string>
-    <string name="video_orientation_system">Hướng thiết bị</string>
     <string name="pref_map_dv7">Dự phòng Dolby Vision profile 7</string>
     <string name="pref_map_dv7_on">Phát nội dung Dolby Vision profile 7 trên màn hình hỗ trợ HDR</string>
     <string name="pref_map_dv7_off">Phát nội dung UHD Blu-ray Dolby Vision</string>

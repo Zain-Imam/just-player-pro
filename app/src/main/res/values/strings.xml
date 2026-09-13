@@ -11,11 +11,13 @@
     <string name="video_resize_fit">Fit</string>
     <string name="video_resize_crop">Crop</string>
     <string name="video_resize_stretch">Stretch</string>
-    <string name="video_orientation_video">Video orientation</string>
+    <string name="video_orientation_landscape">Landscape</string>
+    <string name="video_orientation_portrait">Portrait</string>
     <string name="video_orientation_sensor">Auto-rotate</string>
-    <string name="video_orientation_system">Device orientation</string>
     <string name="onboarding_open_title">Choose a video to play</string>
     <string name="onboarding_open_description">Tap to open a video file. Long tap to load external subtitles.</string>
+    <string name="onboarding_key_title">Add a TMDB key</string>
+    <string name="onboarding_key_description">Settings are here. A free TMDB key is what finds titles, posters, subtitles and intro markers.</string>
     <string name="open_subtitles">Load subtitles</string>
     <string name="error_title">This would not play</string>
     <string name="error_share">Share the details</string>
@@ -107,6 +109,9 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="pref_key_set">Set</string>
     <string name="pref_key_not_set">Not set</string>
     <string name="pref_subtitle_language">Subtitle language</string>
+    <string name="pref_link_titles">One title for both</string>
+    <string name="pref_link_titles_on">The info card and the subtitle search use the same title. Correcting either corrects both.</string>
+    <string name="pref_link_titles_off">Kept apart. The card can show one film while subtitles are searched for another.</string>
     <string name="pref_overlay">Info card when paused</string>
     <string name="pref_overlay_on">Looks the film up as it opens, and shows its poster, rating and synopsis whenever you pause</string>
     <string name="pref_overlay_off">No card on pause. You can still ask for it from the quick panel while watching.</string>
@@ -126,6 +131,8 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="online_no_subtitles">No subtitles found for this one</string>
     <string name="online_search_hint">Title to search for</string>
     <string name="online_clear">Clear</string>
+    <string name="online_search_again">Search again…</string>
+    <string name="online_search_again_detail">Wrong film? Look it up by name</string>
     <string name="online_change_title">Change title…</string>
     <string name="subtitle_menu_title">Subtitles</string>
     <string name="audio_menu_title">Audio track</string>

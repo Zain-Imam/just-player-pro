@@ -108,6 +108,7 @@ import com.brouken.player.osd.OsdSettingsController;
 import com.brouken.player.subtitle.CueModifier;
 import com.brouken.player.subtitle.parser.EnhancedSubtitleParserFactory;
 import com.brouken.player.subtitle.SubtitleDelayRenderersFactory;
+import com.brouken.player.online.ApiKeys;
 import com.getkeepsafe.taptargetview.TapTarget;
 import com.getkeepsafe.taptargetview.TapTargetView;
 import com.google.android.material.snackbar.Snackbar;
@@ -940,24 +941,15 @@ public class PlayerActivity extends Activity {
 
                 if (controllerVisible && playerView.isControllerFullyVisible()) {
                     if (mPrefs.firstRun) {
-                        TapTargetView.showFor(PlayerActivity.this,
-                                TapTarget.forView(buttonOpen, getString(R.string.onboarding_open_title), getString(R.string.onboarding_open_description))
-                                        .outerCircleColorInt(Accent.color(PlayerActivity.this))
-                                        .targetCircleColor(R.color.white)
-                                        .titleTextSize(22)
-                                        .titleTextColor(R.color.white)
-                                        .descriptionTextSize(14)
-                                        .cancelable(true),
-                                new TapTargetView.Listener() {
-                                    @Override
-                                    public void onTargetClick(TapTargetView view) {
-                                        super.onTargetClick(view);
-                                        buttonOpen.performClick();
-                                    }
-                                });
+                        mPrefs.markFirstRun();
+                        showOpeningHint();
                         // TODO: Explain gestures?
                         //  "Use vertical and horizontal gestures to change brightness, volume and seek in video"
-                        mPrefs.markFirstRun();
+                    } else if (keyHintPending) {
+                        // The picker covered everything; now the controls are
+                        // back, so is the second pointer.
+                        keyHintPending = false;
+                        showKeyHint();
                     }
                     if (errorToShow != null) {
                         showError(errorToShow);
@@ -2252,11 +2244,6 @@ public class PlayerActivity extends Activity {
                 if (videoLoading) {
                     videoLoading = false;
 
-                    if (mPrefs.orientation == Utils.Orientation.UNSPECIFIED) {
-                        mPrefs.orientation = Utils.getNextOrientation(mPrefs.orientation);
-                        Utils.setOrientation(PlayerActivity.this, mPrefs.orientation);
-                    }
-
                     applyVideoShape();
 
                     if (duration != C.TIME_UNSET && duration > TimeUnit.MINUTES.toMillis(20)) {
@@ -2605,8 +2592,15 @@ public class PlayerActivity extends Activity {
         if (!pictureSeen || player.getPlaybackState() == Player.STATE_BUFFERING) {
             return;
         }
+        /*
+         * The card's title, which is not always the film's title.
+         *
+         * With the two kept together, which is the default, this is the same
+         * answer as everywhere else. Kept apart, the card shows whatever was
+         * last chosen for it and the subtitle search goes on using its own.
+         */
         final com.brouken.player.online.Identity identity =
-                onlineController.remembered(mPrefs.mediaUri);
+                onlineController.rememberedForCard(mPrefs.mediaUri);
         if (identity == null) {
             return;
         }
@@ -2652,7 +2646,7 @@ public class PlayerActivity extends Activity {
         if (onlineController == null || mPrefs.mediaUri == null) {
             return;
         }
-        if (onlineController.remembered(mPrefs.mediaUri) != null) {
+        if (onlineController.rememberedForCard(mPrefs.mediaUri) != null) {
             coordinatorLayout.removeCallbacks(overlayShower);
             overlayShower.run();
             return;
@@ -2786,12 +2780,34 @@ public class PlayerActivity extends Activity {
         }
         hideOverlayCard();
         final Uri uri = mPrefs.mediaUri;
-        onlineController.forget(uri);
-        skipLoadedFor = null;
+        onlineController.forgetCardTitle(uri);
+        /*
+         * Kept apart, this leaves the film alone.
+         *
+         * Forgetting the shared answer is right when the two titles are one
+         * thing, because the guess it holds is the wrong guess. It is not right
+         * when they have been separated: the subtitle search and the skip
+         * markers are still about the film that is playing, and only the card
+         * is being told to show something else.
+         */
+        if (onlineController.titlesAreLinked()) {
+            onlineController.forget(uri);
+            skipLoadedFor = null;
+        }
         onlineController.identify(this, true, identity -> {
             if (uri == null || !uri.equals(mPrefs.mediaUri)) {
                 return;
             }
+            /*
+             * Written down, so the next automatic guess does not undo it.
+             *
+             * Typing a title here is a decision, and it used to last until the
+             * file was identified again — which happens on its own, from the
+             * file name, and would put the guess back. What is chosen by hand
+             * wins from now on, for as long as the file is open and every time
+             * it is opened again, until it is changed by hand once more.
+             */
+            onlineController.rememberForCard(uri, identity);
             ensureSkipSegments();
             updateMetaLine();
             showOverlayCardNow();
@@ -3215,14 +3231,11 @@ public class PlayerActivity extends Activity {
         if (format == null) {
             return;
         }
-        if (!isTvBox && mPrefs.orientation == Utils.Orientation.VIDEO) {
-            if (Utils.isPortrait(format)) {
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
-            } else {
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-            }
-            updateButtonRotation();
-        }
+        // Nothing here turns the screen any more. It used to match the phone to
+        // the file, for the mode called "video orientation"; the three that
+        // replaced it all say what they want outright, so a file arriving with a
+        // different shape is no longer a reason to move the screen under
+        // somebody.
 
         /*
          * The shape is re-applied whenever a size arrives, because the player
@@ -4826,35 +4839,85 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    private void updateButtonRotation() {
-        boolean portrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
-        boolean auto = false;
-        try {
-            auto = Settings.System.getInt(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION) == 1;
-        } catch (Settings.SettingNotFoundException e) {
-            e.printStackTrace();
-        }
+    /*
+     * Two pointers on a first run: where the files are, then where the key goes.
+     *
+     * The first has always been there. The second exists because everything the
+     * player knows about a film -- its title, its poster, its subtitles, the
+     * marks it skips -- comes from one free key that somebody has to paste in,
+     * and nothing said so. An empty info card and a subtitle search that finds
+     * nothing look like a broken player rather than an unfinished setup.
+     *
+     * It is shown only while there is no key, so it is a piece of setup and not
+     * a standing advertisement, and it is dismissed exactly like the first one.
+     */
+    private boolean keyHintPending;
 
-        if (mPrefs.orientation == Utils.Orientation.VIDEO) {
-            if (auto) {
-                buttonRotation.setImageResource(R.drawable.ic_screen_lock_rotation_24dp);
-            } else if (portrait) {
+    private void showOpeningHint() {
+        TapTargetView.showFor(PlayerActivity.this,
+                hintAt(buttonOpen, R.string.onboarding_open_title,
+                        R.string.onboarding_open_description),
+                new TapTargetView.Listener() {
+                    @Override
+                    public void onTargetClick(TapTargetView view) {
+                        // Set before dismissing: dismissing calls the method
+                        // below, which is the other way the second pointer
+                        // comes up, and only one of the two should do it.
+                        keyHintPending = true;
+                        super.onTargetClick(view);
+                        buttonOpen.performClick();
+                    }
+
+                    @Override
+                    public void onTargetDismissed(TapTargetView view, boolean userInitiated) {
+                        super.onTargetDismissed(view, userInitiated);
+                        if (!keyHintPending) {
+                            showKeyHint();
+                        }
+                    }
+                });
+    }
+
+    private void showKeyHint() {
+        if (exoSettings == null || ApiKeys.hasTmdb(this)) {
+            return;
+        }
+        TapTargetView.showFor(PlayerActivity.this,
+                hintAt(exoSettings, R.string.onboarding_key_title,
+                        R.string.onboarding_key_description),
+                new TapTargetView.Listener() {
+                    @Override
+                    public void onTargetClick(TapTargetView view) {
+                        super.onTargetClick(view);
+                        exoSettings.performClick();
+                    }
+                });
+    }
+
+    private TapTarget hintAt(final View view, final int title, final int description) {
+        return TapTarget.forView(view, getString(title), getString(description))
+                .outerCircleColorInt(Accent.color(PlayerActivity.this))
+                .targetCircleColor(R.color.white)
+                .titleTextSize(22)
+                .titleTextColor(R.color.white)
+                .descriptionTextSize(14)
+                .cancelable(true);
+    }
+
+    private void updateButtonRotation() {
+        switch (mPrefs.orientation) {
+            case PORTRAIT:
                 buttonRotation.setImageResource(R.drawable.ic_screen_lock_portrait_24dp);
-            } else {
+                break;
+            case SENSOR:
+                // Following the phone, regardless of what the phone's own
+                // rotation lock says, so the icon is the unambiguous one.
+                buttonRotation.setImageResource(R.drawable.ic_auto_rotate_24dp);
+                break;
+            case LANDSCAPE:
+            default:
                 buttonRotation.setImageResource(R.drawable.ic_screen_lock_landscape_24dp);
-            }
-        } else if (mPrefs.orientation == Utils.Orientation.SENSOR) {
-            // Following the phone, regardless of what the phone's own rotation
-            // lock says, so the icon is the unambiguous one for that.
-            buttonRotation.setImageResource(R.drawable.ic_auto_rotate_24dp);
-        } else {
-            if (auto) {
-                buttonRotation.setImageResource(R.drawable.ic_screen_rotation_24dp);
-            } else if (portrait) {
-                buttonRotation.setImageResource(R.drawable.ic_screen_portrait_24dp);
-            } else {
-                buttonRotation.setImageResource(R.drawable.ic_screen_landscape_24dp);
-            }
+                break;
         }
     }
 

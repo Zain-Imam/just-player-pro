@@ -6,7 +6,6 @@
     <string name="onboarding_open_description">Appuyez pour ouvrir un fichier vidéo. Appui long pour charger les sous-titres externes.</string>
     <string name="onboarding_open_title">Choisissez une vidéo à lire</string>
     <string name="video_orientation_sensor">Rotation automatique</string>
-    <string name="video_orientation_video">Orientation vidéo</string>
     <string name="video_resize_crop">Rogner</string>
     <string name="video_resize_fit">Ajuster</string>
     <string name="request_scope">Pour charger automatiquement des sous-titres externes ou permettre le passage au fichier suivant dans un répertoire, accordez l’accès à %s au dossier le plus élevé contenant vos vidéos (par exemple, Films).</string>
@@ -41,7 +40,6 @@
     <string name="pref_decoder_priority">Priorité du décodeur</string>
     <string name="pref_decoder_priority_only_device">Décodeurs d\'appareils uniquement</string>
     <string name="pref_decoder_priority_prefer_device">Préférer les décodeurs de l’appareil (par défaut)</string>
-    <string name="video_orientation_system">Orientation de l’appareil</string>
     <string name="pref_map_dv7">Profil Dolby Vision 7 de secours</string>
     <string name="pref_map_dv7_on">Lire du contenu Dolby Vision profile 7 sur des écrans HDR</string>
     <string name="pref_dangerous_header">Dangereux ⚠️</string>

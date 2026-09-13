@@ -6,7 +6,6 @@
     <string name="onboarding_open_description">Πατήστε για να ανοίξετε ένα αρχείο βίντεο. Πατήστε παρατεταμένα για να φορτώσετε εξωτερικούς υπότιτλους.</string>
     <string name="onboarding_open_title">Επιλογή βίντεο για αναπαραγωγή</string>
     <string name="video_orientation_sensor">Αυτόματη περιστροφή</string>
-    <string name="video_orientation_video">Προσανατολισμός βίντεο</string>
     <string name="video_resize_crop">Περικοπή</string>
     <string name="video_resize_fit">Προσαρμογή</string>
     <string name="request_scope">Για την αυτόματη φόρτωση εξωτερικών υποτίτλων ή την ενεργοποίηση της παράβλεψης μετάβασης στο επόμενο αρχείο σε έναν κατάλογο, παραχωρήστε στο %s πρόσβαση στον ριζικό φάκελο που περιέχει τα βίντεό σας (π.χ. Movies).</string>
@@ -41,7 +40,6 @@
     <string name="pref_decoder_priority_prefer_app">Προτίμηση αποκωδικοποιητών εφαρμογής</string>
     <string name="pref_decoder_priority_only_device">Μόνο αποκωδικοποιητές συσκευής</string>
     <string name="pref_decoder_priority_prefer_device">Προτίμηση αποκωδικοποιητών συσκευής (προεπιλογή)</string>
-    <string name="video_orientation_system">Προσανατολισμός συσκευής</string>
     <string name="pref_dangerous_header">Επικίνδυνες ⚠️</string>
     <string name="pref_map_dv7">Εναλλαγή σε Dolby Vision προφίλ 7</string>
     <string name="pref_map_dv7_on">Αναπαραγωγή περιεχομένου Dolby Vision προφίλ 7 σε οθόνες HDR</string>

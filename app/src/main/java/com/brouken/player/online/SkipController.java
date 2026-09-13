@@ -56,8 +56,24 @@ public final class SkipController {
 
     /** Where the film was before the last skip, while undo is still offered. */
     private double undoAt = -1;
-    private static final double UNDO_WINDOW_SECONDS = 8;
-    private double undoUntil = -1;
+
+    /*
+     * How long the undo offer stays, measured by the clock rather than by the
+     * film.
+     *
+     * It used to be eight seconds of playback, which has two faults. Eight is
+     * long enough that the button is still sitting there well after you have
+     * stopped thinking about it. And counting in playback time means a paused
+     * film never counts at all: pause just after a skip and the offer stays on
+     * screen for as long as you leave it.
+     *
+     * Three seconds of real time, either way.
+     */
+    private static final long UNDO_WINDOW_MS = 3_000;
+    private final Runnable undoExpired = () -> {
+        undoAt = -1;
+        hideButton();
+    };
 
     private boolean running;
     private int restingBottomMargin;
@@ -145,6 +161,7 @@ public final class SkipController {
     public void stop() {
         running = false;
         main.removeCallbacks(tick);
+        main.removeCallbacks(undoExpired);
     }
 
     private final Runnable tick = new Runnable() {
@@ -188,11 +205,7 @@ public final class SkipController {
             return;
         }
 
-        // The undo offer lasts a few seconds of playback and then goes.
-        if (undoAt >= 0 && position > undoUntil) {
-            undoAt = -1;
-            hideButton();
-        }
+        // Its own timer takes the undo offer away; see UNDO_WINDOW_MS.
         if (undoAt >= 0) {
             // Undo is up; leave it alone.
             return;
@@ -286,6 +299,7 @@ public final class SkipController {
                     // scrubber.
                     final double back = undoAt;
                     undoAt = -1;
+                    main.removeCallbacks(undoExpired);
                     skipped = null;
                     host.seekToSeconds(back);
                     hideButton();
@@ -319,7 +333,8 @@ public final class SkipController {
         if (button == null) {
             return;
         }
-        undoUntil = host.positionSeconds() + UNDO_WINDOW_SECONDS;
+        main.removeCallbacks(undoExpired);
+        main.postDelayed(undoExpired, UNDO_WINDOW_MS);
         button.setText(R.string.skip_undo);
         button.setVisibility(View.VISIBLE);
         button.post(button::requestFocus);

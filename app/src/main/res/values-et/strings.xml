@@ -3,7 +3,6 @@
     <string name="video_resize_fit">Sobita</string>
     <string name="video_resize_crop">Kadreeri</string>
     <string name="error_details">Üksikasjad</string>
-    <string name="video_orientation_video">Video paigutus</string>
     <string name="video_orientation_sensor">Pööra automaatselt</string>
     <string name="onboarding_open_title">Vali esitatav video</string>
     <string name="onboarding_open_description">Videofaili avamiseks klõpsi. Väliste subtiitrite lisamiseks puuduta pikalt.</string>
@@ -13,7 +12,6 @@
     <string name="button_crop">Muuda suurust</string>
     <string name="pref_file_access">Ligipääs failidele</string>
     <string name="pref_file_access_auto">Automaatne</string>
-    <string name="video_orientation_system">Seadme paigutus</string>
     <string name="open_subtitles">Laadi subtiitrid</string>
     <string name="button_rotate">Pööra</string>
     <string name="button_pip">Pilt pildis</string>

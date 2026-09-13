@@ -312,9 +312,17 @@ class Utils {
         showText(playerView, text, 1200);
     }
 
+    /*
+     * Landscape, portrait, or follow the phone.
+     *
+     * It used to offer "Video orientation" and "Device orientation", which say
+     * how the player decides rather than what you get, and neither is the thing
+     * anybody reaches for. What people want from this button is to hold the
+     * phone a particular way round, or to stop being asked about it at all.
+     */
     public enum Orientation {
-        VIDEO(0, R.string.video_orientation_video),
-        SYSTEM(1, R.string.video_orientation_system),
+        LANDSCAPE(0, R.string.video_orientation_landscape),
+        PORTRAIT(4, R.string.video_orientation_portrait),
         /*
          * Follows the phone, whatever the phone has been told about rotating.
          *
@@ -325,8 +333,7 @@ class Utils {
          * does nothing because of a setting three screens away is not a
          * control. This is what every other player does here.
          */
-        SENSOR(3, R.string.video_orientation_sensor),
-        UNSPECIFIED(2, R.string.video_orientation_system);
+        SENSOR(3, R.string.video_orientation_sensor);
 
         public final int value;
         public final int description;
@@ -335,49 +342,63 @@ class Utils {
             this.value = type;
             this.description = description;
         }
+
+        /**
+         * The saved number back into a choice.
+         *
+         * By number and not by position in this list, which is what it used to
+         * be. The two stopped matching when a third mode was added in the
+         * middle, so choosing auto-rotate saved a 3 and read back as whatever
+         * happened to be fourth - the setting did not survive closing the app.
+         *
+         * The modes that no longer exist land on their nearest equivalent:
+         * video orientation was landscape for all but a phone-shot clip, and
+         * device orientation was the phone deciding, which is auto-rotate.
+         * Anything unrecognised, including the old "not chosen yet", opens
+         * landscape.
+         */
+        public static Orientation fromValue(final int value) {
+            switch (value) {
+                case 4:
+                    return PORTRAIT;
+                case 1:
+                case 3:
+                    return SENSOR;
+                default:
+                    return LANDSCAPE;
+            }
+        }
     }
 
     @SuppressLint("SourceLockedOrientationActivity")
     public static void setOrientation(Activity activity, Orientation orientation) {
         switch (orientation) {
-            case VIDEO:
-                if (PlayerActivity.player != null) {
-                    final Format format = PlayerActivity.videoFormat();
-                    if (format != null && isPortrait(format))
-                        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
-                    else
-                        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-                } else {
-                    activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-                }
-
-                break;
-            case SYSTEM:
-                activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+            case PORTRAIT:
+                // SENSOR_PORTRAIT, not PORTRAIT, so the phone can still be held
+                // the other way up. Locking to one edge is not what was asked
+                // for; staying out of landscape is.
+                activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
                 break;
             case SENSOR:
                 activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
                 break;
+            case LANDSCAPE:
+            default:
+                activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                break;
         }
     }
 
-    /*
-     * Three states now, not two.
-     *
-     * It used to be a toggle: shaped to the video, or left to the system. What
-     * was missing is the one people actually expect from a video player —
-     * follow the phone — so the cycle is video, then auto-rotate, then the
-     * system's own behaviour, and round again.
-     */
+    /** Landscape, then portrait, then follow the phone, then round again. */
     public static Orientation getNextOrientation(Orientation orientation) {
         switch (orientation) {
-            case VIDEO:
+            case LANDSCAPE:
+                return Orientation.PORTRAIT;
+            case PORTRAIT:
                 return Orientation.SENSOR;
             case SENSOR:
-                return Orientation.SYSTEM;
-            case SYSTEM:
             default:
-                return Orientation.VIDEO;
+                return Orientation.LANDSCAPE;
         }
     }
 

@@ -6,7 +6,6 @@
     <string name="onboarding_open_description">Trykk for å åpne videofil. Trykk lenge for å laste eksterne undertekster.</string>
     <string name="onboarding_open_title">Velg en video å spille</string>
     <string name="video_orientation_sensor">Roter automatisk</string>
-    <string name="video_orientation_video">Skjermretning</string>
     <string name="video_resize_crop">Beskjør</string>
     <string name="video_resize_fit">Tilpass</string>
     <string name="pref_tunneling_summary">Tunnel gir bedre støtte for 4K/HDR innhold, men kan ikke fungere på alle enheter</string>

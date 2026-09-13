@@ -270,11 +270,41 @@ open_settings() {
   exit 3
 }
 
-# A paused player keeps its controls up; a playing one hides them in three and
-# a half seconds, which is less time than reading the screen takes. Everything
-# that presses a control pauses first.
-pause_player()  { if [ -n "$(playing)" ]; then key KEYCODE_DPAD_CENTER; sleep 2; fi; return 0; }
-show_controls() { pause_player; if ! onscreen content-desc Settings; then key KEYCODE_DPAD_UP; sleep 1; fi; return 0; }
+# Pause, and make sure of it.
+#
+# Everything else here rests on this. A paused player keeps its controls up for
+# as long as you leave them, so a dump -- which takes a second or two -- reads a
+# screen that is standing still. A playing one takes them away on a timer, and
+# then a button that was plainly there when the search began has gone by the
+# time uiautomator reads the screen, and is reported as a button that does not
+# exist. Two false failures in an otherwise clean run were exactly that.
+#
+# It used to press the centre key, which is a toggle, and only when the media
+# session said the film was playing -- so when the session had not caught up it
+# pressed nothing at all, and when the session was stale it pressed play. The
+# pause key is not a toggle: sending it twice still pauses.
+pause_player() {
+  local n
+  for n in 1 2 3 4 5; do
+    [ -z "$(playing)" ] && return 0
+    key KEYCODE_MEDIA_PAUSE
+    sleep 1
+  done
+  return 0
+}
+
+# Up, and asked about the strip itself rather than about one button on it. The
+# buttons at the far end are off-screen until the strip is dragged, so asking
+# for one of those is really asking whether the controls are up *and* already
+# scrolled to the end -- which sent it looking for them all over again.
+show_controls() {
+  pause_player
+  if ! onscreen resource-id "$PKG:id/controls_scroll_view"; then
+    key KEYCODE_DPAD_UP
+    sleep 1
+  fi
+  return 0
+}
 
 # The button strip scrolls sideways on a narrow screen.
 #

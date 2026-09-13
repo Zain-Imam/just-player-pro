@@ -2,9 +2,7 @@
 <resources>
     <string name="video_resize_fit">សមរម្យ</string>
     <string name="video_resize_crop">ច្រឹប</string>
-    <string name="video_orientation_video">ការបង្វិលទិសវីដេអូ</string>
     <string name="video_orientation_sensor">ស្វ័យបង្វិល</string>
-    <string name="video_orientation_system">ការបង្វិលទិសតាមឧបករណ៍</string>
     <string name="onboarding_open_title">ជ្រើសវីដេអូ ដើម្បីចាក់</string>
     <string name="onboarding_open_description">ចុច ដើម្បីបើកឯកសារវីដេអូ។ ប៉ះឱ្យជាប់ ដើម្បីផ្ទុកចំណងជើងរងខាងក្រៅ។</string>
     <string name="open_subtitles">ផ្ទុកចំណងជើងរង</string>

@@ -18,7 +18,6 @@
     <string name="request_scope">لتحميل الترجمات الخارجية أو لتفعيل ميزة التخطي للفيديو التالي تلقائيا، أعط %s صلاحية الوصول للمجلد الذي يحوي فيديوهاتك (مثل مجلد Movies).</string>
     <string name="video_resize_fit">ملائم</string>
     <string name="video_resize_crop">اقتصاص</string>
-    <string name="video_orientation_video">اتجاه الفيديو</string>
     <string name="video_orientation_sensor">دوران تلقائي</string>
     <string name="error_files_missing">تطبيق Files غير فعّال أو غير موجود</string>
     <string name="error_details">التفاصيل</string>
@@ -28,7 +27,6 @@
     <string name="shortcut_videos">الفيديوهات</string>
     <string name="pref_repeat_toggle">تكرار</string>
     <string name="pref_decoder_priority">أولوية التشفير</string>
-    <string name="video_orientation_system">مسار الجهاز</string>
     <string name="pref_shortcuts_header">الاختصارت</string>
     <string name="pref_repeat_toggle_summary">تحكم إضافي للسماح بتكرار حلقة الفيديو إلى أجل غير مسمى ( يجب إعادة تشغيل التطبيق)</string>
     <string name="button_crop">تغير الحجم</string>

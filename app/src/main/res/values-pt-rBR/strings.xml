@@ -2,7 +2,6 @@
 <resources>
     <string name="video_resize_fit">Ajustar</string>
     <string name="video_resize_crop">Cortar</string>
-    <string name="video_orientation_video">Seguir orientação do vídeo</string>
     <string name="video_orientation_sensor">Rotação automática</string>
     <string name="onboarding_open_title">Escolha um vídeo para reproduzir</string>
     <string name="onboarding_open_description">Toque para abrir um arquivo de vídeo. Toque longo para carregar legendas externas.</string>
@@ -39,7 +38,6 @@
     <string name="pref_file_access">Acesso aos arquivos</string>
     <string name="pref_shortcuts_header">Atalhos</string>
     <string name="pref_decoder_priority_only_device">Apenas decodificadores do dispositivo</string>
-    <string name="video_orientation_system">Seguir orientação do dispostivo</string>
     <string name="pref_repeat_toggle">Ativar/desativar repetição</string>
     <string name="pref_captioning_preferences">Preferências de legenda</string>
     <string name="pref_dangerous_header">Perigoso ⚠️</string>

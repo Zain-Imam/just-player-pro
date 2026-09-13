@@ -15,6 +15,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.preference.PreferenceManager;
 
@@ -94,6 +95,93 @@ public final class OnlineController {
     // without being asked for. They are separate now.
     public boolean autoSearchSubtitles() {
         return preferences().getBoolean("subtitleAutoSearch", false);
+    }
+
+    /**
+     * Whether the info card and the subtitle search share one title.
+     *
+     * On, which is the default, they are the same thing: correcting the title
+     * to find subtitles also corrects what the card shows, which is what you
+     * want nearly always — they are both answers to "what is this?".
+     *
+     * Off, they are independent. That is for the case where the two questions
+     * genuinely differ: subtitles for the film that is playing, while the card
+     * shows something else entirely.
+     */
+    public boolean titlesAreLinked() {
+        return preferences().getBoolean("linkSubtitleAndInfo", true);
+    }
+
+    /** Where a card-only title is kept, when the two are not linked. */
+    private static String cardKey(final String key) {
+        return "card:" + key;
+    }
+
+    /**
+     * The title the info card should show.
+     *
+     * Linked, that is simply the one title there is. Unlinked, it is the card's
+     * own if one has been chosen, and otherwise the shared one — so turning the
+     * setting off does not blank a card that was already right.
+     */
+    @Nullable
+    public Identity rememberedForCard(@Nullable final Uri uri) {
+        if (uri == null) {
+            return null;
+        }
+        if (titlesAreLinked()) {
+            return remembered(uri);
+        }
+        try {
+            final JSONObject all =
+                    new JSONObject(preferences().getString(PREF_KEY_IDENTITIES, "{}"));
+            final Identity own = Identity.fromJson(all.optJSONObject(cardKey(uri.toString())));
+            if (own != null) {
+                return own;
+            }
+        } catch (Exception ignored) {
+            // Fall through to the shared one.
+        }
+        return remembered(uri);
+    }
+
+    /**
+     * Remember a title the person chose for the card.
+     *
+     * Kept whichever way the setting is pointing, so that turning linking off
+     * and on again does not lose a choice. Linked, it is written as the shared
+     * title too, which is what makes correcting the card correct the subtitle
+     * search with it.
+     */
+    public void rememberForCard(@Nullable final Uri uri, final Identity identity) {
+        if (uri == null || identity == null) {
+            return;
+        }
+        try {
+            final JSONObject all =
+                    new JSONObject(preferences().getString(PREF_KEY_IDENTITIES, "{}"));
+            all.put(cardKey(uri.toString()), identity.toJson());
+            preferences().edit().putString(PREF_KEY_IDENTITIES, all.toString()).apply();
+        } catch (Exception ignored) {
+            // One extra dialog next time, nothing worse.
+        }
+        if (titlesAreLinked()) {
+            remember(uri, identity);
+        }
+    }
+
+    /** Forget a card-only title, so the shared one applies again. */
+    public void forgetCardTitle(@Nullable final Uri uri) {
+        if (uri == null) {
+            return;
+        }
+        try {
+            final JSONObject all =
+                    new JSONObject(preferences().getString(PREF_KEY_IDENTITIES, "{}"));
+            all.remove(cardKey(uri.toString()));
+            preferences().edit().putString(PREF_KEY_IDENTITIES, all.toString()).apply();
+        } catch (Exception ignored) {
+        }
     }
 
     private SharedPreferences preferences() {
@@ -233,8 +321,19 @@ public final class OnlineController {
             return;
         }
 
+        /*
+         * Asking first, when the setting says not to search on its own.
+         *
+         * Turning "Search subtitles automatically" off says: do not go and find
+         * subtitles without me. Pressing the button then went straight to a
+         * search anyway, because the film had already been identified as it
+         * opened and the answer was sitting there — so there was no way to say
+         * which film you wanted subtitles for. With the setting off, the box
+         * comes up every time.
+         */
         final Uri uri = host.mediaUri();
-        final Identity known = reIdentify ? null : remembered(uri);
+        final boolean ask = reIdentify || !autoSearchSubtitles();
+        final Identity known = ask ? null : remembered(uri);
         if (known != null) {
             runSearch(activity, known);
             return;
@@ -513,11 +612,51 @@ public final class OnlineController {
         });
     }
 
+    /**
+     * The results, with a way back to the question above them.
+     *
+     * The button at the bottom of the dialog did this already, but a dialog
+     * button is not where anybody looks when the list is plainly for the wrong
+     * film. It is the first row now, and what you choose there overrides
+     * whatever was guessed.
+     */
     private void showResults(final Activity activity, final List<Subtitles.Result> results) {
-        ListPicker.show(activity, results.size() + " subtitles", results,
-                index -> downloadAndLoad(activity, results.get(index)),
-                R.string.online_change_title,
-                () -> searchSubtitles(activity, true));
+        final List<ListPicker.Row> rows = new ArrayList<>();
+        rows.add(new SearchAgainRow(context.getString(R.string.online_search_again),
+                context.getString(R.string.online_search_again_detail)));
+        rows.addAll(results);
+
+        ListPicker.show(activity, results.size() + " subtitles", rows,
+                index -> {
+                    if (index == 0) {
+                        searchSubtitles(activity, true);
+                        return;
+                    }
+                    downloadAndLoad(activity, results.get(index - 1));
+                });
+    }
+
+    /** The row that reopens the question, at the top of the results. */
+    private static final class SearchAgainRow implements ListPicker.Row {
+        private final String title;
+        private final String detail;
+
+        SearchAgainRow(final String title, final String detail) {
+            this.title = title;
+            this.detail = detail;
+        }
+
+        @NonNull
+        @Override
+        public String title() {
+            return title;
+        }
+
+        @Nullable
+        @Override
+        public String detail() {
+            return detail;
+        }
     }
 
     private void downloadAndLoad(final Activity activity, final Subtitles.Result result) {

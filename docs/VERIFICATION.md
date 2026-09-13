@@ -128,15 +128,23 @@ of 43,775 checked across 17 modules.
 
 ## Layer 2 — on the device
 
-`4 tests, 0 failures`
+`5 tests, 0 failures`
 
-Two of these exist because a laptop cannot answer the question:
+Three of these exist because a laptop cannot answer the question:
 
 * **Every class holding a regular expression is loaded and every pattern in it
   compiled, on the phone.** Android uses ICU and rejects patterns desktop Java
   accepts. That is exactly how a pattern that passed here killed the app there.
 * **The same name corpus, parsed on the device**, so the two engines of regular
   expression cannot disagree quietly.
+* **The undo offer after a skip, timed on the device's own main-thread
+  handler.** It cannot be reached by driving the player, because the skip button
+  only appears over a file with chapter marks or a film the databases know, and
+  the test clip is neither. The controller is built with the real activity, the
+  real layout and the real handler, and only the film is a stand-in: the offer
+  is up at two seconds, gone by three and a half, **with the film paused** —
+  which is the case the old playback-position window could never leave — and the
+  skip is offered again on seeking back into the intro.
 
 **This was proved to have teeth too**: the old broken pattern was put back and
 the suite failed with the same error the phone gave —
@@ -305,7 +313,7 @@ And one thing that is the phone, not the player: this device's Security Hub
 intercepts unfamiliar hosts with a full-screen warning. If a stream will not
 start and there is a "Potentially risky website" page behind it, that is why.
 
-## Three bugs the harness had, found by its own runs
+## Four bugs the harness had, found by its own runs
 
 Worth writing down, because a test that reports the wrong thing is worse than
 no test — and two of these were reporting the wrong thing about a player that
@@ -329,6 +337,15 @@ was behaving perfectly.
   It was asking the harness to contradict itself. What rotating can actually
   break is the place in the film, so that is what is checked now.
 
+* **The strip hid itself while it was being read.** The controls go away on a
+  timer and a `uiautomator` dump takes a second or two, so a button that was
+  plainly on screen when the search began could be gone by the time the screen
+  was actually read — reported as a button that does not exist. It cost two
+  false failures in a run where every button was there and reachable by hand,
+  and it only shows in portrait, where the strip is wider than the phone and has
+  to be dragged before the padlock and the frame button come into view. A key
+  press resets that timer, so one now goes in before every look.
+
 And one that ended a run rather than misreporting it: a **Back pressed with
 nothing open** left the player, after which every press would have landed on a
 launcher. The interlock stopped the run, correctly — but it could not recover,
@@ -338,6 +355,47 @@ has a screen of this app to return to.
 
 
 ---
+
+## The second round of notes, one at a time
+
+Six changes, each driven on the phone against the signed release build. What
+each one had to show before it counted:
+
+1. **With automatic search off, the subtitle button asks first.** Pressing
+   "Search online subtitles…" over an already-identified file used to go
+   straight to a search, so there was no way to say which film you wanted
+   subtitles for. It now brings up "Which is this?" with the name to correct —
+   seen on the phone, with the file identified and the setting off. And the
+   results themselves lead back: the first row above 163 subtitles for *Batman
+   Begins* reads "Search again… — Wrong film? Look it up by name".
+2. **The undo offer goes after three seconds by the clock.** Timed on the device
+   (Layer 2 above) and seen in the player itself: pressing "Skip intro" over a
+   film with real online markers puts "Undo skip" up, it is there within a
+   second, and it and nothing else is on screen four seconds later.
+3. **A title chosen by hand on the info card stays chosen.** The card was told
+   the file was *Inception* through the search icon on "Show info card"; it said
+   so, and it still said so after the file was closed and opened again, rather
+   than reverting to what the file name suggests.
+4. **The card's title and the subtitle title can be separated.** With "One title
+   for both" off, the card was changed to *Batman Begins* while the film's own
+   markers — which follow the subtitle title, not the card — went on offering to
+   skip *Inception*'s intro. Turned back on, the card returned to the shared
+   title by itself.
+5. **Landscape, portrait, auto-rotate.** Three presses of the rotate button, with
+   the label it puts on screen and the screen itself agreeing each time, and the
+   icon changing with them. A fresh install opens landscape.
+6. **Two pointers on a first run.** Cleared to a genuine first run: the pointer
+   at the folder, then — dismissed the way it is dismissed, by tapping away from
+   it — a second at the settings gear saying a free TMDB key is what finds
+   titles, posters, subtitles and intro markers. Tapped away again, and the film
+   is there.
+
+A bug found while reading the code for (5), rather than by any test: **the
+orientation setting never survived being closed.** It was written by number and
+read back by position in the list, and the two stopped matching when a third
+mode was added in the middle — so choosing auto-rotate saved a 3 and read back
+as whatever happened to be fourth. It is read by number now, and the modes that
+no longer exist map onto their nearest equivalent.
 
 ## What this does not prove
 

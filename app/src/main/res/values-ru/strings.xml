@@ -6,7 +6,6 @@
     <string name="onboarding_open_description">Нажмите, чтобы открыть видеофайл. Нажмите и удерживайте для загрузки внешних субтитров.</string>
     <string name="onboarding_open_title">Выберите видео для воспроизведения</string>
     <string name="video_orientation_sensor">Автоповорот</string>
-    <string name="video_orientation_video">Ориентация видео</string>
     <string name="video_resize_crop">Обрезать</string>
     <string name="video_resize_fit">Подогнать</string>
     <string name="delete_confirmation">Удалить</string>
@@ -41,7 +40,6 @@
     <string name="pref_decoder_priority_only_device">Только декодеры устройства</string>
     <string name="mediastore_empty">Видеофайлы не найдены</string>
     <string name="pref_shortcuts_header">Ярлыки</string>
-    <string name="video_orientation_system">Ориентация устройства</string>
     <string name="pref_map_dv7_off">Воспроизведение содержимого UHD Blu-ray, содержащего Dolby Vision, как есть</string>
     <string name="pref_map_dv7">Резервный вариант профиля 7 Dolby Vision</string>
     <string name="pref_dangerous_header">Опасный⚠️</string>
