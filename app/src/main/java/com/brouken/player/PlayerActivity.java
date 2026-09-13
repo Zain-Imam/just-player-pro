@@ -1605,12 +1605,26 @@ public class PlayerActivity extends Activity {
     private boolean pictureSeen;
 
     /**
-     * Whether a subtitle has been chosen by hand and not yet seen to work.
+     * The addresses of the subtitles handed over with this file.
      *
-     * Only set by the picker, so that a file which simply has no subtitles
-     * never produces a complaint about one.
+     * Needed because a failing sidecar does not announce itself as a subtitle.
+     * Three earlier attempts at this looked for the track becoming unselected,
+     * which never happens — when a subtitle fails, ExoPlayer disables the
+     * renderer internally and the track list goes on reporting
+     * "sel=true sup=true", which is why the picker says "Playing now" over a
+     * blank screen. The load error is the only place the truth appears, and it
+     * arrives with trackType -1 rather than TRACK_TYPE_TEXT, because a sidecar
+     * is loaded by a source that does not tag what it is for.
+     *
+     * What it does carry is the address it was trying to read, so that is what
+     * is matched. An embedded track still comes through as TRACK_TYPE_TEXT and
+     * is caught by the type instead.
      */
-    private boolean subtitleWasAskedFor;
+    private final java.util.Set<String> sidecarSubtitleUris = new java.util.HashSet<>();
+
+    /** Whether this file has already been reported as having a bad subtitle. */
+    private boolean subtitleFailureReported;
+
 
     private boolean tryMpvFallback() {
         if (pictureSeen) {
@@ -1881,6 +1895,55 @@ public class PlayerActivity extends Activity {
             player = playerBuilder.build();
         }
 
+        /*
+         * Say so when a subtitle will not load.
+         *
+         * This took three wrong attempts, each of which looked right in the
+         * code and did nothing on the device, so the reasoning is worth
+         * keeping.
+         *
+         * The obvious approach is to notice that no text track is selected any
+         * more. It does not work: when a subtitle fails, ExoPlayer disables the
+         * renderer internally and getCurrentTracks() goes on reporting the
+         * track as selected. The picker says "Playing now" because, as far as
+         * the track list is concerned, it is. There is no unselected state to
+         * find.
+         *
+         * Nor is it a player error — playback carries on perfectly well
+         * without the subtitle, so nothing is thrown.
+         *
+         * What does happen is a load failure, which the analytics listener
+         * reports along with the type of track it was for. That is the only
+         * place the fact appears, so that is where it is read.
+         */
+        final ExoPlayer errorSource = exo();
+        if (errorSource != null) {
+            errorSource.addAnalyticsListener(
+                    new androidx.media3.exoplayer.analytics.AnalyticsListener() {
+                        @Override
+                        public void onLoadError(
+                                @NonNull EventTime eventTime,
+                                @NonNull androidx.media3.exoplayer.source.LoadEventInfo loadEventInfo,
+                                @NonNull androidx.media3.exoplayer.source.MediaLoadData mediaLoadData,
+                                @NonNull java.io.IOException error,
+                                boolean wasCanceled) {
+                            if (subtitleFailureReported) {
+                                return;
+                            }
+                            final boolean ours = mediaLoadData.trackType == C.TRACK_TYPE_TEXT
+                                    || (loadEventInfo.uri != null
+                                        && sidecarSubtitleUris.contains(
+                                                loadEventInfo.uri.toString()));
+                            if (!ours) {
+                                return;
+                            }
+                            subtitleFailureReported = true;
+                            Utils.showText(playerView,
+                                    getString(R.string.subtitle_would_not_load), 3500);
+                        }
+                    });
+        }
+
         AudioAttributes audioAttributes = new AudioAttributes.Builder()
                 .setUsage(C.USAGE_MEDIA)
                 .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
@@ -1953,10 +2016,12 @@ public class PlayerActivity extends Activity {
             }
             if (apiAccess && apiSubs.size() > 0) {
                 mediaItemBuilder.setSubtitleConfigurations(apiSubs);
+                rememberSubtitleAddresses(apiSubs);
             } else {
                 final List<MediaItem.SubtitleConfiguration> subtitles = subtitleConfigurations();
                 if (!subtitles.isEmpty()) {
                     mediaItemBuilder.setSubtitleConfigurations(subtitles);
+                    rememberSubtitleAddresses(subtitles);
                 }
             }
             player.setMediaItem(mediaItemBuilder.build(), mPrefs.getPosition());
@@ -2085,6 +2150,19 @@ public class PlayerActivity extends Activity {
         }
         titleBar.setVisibility(View.GONE);
         updateButtons(false);
+    }
+
+    /** Note where each handed-over subtitle lives, so a failure can be recognised. */
+    private void rememberSubtitleAddresses(
+            final java.util.List<MediaItem.SubtitleConfiguration> subtitles) {
+        if (subtitles == null) {
+            return;
+        }
+        for (final MediaItem.SubtitleConfiguration subtitle : subtitles) {
+            if (subtitle.uri != null) {
+                sidecarSubtitleUris.add(subtitle.uri.toString());
+            }
+        }
     }
 
     private class PlayerListener implements Player.Listener {
@@ -2275,7 +2353,6 @@ public class PlayerActivity extends Activity {
             selectPendingSubtitle(tracks);
             applyCarriedTracks(tracks);
             keepSubtitleButtonEnabled();
-            noticeSubtitleThatWouldNotLoad(tracks);
             updateMetaLine();
             logEngineState("tracks");
             final boolean unplayable = hasUnplayableVideo(tracks);
@@ -2285,57 +2362,6 @@ public class PlayerActivity extends Activity {
             if (unplayable) {
                 tryMpvFallback();
             }
-        }
-
-        /*
-         * Say so when the subtitle you chose quietly failed.
-         *
-         * A text track that cannot be read — a sidecar file with no permission,
-         * a URL that has expired, a malformed .srt — is dropped by the player
-         * itself: "Disabling track due to error", and the track comes back
-         * unselected. Nothing was shown for that. The picker went on saying
-         * "Playing now" against the track you had picked, the screen stayed
-         * blank, and the only reading available was that choosing a subtitle
-         * does nothing.
-         *
-         * So: if a text track was asked for and the player is no longer
-         * offering it as selected, that is a failure, and it is said out loud
-         * once. The override is cleared at the same time, so the picker stops
-         * claiming something that is not true.
-         */
-        private void noticeSubtitleThatWouldNotLoad(final Tracks tracks) {
-            if (player == null || !subtitleWasAskedFor) {
-                return;
-            }
-            boolean anyTextSelected = false;
-            boolean anyTextOffered = false;
-            for (final Tracks.Group group : tracks.getGroups()) {
-                if (group.getType() != C.TRACK_TYPE_TEXT) {
-                    continue;
-                }
-                anyTextOffered = true;
-                for (int i = 0; i < group.length; i++) {
-                    if (group.isTrackSelected(i)) {
-                        anyTextSelected = true;
-                        break;
-                    }
-                }
-                if (anyTextSelected) {
-                    break;
-                }
-            }
-
-            // Still nothing decided, or the track list has not caught up yet.
-            if (!anyTextOffered || anyTextSelected) {
-                return;
-            }
-
-            subtitleWasAskedFor = false;
-            player.setTrackSelectionParameters(
-                    player.getTrackSelectionParameters().buildUpon()
-                            .clearOverridesOfType(C.TRACK_TYPE_TEXT)
-                            .build());
-            Utils.showText(playerView, getString(R.string.subtitle_would_not_load), 3500);
         }
 
         private boolean hasUnplayableVideo(final Tracks tracks) {
@@ -4202,8 +4228,8 @@ public class PlayerActivity extends Activity {
         if (player == null) {
             return;
         }
-        // Off is not something that can fail, so it does not arm the check.
-        subtitleWasAskedFor = group != null;
+        // A new choice gets a fresh hearing: if this one also fails, say so.
+        subtitleFailureReported = false;
         final TrackSelectionParameters.Builder builder =
                 player.getTrackSelectionParameters().buildUpon();
 

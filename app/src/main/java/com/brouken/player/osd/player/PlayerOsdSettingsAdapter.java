@@ -160,7 +160,7 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
     }
 
     private OsdSettingsItem createVideoTrackItem() {
-        final Drawable icon = getDrawable(R.drawable.ic_video_quality_24dp);
+        final Drawable icon = getDrawable(R.drawable.ic_hd_24dp);
         return new SimpleOsdSettingsItem(context.getString(R.string.video_menu_title), icon,
                 position -> listener.onOpenVideoTracks());
     }

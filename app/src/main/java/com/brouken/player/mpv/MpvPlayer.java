@@ -1114,44 +1114,35 @@ public final class MpvPlayer extends BasePlayer
     private int subtitleSizeStep;
 
     /**
-     * Size subtitles against the picture, while still placing them by the window.
+     * Match the other engine's subtitle size, by arithmetic rather than taste.
      *
-     * mpv measures subtitle size as a fraction of the window it is drawing
-     * into. That used to be the picture, because the surface was cut to the
-     * shape of the film. Now the surface is the whole screen — which is what
-     * lets subtitles sit on the black bars — so the same fraction produces text
-     * getting on for twice the size, and much larger than the other engine's.
+     * Both engines express size as a share of the window they draw into, and
+     * they do not agree on the share. Media3 uses SubtitleView's default text
+     * fraction, 0.0533 of the view height. mpv's default sub-font-size of 55 is
+     * expressed against a 720-tall window, which is 55/720 = 0.0764 of it. So
+     * the same film, the same screen and the same setting give mpv text about
+     * 43 per cent larger.
      *
-     * The fix is not to pick a smaller number and hope. mpv reports the window
-     * and the margins it has left around the video in osd-dimensions, so the
-     * height of the picture inside the window is known exactly, and the scale
-     * is set to that share of it. The text then measures itself against the
-     * film, as it did before, while margins go on placing it against the
-     * screen.
+     * That never showed while mpv was drawing into a surface cut to the shape
+     * of the film, because the two were measuring different windows. Now that
+     * mpv is given the whole screen — which is what lets subtitles sit on the
+     * black bars — they measure the same window, and the difference is plain.
+     *
+     * 0.0533 / 0.0764 brings them level. A constant, deliberately: sizing by
+     * how much of the screen the picture happens to occupy made the text change
+     * size when the aspect changed, so a crop was noticeably larger than a fit.
+     * Subtitles should not resize when you zoom the picture.
      */
+    private static final double MEDIA3_PARITY = 0.0533 / (55.0 / 720.0);
+
     private void applySubtitleScale() {
         if (mpv == null) {
             return;
         }
         final double chosen = 1.0 + subtitleSizeStep * (SUB_SIZE_STEP / SUB_SIZE_DEFAULT);
-
-        double share = 1.0;
-        final Integer windowHeight = mpv.getPropertyInt("osd-dimensions/h");
-        final Integer marginTop = mpv.getPropertyInt("osd-dimensions/mt");
-        final Integer marginBottom = mpv.getPropertyInt("osd-dimensions/mb");
-        if (windowHeight != null && windowHeight > 0
-                && marginTop != null && marginBottom != null) {
-            final double picture = windowHeight - marginTop - marginBottom;
-            if (picture > 0) {
-                share = picture / (double) windowHeight;
-            }
-        }
-        // A very tall, very narrow letterbox would otherwise shrink the text to
-        // nothing; below about a third of the screen it stops getting smaller.
-        share = Math.max(0.35, Math.min(1.0, share));
-
-        set("sub-scale", String.valueOf(Math.max(0.2, chosen * share)));
+        set("sub-scale", String.valueOf(Math.max(0.2, chosen * MEDIA3_PARITY)));
     }
+
 
     /**
      * Shape the picture, inside mpv, rather than by resizing its canvas.
