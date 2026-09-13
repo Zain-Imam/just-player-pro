@@ -116,8 +116,8 @@ Media3 reported everything.
 
 ## Subtitles and languages
 
-* **Subtitles handed over by another app are kept.** Stremio, Nuvio,
-  torbox-android and the rest each pass them in a slightly different shape — an
+* **Subtitles handed over by another app are kept.** Stremio, Nuvio and the rest
+  each pass them in a slightly different shape — an
   array of Uri, a list of Uri, an array of plain strings, a list of strings, or
   one on its own. Only the first was being read, so a subtitle sent by one app
   arrived and one sent by the next was dropped without a word. All of them are

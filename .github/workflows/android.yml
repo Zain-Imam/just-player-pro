@@ -1,28 +1,52 @@
-name: Android CI
+# Every push and every pull request: does it build, and do the tests pass.
+#
+# It used to watch `master`, which this repository does not have, so it had
+# never once run. It also used `./gradlew build`, which builds every variant and
+# runs lint over all of them for no benefit here -- one release APK and the unit
+# tests answer the same question in a fraction of the time.
+name: Build and test
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: set up JDK 17
-        uses: actions/setup-java@v1
-        with:
-          java-version: 17
 
-      - name: Validate Gradle wrapper
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Validate the Gradle wrapper
         uses: gradle/actions/wrapper-validation@v5
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      - name: Build with Gradle
-        run: ./gradlew build
+      # Media3LinkageTest is the one that matters most here: it reads every
+      # class file in the patched aars and resolves every call between them, so
+      # a Maven version raised past the aars fails the build instead of failing
+      # on somebody's television.
+      - name: Unit tests
+        run: ./gradlew --no-daemon :app:testLatestUniversalDebugUnitTest
+
+      - name: Build
+        run: ./gradlew --no-daemon :app:assembleLatestUniversalRelease
+
+      - name: Keep the test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: app/build/reports/tests/
+          if-no-files-found: ignore

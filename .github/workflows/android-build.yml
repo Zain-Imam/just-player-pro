@@ -1,9 +1,31 @@
-name: Android Build APK
+# Tag a version, get the five APKs.
+#
+# Signing is the whole difficulty here. Without a keystore the release build
+# falls back to the debug key, and an APK signed with that cannot be installed
+# over a properly signed one -- so a release made of debug-signed APKs is worse
+# than no release at all, and the old version of this file would have published
+# exactly that as a draft.
+#
+# So: if the signing secrets are set, the APKs are signed and attached to a
+# draft release for you to check and publish. If they are not, they are built
+# anyway and left as workflow artifacts, clearly not a release, for whoever
+# wants to look at them.
+#
+# The four secrets, if you want the signed path:
+#   KEYSTORE_BASE64       base64 of the .jks file
+#   KEYSTORE_PASSWORD
+#   KEY_ALIAS
+#   KEY_PASSWORD
+name: Release APKs
 
 on:
   push:
     tags:
-      - 'v*.*'
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -11,6 +33,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - uses: actions/setup-java@v4
         with:
@@ -18,22 +42,58 @@ jobs:
           java-version: 17
           cache: gradle
 
-      - name: Validate Gradle wrapper
+      - name: Validate the Gradle wrapper
         uses: gradle/actions/wrapper-validation@v5
 
-      - run: ./gradlew clean :app:assembleLatestUniversalRelease
+      - name: Unlock signing, if this repository has the keys
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "No keystore secret; building unsigned-for-release APKs."
+            exit 0
+          fi
+          mkdir -p keystore
+          echo "$KEYSTORE_BASE64" | base64 -d > keystore/release.jks
+          cat > keystore.properties <<EOF
+          storeFile=keystore/release.jks
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          EOF
+          echo "signed=true" >> "$GITHUB_OUTPUT"
 
-      - uses: softprops/action-gh-release@v2
+      - name: Unit tests
+        run: ./gradlew --no-daemon :app:testLatestUniversalDebugUnitTest
+
+      # One build per architecture, plus the universal one. Each overwrites the
+      # same output file, so each is copied out before the next begins.
+      - name: Build the five APKs
+        run: |
+          mkdir -p release-apks
+          version="$(grep -oP 'versionName\s+"\K[^"]+' app/build.gradle | head -1)"
+          for abi in arm64-v8a armeabi-v7a x86 x86_64; do
+            ./gradlew --no-daemon :app:assembleLatestUniversalRelease -PabiFilter="$abi"
+            cp app/build/outputs/apk/latestUniversal/release/just_player_pro.apk \
+               "release-apks/just-player-pro-$version-$abi.apk"
+          done
+          ./gradlew --no-daemon :app:assembleLatestUniversalRelease
+          cp app/build/outputs/apk/latestUniversal/release/just_player_pro.apk \
+             "release-apks/just-player-pro-$version-universal.apk"
+          ls -la release-apks
+
+      - name: Keep them as artifacts either way
+        uses: actions/upload-artifact@v4
         with:
-          files: |
-            app/build/outputs/apk/latestUniversal/release/*.apk
-          prerelease: true
+          name: apks
+          path: release-apks/*.apk
+
+      - name: Draft a release, but only if they are properly signed
+        if: steps.signing.outputs.signed == 'true' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-apks/*.apk
           draft: true
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: release
-          path: |
-            app/build/outputs/apk/*/release/*.apk
-            app/build/outputs/bundle/*/*.aab
-            app/build/outputs/mapping/latestUniversalRelease/mapping.txt
+          generate_release_notes: true
