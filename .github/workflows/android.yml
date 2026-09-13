@@ -24,10 +24,16 @@ jobs:
         with:
           submodules: recursive
 
+      # 21, not 17. The libmpv aar is compiled with Java 21, so its class files
+      # are version 65 and a javac 17 refuses to read them:
+      #   bad class file: .../MPVLib.class
+      #   class file has wrong version 65.0, should be 61.0
+      # The app still targets Java 11 bytecode; this is only the JDK doing the
+      # compiling, and it matches the Temurin 21 the project is built with.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
           cache: gradle
 
       - name: Validate the Gradle wrapper

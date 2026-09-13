@@ -36,10 +36,12 @@ jobs:
         with:
           submodules: recursive
 
+      # 21, because the libmpv aar is compiled with Java 21 and javac 17 will
+      # not read its class files. See the note in android.yml.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
           cache: gradle
 
       - name: Validate the Gradle wrapper
