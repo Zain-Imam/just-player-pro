@@ -203,10 +203,41 @@ Five things none of the layers above touched:
 * **The decoder extensions.** The ffmpeg, AV1, IAMF and MPEG-H aars in
   `app/libs` are built separately from the Media3 they run against — the same
   arrangement that broke HLS when the versions drifted apart — and nothing else
-  here played a file that needed one of them. Seven now play, every one of them
-  through to sound: **AC-3 5.1, E-AC-3 bare, E-AC-3 in MP4, DTS 5.1, TrueHD in
-  M2TS, FLAC and Opus**, with an empty crash log after each. The samples are
-  fetched on demand and are not in the repository.
+  here played a file that needed one of them. Seven samples now play through to
+  sound, with an empty crash log after each: **AC-3 5.1, E-AC-3 bare, E-AC-3 in
+  MP4, DTS 5.1, TrueHD in M2TS, FLAC and Opus**. The samples are fetched on
+  demand and are not in the repository.
+
+  **Playing is not the same as proving, though**, and it is worth being exact
+  about which of those actually exercised the bundled decoder. On the Auto
+  setting the app may hand a file to mpv, which carries its own complete
+  FFmpeg — so a file that plays says nothing on its own about the aar. Asked
+  which engine and which decoder took each one:
+
+  ```
+  DefaultRenderersFactory: Loaded FfmpegAudioRenderer.
+
+  AC-3 5.1        Media3, no MediaCodec named  -> the bundled ffmpeg decoder
+  E-AC-3 in MP4   Media3, no MediaCodec named  -> the bundled ffmpeg decoder
+  E-AC-3 mono     Media3, no MediaCodec named  -> the bundled ffmpeg decoder
+  FLAC            Media3, c2.android.flac.decoder  -> the phone's own
+  Opus            Media3, c2.android.opus.decoder  -> the phone's own
+  DTS 5.1         mpv
+  TrueHD in M2TS  mpv
+  ```
+
+  So the extension is loaded, registered and decoding: AC-3 and E-AC-3 are the
+  evidence, and they carry it — this phone ships Dolby decoders
+  (`OMX.dolby.ac3.decoder`, `c2.dolby.eac3.decoder`) and none of them was named
+  in the log for those files, while FLAC and Opus both named theirs. FLAC and
+  Opus therefore prove nothing about the aar; the platform decoded them.
+
+  TrueHD arrives in a VC-1 file, which Media3 has no decoder for at all, so the
+  whole file going to mpv is the two engines working as intended. DTS going to
+  mpv is the one unexpected result: the extension is built with `dca` enabled
+  and the phone has no DTS decoder, which points at Media3 not parsing a raw
+  `.dts` elementary stream rather than not being able to decode it. Either way
+  the file plays, on the other engine.
 * **The track pickers under a remote.** The focus bug that made the quick panel
   unusable was the same in the track lists and the poster grid, and those were
   fixed by analogy rather than by being driven. Now driven: the picker takes the
@@ -329,7 +360,8 @@ has a screen of this app to return to.
   not check that each setting then does what it says — that a toggled switch
   changes playback. That is what a person watching is for.
 * **The AV1, IAMF and MPEG-H decoders are still not exercised.** The ffmpeg one
-  is, seven codecs deep. No sample needing the other three was to hand.
+  is, and is shown to be the decoder that ran for AC-3 and E-AC-3. No sample
+  needing the other three was to hand.
 * **Nothing was played over HDMI**, so audio passthrough — AC-3, E-AC-3 and
   TrueHD sent to a receiver rather than decoded — is untested, as is HDR and
   Dolby Vision output. Those need a television, and are the most likely place
