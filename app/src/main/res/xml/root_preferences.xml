@@ -243,6 +243,16 @@
             app:title="@string/pref_overlay" />
 
         <SeekBarPreference
+            app:key="overlayBackgroundOpacity"
+            app:defaultValue="50"
+            android:max="100"
+            app:min="0"
+            app:seekBarIncrement="5"
+            app:showSeekBarValue="true"
+            app:summary="@string/pref_overlay_background_summary"
+            app:title="@string/pref_overlay_background" />
+
+        <SeekBarPreference
             app:key="overlayDelaySeconds"
             app:defaultValue="3"
             android:max="15"

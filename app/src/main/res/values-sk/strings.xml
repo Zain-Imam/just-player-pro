@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="video_resize_fit">Prispôsobiť</string>
     <string name="video_resize_crop">Orezať</string>
     <string name="video_orientation_sensor">Automatické otáčanie</string>
     <string name="onboarding_open_title">Vyberte video, ktoré chcete prehrať</string>

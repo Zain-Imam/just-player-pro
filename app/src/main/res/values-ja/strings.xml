@@ -9,7 +9,6 @@
     <string name="onboarding_open_description">タップして動画ファイルを開く。長押して外部の字幕を読み込む。</string>
     <string name="onboarding_open_title">再生する動画を選択</string>
     <string name="video_orientation_sensor">自動回転</string>
-    <string name="video_resize_fit">丁度収める</string>
     <string name="video_resize_crop">切り抜く</string>
     <string name="shortcut_videos">動画</string>
     <string name="pref_title">設定</string>

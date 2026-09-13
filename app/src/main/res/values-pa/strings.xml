@@ -35,7 +35,6 @@
     <string name="pref_language_audio">ਡਿਫ਼ਾਲਟ ਆਡੀਓ ਟ੍ਰੈਕ</string>
     <string name="pref_language_track_device">ਡਿਵਾਈਸ ਭਾਸ਼ਾਵਾਂ</string>
     <string name="pref_language_track_default">ਡਿਫ਼ਾਲਟ</string>
-    <string name="video_resize_fit">ਫਿੱਟ</string>
     <string name="pref_tunneling">ਟਨਲ ਕੀਤਾ ਪਲੇਬੈਕ</string>
     <string name="request_scope">ਬਾਹਰੀ ਉਪਸਿਰਲੇਖਾਂ ਨੂੰ ਸਵੈਚਲਿਤ ਤੌਰ \'ਤੇ ਲੋਡ ਕਰਨ ਲਈ ਜਾਂ ਡਾਇਰੈਕਟਰੀ ਵਿੱਚ ਅਗਲੀ ਫਾਈਲ \'ਤੇ ਜਾਣ ਲਈ, %s ਨੂੰ ਤੁਹਾਡੇ ਵੀਡੀਓਜ਼ (ਉਦਾਹਰਨ ਲਈ ਮੂਵੀਜ਼) ਵਾਲੇ ਸਭ ਤੋਂ ਉੱਚੇ ਫੋਲਡਰ ਤੱਕ ਪਹੁੰਚ ਦਿਓ।</string>
     <string name="onboarding_open_description">ਵੀਡੀਓ ਫਾਈਲ ਖੋਲ੍ਹਣ ਲਈ ਟੈਪ ਕਰੋ। ਬਾਹਰੀ ਉਪਸਿਰਲੇਖਾਂ ਨੂੰ ਲੋਡ ਕਰਨ ਲਈ ਲੰਬਾ ਟੈਪ ਕਰੋ।</string>

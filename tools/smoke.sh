@@ -83,7 +83,11 @@ echo
 echo "== the quick panel opens and carries everything it should"
 if tap_control Settings; then
   for row in "Speed" "Playback engine" "Sleep timer" "Show info card" "Audio track"; do
-    onscreen text "$row" && pass "quick panel has: $row" || fail "quick panel has: $row"
+    if [ -n "$(panel_row "$row")" ]; then
+      pass "quick panel has: $row"
+    else
+      fail "quick panel has: $row"
+    fi
   done
   QP="$(bounds_of text 'Quick settings')"
   if [ -n "$QP" ]; then

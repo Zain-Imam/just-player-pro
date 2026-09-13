@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="video_resize_fit">Підігнати</string>
     <string name="video_resize_crop">Обрізати</string>
     <string name="video_orientation_sensor">Автоповорот</string>
     <string name="onboarding_open_title">Оберіть відео для відтворення</string>

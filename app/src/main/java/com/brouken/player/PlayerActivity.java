@@ -319,74 +319,7 @@ public class PlayerActivity extends Activity {
                 }
             }
         } else if (launchIntent.getData() != null) {
-            resetApiAccess();
-            final Uri uri = launchIntent.getData();
-            if (SubtitleUtils.isSubtitle(uri, type)) {
-                handleSubtitles(uri);
-            } else {
-                Bundle bundle = launchIntent.getExtras();
-                if (bundle != null) {
-                    apiAccess = bundle.containsKey(API_POSITION) || bundle.containsKey(API_RETURN_RESULT)
-                            || LaunchSubtitles.present(bundle);
-                    if (apiAccess) {
-                        mPrefs.setPersistent(false);
-                    } else if (bundle.containsKey(API_TITLE)) {
-                        apiAccessPartial = true;
-                    }
-                    apiTitle = bundle.getString(API_TITLE);
-                    readApiHeaders(bundle);
-                }
-
-                mPrefs.updateMedia(this, uri, type);
-
-                if (bundle != null) {
-                    /*
-                     * Whatever the launcher sent, in whatever shape it sent it.
-                     *
-                     * The names and the languages are matched to the files by
-                     * position, so the conversion has to keep the order it was
-                     * given even where a file fails to convert.
-                     */
-                    final List<Uri> given = LaunchSubtitles.uris(bundle, LaunchSubtitles.FILES);
-                    final List<Uri> toEnable =
-                            LaunchSubtitles.uris(bundle, LaunchSubtitles.ENABLE);
-                    final String[] subsName =
-                            LaunchSubtitles.strings(bundle, LaunchSubtitles.NAMES);
-                    final String[] subsLanguage =
-                            LaunchSubtitles.strings(bundle, LaunchSubtitles.LANGUAGES);
-
-                    final List<Uri> subs = new SubtitleConverter().convertSubtitles(this, given);
-
-                    for (int i = 0; i < subs.size(); i++) {
-                        final Uri sub = subs.get(i);
-                        if (sub == null) {
-                            continue;
-                        }
-                        String name = subsName.length > i ? subsName[i] : null;
-                        final String language = subsLanguage.length > i ? subsLanguage[i] : null;
-                        // The converted file is a copy, so what the launcher
-                        // asked for is matched against what it handed over.
-                        final Uri original = given.size() > i ? given.get(i) : sub;
-                        final boolean selected = toEnable.contains(original)
-                                || toEnable.contains(sub)
-                                || (toEnable.isEmpty() && subs.size() == 1);
-                        apiSubs.add(SubtitleUtils.buildSubtitle(this, sub, name, language, selected));
-                    }
-                }
-
-                if (apiSubs.isEmpty()) {
-                    searchSubtitles();
-                }
-
-                if (bundle != null) {
-                    intentReturnResult = bundle.getBoolean(API_RETURN_RESULT);
-
-                    if (bundle.containsKey(API_POSITION)) {
-                        mPrefs.updatePosition((long) bundle.getInt(API_POSITION));
-                    }
-                }
-            }
-            focusPlay = true;
+            openFromLaunch(launchIntent);
         }
 
         if (mPrefs.askResume
@@ -945,11 +878,6 @@ public class PlayerActivity extends Activity {
                         showOpeningHint();
                         // TODO: Explain gestures?
                         //  "Use vertical and horizontal gestures to change brightness, volume and seek in video"
-                    } else if (keyHintPending) {
-                        // The picker covered everything; now the controls are
-                        // back, so is the second pointer.
-                        keyHintPending = false;
-                        showKeyHint();
                     }
                     if (errorToShow != null) {
                         showError(errorToShow);
@@ -1098,6 +1026,12 @@ public class PlayerActivity extends Activity {
     @SuppressLint("GestureBackNavigation")
     @Override
     public void onBackPressed() {
+        // From Android 13 this is where Back arrives, gesture or button, rather
+        // than as a key event -- so it is the only place a pointer can be told
+        // about it there.
+        if (hintTookBack()) {
+            return;
+        }
         restorePlayStateAllowed = false;
         super.onBackPressed();
     }
@@ -1138,13 +1072,7 @@ public class PlayerActivity extends Activity {
             final Uri uri = intent.getData();
 
             if (Intent.ACTION_VIEW.equals(action) && uri != null) {
-                if (SubtitleUtils.isSubtitle(uri, type)) {
-                    handleSubtitles(uri);
-                } else {
-                    mPrefs.updateMedia(this, uri, type);
-                    searchSubtitles();
-                }
-                focusPlay = true;
+                openFromLaunch(intent);
                 initializePlayer();
             } else if (Intent.ACTION_SEND.equals(action) && "text/plain".equals(type)) {
                 String text = intent.getStringExtra(Intent.EXTRA_TEXT);
@@ -1351,6 +1279,10 @@ public class PlayerActivity extends Activity {
             return true;
         }
 
+        if (hintTakesKey(event)) {
+            return true;
+        }
+
         if (isScaling) {
             final int keyCode = event.getKeyCode();
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
@@ -1379,6 +1311,23 @@ public class PlayerActivity extends Activity {
         }
 
         if (!controllerVisibleFully) {
+            /*
+             * The skip offer is the one thing on screen while the controls are
+             * not.
+             *
+             * With the controls hidden every key is handled here and none of
+             * them is offered to the view that has the focus — which is right
+             * for a player with nothing on it, and wrong the moment something
+             * is. The skip button takes the focus for a remote and highlights
+             * itself, so it looks ready; pressing OK went to the line below
+             * instead and was read as play/pause, which paused the film and
+             * left the button sitting there. Confirm keys go to it when it has
+             * the focus. Everything else, and every other moment, is unchanged.
+             */
+            if (isConfirmKey(event.getKeyCode())
+                    && skipController != null && skipController.buttonHasFocus()) {
+                return super.dispatchKeyEvent(event);
+            }
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
                 onKeyDown(event.getKeyCode(), event);
             } else if (event.getAction() == KeyEvent.ACTION_UP) {
@@ -1388,6 +1337,114 @@ public class PlayerActivity extends Activity {
         } else {
             return super.dispatchKeyEvent(event);
         }
+    }
+
+    /*
+     * A pointer has to answer a remote.
+     *
+     * It is dismissed by tapping it or by tapping away from it, and a television
+     * can do neither. The library listens for Back, which was no help twice
+     * over: from Android 13 Back is not a key event, so it never arrived, and
+     * what did arrive at the activity closed the film instead -- pressing the
+     * one key a remote always has walked out of the player.
+     *
+     * OK presses the circle, which is what pressing it with a finger does. Back
+     * puts the pointer away without pressing it. Nothing else reaches the film
+     * while a pointer is up, except the volume, which belongs to the phone
+     * rather than to whatever is on screen.
+     */
+    private boolean hintTakesKey(final KeyEvent event) {
+        if (currentHint == null || !currentHint.isVisible()) {
+            return false;
+        }
+        final int keyCode = event.getKeyCode();
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP
+                || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN
+                || keyCode == KeyEvent.KEYCODE_VOLUME_MUTE) {
+            return false;
+        }
+        /*
+         * Acted on as the key goes down, not as it comes up.
+         *
+         * Back is the reason. With android:enableOnBackInvokedCallback the
+         * system turns a back press into a call to onBackPressed, but only if
+         * the window did not eat the key first -- and swallowing the down half
+         * while waiting for the up half is exactly eating it. Back then did
+         * nothing at all: no key came up, and no back was invoked either.
+         *
+         * A key held down repeats, so only the first press counts.
+         */
+        if (event.getAction() != KeyEvent.ACTION_DOWN) {
+            return true;
+        }
+        if (event.getRepeatCount() > 0) {
+            return true;
+        }
+        if (isConfirmKey(keyCode)) {
+            if (currentHintIsTheKeyOne) {
+                openSettingsAfterHints = true;
+            } else {
+                openFileAfterHints = true;
+            }
+            currentHint.dismiss(true);
+        } else if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_ESCAPE) {
+            currentHint.dismiss(false);
+        }
+        return true;
+    }
+
+    /** Whether a pointer was there to take the Back, wherever it came from. */
+    private boolean hintTookBack() {
+        if (currentHint == null || !currentHint.isVisible()) {
+            return false;
+        }
+        currentHint.dismiss(false);
+        return true;
+    }
+
+    /*
+     * Back, registered for the pointer and only while one is up.
+     *
+     * From Android 13 Back is not a key event: it is delivered to whichever
+     * OnBackInvokedCallback the system decides is in front, so nothing the
+     * player does with keys can see it. Overriding onBackPressed is not enough
+     * either -- proved on the phone, where a Back press reached neither the key
+     * handler nor the override, and simply closed the film while the pointer
+     * sat there.
+     *
+     * A pointer is an overlay, and the framework has a priority that means
+     * exactly that. Registered when a pointer appears and taken away when the
+     * last one goes, so Back does what it always did the rest of the time.
+     *
+     * Below 13 Back is still a key event and hintTakesKey has it.
+     */
+    @Nullable
+    private Object hintBackWatch;
+
+    private void watchBackForHint(final boolean on) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return;
+        }
+        if (on) {
+            if (hintBackWatch == null) {
+                final android.window.OnBackInvokedCallback callback = this::hintTookBack;
+                hintBackWatch = callback;
+                getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                        OnBackInvokedDispatcher.PRIORITY_OVERLAY, callback);
+            }
+        } else if (hintBackWatch != null) {
+            getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(
+                    (android.window.OnBackInvokedCallback) hintBackWatch);
+            hintBackWatch = null;
+        }
+    }
+
+    /** OK, on everything that has one. */
+    private static boolean isConfirmKey(final int keyCode) {
+        return keyCode == KeyEvent.KEYCODE_DPAD_CENTER
+                || keyCode == KeyEvent.KEYCODE_ENTER
+                || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER
+                || keyCode == KeyEvent.KEYCODE_BUTTON_A;
     }
 
     @Override
@@ -1979,11 +2036,21 @@ public class PlayerActivity extends Activity {
 
         if (haveMedia) {
 
-            aspectStep = androidx.preference.PreferenceManager
-                    .getDefaultSharedPreferences(this).getInt(PREF_ASPECT_STEP, 0);
-            playerView.setResizeMode(mPrefs.resizeMode);
+            aspectStep = savedAspectStepFor(mPrefs.mediaUri);
+            /*
+             * The shape comes from the step, and from nothing else.
+             *
+             * It used to come from the saved resize mode, which only describes
+             * the first three steps — so a file opened on a forced ratio, or
+             * came back from the settings screen, with a step saying 4:3 and a
+             * picture saying something else. Every press of the frame button
+             * then moved on from a position that was not the one on screen, and
+             * it stayed wrong until the player was restarted. One source now,
+             * applied here, so the two cannot disagree.
+             */
+            applyAspectStep(false);
 
-            if (mPrefs.resizeMode == AspectRatioFrameLayout.RESIZE_MODE_ZOOM) {
+            if (playerView.getResizeMode() == AspectRatioFrameLayout.RESIZE_MODE_ZOOM) {
                 playerView.setScale(mPrefs.scale);
             } else {
                 playerView.setScale(1.f);
@@ -2837,6 +2904,112 @@ public class PlayerActivity extends Activity {
         hideOverlayCardForNow();
         if (onlineController != null) {
             onlineController.searchSubtitles(this, false);
+        }
+    }
+
+    /*
+     * Open whatever a launcher handed over, and forget the film before it.
+     *
+     * Shared with onNewIntent, which is how a second film arrives when the
+     * player is still in memory. That used to do a small part of this -- set
+     * the address, search for subtitles -- and none of the rest, so everything
+     * belonging to the film before it stayed: its title across the top, its
+     * poster and synopsis on the card, its intro markers, the subtitles its
+     * launcher had handed over. A different address on screen and the previous
+     * film described underneath it.
+     */
+    private void openFromLaunch(final Intent intent) {
+        forgetPreviousFilm();
+
+        resetApiAccess();
+        final Uri uri = intent.getData();
+        if (SubtitleUtils.isSubtitle(uri, intent.getType())) {
+            handleSubtitles(uri);
+        } else {
+            Bundle bundle = intent.getExtras();
+            if (bundle != null) {
+                apiAccess = bundle.containsKey(API_POSITION) || bundle.containsKey(API_RETURN_RESULT)
+                        || LaunchSubtitles.present(bundle);
+                if (apiAccess) {
+                    mPrefs.setPersistent(false);
+                } else if (bundle.containsKey(API_TITLE)) {
+                    apiAccessPartial = true;
+                }
+                apiTitle = bundle.getString(API_TITLE);
+                readApiHeaders(bundle);
+            }
+
+            mPrefs.updateMedia(this, uri, intent.getType());
+
+            if (bundle != null) {
+                /*
+                 * Whatever the launcher sent, in whatever shape it sent it.
+                 *
+                 * The names and the languages are matched to the files by
+                 * position, so the conversion has to keep the order it was
+                 * given even where a file fails to convert.
+                 */
+                final List<Uri> given = LaunchSubtitles.uris(bundle, LaunchSubtitles.FILES);
+                final List<Uri> toEnable =
+                        LaunchSubtitles.uris(bundle, LaunchSubtitles.ENABLE);
+                final String[] subsName =
+                        LaunchSubtitles.strings(bundle, LaunchSubtitles.NAMES);
+                final String[] subsLanguage =
+                        LaunchSubtitles.strings(bundle, LaunchSubtitles.LANGUAGES);
+
+                final List<Uri> subs = new SubtitleConverter().convertSubtitles(this, given);
+
+                for (int i = 0; i < subs.size(); i++) {
+                    final Uri sub = subs.get(i);
+                    if (sub == null) {
+                        continue;
+                    }
+                    String name = subsName.length > i ? subsName[i] : null;
+                    final String language = subsLanguage.length > i ? subsLanguage[i] : null;
+                    // The converted file is a copy, so what the launcher
+                    // asked for is matched against what it handed over.
+                    final Uri original = given.size() > i ? given.get(i) : sub;
+                    final boolean selected = toEnable.contains(original)
+                            || toEnable.contains(sub)
+                            || (toEnable.isEmpty() && subs.size() == 1);
+                    apiSubs.add(SubtitleUtils.buildSubtitle(this, sub, name, language, selected));
+                }
+            }
+
+            if (apiSubs.isEmpty()) {
+                searchSubtitles();
+            }
+
+            if (bundle != null) {
+                intentReturnResult = bundle.getBoolean(API_RETURN_RESULT);
+
+                if (bundle.containsKey(API_POSITION)) {
+                    mPrefs.updatePosition((long) bundle.getInt(API_POSITION));
+                }
+            }
+        }
+        focusPlay = true;
+    }
+
+    /*
+     * Everything that belonged to the film that was playing.
+     *
+     * Not the settings, and not the position -- those are the player's. This is
+     * the things that describe one particular film, each of which is wrong the
+     * moment a different one starts.
+     */
+    private void forgetPreviousFilm() {
+        skipLoadedFor = null;
+        mpvFallbackActive = false;
+        subtitleFailureReported = false;
+        sidecarSubtitleUris.clear();
+        pictureSeen = false;
+        if (skipController != null) {
+            skipController.release();
+            skipController = null;
+        }
+        if (overlayCard != null) {
+            overlayCard.hide();
         }
     }
 
@@ -3697,17 +3870,14 @@ public class PlayerActivity extends Activity {
     }
 
     private void updatebuttonAspectRatioIcon() {
-        switch (playerView.getResizeMode()) {
-            case AspectRatioFrameLayout.RESIZE_MODE_ZOOM:
-                buttonAspectRatio.setImageResource(R.drawable.ic_fit_screen_24dp);
-                break;
-            case AspectRatioFrameLayout.RESIZE_MODE_FILL:
-                buttonAspectRatio.setImageResource(R.drawable.ic_stretch_24dp);
-                break;
-            default:
-                buttonAspectRatio.setImageResource(R.drawable.ic_aspect_ratio_24dp);
-                break;
+        // A pinch has put the picture somewhere none of the steps describes.
+        if (aspectStep == 0
+                && playerView.getResizeMode() == AspectRatioFrameLayout.RESIZE_MODE_ZOOM) {
+            buttonAspectRatio.setImageResource(R.drawable.ic_fit_screen_24dp);
+            return;
         }
+        final int step = aspectStep >= 0 && aspectStep < ASPECT_ICONS.length ? aspectStep : 0;
+        buttonAspectRatio.setImageResource(ASPECT_ICONS[step]);
     }
 
 
@@ -4477,8 +4647,52 @@ public class PlayerActivity extends Activity {
             R.string.video_resize_235, R.string.video_resize_239,
             R.string.video_resize_5_4};
     private static final String PREF_ASPECT_STEP = "aspectStep";
+    private static final String PREF_ASPECT_STEP_URI = "aspectStepUri";
+
+    /*
+     * One icon for each step, so the button says which one you are on.
+     *
+     * It used to have three, chosen from the resize mode, which meant all seven
+     * forced ratios showed the same picture — the button told you it was doing
+     * something to the shape but never which. The ratios are drawn as a screen
+     * of that shape, so they read as a set.
+     */
+    private static final int[] ASPECT_ICONS = {
+            R.drawable.ic_aspect_ratio_24dp,    // Default: the film's own shape
+            R.drawable.ic_fit_screen_24dp,      // Crop
+            R.drawable.ic_stretch_24dp,         // Stretch
+            R.drawable.ic_aspect_16_9_24dp,
+            R.drawable.ic_aspect_4_3_24dp,
+            R.drawable.ic_aspect_16_10_24dp,
+            R.drawable.ic_aspect_2_1_24dp,
+            R.drawable.ic_aspect_235_24dp,
+            R.drawable.ic_aspect_239_24dp,
+            R.drawable.ic_aspect_5_4_24dp,
+    };
 
     private int aspectStep;
+
+    /*
+     * A forced ratio belongs to the film it was forced on.
+     *
+     * The step was kept for the app as a whole, so squeezing one badly authored
+     * file into 2.35 left every film afterwards squeezed into 2.35 as well —
+     * and the way back was to press the button round the whole cycle. It is
+     * remembered against the file now: the same film reopens the way you left
+     * it, and a different one opens at its own shape.
+     */
+    private int savedAspectStepFor(@Nullable final Uri uri) {
+        if (uri == null) {
+            return 0;
+        }
+        final SharedPreferences preferences =
+                androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        if (!uri.toString().equals(preferences.getString(PREF_ASPECT_STEP_URI, null))) {
+            return 0;
+        }
+        final int saved = preferences.getInt(PREF_ASPECT_STEP, 0);
+        return saved >= 0 && saved < 3 + FORCED_ASPECTS.length ? saved : 0;
+    }
 
     private void applyAspectStep(final boolean announce) {
         final AspectRatioFrameLayout frame =
@@ -4526,6 +4740,23 @@ public class PlayerActivity extends Activity {
                 // crop fills by cutting the edges; stretch abandons the shape.
                 mpv.setAspect(aspectStep != 2, aspectStep == 1 ? 1.0 : 0.0, 0);
             } else {
+                /*
+                 * Put the frame back to the shape of the film.
+                 *
+                 * A forced ratio works by telling the frame what shape to be,
+                 * and nothing here ever told it to stop -- so coming back round
+                 * the cycle to Default, Crop or Stretch left the frame still
+                 * holding the last ratio forced on it. The picture stayed 5:4
+                 * while the button said Default, every further press moved on
+                 * from a shape that was not the one on screen, and only
+                 * reopening the player cleared it.
+                 */
+                if (frame != null) {
+                    final androidx.media3.common.VideoSize size =
+                            player == null ? null : player.getVideoSize();
+                    frame.setAspectRatio(size == null || size.height == 0 ? 0
+                            : size.width * size.pixelWidthHeightRatio / size.height);
+                }
                 playerView.setResizeMode(mode);
             }
             mPrefs.resizeMode = mode;
@@ -4533,11 +4764,15 @@ public class PlayerActivity extends Activity {
                 Utils.showText(playerView, getString(aspectStep == 1
                         ? R.string.video_resize_crop
                         : aspectStep == 2 ? R.string.video_resize_stretch
-                        : R.string.video_resize_fit));
+                        : R.string.video_resize_default));
             }
         }
         androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
-                .edit().putInt(PREF_ASPECT_STEP, aspectStep).apply();
+                .edit()
+                .putInt(PREF_ASPECT_STEP, aspectStep)
+                .putString(PREF_ASPECT_STEP_URI,
+                        mPrefs.mediaUri == null ? null : mPrefs.mediaUri.toString())
+                .apply();
         remeasureOverPicture();
         refreshPictureAfterShapeChange();
     }
@@ -4851,47 +5086,103 @@ public class PlayerActivity extends Activity {
      * It is shown only while there is no key, so it is a piece of setup and not
      * a standing advertisement, and it is dismissed exactly like the first one.
      */
-    private boolean keyHintPending;
+    /*
+     * What the pointers were asked to do, once they have both been through.
+     *
+     * Pressing a pointer's circle used to do its thing there and then, and the
+     * first circle's thing is opening the file picker — which covers the screen,
+     * so the second pointer was put off until the controls came back. It never
+     * reliably did: that is a visibility callback which does not fire if the
+     * controls were already up, and the second pointer simply never appeared
+     * for anybody who pressed the first one rather than tapping it away. Which
+     * is what the circle invites you to do.
+     *
+     * So neither circle acts immediately. Both pointers run, one after the
+     * other, however each is dismissed — and whatever was asked for happens
+     * when the last one has gone.
+     */
+    private boolean openFileAfterHints;
+    private boolean openSettingsAfterHints;
+
+    /*
+     * The pointer on screen, if one is, and which of the two it is.
+     *
+     * Kept because a pointer has to answer a remote, and the library it comes
+     * from only listens for Back -- which on Android 13 and later is not a key
+     * event at all, so it heard nothing. See hintTakesKey below.
+     */
+    @Nullable
+    private TapTargetView currentHint;
+    private boolean currentHintIsTheKeyOne;
+
 
     private void showOpeningHint() {
-        TapTargetView.showFor(PlayerActivity.this,
+        currentHintIsTheKeyOne = false;
+        watchBackForHint(true);
+        currentHint = TapTargetView.showFor(PlayerActivity.this,
                 hintAt(buttonOpen, R.string.onboarding_open_title,
                         R.string.onboarding_open_description),
                 new TapTargetView.Listener() {
                     @Override
                     public void onTargetClick(TapTargetView view) {
-                        // Set before dismissing: dismissing calls the method
-                        // below, which is the other way the second pointer
-                        // comes up, and only one of the two should do it.
-                        keyHintPending = true;
+                        // Before dismissing, because dismissing is what moves
+                        // this on to the next pointer.
+                        openFileAfterHints = true;
                         super.onTargetClick(view);
-                        buttonOpen.performClick();
                     }
 
                     @Override
                     public void onTargetDismissed(TapTargetView view, boolean userInitiated) {
                         super.onTargetDismissed(view, userInitiated);
-                        if (!keyHintPending) {
-                            showKeyHint();
+                        currentHint = null;
+                        if (!showKeyHint()) {
+                            finishHints();
                         }
                     }
                 });
     }
 
-    private void showKeyHint() {
-        if (exoSettings == null || ApiKeys.hasTmdb(this)) {
-            return;
+    /** The second pointer, or false when there is nothing to point at. */
+    private boolean showKeyHint() {
+        if (exoSettings == null || exoSettings.getVisibility() != View.VISIBLE
+                || ApiKeys.hasTmdb(this)) {
+            return false;
         }
-        TapTargetView.showFor(PlayerActivity.this,
+        currentHintIsTheKeyOne = true;
+        watchBackForHint(true);
+        currentHint = TapTargetView.showFor(PlayerActivity.this,
                 hintAt(exoSettings, R.string.onboarding_key_title,
                         R.string.onboarding_key_description),
                 new TapTargetView.Listener() {
                     @Override
                     public void onTargetClick(TapTargetView view) {
+                        openSettingsAfterHints = true;
                         super.onTargetClick(view);
-                        exoSettings.performClick();
+                    }
+
+                    @Override
+                    public void onTargetDismissed(TapTargetView view, boolean userInitiated) {
+                        super.onTargetDismissed(view, userInitiated);
+                        currentHint = null;
+                        finishHints();
                     }
                 });
+        return true;
+    }
+
+    private void finishHints() {
+        watchBackForHint(false);
+        // Settings wins if both were pressed: it is the later of the two, so it
+        // is the one still being asked for.
+        final boolean settings = openSettingsAfterHints;
+        final boolean open = openFileAfterHints;
+        openSettingsAfterHints = false;
+        openFileAfterHints = false;
+        if (settings && exoSettings != null) {
+            exoSettings.performClick();
+        } else if (open && buttonOpen != null) {
+            buttonOpen.performClick();
+        }
     }
 
     private TapTarget hintAt(final View view, final int title, final int description) {

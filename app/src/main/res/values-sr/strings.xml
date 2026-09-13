@@ -10,6 +10,5 @@
     <string name="onboarding_open_title">Izaberi video za pokretanje</string>
     <string name="video_orientation_sensor">Automatska rotacija</string>
     <string name="video_resize_crop">Iseci</string>
-    <string name="video_resize_fit">Uklopi</string>
     <string name="shortcut_videos">Видео снимци</string>
 </resources>

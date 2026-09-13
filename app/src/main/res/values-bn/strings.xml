@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="video_resize_fit">ফিট</string>
     <string name="video_resize_crop">ক্রপ</string>
     <string name="video_orientation_sensor">অটো-রোটেট</string>
     <string name="onboarding_open_title">চালানোর জন্য একটি ভিডিও বাছুন</string>

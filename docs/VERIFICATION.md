@@ -397,6 +397,124 @@ mode was added in the middle — so choosing auto-rotate saved a 3 and read back
 as whatever happened to be fourth. It is read by number now, and the modes that
 no longer exist map onto their nearest equivalent.
 
+## The third round of notes, one at a time
+
+Seven more, each driven on the phone. The two that were reported as not working
+at all turned out to be exactly that, and both had a cause that reading the code
+would have found faster than testing did:
+
+1. **The second pointer on a first run never appeared for anybody who pressed
+   the first one.** Pressing a pointer's circle did its thing there and then,
+   and the first circle's thing is opening the file picker — which covers the
+   screen, so the second pointer was put off until the controls came back. That
+   is a visibility callback, and it does not fire if the controls were already
+   up. Tapping *away* from the circle worked, which is why it passed the first
+   time it was tested. Neither circle acts immediately now: both pointers run,
+   one after the other, and what was asked for happens when the last one has
+   gone. Verified from a cleared install on both paths — the picker opens after
+   the second pointer, not instead of it.
+2. **A remote could not reach the search icon on the info-card row.** Not
+   because the button refused the focus: a direction search only offers views
+   that lie *beyond* the rectangle of the one that has it, and this button lies
+   inside that rectangle — the whole row is focused and the button is part of
+   the row. The way out is named rather than searched for now, with ids
+   generated per row so a recycled row cannot claim another row's button.
+   Verified by walking the panel with the d-pad: right lands on the icon's own
+   bounds.
+3. **Coming back from the settings screen left the picture in the wrong shape.**
+   The shape was restored from the saved resize mode, which only describes the
+   first three steps, while the step itself said something else — so the frame
+   button moved on from a position that was not the one on screen, and it stayed
+   wrong until the player was restarted. The step is the only source now.
+   Verified: 4:3 goes into settings and comes back 4:3, and the next press gives
+   16:10.
+4. **Every step has its own icon.** There were three, chosen from the resize
+   mode, so all seven forced ratios showed the same picture. The ratios are
+   drawn as a screen of that shape. 2.35 and 2.39 differ by two per cent, which
+   no icon can show at this size, so the wider of the two is filled in rather
+   than hollow — the only pair where the picture is a label rather than a
+   likeness.
+5. **"Fit" is called "Default", and a forced ratio no longer follows you from
+   film to film.** It was kept for the app as a whole, so squeezing one badly
+   authored file into 2.35 left every film afterwards squeezed into 2.35. It is
+   remembered against the file now. Verified by walking the whole cycle and
+   reading the picture's rectangle at each step against the ratio it claims.
+6. **OK on a highlighted skip button paused the film.** With the controls
+   hidden the player handles every key itself and offers none of them to the
+   view that has the focus — which is right for a player with nothing on it, and
+   wrong the moment something is. The skip button takes the focus for a remote
+   and highlights itself, so it looks ready, and the press went to play/pause
+   instead. Confirm keys reach it when it has the focus. Verified with the phone
+   taken out of touch mode, which is the state a television is always in: the
+   button takes the focus, OK moves the film from 9.8s to 38.5s, and it is still
+   playing afterwards.
+7. **The info card background is a slider.** Half transparent reads well over
+   most films and badly over a few. Verified at both ends: at 100 the card is
+   solid, at 0 there is no card at all, only the poster and the words.
+
+Two things were found while doing the above rather than by looking for them:
+
+* **Coming back round the cycle left the frame on the last forced ratio.** A
+  forced ratio works by telling the frame what shape to be, and nothing ever
+  told it to stop — so Default, Crop and Stretch all drew the previous forced
+  shape until the player was reopened. That is most of what "changing the aspect
+  ratio kept making it worse" was.
+* **The keyboard is drawn over the dialog buttons in a window the screen dump
+  does not show.** So a test finds Search at its own coordinates, taps there,
+  and presses a letter key instead. Two runs were lost to a search box that read
+  "Inceptioni" before this was understood; the harness puts the keyboard away
+  first now.
+
+## The fourth round: the parts that needed a remote, and two more reports
+
+**The pointers now answer a remote.** They are dismissed by tapping, and a
+television cannot tap. Back was no help: with
+`android:enableOnBackInvokedCallback` the system stopped delivering it as a key
+event, and the activity's own `registerOnBackInvokedCallback` never ran either —
+proved on the phone by logging both doors and watching a Back press arrive at
+neither, while every other key arrived at the first. What it did instead was
+close the film. A pointer is an overlay and the framework has a priority that
+means exactly that, so one is registered while a pointer is up and taken away
+after. OK presses the circle, as a finger does. Verified from a cleared install:
+OK moves to the second pointer and then opens what was asked for; Back puts each
+pointer away and the player stays open.
+
+**The aspect ratio on mpv.** The frame cannot be measured there — mpv is given
+the whole player and letterboxes inside it, so `exo_content_frame` is the full
+window whatever shape the picture is — so this was read off the pictures. All
+ten steps produce the right rectangle, the cycle closes back to the film's own
+shape, and 4:3 survives a trip to the settings screen and back. One thing to
+know: mpv needs a moment to redraw after a shape change, so a screenshot taken
+in the same instant as the press still shows the shape before it.
+
+**A second film handed over while the player is in memory.** `onNewIntent` did a
+small part of what a launch does — set the address, search for subtitles — and
+none of the rest, so everything describing the film before it stayed: the title
+across the top, the poster and synopsis on the card, the intro markers, the
+subtitles its launcher had handed over. A different address on screen and the
+previous film described underneath it. Both launches go through one method now.
+Verified with two files and three handovers: the title follows the new film,
+falls back to the file name when the launcher gives none, and the card lets go
+of a film that had been identified.
+
+**Live streams.** The crash reported against v1 was every HLS stream dying on
+`NoSuchMethodError: getBandwidthMeter()`, from Media3 modules raised past the
+patched ExoPlayer aars. Live HLS, on-demand HLS and DASH were played on Media3,
+on mpv and on Auto: no crashes anywhere, and playing on all three with Auto.
+Two honest notes. Akamai's `cph-p2p-msl` test channel fails on both engines
+because its own master playlist points at a variant that answers 404 — broken
+where it is served, and both engines are right to refuse it. And mpv takes the
+highest rendition a DASH manifest offers rather than choosing one to suit the
+device, so a 4K 12 Mbps stream crawls on this phone where Media3 picks something
+it can keep up with; Auto and Media3 both play it properly.
+
+**And the five failures that were the harness, not the player.** `wm size`
+reports the physical panel and never turns, so with the player asking for
+landscape every script was working from 1080x2400 while the window was
+2400x1080 — and a list dragged from 70% of 2400 was dragged from below the
+bottom of the screen, which does nothing. Five rows that were plainly there came
+back as missing. The screen is measured from the window now, once there is one.
+
 ## What this does not prove
 
 * **One device, one orientation.** A moto g54 in portrait, Android 15. Not a

@@ -7,7 +7,6 @@
     <string name="onboarding_open_title">Επιλογή βίντεο για αναπαραγωγή</string>
     <string name="video_orientation_sensor">Αυτόματη περιστροφή</string>
     <string name="video_resize_crop">Περικοπή</string>
-    <string name="video_resize_fit">Προσαρμογή</string>
     <string name="request_scope">Για την αυτόματη φόρτωση εξωτερικών υποτίτλων ή την ενεργοποίηση της παράβλεψης μετάβασης στο επόμενο αρχείο σε έναν κατάλογο, παραχωρήστε στο %s πρόσβαση στον ριζικό φάκελο που περιέχει τα βίντεό σας (π.χ. Movies).</string>
     <string name="delete_confirmation">Διαγραφή</string>
     <string name="delete_query">Διαγραφή αυτού του αρχείου;</string>

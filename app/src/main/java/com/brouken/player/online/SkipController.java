@@ -158,6 +158,17 @@ public final class SkipController {
         main.post(tick);
     }
 
+    /**
+     * Whether the offer on screen is the thing holding the focus.
+     *
+     * Asked by the player before it swallows a key: with the controls hidden it
+     * handles every press itself, and this button is the one case where a press
+     * is meant for a view rather than for the film.
+     */
+    public boolean buttonHasFocus() {
+        return button != null && button.getVisibility() == View.VISIBLE && button.hasFocus();
+    }
+
     public void stop() {
         running = false;
         main.removeCallbacks(tick);

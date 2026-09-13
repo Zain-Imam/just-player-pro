@@ -37,9 +37,13 @@ public final class OverlayCard {
 
     private void inflateIfNeeded() {
         if (root != null) {
+            // Built already, but the slider may have moved since.
+            applyBackground(root.findViewById(R.id.online_overlay));
             return;
         }
         root = activity.getLayoutInflater().inflate(R.layout.online_overlay, attachTo, false);
+
+        applyBackground(root.findViewById(R.id.online_overlay));
 
         poster = root.findViewById(R.id.overlay_poster);
         heading = root.findViewById(R.id.overlay_heading);
@@ -55,6 +59,53 @@ public final class OverlayCard {
         // way: the frame we are copying gets laid out at a new size.
         bounds.addOnLayoutChangeListener(
                 (v, l, t, r, b, ol, ot, or, ob) -> syncToVideo());
+    }
+
+    /*
+     * How solid the card is, from the settings screen.
+     *
+     * Half transparent reads well over most films and badly over a few: a dark
+     * scene behind pale text, or a busy one behind the description. The picture
+     * matters more to some people than the card does and less to others, and
+     * there is no one answer -- so it is a slider, and the middle of it is what
+     * the card has always looked like.
+     *
+     * Set on the shape rather than through setAlpha, which scales what is
+     * already there: at the top of the slider that would still leave the card
+     * half transparent, because half is what the drawable starts at.
+     */
+    private static final int CARD_RED = 0x14;
+    private static final int CARD_GREEN = 0x14;
+    private static final int CARD_BLUE = 0x14;
+
+    public static int backgroundPercent(final android.content.Context context) {
+        final int saved = androidx.preference.PreferenceManager
+                .getDefaultSharedPreferences(context)
+                .getInt("overlayBackgroundOpacity", 50);
+        return Math.max(0, Math.min(100, saved));
+    }
+
+    private void applyBackground(@Nullable final View card) {
+        if (card == null) {
+            return;
+        }
+        final android.graphics.drawable.Drawable background =
+                androidx.core.content.ContextCompat.getDrawable(
+                        activity, R.drawable.online_overlay_card);
+        if (!(background instanceof android.graphics.drawable.GradientDrawable)) {
+            return;
+        }
+        final android.graphics.drawable.GradientDrawable shape =
+                (android.graphics.drawable.GradientDrawable) background.mutate();
+        final int percent = backgroundPercent(activity);
+        final int fill = Math.round(percent * 255f / 100f);
+        shape.setColor(android.graphics.Color.argb(fill, CARD_RED, CARD_GREEN, CARD_BLUE));
+        // The outline fades with it, so nothing is left drawn round an empty
+        // space when the slider is at the bottom.
+        final int stroke = Math.round(percent * 0x33 / 100f);
+        final int width = Math.round(activity.getResources().getDisplayMetrics().density);
+        shape.setStroke(width, android.graphics.Color.argb(stroke, 255, 255, 255));
+        card.setBackground(shape);
     }
 
     private void syncToVideo() {

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="video_resize_fit">Vừa vặn</string>
     <string name="video_resize_crop">Cắt bỏ</string>
     <string name="video_orientation_sensor">Tự động xoay</string>
     <string name="onboarding_open_title">Chọn một video để phát</string>

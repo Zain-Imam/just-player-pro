@@ -8,7 +8,7 @@
     <string name="video_resize_235" translatable="false">2.35:1</string>
     <string name="video_resize_239" translatable="false">2.39:1</string>
     <string name="video_resize_5_4" translatable="false">5:4</string>
-    <string name="video_resize_fit">Fit</string>
+    <string name="video_resize_default">Default</string>
     <string name="video_resize_crop">Crop</string>
     <string name="video_resize_stretch">Stretch</string>
     <string name="video_orientation_landscape">Landscape</string>
@@ -113,6 +113,8 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="pref_link_titles_on">The info card and the subtitle search use the same title. Correcting either corrects both.</string>
     <string name="pref_link_titles_off">Kept apart. The card can show one film while subtitles are searched for another.</string>
     <string name="pref_overlay">Info card when paused</string>
+    <string name="pref_overlay_background">Info card background</string>
+    <string name="pref_overlay_background_summary">How solid the card is over the picture. 0 leaves only the text.</string>
     <string name="pref_overlay_on">Looks the film up as it opens, and shows its poster, rating and synopsis whenever you pause</string>
     <string name="pref_overlay_off">No card on pause. You can still ask for it from the quick panel while watching.</string>
     <string name="pref_skip">Skip intros and credits · experimental</string>

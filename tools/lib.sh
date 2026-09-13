@@ -163,6 +163,28 @@ key()   { require_player; adb shell "input keyevent $1" >/dev/null 2>&1; }
 hold()  { require_player; adb shell "input keyevent --longpress $1" >/dev/null 2>&1; }
 swipe() { require_player; adb shell "input swipe $1 $2 $3 $4 $5" >/dev/null 2>&1; }
 
+# The window as it is held right now, not the panel the phone was built with.
+#
+# `wm size` reports the physical panel and never turns, so on a player that asks
+# for landscape every script was working from 1080x2400 while the window was
+# 2400x1080 -- and a list dragged from 70% of 2400 was dragged from a point
+# below the bottom of the screen, which does nothing at all. Five rows that were
+# plainly there came back as missing.
+#
+# Scripts set these two at the top before anything is open; this corrects them
+# once there is a window to measure.
+refresh_screen() {
+  local wh
+  wh="$(dump | grep -m1 -oE 'bounds="\[0,0\]\[[0-9]+,[0-9]+\]"' \
+        | sed -E 's/.*\[0,0\]\[([0-9]+),([0-9]+)\].*/\1 \2/')"
+  set -- $wh
+  if [ $# -eq 2 ] && [ "$1" -gt 0 ] && [ "$2" -gt 0 ]; then
+    SCREEN_W="$1"
+    SCREEN_H="$2"
+  fi
+  return 0
+}
+
 # ---------------------------------------------------------------- test media
 
 prepare() {
@@ -230,7 +252,7 @@ open_film() {
   adb shell "am start -a android.intent.action.VIEW -d $URI -t video/mp2t -n $ACT --grant-read-uri-permission --esa subs file://$SUBS --esa subs.name Smoke" >/dev/null 2>&1
   local waited=0
   while [ $waited -lt 25 ]; do
-    case "$(focused)" in *"$PKG"*) sleep 4; return 0 ;; esac
+    case "$(focused)" in *"$PKG"*) sleep 4; refresh_screen; return 0 ;; esac
     sleep 1; waited=$((waited + 1))
   done
   echo
@@ -258,6 +280,7 @@ open_settings() {
     case "$(focused)" in
       *"$PKG"*)
         if dump | grep -q 'text="Appearance"'; then
+          refresh_screen
           return 0
         fi ;;
     esac
@@ -358,6 +381,39 @@ tap_control() {
   return 0
 }
 
+# A row in the quick panel.
+#
+# The panel is its own list down one side of the screen, so it is dragged there
+# rather than down the middle of the film -- and in landscape it is short enough
+# that the rows at the bottom of it are off the end until it is.
+panel_row() {
+  local want at n px from to
+  want="$1"
+  at="$(centre text "$want")"
+  [ -n "$at" ] && { echo "$at"; return 0; }
+
+  # The panel's list is the framework's id, not one of this app's.
+  set -- $(bounds_of resource-id "android:id/list")
+  if [ $# -ne 4 ]; then
+    set -- $(bounds_of resource-id "$PKG:id/list")
+  fi
+  if [ $# -ne 4 ]; then
+    echo ""
+    return 1
+  fi
+  px=$(( ($1 + $3) / 2 ))
+  from=$(( $2 + ($4 - $2) * 80 / 100 ))
+  to=$(( $2 + ($4 - $2) * 25 / 100 ))
+  for n in 1 2 3 4 5 6; do
+    swipe "$px" "$from" "$px" "$to" 700
+    sleep 1
+    at="$(centre text "$want")"
+    [ -n "$at" ] && { echo "$at"; return 0; }
+  done
+  echo ""
+  return 1
+}
+
 # Drag, do not fling.
 #
 # A fast swipe throws the list, and it keeps going long after the finger is up —
@@ -369,8 +425,16 @@ scroll_to() {
   at="$(centre text "$1")"
   [ -n "$at" ] && { echo "$at"; return 0; }
 
-  from=$(( (SCREEN_H * 65) / 100 ))
-  to=$(( (SCREEN_H * 40) / 100 ))
+  # Most of the window, but never all of it.
+  #
+  # It used to move a quarter of the height at a time, which in landscape is a
+  # quarter of 1080 rather than of 2400 -- so thirty drags fell short of the
+  # bottom of the settings list and rows that were plainly there were reported
+  # missing. Two thirds is still less than one screenful, so no row can pass
+  # through the visible area between one look and the next, which is the thing
+  # a long drag would otherwise get wrong.
+  from=$(( (SCREEN_H * 85) / 100 ))
+  to=$(( (SCREEN_H * 20) / 100 ))
   for n in $(seq 1 30); do
     swipe $((SCREEN_W / 2)) "$from" $((SCREEN_W / 2)) "$to" 700
     sleep 1

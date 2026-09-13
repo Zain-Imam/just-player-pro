@@ -179,7 +179,32 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
                 item.listener.onSettingClicked(position);
             });
 
+            /*
+             * A remote has to be able to get to the button on the end of a row.
+             *
+             * Pressing right did nothing, and not because the button refused
+             * the focus: a direction search only offers views that lie beyond
+             * the rectangle of the one that has it, and this button lies inside
+             * that rectangle -- the whole row is focused, and the button is
+             * part of the row. There is nothing to the right of the row but the
+             * edge of the panel.
+             *
+             * So the way out is named rather than searched for. Both views are
+             * given ids of their own -- generated, because every recycled row
+             * carries the same id from the layout and the first match in the
+             * tree would win, which could be a row that has its button hidden.
+             */
             if (trailingView != null) {
+                if (itemView.getId() == View.NO_ID) {
+                    itemView.setId(View.generateViewId());
+                }
+                if (trailingView.getId() == View.NO_ID
+                        || trailingView.getId() == R.id.osd_trailing_action) {
+                    trailingView.setId(View.generateViewId());
+                }
+                itemView.setNextFocusRightId(trailingView.getId());
+                trailingView.setNextFocusLeftId(itemView.getId());
+
                 trailingView.setOnClickListener(v -> {
                     int position = getBindingAdapterPosition();
                     if (position < 0 || position >= items.length) {
@@ -208,7 +233,11 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
             if (trailingView != null) {
                 if (simpleItem.trailingIcon == null || simpleItem.trailingListener == null) {
                     trailingView.setVisibility(View.GONE);
+                    // Nothing to go right to, so right does nothing rather than
+                    // jumping to a hidden button this row is not using.
+                    itemView.setNextFocusRightId(View.NO_ID);
                 } else {
+                    itemView.setNextFocusRightId(trailingView.getId());
                     trailingView.setVisibility(View.VISIBLE);
                     trailingView.setImageDrawable(simpleItem.trailingIcon);
                     trailingView.setContentDescription(simpleItem.trailingDescription);
