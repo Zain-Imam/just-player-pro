@@ -94,9 +94,34 @@ Media3 reported everything.
 
 * **Video quality.** A stream served as a ladder of bitrates, or a file with
   more than one video track, now gets a list with Auto at the top.
-* **Ten scaling modes** — fit, fill, crop, stretch, 4:3, 16:9, 1.85:1, 2.35:1,
-  2.39:1 — stepped through from the frame button, with free zoom on a long
-  press, on any device.
+* **Ten scaling modes, each with its own icon** — Default, Crop, Stretch, then
+  16:9, 4:3, 16:10, 2:1, 2.35:1, 2.39:1 and 5:4, stepped through from the frame
+  button with free zoom on a long press, on any device. There were three icons
+  before, chosen from the resize mode, so all seven forced ratios showed the
+  same picture: the button told you it was doing something to the shape but
+  never which.
+
+  Default is the film's own shape, and a ratio forced on one film belongs to
+  that film. It used to be kept for the app as a whole, so squeezing one badly
+  authored file into 2.35 left every film afterwards squeezed into 2.35, and the
+  only way back was to press the button round the whole cycle.
+
+  Two ways it drew the wrong shape are gone with it. Coming back from the
+  settings screen restored the picture from the saved resize mode, which
+  describes only the first three steps, so the step said 4:3 while the picture
+  said something else and every press after that moved on from a position that
+  was not the one on screen. And a forced ratio works by telling the frame what
+  shape to be, which nothing ever told it to stop doing — so coming back round
+  to Default, Crop or Stretch left the frame still drawing the last ratio forced
+  on it, until the player was reopened.
+* **Landscape, portrait or auto-rotate** — three plain choices in place of
+  "video orientation" and "device orientation", which describe how the player
+  decides rather than what you get. The choice survives closing the app now,
+  too: it was written by number and read back by position in the list, and the
+  two stopped matching when a third mode was added in the middle, so picking
+  auto-rotate saved a 3 and came back as whatever happened to be fourth.
+* **Live streams play** — HLS live, HLS on demand and DASH, on Media3, on mpv
+  and on Auto. The crash above was every one of them.
 * **Sleep timer**, by minutes or at the end of the file, fading out over the
   last thirty seconds instead of cutting.
 * **Hold the picture for double speed**, and hold it with two fingers to lock.
@@ -129,6 +154,39 @@ Media3 reported everything.
   subtitles, both read by both engines.
 * **Media3 honours the subtitle language too.** It never had, so the same file
   opened with subtitles on one engine and without them on the other.
+* **It asks which film before it searches.** Turning "Search subtitles
+  automatically" off says: do not go and find subtitles without me. Pressing the
+  button then went straight to a search anyway, because the film had been
+  identified as it opened and the answer was sitting there — so there was no way
+  to say which film you wanted subtitles for. The box comes up every time now,
+  and **Search again…** sits at the top of the results, because a dialog button
+  at the bottom is not where anybody looks when the list is plainly for the
+  wrong film.
+* **It says so when a subtitle will not load.** ExoPlayer disables the renderer
+  internally and the track list goes on reporting the track as selected and
+  supported, which is why the picker said "Playing now" over a blank screen.
+
+## Skipping intros and credits
+
+* **Chapters first, databases second.** A file whose chapters name an intro or
+  the credits has told you exactly where they are, at the right timings for the
+  cut you actually have — read from mpv directly, and parsed out of the Matroska
+  container for Media3, which has no chapter API of its own. Only when there are
+  none does it ask the internet. Which also means a file full of perfectly good
+  chapter marks no longer has to be identified online before it will offer to
+  skip anything.
+* **Sources merged, not stacked.** Markers from chapters, IntroDB, TheIntroDB,
+  SkipDB and AniSkip are clustered by overlap; the most corroborated cluster
+  wins, ties break by source reliability, and precise bounds beat placeholder
+  ones.
+* **The button comes back if you seek into the segment again**, which is the
+  moment you are most likely to want it — it used to strike a skipped segment
+  off the list for good.
+* **Undo lasts three seconds**, by the clock. It was eight seconds of playback,
+  which is long enough that the button is still sitting there well after you
+  have stopped thinking about it — and counting in playback time means a paused
+  film never counts at all, so pausing just after a skip left the offer up for
+  as long as you left it.
 
 ## Knowing what you are watching
 
@@ -153,6 +211,24 @@ Media3 reported everything.
   frame out of the middle of the thing you are watching, which over a paused
   film reads as a second screenshot, and which for half the episodes ever made
   is a dark corridor.
+* **A title chosen by hand stays chosen.** Identification reads the file name,
+  which is a guess, and correcting it used to last only until the file was
+  identified again — which happens on its own, from that same file name, and put
+  the guess straight back. What you choose wins from now on, for that file,
+  until you change it again.
+* **One title, or two.** The card and the subtitle search share a title by
+  default, so correcting either corrects both — they are both answers to "what
+  is this?". Turned off, they are independent: the card can show one film while
+  subtitles are searched for another.
+* **How solid the card sits over the picture is a slider**, from nothing at all
+  to opaque. Half transparent reads well over most films and badly over a few: a
+  dark scene behind pale text, or a busy one behind the synopsis.
+* **A second film handed over while the player is still open is the film that
+  gets described.** Another app sending a video to a player already in memory
+  left everything belonging to the one before it on screen — the title across
+  the top, the poster and synopsis, the intro markers, even the subtitles its
+  launcher had handed over. A different address playing, and the previous film
+  described underneath it.
 
 ## Interface
 
@@ -173,6 +249,25 @@ Media3 reported everything.
   on to see.
 * **Test keys and addons** from Settings, on demand.
 * **An About row** with the version and a mark that opens the repository.
+* **Copy link** in the quick panel, for the address of what is playing — which
+  any other way means going back to whatever opened the player, and for a link
+  handed over by another app that is often nowhere at all.
+* **Two pointers on a first run**: where the files are, then where the key goes.
+  Everything the player knows about a film comes from one free TMDB key that
+  somebody has to paste in, and nothing said so — an empty info card and a
+  subtitle search that finds nothing look like a broken player rather than an
+  unfinished setup.
+* **A remote can reach the second button on a row.** Right from "Show info card"
+  lands on its search button, which a plain direction search never does: a
+  direction search only offers views beyond the rectangle of the one that has
+  the focus, and that button sits inside it.
+* **OK presses what it has highlighted.** With the controls hidden the player
+  handled every key itself and offered none of them to the view holding the
+  focus — right for a player with nothing on it, wrong the moment something is.
+  A highlighted skip button looked ready and paused the film instead. Back had
+  the same trouble while a first-run pointer was up, and walked out of the
+  player: from Android 13 it is not a key event at all, and the registration the
+  activity already had never ran either.
 
 ## Which APK
 
@@ -182,12 +277,33 @@ is **arm64-v8a**. If in doubt, take the universal one.
 
 ## Thanks
 
-Ideas in this release came from reading
-[mpvNova](https://github.com/Laskco/mpvNova),
-[mpvEx](https://github.com/marlboro-advance/mpvEx),
-[mpvRex](https://github.com/sfsakhawat999/mpvRex) and
-[mpvRx](https://github.com/Riteshp2001/mpvRx), on top of
-[Just Player](https://github.com/moneytoo/Player),
-[just-player-plus](https://github.com/wasky/just-player-plus) and
-[Just+ Player](https://github.com/just-plus-player/just-plus-player). The
-credits in the README say which idea came from where.
+The README names the three this leans on hardest. Here is the rest of it, so
+every borrowing is written down beside what it gave:
+
+* **[Just Player](https://github.com/moneytoo/Player)** by Marcel Dopita — the
+  player core, the gesture controls, the file handling and the Android TV
+  behaviour. The foundation, still.
+* **[just-player-plus](https://github.com/wasky/just-player-plus)** by Michal
+  Wolski — the subtitle settings panel, custom subtitle fonts, the Outline &
+  shadow edge style, the Medium typeface, MicroDVD and MPL2 support, and the TV
+  back-button behaviour.
+* **[Morveus/just-player-plus](https://github.com/Morveus/just-player-plus)** —
+  subtitle delay applied at render time, which is the reason negative delays
+  move embedded MKV subtitles earlier rather than just shortening them.
+* **[Just+ Player](https://github.com/just-plus-player/just-plus-player)** — the
+  most feature-complete Just Player fork going, and worth a look in its own
+  right.
+* **[mpvNova](https://github.com/Laskco/mpvNova)** (MIT) — how a launcher's
+  subtitles and start position are taken off an intent, and that a
+  `content://` handed to a native player has to be turned into something it can
+  actually open.
+* **[mpvEx](https://github.com/marlboro-advance/mpvEx)** and
+  **[mpvRex](https://github.com/sfsakhawat999/mpvRex)** (Apache 2.0) — the shape
+  of a release-name parser, itself after
+  [kahari-parser](https://github.com/GizmoH2o/kahari-parser); and the decoder
+  fallback order that turned out to be the whole of the difference in battery
+  and heat on the mpv engine here.
+* **[mpvRx](https://github.com/Riteshp2001/mpvRx)** (AGPL, so read rather than
+  used) — the several shapes a launching app can put subtitles in, all of which
+  now get read. Nothing was copied from it; the idea is theirs and the code here
+  is not.
