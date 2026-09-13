@@ -297,14 +297,15 @@
     <PreferenceCategory app:title="@string/pref_history_header">
 
         <Preference
-            app:key="checkUpdate"
-            app:title="@string/pref_update"
-            app:summary="@string/pref_update_summary" />
-
-        <Preference
             app:key="historyOpen"
-            app:title="@string/pref_history"
-            app:icon="@null" />
+            app:title="@string/pref_history" />
+
+        <SwitchPreferenceCompat
+            app:key="historyKeepFailed"
+            app:defaultValue="false"
+            app:summaryOn="@string/pref_history_failed_on"
+            app:summaryOff="@string/pref_history_failed_off"
+            app:title="@string/pref_history_failed" />
 
     </PreferenceCategory>
 
@@ -351,6 +352,11 @@
             app:key="aboutVersion"
             app:selectable="false"
             app:title="@string/app_name" />
+
+        <Preference
+            app:key="checkUpdate"
+            app:title="@string/pref_update"
+            app:summary="@string/pref_update_summary" />
 
         <Preference
             app:key="aboutProject"

@@ -158,6 +158,8 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
 
         private final TextView titleTextView;
         private final ImageView iconView;
+        /** The second, optional target at the end of a row. */
+        private final ImageView trailingView;
 
         private SimpleOsdSettingsViewHolder(View itemView) {
             super(itemView);
@@ -169,12 +171,26 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
 
             titleTextView = itemView.findViewById(android.R.id.title);
             iconView = itemView.findViewById(android.R.id.icon);
+            trailingView = itemView.findViewById(com.brouken.player.R.id.osd_trailing_action);
 
             itemView.setOnClickListener(v -> {
                 int position = getBindingAdapterPosition();
                 SimpleOsdSettingsItem item = (SimpleOsdSettingsItem) items[position];
                 item.listener.onSettingClicked(position);
             });
+
+            if (trailingView != null) {
+                trailingView.setOnClickListener(v -> {
+                    int position = getBindingAdapterPosition();
+                    if (position < 0 || position >= items.length) {
+                        return;
+                    }
+                    SimpleOsdSettingsItem item = (SimpleOsdSettingsItem) items[position];
+                    if (item.trailingListener != null) {
+                        item.trailingListener.onSettingClicked(position);
+                    }
+                });
+            }
         }
 
         @Override
@@ -184,7 +200,19 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
             if (simpleItem.icon == null) {
                 iconView.setVisibility(View.GONE);
             } else {
+                iconView.setVisibility(View.VISIBLE);
                 iconView.setImageDrawable(simpleItem.icon);
+            }
+            // Rows are recycled, so a trailing button that this row does not
+            // use has to be put away again, not merely left unconfigured.
+            if (trailingView != null) {
+                if (simpleItem.trailingIcon == null || simpleItem.trailingListener == null) {
+                    trailingView.setVisibility(View.GONE);
+                } else {
+                    trailingView.setVisibility(View.VISIBLE);
+                    trailingView.setImageDrawable(simpleItem.trailingIcon);
+                    trailingView.setContentDescription(simpleItem.trailingDescription);
+                }
             }
         }
     }

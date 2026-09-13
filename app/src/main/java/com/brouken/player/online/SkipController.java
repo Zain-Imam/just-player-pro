@@ -22,6 +22,15 @@ public final class SkipController {
     public interface Host {
         double positionSeconds();
 
+        /**
+         * Whether the film is actually running.
+         *
+         * The button is an offer to skip forward, which only makes sense while
+         * something is moving. On a paused film it is one more thing sitting
+         * over the picture you paused to look at.
+         */
+        boolean isPlaying();
+
         double durationSeconds();
 
         void seekToSeconds(double seconds);
@@ -59,17 +68,28 @@ public final class SkipController {
         this.host = host;
     }
 
-    public void load(final Identity identity) {
+    /*
+     * The file's own markers first, the internet second.
+     *
+     * A file that names its own chapters — "Intro", "Opening", "Credits" — has
+     * told you exactly where they are, at the right timings for the cut you
+     * actually have. A community database has guessed, for some other release,
+     * and has to be matched by identifying the film at all. When the file
+     * knows, the file wins.
+     *
+     * Which means chapters must not depend on identification. They used to:
+     * this returned immediately without an IMDb id, so a file full of perfectly
+     * good chapter marks offered nothing unless it had also been looked up
+     * online — and anything unidentifiable never offered skipping at all.
+     * Identity is optional now, and only the online half needs it.
+     */
+    public void load(@Nullable final Identity identity) {
         stop();
         segments = null;
         showing = null;
         skipped = null;
         hideButton();
 
-        final String imdb = identity.isSeries ? identity.parentImdbId : identity.imdbId;
-        if (imdb == null) {
-            return;
-        }
         final double duration = host.durationSeconds();
 
         final List<SkipSegments.Segment> fromChapters =
@@ -77,6 +97,14 @@ public final class SkipController {
         if (!fromChapters.isEmpty()) {
             segments = fromChapters;
             start();
+            return;
+        }
+
+        if (identity == null) {
+            return;
+        }
+        final String imdb = identity.isSeries ? identity.parentImdbId : identity.imdbId;
+        if (imdb == null) {
             return;
         }
 
@@ -130,6 +158,27 @@ public final class SkipController {
         }
     };
 
+    /*
+     * Where the button ought to be, worked out afresh every half second.
+     *
+     * This used to be written as a set of transitions — remember what was
+     * showing, act only when it changes — and it got two things wrong.
+     *
+     * A segment that had been skipped was struck off the list for good, so
+     * seeking back into the intro offered nothing: the one moment you are most
+     * likely to want the button is right after you have gone back to see what
+     * you skipped. There is no need for that exclusion at all, because after a
+     * skip the position is past the end of the segment anyway; all it has to do
+     * is stay quiet while the undo offer is still on screen.
+     *
+     * And because the decision was edge-triggered, anything that hid the button
+     * for another reason — a pause, a rebuild, the card — left "showing" still
+     * pointing at the segment, so nothing ever put it back.
+     *
+     * It is now a plain question asked repeatedly: should the button be up, and
+     * is it? Every path in and out of a segment, in either direction, produces
+     * the right answer without needing to be enumerated.
+     */
     private void update() {
         if (segments == null) {
             return;
@@ -139,34 +188,34 @@ public final class SkipController {
             return;
         }
 
-        SkipSegments.Segment inside = null;
-        for (final SkipSegments.Segment segment : segments) {
-            if (segment == skipped) {
-                continue;
-            }
-            if (segment.contains(position)) {
-                inside = segment;
-                break;
-            }
-        }
-
         // The undo offer lasts a few seconds of playback and then goes.
         if (undoAt >= 0 && position > undoUntil) {
             undoAt = -1;
             hideButton();
         }
-
-        if (inside == null) {
-            if (showing != null) {
-                showing = null;
-                if (undoAt < 0) {
-                    hideButton();
-                }
-            }
+        if (undoAt >= 0) {
+            // Undo is up; leave it alone.
             return;
         }
 
-        if (inside == showing) {
+        SkipSegments.Segment inside = null;
+        if (host.isPlaying()) {
+            for (final SkipSegments.Segment segment : segments) {
+                if (segment.contains(position)) {
+                    inside = segment;
+                    break;
+                }
+            }
+        }
+
+        if (inside == null) {
+            showing = null;
+            hideButton();
+            return;
+        }
+
+        // Already offering this one, and still on screen: nothing to do.
+        if (inside == showing && button != null && button.getVisibility() == View.VISIBLE) {
             return;
         }
         showing = inside;

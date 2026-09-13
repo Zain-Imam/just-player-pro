@@ -29,10 +29,12 @@ public class SubtitleAddonsFragment extends PreferenceFragmentCompat {
         final PreferenceScreen screen = getPreferenceManager().createPreferenceScreen(requireContext());
 
         final PreferenceCategory about = new PreferenceCategory(requireContext());
+        about.setIconSpaceReserved(false);
         about.setTitle(R.string.pref_addons_header);
         screen.addPreference(about);
 
         final Preference note = new Preference(requireContext());
+        note.setIconSpaceReserved(false);
         note.setSelectable(false);
         note.setSummary(R.string.pref_addons_note);
         about.addPreference(note);
@@ -46,6 +48,7 @@ public class SubtitleAddonsFragment extends PreferenceFragmentCompat {
 
     private EditTextPreference slotPreference(final int slot) {
         final EditTextPreference preference = new EditTextPreference(requireContext());
+        preference.setIconSpaceReserved(false);
         preference.setKey(SubtitleAddons.key(slot));
         preference.setTitle(getString(R.string.pref_addon_slot, slot));
         preference.setDialogTitle(getString(R.string.pref_addon_slot, slot));

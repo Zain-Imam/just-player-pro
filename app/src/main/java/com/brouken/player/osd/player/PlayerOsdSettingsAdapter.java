@@ -53,6 +53,7 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
         items.add(createInfoCardItem());
         items.add(createAudioTrackItem());
         items.add(createSubtitleSettingsItem());
+        items.add(createCopyLinkItem());
         items.add(createAllSettingsItem());
         this.items = items.toArray(new OsdSettingsItem[0]);
     }
@@ -164,11 +165,38 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
                 position -> listener.onOpenVideoTracks());
     }
 
+    /*
+     * Show the card, and — on the end of the same row — look it up again.
+     *
+     * Identification reads the file name and guesses, and when the guess is
+     * wrong the card is confidently wrong with it. The button on the end is
+     * the way to say so: it asks what this actually is, starting from the name
+     * it guessed, and then offers the posters it found.
+     *
+     * Deliberately not the subtitle search, which is a different question with
+     * a different answer and already has its own row.
+     */
     private OsdSettingsItem createInfoCardItem() {
         @SuppressLint("PrivateResource")
         final Drawable icon = getDrawable(R.drawable.ic_info_card_24dp);
         return new SimpleOsdSettingsItem(context.getString(R.string.osd_info_card), icon,
-                position -> listener.onShowInfoCard());
+                position -> listener.onShowInfoCard(),
+                getDrawable(R.drawable.ic_search_24dp),
+                context.getString(R.string.osd_info_card_search_again),
+                position -> listener.onSearchAgain());
+    }
+
+    /*
+     * The address of what is playing, on the clipboard.
+     *
+     * A URL for a stream, a path for a file. Reaching it any other way means
+     * going back to whatever opened the player, which for a link handed over by
+     * another app is often nowhere at all.
+     */
+    private OsdSettingsItem createCopyLinkItem() {
+        final Drawable icon = getDrawable(R.drawable.ic_content_copy_24dp);
+        return new SimpleOsdSettingsItem(context.getString(R.string.copy_link), icon,
+                position -> listener.onCopyLink());
     }
 
     private OsdSettingsItem createAudioTrackItem() {
@@ -213,6 +241,12 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
         void onSleepChange(int minutes);
 
         void onShowInfoCard();
+
+        /** Look the film up again, because what it found was wrong. */
+        void onSearchAgain();
+
+        /** Put the address of what is playing on the clipboard. */
+        void onCopyLink();
 
         void onOpenVideoTracks();
 

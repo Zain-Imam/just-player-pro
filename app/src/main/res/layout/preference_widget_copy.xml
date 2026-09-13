@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     A copy button at the end of a history row. It is its own target rather
+     than part of the row, because tapping the row plays the thing and tapping
+     this one only takes the address.
+-->
+<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/copy_link"
+    android:layout_width="48dp"
+    android:layout_height="48dp"
+    android:layout_gravity="center_vertical|end"
+    android:background="?android:attr/selectableItemBackgroundBorderless"
+    android:clickable="true"
+    android:focusable="true"
+    android:contentDescription="@string/copy_link"
+    android:padding="12dp"
+    android:scaleType="fitCenter"
+    android:src="@drawable/ic_content_copy_24dp" />

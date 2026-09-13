@@ -86,16 +86,19 @@ final class OpenMenu {
         input.setHint(R.string.open_url_hint);
         input.setSingleLine(true);
 
-        final String suggestion = clipboardUrl(activity);
-        if (suggestion != null) {
-            input.setText(suggestion);
-            input.setSelection(suggestion.length());
-        } else if (!recent.isEmpty()) {
-            // Failing that, the last URL played: usually the one being resumed.
-            final String last = recent.get(0).uri.toString();
-            input.setText(last);
-            input.setSelection(last.length());
-        }
+        /*
+         * The box starts empty.
+         *
+         * It used to fill itself from the clipboard, which is helpful exactly
+         * once and a nuisance every other time: whatever you last copied — a
+         * message, a password, a link to something else entirely — was sitting
+         * in the field, and typing an address meant clearing it out first.
+         * It also meant reading the clipboard on opening, unasked, which is
+         * not a thing an application should do.
+         *
+         * There is a Paste button instead, which does the same work at the
+         * moment somebody actually wants it done.
+         */
 
         // AlertDialog gives a custom view no margins of its own.
         final int margin = (int) TypedValue.applyDimension(
@@ -107,10 +110,20 @@ final class OpenMenu {
         params.rightMargin = margin;
         container.addView(input, params);
 
+        /*
+         * Cancel, Paste, Play.
+         *
+         * Paste is the neutral button, which is the slot between the other two,
+         * and it must not dismiss: pasting is a step on the way to playing, not
+         * an answer in itself. AlertDialog closes on any button press, so its
+         * listener is attached after show() — the only point the framework
+         * allows a button to decline to close.
+         */
         final AlertDialog dialog = new AlertDialog.Builder(activity)
                 .setTitle(R.string.open_url_title)
                 .setView(container)
                 .setNegativeButton(android.R.string.cancel, null)
+                .setNeutralButton(R.string.open_url_paste, null)
                 .setPositiveButton(R.string.open_url_play, (d, which) -> play(activity, input.getText().toString()))
                 .create();
 
@@ -123,6 +136,20 @@ final class OpenMenu {
         });
 
         dialog.show();
+
+        final android.widget.Button paste = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+        if (paste != null) {
+            paste.setOnClickListener(view -> {
+                final String text = clipboardText(activity);
+                if (text == null || text.isEmpty()) {
+                    Toast.makeText(activity, R.string.open_url_clipboard_empty,
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                input.setText(text);
+                input.setSelection(text.length());
+            });
+        }
     }
 
     private static void showRecent(final PlayerActivity activity, final List<History.Entry> recent) {
@@ -155,6 +182,33 @@ final class OpenMenu {
         // Type is left to be worked out from the response, as it is for a URL
         // arriving by intent.
         activity.playMedia(uri, null);
+    }
+
+    /**
+     * Whatever is on the clipboard, as text, when Paste is pressed.
+     *
+     * This does not insist the content looks like an address. Somebody
+     * pressing Paste knows what they copied, and refusing on the grounds that
+     * it fails a guess about its shape is not help — what was pasted is
+     * checked when Play is pressed, which is where checking belongs.
+     */
+    private static String clipboardText(final Context context) {
+        try {
+            final ClipboardManager clipboard =
+                    (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+            if (clipboard == null || !clipboard.hasPrimaryClip()) {
+                return null;
+            }
+            final ClipData clip = clipboard.getPrimaryClip();
+            if (clip == null || clip.getItemCount() == 0) {
+                return null;
+            }
+            final CharSequence text = clip.getItemAt(0).coerceToText(context);
+            return text == null ? null : text.toString().trim();
+        } catch (Exception e) {
+            Utils.log("Could not read clipboard: " + e);
+            return null;
+        }
     }
 
     private static String clipboardUrl(final Context context) {

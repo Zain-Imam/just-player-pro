@@ -71,10 +71,10 @@
     <string name="pref_file_access_auto">Auto</string>
     <string name="mediastore_empty">No video files found</string>
     <string name="pref_online_header">Online info and subtitles</string>
-    <string name="pref_identify_auto">Automatically</string>
+    <string name="pref_identify_auto">Automatically · experimental</string>
     <string name="pref_identify_manual">Only when I ask</string>
     <string name="pref_identify">Identify files</string>
-    <string name="pref_identify_note">Automatic looks the film up as it starts, which is what fills the info card, the skip markers and the titles in history. Manual does nothing until you ask, from the quick settings panel.</string>
+    <string name="pref_identify_note">Automatic looks the film up as it starts, which is what fills the info card, the skip markers and the titles in history. Manual does nothing until you ask, from the quick settings panel.\n\nAutomatic is experimental. It works out what you are watching by reading the file name, which is a guess: a tidy release name it will usually get right, something called video_final2.mp4 it will not. When it is wrong, use Search again on the card to correct it.</string>
     <string name="pref_auto_search">Search subtitles automatically</string>
     <string name="pref_auto_search_on">Searches as soon as a file is identified</string>
     <string name="pref_auto_search_off">Only when you press search</string>
@@ -110,8 +110,8 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="pref_overlay">Info card when paused</string>
     <string name="pref_overlay_on">Looks the film up as it opens, and shows its poster, rating and synopsis whenever you pause</string>
     <string name="pref_overlay_off">No card on pause. You can still ask for it from the quick panel while watching.</string>
-    <string name="pref_skip">Skip intros and credits</string>
-    <string name="pref_skip_on">Button over intros, recaps and credits</string>
+    <string name="pref_skip">Skip intros and credits · experimental</string>
+    <string name="pref_skip_on">Button over intros, recaps and credits. Chapter marks in the file are used where it has them; otherwise the timings come from a community database, which is a guess about your particular release and is sometimes out.</string>
     <string name="pref_skip_off">Never looked up</string>
 
     <string name="online_search_subtitles">Search online subtitles…</string>
@@ -156,8 +156,8 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="unlocked">Unlocked</string>
     <string name="locked_hint">Locked — hold OK, or hold two fingers on the picture, to unlock</string>
     <string name="pref_lock_hint">Lock the screen against accidental touches with the padlock in the controls, or by holding two fingers on the picture. To unlock, hold again — with one finger or two — or hold OK on a remote. A single press does nothing, so the lock cannot be lifted by accident. The volume keys keep working while locked.</string>
-    <string name="pref_overlay_delay">Card delay</string>
-    <string name="pref_overlay_delay_summary">Seconds after pausing. 0 shows it at once.</string>
+    <string name="pref_overlay_delay">Card appears after</string>
+    <string name="pref_overlay_delay_summary">Seconds of being paused before the card appears. 0 shows it at once. It then stays until something else needs the screen.</string>
     <string name="pref_prefill">Fill search from file name</string>
     <string name="pref_prefill_on">Starts with the title from the name</string>
     <string name="pref_prefill_off">Starts empty — better for id-named files</string>
@@ -233,7 +233,18 @@ Auto starts on Media3 and switches only for a file Media3 fails on.</string>
     <string name="update_failed">Could not check for an update.</string>
     <string name="update_none">You have %1$s. The newest published is %2$s.</string>
     <string name="update_none_published">Nothing has been published yet. You have %1$s.</string>
+    <string name="osd_info_card_search_again">Search again</string>
+    <string name="open_url_paste">Paste</string>
+    <string name="open_url_clipboard_empty">Nothing to paste</string>
+    <string name="subtitle_would_not_load">That subtitle would not load</string>
+    <string name="buffering">Buffering…</string>
+    <string name="copy_link">Copy link</string>
+    <string name="copy_done">Link copied</string>
+    <string name="copy_nothing">Nothing to copy</string>
     <string name="pref_history">Recently played URLs</string>
+    <string name="pref_history_failed">Keep ones that would not play</string>
+    <string name="pref_history_failed_on">Everything opened is listed, including links that failed</string>
+    <string name="pref_history_failed_off">Only what actually played is listed</string>
     <string name="pref_history_summary_empty">Nothing played from a network URL yet</string>
     <plurals name="pref_addons_summary_count">
         <item quantity="one">%d addon</item>

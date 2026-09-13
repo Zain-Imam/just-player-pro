@@ -79,6 +79,12 @@ public class OsdSettingsController {
         osdSettingsWindow.setAnimationStyle(R.style.PanelAnimation);
         playerSettingsWindow.setAnimationStyle(R.style.PanelAnimation);
 
+        // Closing a panel is the end of "you are busy", so the info card is
+        // allowed back — three seconds later, and only if the film is still
+        // paused. Without this it would stay away until the next pause.
+        osdSettingsWindow.setOnDismissListener(playerActivity::hideOverlayCardForNow);
+        playerSettingsWindow.setOnDismissListener(playerActivity::hideOverlayCardForNow);
+
         if (Util.SDK_INT < 23) {
             // Work around issue where tapping outside of the menu area or pressing the back button
             // doesn't dismiss the menu as expected. See: https://github.com/google/ExoPlayer/issues/8272.
@@ -89,7 +95,7 @@ public class OsdSettingsController {
 
     public void showPlayerSettings() {
         // Same for the quick panel: one thing on screen at a time.
-        playerActivity.hideOverlayCard();
+        playerActivity.hideOverlayCardForNow();
         playerAdapter.setInitialValues(
                 prefs.speed,
                 prefs.playbackEngine,
@@ -180,6 +186,18 @@ public class OsdSettingsController {
             }
 
             @Override
+            public void onSearchAgain() {
+                playerSettingsWindow.dismiss();
+                playerActivity.identifyAgain();
+            }
+
+            @Override
+            public void onCopyLink() {
+                playerSettingsWindow.dismiss();
+                playerActivity.copyCurrentLink();
+            }
+
+            @Override
             public void onOpenVideoTracks() {
                 playerSettingsWindow.dismiss();
                 playerActivity.showVideoMenu();
@@ -207,7 +225,7 @@ public class OsdSettingsController {
 
     public void showSubtitleSettings() {
         // Nothing may sit under a panel: the card would show through it.
-        playerActivity.hideOverlayCard();
+        playerActivity.hideOverlayCardForNow();
         TextView titleTextView = osdSettingsWindow.getContentView().findViewById(android.R.id.text1);
         titleTextView.setText(R.string.osd_subtitle_title);
         osdSettingsWindow.showAtLocation(playerActivity.playerView, Gravity.END | Gravity.TOP, 0, 0);

@@ -45,7 +45,23 @@ onscreen() { [ -n "$(centre "$@")" ]; }
 
 alive()   { adb shell "pidof $PKG" 2>/dev/null | tr -d '\r'; }
 playing() { adb shell "dumpsys media_session | grep -o 'state=PLAYING' | head -1" 2>/dev/null | tr -d '\r'; }
-crashed() { adb logcat -b crash -d 2>/dev/null | grep -c "FATAL EXCEPTION"; }
+# Crashes belonging to the app under test, and nothing else.
+#
+# This used to count every FATAL EXCEPTION in the buffer, whoever it belonged
+# to — including uiautomator, which dies with "already registered" whenever two
+# of these scripts dump the screen at the same moment. That reported five
+# crashes against a player that had not crashed at all. Only lines naming this
+# package, or the ones immediately under them, are ours.
+# Crashes belonging to the app under test, and nothing else.
+#
+# This used to count every FATAL EXCEPTION in the buffer, whoever it belonged
+# to — including uiautomator, which dies with "already registered" whenever two
+# of these scripts dump the screen at the same moment. That reported five
+# crashes against a player which had not crashed at all.
+crashed() {
+  adb logcat -b crash -d 2>/dev/null | grep -A3 "FATAL EXCEPTION" \
+    | grep -c "Process: $PKG"
+}
 focused()     { adb shell "dumpsys window | grep -m1 mCurrentFocus" 2>/dev/null | tr -d '\r'; }
 focused_app() { adb shell "dumpsys window | grep -m1 mFocusedApp" 2>/dev/null | tr -d '\r'; }
 

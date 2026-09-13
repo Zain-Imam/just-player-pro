@@ -23,6 +23,21 @@ final class History {
     private static final String KEY_TYPE = "type";
     private static final String KEY_TIME = "time";
 
+    /*
+     * Whether anything ever came out of it.
+     *
+     * An entry is written the moment a URL is opened, which is before anyone
+     * knows whether it will play — so a dead link, an expired debrid URL or a
+     * typo lands in the list beside the things that worked. This is set once
+     * the player has actually rendered a frame, and the list can then be asked
+     * to show only what played.
+     *
+     * Absent on entries written by earlier versions, which are given the
+     * benefit of the doubt: they were listed before this existed, and silently
+     * hiding somebody's history on upgrade is worse than listing a dud.
+     */
+    private static final String KEY_PLAYED = "played";
+
     private static final int MAX_ENTRIES = 100;
 
     private static final String[] NETWORK_SCHEMES = {
@@ -42,12 +57,19 @@ final class History {
         @Nullable
         final String type;
         final long time;
+        /** Whether this one ever actually played. See KEY_PLAYED. */
+        final boolean played;
 
         Entry(Uri uri, String name, @Nullable String type, long time) {
+            this(uri, name, type, time, true);
+        }
+
+        Entry(Uri uri, String name, @Nullable String type, long time, boolean played) {
             this.uri = uri;
             this.name = name;
             this.type = type;
             this.time = time;
+            this.played = played;
         }
     }
 
@@ -100,7 +122,9 @@ final class History {
             }
         }
 
-        entries.add(0, new Entry(uri, displayName(uri), type, System.currentTimeMillis()));
+        // Not played yet — it has only been opened. markPlayed says otherwise.
+        entries.add(0, new Entry(uri, displayName(uri), type,
+                System.currentTimeMillis(), false));
 
         while (entries.size() > MAX_ENTRIES) {
             entries.remove(entries.size() - 1);
@@ -205,6 +229,32 @@ final class History {
         preferences.edit().remove(PREF_KEY).apply();
     }
 
+    /**
+     * Say that this one played, so it survives the "only what played" filter.
+     *
+     * Called when a frame has actually been rendered rather than when playback
+     * is merely requested: a link that connects, buffers and then fails has not
+     * played, and should not be remembered as though it had.
+     */
+    static void markPlayed(final SharedPreferences preferences, @Nullable final Uri uri) {
+        if (!isNetworkUri(uri)) {
+            return;
+        }
+        final List<Entry> entries = load(preferences);
+        final String key = uri.toString();
+        boolean changed = false;
+        for (int i = 0; i < entries.size(); i++) {
+            final Entry entry = entries.get(i);
+            if (!entry.played && key.equals(entry.uri.toString())) {
+                entries.set(i, new Entry(entry.uri, entry.name, entry.type, entry.time, true));
+                changed = true;
+            }
+        }
+        if (changed) {
+            save(preferences, entries);
+        }
+    }
+
     @NonNull
     static List<Entry> load(final SharedPreferences preferences) {
         final List<Entry> entries = new ArrayList<>();
@@ -231,7 +281,8 @@ final class History {
                 }
                 final String type = object.has(KEY_TYPE) && !object.isNull(KEY_TYPE)
                         ? object.optString(KEY_TYPE, null) : null;
-                entries.add(new Entry(uri, name, type, object.optLong(KEY_TIME, 0L)));
+                entries.add(new Entry(uri, name, type, object.optLong(KEY_TIME, 0L),
+                        object.optBoolean(KEY_PLAYED, true)));
             }
         } catch (JSONException e) {
             // A corrupt list is not worth failing a launch over — the feature is
@@ -254,6 +305,7 @@ final class History {
                     object.put(KEY_TYPE, entry.type);
                 }
                 object.put(KEY_TIME, entry.time);
+                object.put(KEY_PLAYED, entry.played);
                 array.put(object);
             }
         } catch (JSONException e) {

@@ -315,6 +315,17 @@ class Utils {
     public enum Orientation {
         VIDEO(0, R.string.video_orientation_video),
         SYSTEM(1, R.string.video_orientation_system),
+        /*
+         * Follows the phone, whatever the phone has been told about rotating.
+         *
+         * Deliberately SCREEN_ORIENTATION_SENSOR rather than USER: a rotation
+         * lock is a decision about the launcher and your messages, not about a
+         * film. Somebody who turns the phone sideways while watching has said
+         * what they want plainly enough, and a control inside the player that
+         * does nothing because of a setting three screens away is not a
+         * control. This is what every other player does here.
+         */
+        SENSOR(3, R.string.video_orientation_sensor),
         UNSPECIFIED(2, R.string.video_orientation_system);
 
         public final int value;
@@ -344,15 +355,25 @@ class Utils {
             case SYSTEM:
                 activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
                 break;
-            /*case SENSOR:
+            case SENSOR:
                 activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
-                break;*/
+                break;
         }
     }
 
+    /*
+     * Three states now, not two.
+     *
+     * It used to be a toggle: shaped to the video, or left to the system. What
+     * was missing is the one people actually expect from a video player —
+     * follow the phone — so the cycle is video, then auto-rotate, then the
+     * system's own behaviour, and round again.
+     */
     public static Orientation getNextOrientation(Orientation orientation) {
         switch (orientation) {
             case VIDEO:
+                return Orientation.SENSOR;
+            case SENSOR:
                 return Orientation.SYSTEM;
             case SYSTEM:
             default:

@@ -195,7 +195,8 @@ public class PlayerActivity extends Activity {
     
     private String pendingSubtitleLabel;
     private String appliedAccent;
-    private ProgressBar loadingProgressBar;
+    /** The spinner and its label together: shown and hidden as one. */
+    private View loadingProgressBar;
     private PlayerControlView controlView;
     private CustomDefaultTimeBar timeBar;
 
@@ -980,7 +981,7 @@ public class PlayerActivity extends Activity {
                 youTubeOverlay.setAlpha(1.0f);
                 youTubeOverlay.setVisibility(View.VISIBLE);
                 // The info card is for settling in, not for seeking through.
-                hideOverlayCard();
+                hideOverlayCardForNow();
             }
 
             @Override
@@ -1602,6 +1603,14 @@ public class PlayerActivity extends Activity {
      * interrupted to be handed to mpv.
      */
     private boolean pictureSeen;
+
+    /**
+     * Whether a subtitle has been chosen by hand and not yet seen to work.
+     *
+     * Only set by the picker, so that a file which simply has no subtitles
+     * never produces a complaint about one.
+     */
+    private boolean subtitleWasAskedFor;
 
     private boolean tryMpvFallback() {
         if (pictureSeen) {
@@ -2251,6 +2260,9 @@ public class PlayerActivity extends Activity {
         public void onRenderedFirstFrame() {
             // The engine has drawn a frame, so it can plainly decode this file.
             pictureSeen = true;
+            // And a frame on screen is the only honest definition of "played",
+            // which is what keeps a dead link out of the history list.
+            History.markPlayed(mPrefs.mSharedPreferences, mPrefs.mediaUri);
         }
 
         @Override
@@ -2263,6 +2275,7 @@ public class PlayerActivity extends Activity {
             selectPendingSubtitle(tracks);
             applyCarriedTracks(tracks);
             keepSubtitleButtonEnabled();
+            noticeSubtitleThatWouldNotLoad(tracks);
             updateMetaLine();
             logEngineState("tracks");
             final boolean unplayable = hasUnplayableVideo(tracks);
@@ -2272,6 +2285,57 @@ public class PlayerActivity extends Activity {
             if (unplayable) {
                 tryMpvFallback();
             }
+        }
+
+        /*
+         * Say so when the subtitle you chose quietly failed.
+         *
+         * A text track that cannot be read — a sidecar file with no permission,
+         * a URL that has expired, a malformed .srt — is dropped by the player
+         * itself: "Disabling track due to error", and the track comes back
+         * unselected. Nothing was shown for that. The picker went on saying
+         * "Playing now" against the track you had picked, the screen stayed
+         * blank, and the only reading available was that choosing a subtitle
+         * does nothing.
+         *
+         * So: if a text track was asked for and the player is no longer
+         * offering it as selected, that is a failure, and it is said out loud
+         * once. The override is cleared at the same time, so the picker stops
+         * claiming something that is not true.
+         */
+        private void noticeSubtitleThatWouldNotLoad(final Tracks tracks) {
+            if (player == null || !subtitleWasAskedFor) {
+                return;
+            }
+            boolean anyTextSelected = false;
+            boolean anyTextOffered = false;
+            for (final Tracks.Group group : tracks.getGroups()) {
+                if (group.getType() != C.TRACK_TYPE_TEXT) {
+                    continue;
+                }
+                anyTextOffered = true;
+                for (int i = 0; i < group.length; i++) {
+                    if (group.isTrackSelected(i)) {
+                        anyTextSelected = true;
+                        break;
+                    }
+                }
+                if (anyTextSelected) {
+                    break;
+                }
+            }
+
+            // Still nothing decided, or the track list has not caught up yet.
+            if (!anyTextOffered || anyTextSelected) {
+                return;
+            }
+
+            subtitleWasAskedFor = false;
+            player.setTrackSelectionParameters(
+                    player.getTrackSelectionParameters().buildUpon()
+                            .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+                            .build());
+            Utils.showText(playerView, getString(R.string.subtitle_would_not_load), 3500);
         }
 
         private boolean hasUnplayableVideo(final Tracks tracks) {
@@ -2416,17 +2480,21 @@ public class PlayerActivity extends Activity {
             return;
         }
 
+        // Null is allowed: a file with its own chapter marks needs no lookup,
+        // and waiting for one meant it never offered to skip anything.
         final com.brouken.player.online.Identity identity =
                 onlineController.remembered(mPrefs.mediaUri);
-        if (identity == null) {
-            return;
-        }
 
         skipLoadedFor = mPrefs.mediaUri;
 
         if (skipController == null) {
             skipController = new com.brouken.player.online.SkipController(this, coordinatorLayout,
                     new com.brouken.player.online.SkipController.Host() {
+                        @Override
+                        public boolean isPlaying() {
+                            return player != null && player.isPlaying();
+                        }
+
                         @Override
                         public double positionSeconds() {
                             return player == null ? -1 : player.getCurrentPosition() / 1000.0;
@@ -2480,17 +2548,35 @@ public class PlayerActivity extends Activity {
     }
 
 
-    // Longer than the controls take to go: there is a synopsis on the card,
-    // and three and a half seconds is not enough to read one.
-    private static final long OVERLAY_TIMEOUT = 8_000L;
-
-    private final Runnable overlayHider = this::hideOverlayCard;
+    /*
+     * How long the card waits before coming back after it has been pushed
+     * aside — by the quick panel, a seek, a picker, anything that means you
+     * are looking at the picture rather than reading about it.
+     *
+     * Fixed, and deliberately not a setting. The setting says how long a pause
+     * has to last before the card appears at all, which is a question of taste.
+     * This is just long enough not to flicker back the instant a panel closes,
+     * and there is nothing for anybody to tune about that.
+     */
+    private static final long CARD_RETURN_MS = 3_000L;
 
     private final Runnable overlayShower = () -> {
         if (onlineController == null || mPrefs.mediaUri == null) {
             return;
         }
         if (player == null || player.isPlaying()) {
+            return;
+        }
+        /*
+         * Not over a film that has not started.
+         *
+         * Opening a file leaves the player paused and buffering for a moment
+         * before the first frame arrives, which looked exactly like a pause to
+         * the old code — so the card appeared over the opening seconds of
+         * everything, before you had seen a single frame of it. It waits for a
+         * picture now, and stays away while the player is refilling.
+         */
+        if (!pictureSeen || player.getPlaybackState() == Player.STATE_BUFFERING) {
             return;
         }
         final com.brouken.player.online.Identity identity =
@@ -2510,13 +2596,21 @@ public class PlayerActivity extends Activity {
         // The centre controls step aside; the card owns the middle.
         setCardControlsVisible(true);
 
-        playerView.hideController();
-
-        // It goes the way the controls go: shown, read, gone. Leaving it up
-        // over a paused film means it is still there when you come back to the
-        // room and want to see what you paused on.
-        coordinatorLayout.removeCallbacks(overlayHider);
-        coordinatorLayout.postDelayed(overlayHider, OVERLAY_TIMEOUT);
+        /*
+         * And then it stays.
+         *
+         * It used to take itself away after eight seconds, on the reasoning
+         * that it should go the way the controls go. That was wrong: the
+         * controls disappear so they stop covering a film that is playing, and
+         * this film is not playing. Pausing to find out what you are watching
+         * and having the answer removed from under you — while still paused,
+         * with nothing else happening — is not a timeout anybody asked for.
+         *
+         * It goes when there is a reason for it to go: playback resumes, or you
+         * open something over it, or you seek. Each of those puts it back three
+         * seconds after you are done. Otherwise a paused film keeps its card
+         * for as long as it stays paused.
+         */
     };
 
     /*
@@ -2595,9 +2689,51 @@ public class PlayerActivity extends Activity {
         return frame != null ? frame : coordinatorLayout;
     }
 
+    /**
+     * Put the card away because something else wants the screen, and bring it
+     * back when that something is done.
+     *
+     * The difference from {@link #hideOverlayCard()} is only what happens next:
+     * this one expects to return. Opening the quick panel, dragging the
+     * timeline, picking a track — none of those mean you have finished with the
+     * card, they mean you are busy. Three seconds after you stop being busy, if
+     * the film is still paused, it comes back on its own.
+     */
+    public void hideOverlayCardForNow() {
+        hideOverlayCard();
+        scheduleOverlayReturn();
+    }
+
+    /**
+     * A picker that, on closing, lets the info card come back.
+     *
+     * The track lists cover the middle of the screen, which is where the card
+     * sits, so the card steps aside while one is open. Closing it is the end of
+     * that, and without this the card would stay away until the next pause.
+     */
+    @Nullable
+    private android.app.AlertDialog cardReturnsWhenClosed(
+            @Nullable final android.app.AlertDialog dialog) {
+        if (dialog != null) {
+            dialog.setOnDismissListener(d -> hideOverlayCardForNow());
+        }
+        return dialog;
+    }
+
+    /** Bring the card back shortly, if there is still a reason to. */
+    private void scheduleOverlayReturn() {
+        coordinatorLayout.removeCallbacks(overlayShower);
+        if (onlineController == null || !onlineController.overlayEnabled()) {
+            return;
+        }
+        if (player == null || player.isPlaying()) {
+            return;
+        }
+        coordinatorLayout.postDelayed(overlayShower, CARD_RETURN_MS);
+    }
+
     public void hideOverlayCard() {
         coordinatorLayout.removeCallbacks(overlayShower);
-        coordinatorLayout.removeCallbacks(overlayHider);
         if (overlayCard != null) {
             overlayCard.hide();
         }
@@ -2609,6 +2745,43 @@ public class PlayerActivity extends Activity {
     }
 
 
+    /**
+     * Ask again what this is, starting from the name it guessed.
+     *
+     * Identification reads the file name, which is a guess, and when it guesses
+     * wrong the card is wrong with it and there was no way to say so — the only
+     * route back was the subtitle search, which is a different question
+     * entirely. This forgets what it decided, offers the name for correcting,
+     * and shows the posters it finds for whatever you type.
+     */
+    public void identifyAgain() {
+        if (onlineController == null) {
+            return;
+        }
+        hideOverlayCard();
+        final Uri uri = mPrefs.mediaUri;
+        onlineController.forget(uri);
+        skipLoadedFor = null;
+        onlineController.identify(this, true, identity -> {
+            if (uri == null || !uri.equals(mPrefs.mediaUri)) {
+                return;
+            }
+            ensureSkipSegments();
+            updateMetaLine();
+            showOverlayCardNow();
+        });
+    }
+
+    /** The address of what is playing, on the clipboard. */
+    public void copyCurrentLink() {
+        Clipboard.copy(this, mPrefs.mediaUri, getTitleForCopy());
+    }
+
+    private CharSequence getTitleForCopy() {
+        final CharSequence shown = titleView == null ? null : titleView.getText();
+        return shown != null && shown.length() > 0 ? shown : getString(R.string.copy_link);
+    }
+
     public void reIdentifyOnline() {
         hideOverlayCard();
         if (onlineController != null) {
@@ -2619,7 +2792,7 @@ public class PlayerActivity extends Activity {
     }
 
     public void searchOnlineSubtitles() {
-        hideOverlayCard();
+        hideOverlayCardForNow();
         if (onlineController != null) {
             onlineController.searchSubtitles(this, false);
         }
@@ -3025,9 +3198,17 @@ public class PlayerActivity extends Activity {
             updateButtonRotation();
         }
 
-        // A forced shape is re-applied here: the player sets the frame from
-        // the file whenever a size arrives, which would undo it.
-        if (aspectStep >= 3) {
+        /*
+         * The shape is re-applied whenever a size arrives, because the player
+         * sets the frame from the file and would otherwise undo it.
+         *
+         * Always on mpv, not only for a forced ratio. mpv needs the surface to
+         * cover the whole player so that the black bars are its own and it can
+         * draw subtitles on them — and that arrangement has to be in place from
+         * the moment the film opens, not only once somebody presses the aspect
+         * button. Media3 only needs this for a forced ratio, as before.
+         */
+        if (aspectStep >= 3 || player instanceof com.brouken.player.mpv.MpvPlayer) {
             applyAspectStep(false);
         }
 
@@ -3094,34 +3275,31 @@ public class PlayerActivity extends Activity {
     }
 
     /*
-     * Tell the subtitles where the picture is.
+     * Subtitles are placed against the screen, not against the picture.
      *
-     * The subtitle view covers the whole player while the picture covers only
-     * part of it, so a subtitle moved down went into the letterbox and was
-     * drawn on black. Measured from the two views rather than worked out from
-     * the aspect ratio, because a forced shape or a zoom moves the picture and
-     * this then follows it.
+     * This used to measure where the picture sat inside the player and clamp
+     * every cue into it, so that nothing was ever drawn on the black bars.
+     * That is the wrong trade: on a letterboxed film the text then sits over
+     * the bottom of the image, covering it, while a wide empty band goes spare
+     * directly underneath — and the further down you move it, the more of the
+     * picture it covers rather than moving clear of it.
+     *
+     * The whole of the subtitle view is the area now, which is the whole
+     * player, so the bars are available and the text lands below the image
+     * where there is nothing to obscure. mpv is told the same thing through
+     * sub-use-margins, so both engines place subtitles alike.
+     *
+     * The method stays — the shape of the player still changes with rotation,
+     * a forced aspect or a zoom, and the cues have to be laid out again each
+     * time that happens.
      */
     void updateSubtitlePictureArea() {
         final SubtitleView subtitleView = playerView.getSubtitleView();
-        final View surface = playerView.getVideoSurfaceView();
-        if (subtitleView == null || surface == null) {
+        if (subtitleView == null) {
             return;
         }
         subtitleView.post(() -> {
-            final int height = subtitleView.getHeight();
-            if (height <= 0 || surface.getHeight() <= 0) {
-                return;
-            }
-            final int[] subtitleAt = new int[2];
-            final int[] pictureAt = new int[2];
-            subtitleView.getLocationOnScreen(subtitleAt);
-            surface.getLocationOnScreen(pictureAt);
-
-            final float top = (pictureAt[1] - subtitleAt[1]) / (float) height;
-            final float bottom = top + surface.getHeight() / (float) height;
-            playerView.cueModifier.setPictureArea(top, bottom);
-
+            playerView.cueModifier.setPictureArea(0f, 1f);
             if (player != null && player.isCommandAvailable(Player.COMMAND_GET_TEXT)) {
                 subtitleView.setCues(
                         playerView.cueModifier.modifyCues(player.getCurrentCues().cues));
@@ -3683,7 +3861,7 @@ public class PlayerActivity extends Activity {
     }
 
     private void showSubtitleMenu() {
-        hideOverlayCard();
+        hideOverlayCardForNow();
         final List<SubtitleChoice> choices = new ArrayList<>();
 
         final Tracks tracks = player == null ? Tracks.EMPTY : player.getCurrentTracks();
@@ -3707,11 +3885,19 @@ public class PlayerActivity extends Activity {
                 getString(R.string.subtitle_menu_settings_detail),
                 () -> osdSettingsController.showSubtitleSettings()));
 
-        com.brouken.player.online.ListPicker.show(this, getString(R.string.subtitle_menu_title), choices,
-                index -> choices.get(index).run());
+        cardReturnsWhenClosed(com.brouken.player.online.ListPicker.show(
+                this, getString(R.string.subtitle_menu_title), choices,
+                index -> choices.get(index).run()));
     }
 
     private static final class SubtitleChoice implements com.brouken.player.online.ListPicker.Row {
+        /** Whether this row is the track actually playing. See Row.current(). */
+        private boolean current;
+
+        @Override
+        public boolean current() {
+            return current;
+        }
 
         private final String title;
         private final String detail;
@@ -3728,17 +3914,23 @@ public class PlayerActivity extends Activity {
         }
 
         static SubtitleChoice off(final PlayerActivity activity, final boolean current) {
-            return new SubtitleChoice(activity.getString(R.string.subtitle_menu_off),
+            return marked(current, new SubtitleChoice(activity.getString(R.string.subtitle_menu_off),
                     current ? activity.getString(R.string.subtitle_menu_current) : null,
-                    () -> activity.selectTextTrack(null, 0));
+                    () -> activity.selectTextTrack(null, 0)));
         }
 
         static SubtitleChoice track(final PlayerActivity activity, final Tracks.Group group,
                                     final int index, final Format format, final boolean selected) {
-            return new SubtitleChoice(
+            return marked(selected, new SubtitleChoice(
                     TrackNames.title(activity, format, index, C.TRACK_TYPE_TEXT),
                     TrackNames.detail(activity, format, selected),
-                    () -> activity.selectTextTrack(group, index));
+                    () -> activity.selectTextTrack(group, index)));
+        }
+
+        /** Tag a row as the one playing, so the list can colour it. */
+        private static SubtitleChoice marked(final boolean current, final SubtitleChoice choice) {
+            choice.current = current;
+            return choice;
         }
 
         @NonNull
@@ -3770,7 +3962,7 @@ public class PlayerActivity extends Activity {
      * it keeps guessing wrong.
      */
     public void showVideoMenu() {
-        hideOverlayCard();
+        hideOverlayCardForNow();
         final List<VideoChoice> choices = new ArrayList<>();
         final Tracks tracks = player == null ? Tracks.EMPTY : player.getCurrentTracks();
 
@@ -3790,8 +3982,9 @@ public class PlayerActivity extends Activity {
             return;
         }
 
-        com.brouken.player.online.ListPicker.show(this, getString(R.string.video_menu_title),
-                choices, index -> choices.get(index).run());
+        cardReturnsWhenClosed(com.brouken.player.online.ListPicker.show(
+                this, getString(R.string.video_menu_title),
+                choices, index -> choices.get(index).run()));
     }
 
     public int videoTrackCount() {
@@ -3812,6 +4005,13 @@ public class PlayerActivity extends Activity {
         private final String title;
         private final String detail;
         private final Runnable action;
+        /** Whether this rung is the one in use. See Row.current(). */
+        private boolean current;
+
+        @Override
+        public boolean current() {
+            return current;
+        }
 
         private VideoChoice(String title, String detail, Runnable action) {
             this.title = title;
@@ -3820,7 +4020,7 @@ public class PlayerActivity extends Activity {
         }
 
         static VideoChoice auto(final PlayerActivity activity, final boolean current) {
-            return new VideoChoice(activity.getString(R.string.video_menu_auto),
+            return marked(current, new VideoChoice(activity.getString(R.string.video_menu_auto),
                     current ? activity.getString(R.string.subtitle_menu_current) : null,
                     () -> {
                         if (activity.player == null) {
@@ -3830,7 +4030,13 @@ public class PlayerActivity extends Activity {
                                 activity.player.getTrackSelectionParameters().buildUpon()
                                         .clearOverridesOfType(C.TRACK_TYPE_VIDEO)
                                         .build());
-                    });
+                    }));
+        }
+
+        /** Tag a rung as the one in use, so the list can colour it. */
+        private static VideoChoice marked(final boolean current, final VideoChoice choice) {
+            choice.current = current;
+            return choice;
         }
 
         static VideoChoice track(final PlayerActivity activity, final Tracks.Group group,
@@ -3840,7 +4046,7 @@ public class PlayerActivity extends Activity {
             final String name = format.height > 0
                     ? format.height + "p"
                     : TrackNames.title(activity, format, index, C.TRACK_TYPE_VIDEO);
-            return new VideoChoice(name, TrackNames.detail(activity, format, selected),
+            return marked(selected, new VideoChoice(name, TrackNames.detail(activity, format, selected),
                     () -> {
                         if (activity.player == null) {
                             return;
@@ -3853,7 +4059,7 @@ public class PlayerActivity extends Activity {
                                         .setOverrideForType(new TrackSelectionOverride(
                                                 group.getMediaTrackGroup(), selection))
                                         .build());
-                    });
+                    }));
         }
 
         @NonNull
@@ -3874,7 +4080,7 @@ public class PlayerActivity extends Activity {
     }
 
     public void showAudioMenu() {
-        hideOverlayCard();
+        hideOverlayCardForNow();
         final List<AudioChoice> choices = new ArrayList<>();
         final Tracks tracks = player == null ? Tracks.EMPTY : player.getCurrentTracks();
 
@@ -3893,8 +4099,9 @@ public class PlayerActivity extends Activity {
             return;
         }
 
-        com.brouken.player.online.ListPicker.show(this, getString(R.string.audio_menu_title),
-                choices, index -> choices.get(index).select());
+        cardReturnsWhenClosed(com.brouken.player.online.ListPicker.show(
+                this, getString(R.string.audio_menu_title),
+                choices, index -> choices.get(index).select()));
     }
 
     int audioTrackCount() {
@@ -3937,6 +4144,11 @@ public class PlayerActivity extends Activity {
         @Override
         public String detail() {
             return TrackNames.detail(activity, format, selected);
+        }
+
+        @Override
+        public boolean current() {
+            return selected;
         }
 
         void select() {
@@ -3990,6 +4202,8 @@ public class PlayerActivity extends Activity {
         if (player == null) {
             return;
         }
+        // Off is not something that can fail, so it does not arm the check.
+        subtitleWasAskedFor = group != null;
         final TrackSelectionParameters.Builder builder =
                 player.getTrackSelectionParameters().buildUpon();
 
@@ -4232,10 +4446,31 @@ public class PlayerActivity extends Activity {
                 playerView.findViewById(androidx.media3.ui.R.id.exo_content_frame);
         final int forced = aspectStep - 3;
 
+        /*
+         * On mpv the shape is mpv's business, not the layout's.
+         *
+         * The surface is given the whole player and mpv letterboxes inside it,
+         * so the bars belong to mpv — which is what lets it put subtitles on
+         * them, and what lets it redraw a new shape while paused. Media3 keeps
+         * the old arrangement, where the frame is measured to the film and the
+         * subtitle view sits over the lot.
+         */
+        final com.brouken.player.mpv.MpvPlayer mpv =
+                player instanceof com.brouken.player.mpv.MpvPlayer
+                        ? (com.brouken.player.mpv.MpvPlayer) player : null;
+
         if (forced >= 0 && forced < FORCED_ASPECTS.length) {
-            playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
-            if (frame != null) {
-                frame.setAspectRatio(FORCED_ASPECTS[forced]);
+            if (mpv != null) {
+                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
+                if (frame != null) {
+                    frame.setAspectRatio(0);
+                }
+                mpv.setAspect(true, 0, FORCED_ASPECTS[forced]);
+            } else {
+                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
+                if (frame != null) {
+                    frame.setAspectRatio(FORCED_ASPECTS[forced]);
+                }
             }
             if (announce) {
                 Utils.showText(playerView, getString(FORCED_ASPECT_NAMES[forced]));
@@ -4244,7 +4479,16 @@ public class PlayerActivity extends Activity {
             final int mode = aspectStep == 1 ? AspectRatioFrameLayout.RESIZE_MODE_ZOOM
                     : aspectStep == 2 ? AspectRatioFrameLayout.RESIZE_MODE_FILL
                     : AspectRatioFrameLayout.RESIZE_MODE_FIT;
-            playerView.setResizeMode(mode);
+            if (mpv != null) {
+                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
+                if (frame != null) {
+                    frame.setAspectRatio(0);
+                }
+                // crop fills by cutting the edges; stretch abandons the shape.
+                mpv.setAspect(aspectStep != 2, aspectStep == 1 ? 1.0 : 0.0, 0);
+            } else {
+                playerView.setResizeMode(mode);
+            }
             mPrefs.resizeMode = mode;
             if (announce) {
                 Utils.showText(playerView, getString(aspectStep == 1
@@ -4256,6 +4500,25 @@ public class PlayerActivity extends Activity {
         androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
                 .edit().putInt(PREF_ASPECT_STEP, aspectStep).apply();
         remeasureOverPicture();
+        refreshPictureAfterShapeChange();
+    }
+
+    /*
+     * After the shape changes, make the picture and the subtitles agree with it.
+     *
+     * Posted rather than called straight away: the frame has only just been
+     * told its new size and has not laid out yet, so asking now would measure
+     * the shape we are leaving. One pass later everything is where it will be.
+     */
+    private void refreshPictureAfterShapeChange() {
+        playerView.post(() -> {
+            if (player instanceof com.brouken.player.mpv.MpvPlayer) {
+                ((com.brouken.player.mpv.MpvPlayer) player).refreshPicture();
+            }
+            // The subtitles are laid out against the player, and the player has
+            // just changed shape, so they are laid out again — on both engines.
+            updateSubtitlePictureArea();
+        });
     }
 
     /*
@@ -4554,6 +4817,10 @@ public class PlayerActivity extends Activity {
             } else {
                 buttonRotation.setImageResource(R.drawable.ic_screen_lock_landscape_24dp);
             }
+        } else if (mPrefs.orientation == Utils.Orientation.SENSOR) {
+            // Following the phone, regardless of what the phone's own rotation
+            // lock says, so the icon is the unambiguous one for that.
+            buttonRotation.setImageResource(R.drawable.ic_auto_rotate_24dp);
         } else {
             if (auto) {
                 buttonRotation.setImageResource(R.drawable.ic_screen_rotation_24dp);

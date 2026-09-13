@@ -132,6 +132,26 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         super.showController();
     }
 
+    /*
+     * With nothing open, the controls are the whole screen.
+     *
+     * There is no picture to get out of the way of — only black — and the
+     * controls are the only way to open anything. Hiding them leaves a blank
+     * screen with no visible way forward, which is what happened after closing
+     * the quick panel with no file loaded: the panel hides the controller on
+     * its way in, and nothing brought it back.
+     *
+     * So while there is no media, the controller does not hide. The lock does
+     * not apply either, because there is nothing to lock.
+     */
+    @Override
+    public void hideController() {
+        if (!PlayerActivity.haveMedia) {
+            return;
+        }
+        super.hideController();
+    }
+
     public void clearIcon() {
         exoErrorMessage.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
         setHighlight(false);

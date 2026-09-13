@@ -1071,13 +1071,32 @@ public final class MpvPlayer extends BasePlayer
             if (id == null) {
                 continue;
             }
+            /*
+             * Ask what type the mime is, rather than reading the front of it.
+             *
+             * This used to test mime.startsWith("text"), which is true of
+             * "text/x-ssa" and "text/vtt" and false of the one everybody
+             * actually has: SubRip's mime is "application/x-subrip". So
+             * choosing an .srt set nothing at all — sid was never written, the
+             * picker said "Playing now" against the track you had chosen, and
+             * the screen carried on showing whatever it had been showing.
+             * Off worked, because that goes through disabledTrackTypes rather
+             * than through an override, which is exactly the shape the bug
+             * report had: "only clicking off works".
+             *
+             * The same was true of tx3g and PGS. getTrackType knows all of
+             * them, and will know the next one too.
+             */
             final String mime = format.sampleMimeType == null ? "" : format.sampleMimeType;
-            if (mime.startsWith(androidx.media3.common.MimeTypes.BASE_TYPE_AUDIO)) {
+            final int trackType = androidx.media3.common.MimeTypes.getTrackType(mime);
+            if (trackType == C.TRACK_TYPE_AUDIO) {
                 mpv.setPropertyString("aid", id);
                 audioChosen = true;
-            } else if (mime.startsWith(androidx.media3.common.MimeTypes.BASE_TYPE_TEXT)) {
+            } else if (trackType == C.TRACK_TYPE_TEXT) {
                 mpv.setPropertyString("sid", id);
                 textChosen = true;
+            } else if (trackType == C.TRACK_TYPE_VIDEO) {
+                mpv.setPropertyString("vid", id);
             }
         }
 
@@ -1089,6 +1108,118 @@ public final class MpvPlayer extends BasePlayer
         if (!audioChosen && parameters.disabledTrackTypes.contains(C.TRACK_TYPE_AUDIO)) {
             mpv.setPropertyString("aid", "no");
         }
+    }
+
+    /** The size the person chose, kept so the scale can be worked out again. */
+    private int subtitleSizeStep;
+
+    /**
+     * Size subtitles against the picture, while still placing them by the window.
+     *
+     * mpv measures subtitle size as a fraction of the window it is drawing
+     * into. That used to be the picture, because the surface was cut to the
+     * shape of the film. Now the surface is the whole screen — which is what
+     * lets subtitles sit on the black bars — so the same fraction produces text
+     * getting on for twice the size, and much larger than the other engine's.
+     *
+     * The fix is not to pick a smaller number and hope. mpv reports the window
+     * and the margins it has left around the video in osd-dimensions, so the
+     * height of the picture inside the window is known exactly, and the scale
+     * is set to that share of it. The text then measures itself against the
+     * film, as it did before, while margins go on placing it against the
+     * screen.
+     */
+    private void applySubtitleScale() {
+        if (mpv == null) {
+            return;
+        }
+        final double chosen = 1.0 + subtitleSizeStep * (SUB_SIZE_STEP / SUB_SIZE_DEFAULT);
+
+        double share = 1.0;
+        final Integer windowHeight = mpv.getPropertyInt("osd-dimensions/h");
+        final Integer marginTop = mpv.getPropertyInt("osd-dimensions/mt");
+        final Integer marginBottom = mpv.getPropertyInt("osd-dimensions/mb");
+        if (windowHeight != null && windowHeight > 0
+                && marginTop != null && marginBottom != null) {
+            final double picture = windowHeight - marginTop - marginBottom;
+            if (picture > 0) {
+                share = picture / (double) windowHeight;
+            }
+        }
+        // A very tall, very narrow letterbox would otherwise shrink the text to
+        // nothing; below about a third of the screen it stops getting smaller.
+        share = Math.max(0.35, Math.min(1.0, share));
+
+        set("sub-scale", String.valueOf(Math.max(0.2, chosen * share)));
+    }
+
+    /**
+     * Shape the picture, inside mpv, rather than by resizing its canvas.
+     *
+     * The Android side used to do all of this: an AspectRatioFrameLayout
+     * measured the video surface to the shape of the film, and mpv simply
+     * filled whatever it was given. Two things follow from that, and both were
+     * reported as bugs.
+     *
+     * The black bars were not mpv's — they were the empty part of the player
+     * around a surface that had been shrunk to fit — so mpv had nowhere to put
+     * a subtitle except on top of the picture, whatever sub-use-margins said.
+     * And changing shape resized the surface under a paused film, which mpv
+     * could not redraw into until the next frame arrived, so the picture sat
+     * there stretched or clipped until playback resumed.
+     *
+     * Now the surface covers the whole player and mpv letterboxes inside it.
+     * The bars belong to mpv, which can draw subtitles on them; the shape is a
+     * property it can change and redraw at once, paused or not.
+     *
+     * @param keepAspect   false stretches the picture to the window
+     * @param panscan      0 letterboxes, 1 crops to fill
+     * @param aspectOverride a forced ratio such as 1.777, or 0 for the film's own
+     */
+    public void setAspect(final boolean keepAspect, final double panscan,
+                          final double aspectOverride) {
+        if (mpv == null) {
+            return;
+        }
+        set("keepaspect", keepAspect ? "yes" : "no");
+        set("panscan", String.valueOf(panscan));
+        set("video-aspect-override", aspectOverride > 0
+                ? String.valueOf(aspectOverride) : "-1");
+        refreshPicture();
+    }
+
+    /**
+     * Draw the picture again, in place, without moving.
+     *
+     * mpv renders frames as they arrive. Change the shape of the window while a
+     * film is paused and there is no next frame to arrive, so what stays on
+     * screen is the last one drawn at the old geometry — stretched, offset, or
+     * with the edges of the previous shape still showing — until you press play
+     * and a fresh frame corrects it. Every other player redraws immediately,
+     * and so should this.
+     *
+     * Restating the surface size makes the video output reconfigure, which
+     * covers the common case. A paused film additionally needs a frame to
+     * render: an exact relative seek of zero produces one at the position it is
+     * already at, which is the cheapest way to say "draw that again".
+     */
+    public void refreshPicture() {
+        if (mpv == null) {
+            return;
+        }
+        if (surfaceHolder != null) {
+            final android.graphics.Rect frame = surfaceHolder.getSurfaceFrame();
+            if (frame != null && frame.width() > 0 && frame.height() > 0) {
+                mpv.setPropertyString("android-surface-size",
+                        frame.width() + "x" + frame.height());
+            }
+        }
+        if (playbackState == Player.STATE_READY && !playWhenReady) {
+            mpv.command(new String[]{"seek", "0", "relative+exact"});
+        }
+        // The margins have just moved, so the size that was measured against
+        // them has to be worked out again.
+        applySubtitleScale();
     }
 
     public void setSubtitleStyle(final int verticalPosition, final int sizeStep,
@@ -1109,11 +1240,24 @@ public final class MpvPlayer extends BasePlayer
         // rather than moving. Media3 is now held to the same rule by measuring
         // the picture and placing the line inside it, so the slider covers the
         // same ground on both.
-        set("sub-use-margins", "no");
-        set("sub-ass-force-margins", "no");
+        /*
+         * Subtitles may use the black bars.
+         *
+         * These were "no", which keeps every subtitle inside the picture. On a
+         * letterboxed film in a fit-to-screen shape that puts the text over the
+         * bottom of the image while a wide empty band sits unused beneath it —
+         * and at some positions pushes it far enough down to be hard to read
+         * against the picture at all.
+         *
+         * "yes" lets mpv lay subtitles out against the window instead of the
+         * video, which is the whole screen, bars included. It is what the other
+         * engine now does too, so the two agree.
+         */
+        set("sub-use-margins", "yes");
+        set("sub-ass-force-margins", "yes");
 
-        final double scale = 1.0 + sizeStep * (SUB_SIZE_STEP / SUB_SIZE_DEFAULT);
-        set("sub-scale", String.valueOf(Math.max(0.2, scale)));
+        subtitleSizeStep = sizeStep;
+        applySubtitleScale();
 
         switch (edgeType == null ? "" : edgeType) {
             case "None":

@@ -29,6 +29,20 @@ public final class ListPicker {
 
         @Nullable
         String detail();
+
+        /**
+         * Whether this is the one playing right now.
+         *
+         * Saying so in words under the row — "Playing now" — is easy to miss in
+         * a list of a dozen languages that all look alike. The row that is on
+         * is drawn in the accent colour as well, which is visible at a glance
+         * and from across a room.
+         *
+         * Default false, so a list of plain actions need not think about it.
+         */
+        default boolean current() {
+            return false;
+        }
     }
 
     public interface OnPicked {
@@ -160,6 +174,17 @@ public final class ListPicker {
             final Row row = rows.get(position);
             holder.title.setText(row.title());
 
+            // The one that is playing, in the accent colour. Both lines, so a
+            // row with a description does not read as half highlighted.
+            if (row.current()) {
+                final int accent = com.brouken.player.Accent.color(holder.title.getContext());
+                holder.title.setTextColor(accent);
+                holder.detail.setTextColor(accent);
+            } else {
+                holder.title.setTextColor(holder.defaultTitleColor);
+                holder.detail.setTextColor(holder.defaultDetailColor);
+            }
+
             final String detail = row.detail();
             holder.detail.setText(detail == null ? "" : detail);
             holder.detail.setVisibility(detail == null || detail.isEmpty()
@@ -178,11 +203,23 @@ public final class ListPicker {
     private static final class Holder extends RecyclerView.ViewHolder {
         final TextView title;
         final TextView detail;
+        /*
+         * What the rows look like when they are not the one playing.
+         *
+         * Rows are recycled, so a row that was painted in the accent colour
+         * comes back around as some other row and has to be put back. Read
+         * once from the inflated view rather than named as a constant, so it
+         * follows the theme.
+         */
+        final int defaultTitleColor;
+        final int defaultDetailColor;
 
         Holder(View view) {
             super(view);
             title = view.findViewById(R.id.row_title);
             detail = view.findViewById(R.id.row_detail);
+            defaultTitleColor = title.getCurrentTextColor();
+            defaultDetailColor = detail.getCurrentTextColor();
         }
     }
 }
