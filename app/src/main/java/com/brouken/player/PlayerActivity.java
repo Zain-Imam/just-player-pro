@@ -241,7 +241,6 @@ public class PlayerActivity extends Activity {
     public boolean frameRendered;
     private boolean alive;
     private final AtomicInteger subtitleDelayMs = new AtomicInteger();
-    private final Runnable subtitleDelayApplyRunnable = this::applySubtitleDelay;
     private boolean keptPlayingInBackground;
     /** Whether this film has already been measured against the device. */
     private boolean capabilityAsked;
@@ -3685,10 +3684,20 @@ public class PlayerActivity extends Activity {
         });
     }
 
+    /*
+     * Applied as the number moves, and nothing is rebuilt to do it.
+     *
+     * This used to wait half a second and then reopen the file, which on a
+     * stream means a re-buffer: a hundred milliseconds of subtitle delay cost a
+     * spinner and a stall. The reopen was left over from when the delay was
+     * baked into the subtitles at parse time. It has not been since the delay
+     * renderer went in -- the text renderer reads the number on every frame,
+     * and mpv takes a property change in its stride -- so there is nothing to
+     * rebuild and no reason to wait before doing it.
+     */
     public void updateSubtitleDelay(int delayMs) {
         mPrefs.updateSubtitleDelay(delayMs);
-        playerView.removeCallbacks(subtitleDelayApplyRunnable);
-        playerView.postDelayed(subtitleDelayApplyRunnable, 500);
+        applySubtitleDelay();
     }
 
     private void applySubtitleDelay() {
@@ -3697,9 +3706,7 @@ public class PlayerActivity extends Activity {
 
         if (player instanceof com.brouken.player.mpv.MpvPlayer) {
             ((com.brouken.player.mpv.MpvPlayer) player).setSubtitleDelayMs(newDelayMs);
-            return;
         }
-        restartPlayback();
     }
 
     /**
