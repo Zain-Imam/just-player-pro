@@ -21,7 +21,6 @@
     <string name="pref_framerate_matching_off">Não alterar taxa de exibição</string>
     <string name="pref_framerate_matching_on">Alterar taxa de exibição para correspondência com a taxa do vídeo</string>
     <string name="pref_framerate_matching">Correspondência automática</string>
-    <string name="pref_general_header">Geral</string>
     <string name="pref_title">Definições</string>
     <string name="pref_repeat_toggle">Repetição</string>
     <string name="pref_repeat_toggle_summary">Controlo extra para permitir a repetição infinita do vídeo (tem que reiniciar)</string>
@@ -29,7 +28,6 @@
     <string name="button_open">Abrir</string>
     <string name="button_crop">Redimensionar</string>
     <string name="button_rotate">Rodar</string>
-    <string name="pref_shortcuts_header">Atalhos</string>
     <string name="pref_captioning_preferences">Preferências de legendas</string>
     <string name="pref_file_access">Acesso ao ficheiro</string>
     <string name="pref_file_access_auto">Automático</string>

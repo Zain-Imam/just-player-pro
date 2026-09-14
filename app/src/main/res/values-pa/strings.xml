@@ -25,7 +25,6 @@
     <string name="pref_file_access_auto">ਆਟੋ</string>
     <string name="mediastore_empty">ਕੋਈ ਇੰਡੈਕਸਡ ਵੀਡੀਓ ਫਾਈਲਾਂ ਨਹੀਂ ਮਿਲੀਆਂ। ਦਿੱਤੇ ਗਏ ਸਟੋਰੇਜ ਵਿੱਚ ਵੀਡੀਓ ਫਾਈਲਾਂ ਤੱਕ ਪਹੁੰਚ ਕਰਨ ਲਈ, ਸਿਸਟਮ ਸੈਟਿੰਗਾਂ ਵਿੱਚ ਆਟੋਮੈਟਿਕ ਮੀਡੀਆ ਸਕੈਨਿੰਗ ਨੂੰ ਸਮਰੱਥ ਬਣਾਓ।</string>
     <string name="pref_dangerous_header">ਖ਼ਤਰਨਾਕ ⚠️</string>
-    <string name="pref_shortcuts_header">ਸ਼ਾਰਟਕਟ</string>
     <string name="pref_dangerous_warning">ਇਸ ਸ਼੍ਰੇਣੀ ਵਿੱਚ ਵਿਕਲਪ ਬਦਲਣਾ ਆਮ ਤੌਰ \'ਤੇ ਅਨੁਕੂਲ ਕੰਟੈਂਟ ਦੇ ਪਲੇਬੈਕ ਨੂੰ ਬੰਦ ਕਰ ਸਕਦਾ ਹੈ</string>
     <string name="pref_captioning_preferences">ਕੈਪਸ਼ਨਿੰਗ ਤਰਜੀਹਾਂ</string>
     <string name="pref_decoder_priority">ਡੀਕੋਡਰ ਤਰਜੀਹਾਂ</string>
@@ -40,7 +39,6 @@
     <string name="onboarding_open_description">ਵੀਡੀਓ ਫਾਈਲ ਖੋਲ੍ਹਣ ਲਈ ਟੈਪ ਕਰੋ। ਬਾਹਰੀ ਉਪਸਿਰਲੇਖਾਂ ਨੂੰ ਲੋਡ ਕਰਨ ਲਈ ਲੰਬਾ ਟੈਪ ਕਰੋ।</string>
     <string name="pref_skip_silence">ਚੁੱਪ ਛੱਡੋ</string>
     <string name="pref_skip_silence_on">ਆਡੀਓ ਸਟ੍ਰੀਮ \'ਤੇ ਚੁੱਪ ਵਾਲੇ ਹਿੱਸਿਆਂ ਨੂੰ ਛੱਡੋ</string>
-    <string name="pref_general_header">ਆਮ</string>
     <string name="pref_framerate_matching_on">ਵੀਡੀਓ ਫਰੇਮ ਰੇਟ ਨਾਲ ਮੇਲ ਕਰਨ ਲਈ ਡਿਸਪਲੇ ਰਿਫ੍ਰੈਸ਼ ਰੇਟ ਨੂੰ ਬਦਲੋ</string>
     <string name="pref_framerate_matching_off">ਡਿਸਪਲੇ ਰਿਫਰੈਸ਼ ਰੇਟ ਨਾ ਬਦਲੋ</string>
     <string name="pref_tunneling_summary">ਟਨਲਿੰਗ 4K/HDR ਸਮੱਗਰੀ ਲਈ ਬਿਹਤਰ ਸਹਾਇਤਾ ਪ੍ਰਦਾਨ ਕਰਦੀ ਹੈ, ਪਰ ਹੋ ਸਕਦਾ ਹੈ ਕਿ ਸਾਰੀਆਂ ਡਿਵਾਈਸਾਂ \'ਤੇ ਕੰਮ ਨਾ ਕਰੇ</string>

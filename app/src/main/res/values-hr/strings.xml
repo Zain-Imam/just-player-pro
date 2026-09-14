@@ -21,7 +21,6 @@
     <string name="pref_auto_pip_off">Nemoj automatski prebaciti na slika u slici</string>
     <string name="pref_auto_pip_on">Prije napuštanja programa prebaci na slika u slici</string>
     <string name="pref_auto_pip">Automatska slika u slici</string>
-    <string name="pref_general_header">Opće</string>
     <string name="pref_title">Postavke</string>
     <string name="shortcut_videos">Videozapisi</string>
     <string name="pref_repeat_toggle_summary">Dodatna kontrola koja omogućuje beskonačno ponavljanje videa (zahtijeva ponovno pokretanje programa)</string>
@@ -32,7 +31,6 @@
     <string name="button_rotate">Okreni</string>
     <string name="pref_file_access">Pristup datotekama</string>
     <string name="pref_file_access_auto">Automatski</string>
-    <string name="pref_shortcuts_header">Prečaci</string>
     <string name="mediastore_empty">Nije pronađena nijedna video datoteka</string>
     <string name="pref_captioning_preferences">Postavke titlova</string>
     <string name="pref_decoder_priority">Prioritet dekodera</string>

@@ -35,7 +35,6 @@
     <string name="delete_query">Delete this file\?</string>
     <string name="delete_confirmation">Delete</string>
     <string name="pref_title">Settings</string>
-    <string name="pref_general_header">General</string>
     <string name="pref_framerate_matching">Match frame rate</string>
     <string name="pref_framerate_matching_on">Display follows the video</string>
     <string name="pref_framerate_matching_off">Display rate left alone</string>
@@ -321,7 +320,6 @@ URLs you open over the network are remembered so you can return to them without 
     <string name="pref_backup_nothing">Nothing was chosen</string>
     <string name="pref_dangerous_header">Dangerous ⚠️</string>
     <string name="pref_dangerous_warning">These can break playback of files that otherwise work.</string>
-    <string name="pref_shortcuts_header">Shortcuts</string>
     <string name="pref_captioning_preferences">Captioning preferences</string>
     <string name="pref_decoder_priority">Decoder priority</string>
     <string name="pref_decoder_priority_prefer_device">Prefer device decoders (default)</string>

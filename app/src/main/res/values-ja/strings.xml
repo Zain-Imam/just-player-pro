@@ -13,7 +13,6 @@
     <string name="shortcut_videos">動画</string>
     <string name="pref_title">設定</string>
     <string name="pref_file_access">ファイルアクセス</string>
-    <string name="pref_shortcuts_header">ショートカット</string>
     <string name="button_open">開く</string>
     <string name="button_pip">ピクチャーインピクチャー</string>
     <string name="button_rotate">回転</string>
@@ -36,7 +35,6 @@
     <string name="pref_repeat_toggle_summary">動画の無限ループを許可する追加の制御 (アプリの再起動が必要)</string>
     <string name="pref_captioning_preferences">字幕の設定</string>
     <string name="pref_skip_silence_off">コンテンツをそのまま再生する</string>
-    <string name="pref_general_header">全般</string>
     <string name="pref_decoder_priority">優先するデコーダー</string>
     <string name="pref_map_dv7">Dolby Vision profile 7の縮退運用</string>
     <string name="pref_map_dv7_on">Dolby Vision profile 7のコンテンツをHDRディスプレイで再生する</string>

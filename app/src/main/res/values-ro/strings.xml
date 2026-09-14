@@ -11,7 +11,6 @@
     <string name="delete_query">Ștergeți acest fișier\?</string>
     <string name="delete_confirmation">Șterge</string>
     <string name="pref_title">Setări</string>
-    <string name="pref_general_header">General</string>
     <string name="pref_framerate_matching">Potrivire automată a ratei de cadre</string>
     <string name="pref_framerate_matching_on">Comutați rata de reîmprospătare a afișajului pentru a se potrivi cu rata de cadre video</string>
     <string name="pref_framerate_matching_off">Nu modificați rata de reîmprospătare a ecranului</string>
@@ -31,7 +30,6 @@
     <string name="pref_decoder_priority_prefer_device">Preferați decodoarele dispozitivului (implicit)</string>
     <string name="pref_decoder_priority_prefer_app">Prefer decodorele de aplicații</string>
     <string name="pref_decoder_priority_only_device">Numai decodoare de dispozitiv</string>
-    <string name="pref_shortcuts_header">Comenzi rapide</string>
     <string name="pref_skip_silence">Sari peste tăcere</string>
     <string name="button_crop">Redimensiona</string>
     <string name="pref_tunneling">Redare tunelizată</string>

@@ -11,7 +11,6 @@
     <string name="delete_query">要刪除這個檔案嗎？</string>
     <string name="delete_confirmation">刪除</string>
     <string name="pref_title">設定</string>
-    <string name="pref_general_header">一般</string>
     <string name="pref_framerate_matching">自動偵測影格速率</string>
     <string name="pref_framerate_matching_on">變更螢幕更新頻率以符合影片速率</string>
     <string name="pref_framerate_matching_off">停用變更螢幕更新頻率</string>
@@ -38,7 +37,6 @@
     <string name="mediastore_empty">找不到影片檔案</string>
     <string name="pref_dangerous_header">實驗性 ⚠️</string>
     <string name="pref_dangerous_warning">變更這個類別中的項目可能會導致播放異常</string>
-    <string name="pref_shortcuts_header">捷徑</string>
     <string name="pref_captioning_preferences">字幕設定</string>
     <string name="pref_decoder_priority">解碼器使用順序</string>
     <string name="pref_decoder_priority_prefer_device">裝置解碼器優先 (預設)</string>
@@ -47,11 +45,5 @@
     <string name="pref_language_audio">預設音訊軌道</string>
     <string name="pref_language_track_device">裝置語言</string>
     <string name="pref_language_track_default">媒體檔案預設</string>
-    <string name="pref_subtitle_style_bold_on">預設使用粗體字型</string>
-    <string name="pref_subtitle_style_bold_off">預設使用標準字型</string>
-    <string name="pref_subtitle_style_embedded">嵌入樣式</string>
-    <string name="pref_subtitle_style_embedded_on">套用內嵌字幕樣式</string>
     <string name="pref_subtitle_header">字幕</string>
-    <string name="pref_subtitle_style_embedded_off">不要套用內嵌字幕樣式</string>
-    <string name="pref_subtitle_style_bold">粗體樣式</string>
 </resources>

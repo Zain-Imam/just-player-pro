@@ -11,7 +11,6 @@
     <string name="pref_framerate_matching_off">لا تغير معدل تحديث العرض</string>
     <string name="pref_framerate_matching_on">تبديل معدل تحديث العرض لمطابقة معدل إطار الفيديو</string>
     <string name="pref_framerate_matching">مطابقة معدل الإطارات تلقائيًا</string>
-    <string name="pref_general_header">عام</string>
     <string name="pref_title">الإعدادات</string>
     <string name="delete_confirmation">حذف</string>
     <string name="delete_query">هل ترغب بحذف هذا الملف؟</string>
@@ -26,7 +25,6 @@
     <string name="shortcut_videos">الفيديوهات</string>
     <string name="pref_repeat_toggle">تكرار</string>
     <string name="pref_decoder_priority">أولوية التشفير</string>
-    <string name="pref_shortcuts_header">الاختصارت</string>
     <string name="pref_repeat_toggle_summary">تحكم إضافي للسماح بتكرار حلقة الفيديو إلى أجل غير مسمى ( يجب إعادة تشغيل التطبيق)</string>
     <string name="button_crop">تغير الحجم</string>
     <string name="button_open">فتح</string>

@@ -24,7 +24,6 @@
     <string name="pref_framerate_matching">Correspondência automática de taxa de quadros</string>
     <string name="pref_framerate_matching_off">Não alterar taxa de atualização da tela</string>
     <string name="pref_title">Configurações</string>
-    <string name="pref_general_header">Geral</string>
     <string name="pref_decoder_priority_prefer_device">Preferir decodificadores do dispositivo (padrão)</string>
     <string name="pref_decoder_priority_prefer_app">Preferir decodificadores do aplicativo</string>
     <string name="pref_decoder_priority">Prioridade do decodificador</string>
@@ -35,7 +34,6 @@
     <string name="pref_repeat_toggle_summary">Controle extra para permitir a repetição infinita do vídeo (requer a reinicialização do aplicativo)</string>
     <string name="button_pip">Picture-in-Picture</string>
     <string name="pref_file_access">Acesso aos arquivos</string>
-    <string name="pref_shortcuts_header">Atalhos</string>
     <string name="pref_decoder_priority_only_device">Apenas decodificadores do dispositivo</string>
     <string name="pref_repeat_toggle">Ativar/desativar repetição</string>
     <string name="pref_captioning_preferences">Preferências de legenda</string>

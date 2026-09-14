@@ -10,7 +10,6 @@
     <string name="delete_query">Bu fayl silinsin\?</string>
     <string name="delete_confirmation">Sil</string>
     <string name="pref_title">Tənzimləmələr</string>
-    <string name="pref_general_header">Ümumi</string>
     <string name="pref_framerate_matching">Avtomatik kadr sürəti uyğunluğu</string>
     <string name="pref_framerate_matching_on">Video kadr sürətinə uyğunlaşdırmaq üçün ekran yenilənmə sürətini dəyişdir</string>
     <string name="pref_framerate_matching_off">Ekran yenilənmə sürətini dəyişdirmə</string>

@@ -21,7 +21,6 @@
     <string name="pref_framerate_matching_off">Jangan mengubah display refresh rate</string>
     <string name="pref_framerate_matching_on">Ganti refresh rate tampilan agar sesuai dengan frame rate video</string>
     <string name="pref_framerate_matching">Pencocokan frame rate otomatis</string>
-    <string name="pref_general_header">Umum</string>
     <string name="pref_title">Pengaturan</string>
     <string name="pref_repeat_toggle">Ulangi toggle</string>
     <string name="pref_repeat_toggle_summary">Kendali tambahan untuk mengaktifkan video loop tanpa batas (memerlukan restart aplikasi)</string>
@@ -32,7 +31,6 @@
     <string name="button_crop">Ubah ukuran</string>
     <string name="pref_decoder_priority_prefer_app">Pilih dekoder aplikasi</string>
     <string name="pref_file_access_auto">Otomatis</string>
-    <string name="pref_shortcuts_header">Pintasan</string>
     <string name="mediastore_empty">Tidak ditemukan file video yang diindeks. Untuk mengakses file video di penyimpanan tertentu, aktifkan pemindaian media otomatis di pengaturan sistem.</string>
     <string name="pref_language_audio">Trek audio default</string>
     <string name="pref_file_access">Akses file</string>

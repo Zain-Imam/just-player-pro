@@ -21,7 +21,6 @@
     <string name="pref_framerate_matching_off">Non cambiare la frequenza di aggiornamento dello schermo</string>
     <string name="pref_framerate_matching_on">Cambia la frequenza di aggiornamento dello schermo in modo che corrisponda alla frequenza dei fotogrammi video</string>
     <string name="pref_framerate_matching">Corrispondenza automatica della frequenza dei fotogrammi</string>
-    <string name="pref_general_header">Generale</string>
     <string name="pref_title">Impostazioni</string>
     <string name="pref_repeat_toggle">Attiva/diattiva la ripetizione</string>
     <string name="pref_repeat_toggle_summary">Controllo aggiuntivo per permettere di riprodurre il video indefinitamente (richiede il riavvio dell\'app)</string>
@@ -33,7 +32,6 @@
     <string name="pref_file_access">Accesso ai file</string>
     <string name="pref_file_access_auto">Auto</string>
     <string name="mediastore_empty">Nessun file video indicizzato trovato. Per accedere ai file video nella memoria data, abilita la scansione automatica dei media nelle impostazioni di sistema.</string>
-    <string name="pref_shortcuts_header">Scorciatoie</string>
     <string name="pref_captioning_preferences">Preferenze per i sottotitoli</string>
     <string name="pref_decoder_priority">Priorità al decoder</string>
     <string name="pref_decoder_priority_prefer_device">Preferisci i decodificatori di dispositivi (predefiniti)</string>

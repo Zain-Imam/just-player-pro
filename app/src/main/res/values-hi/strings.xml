@@ -10,7 +10,6 @@
     <string name="delete_query">यह फ़ाइल मिटाओ\?</string>
     <string name="delete_confirmation">मिटाओ</string>
     <string name="pref_title">सेटिंग्स</string>
-    <string name="pref_general_header">आम</string>
     <string name="pref_framerate_matching">ऑटो फ़्रेम दर मिलान</string>
     <string name="pref_framerate_matching_off">डिस्प्ले रिफ्रेश रेट न बदलें</string>
     <string name="pref_tunneling_summary">टनलिंग 4K/HDR सामग्री के लिए बेहतर समर्थन प्रदान करता है, लेकिन यह सभी उपकरणों पर काम नहीं कर सकता है</string>
@@ -32,7 +31,6 @@
     <string name="pref_dangerous_header">खतरनाक ⚠️</string>
     <string name="pref_file_access_auto">ऑटो</string>
     <string name="pref_dangerous_warning">इस श्रेणी में विकल्प बदलने से सामान्य रूप से कंपेटीबल सामग्री का प्लेबैक बाधित हो सकता है</string>
-    <string name="pref_shortcuts_header">शार्टकटस</string>
     <string name="pref_decoder_priority">डिकोडर प्राथमिकता</string>
     <string name="pref_decoder_priority_prefer_device">डिवाइस डिकोडर्स को प्राथमिकता दें (डिफ़ॉल्ट)</string>
     <string name="pref_decoder_priority_prefer_app">ऐप डिकोडर्स को प्राथमिकता दें</string>

@@ -21,7 +21,6 @@
     <string name="pref_framerate_matching_off">Не изменять частоту обновления экрана</string>
     <string name="pref_framerate_matching_on">Переключать частоту обновления экрана в соответствии с частотой кадров видеосигнала</string>
     <string name="pref_framerate_matching">Автоматическое согласование частоты кадров</string>
-    <string name="pref_general_header">Общие</string>
     <string name="pref_title">Настройки</string>
     <string name="pref_repeat_toggle">Переключение повтора</string>
     <string name="pref_repeat_toggle_summary">Дополнительное управление, позволяющее бесконечно зацикливать видео (требуется перезапуск приложения)</string>
@@ -38,7 +37,6 @@
     <string name="pref_decoder_priority_prefer_app">Предпочитайте декодеры приложения</string>
     <string name="pref_decoder_priority_only_device">Только декодеры устройства</string>
     <string name="mediastore_empty">Видеофайлы не найдены</string>
-    <string name="pref_shortcuts_header">Ярлыки</string>
     <string name="pref_map_dv7_off">Воспроизведение содержимого UHD Blu-ray, содержащего Dolby Vision, как есть</string>
     <string name="pref_map_dv7">Резервный вариант профиля 7 Dolby Vision</string>
     <string name="pref_dangerous_header">Опасный⚠️</string>

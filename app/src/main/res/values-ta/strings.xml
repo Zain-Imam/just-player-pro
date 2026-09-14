@@ -6,7 +6,6 @@
     <string name="delete_query">இந்தக் கோப்பை நீக்கவா\?</string>
     <string name="delete_confirmation">அழி</string>
     <string name="pref_title">அமைப்புகள்</string>
-    <string name="pref_general_header">பொது</string>
     <string name="pref_framerate_matching_off">காட்சி புதுப்பிப்பு வீதத்தை மாற்ற வேண்டாம்</string>
     <string name="pref_tunneling">சுரங்கப்பாதை பின்னணி</string>
     <string name="pref_auto_pip_on">பயன்பாட்டை விட்டு வெளியேறும்போது PiPக்கு மாறவும்</string>
@@ -32,7 +31,6 @@
     <string name="pref_map_dv7_off">டால்பி பார்வை கொண்ட UHD ப்ளூ-ரே உள்ளடக்கத்தை விளையாடுங்கள்</string>
     <string name="pref_dangerous_warning">இந்த பிரிவில் விருப்பங்களை மாற்றுவது பொதுவாக இணக்கமான உள்ளடக்கத்தின் பின்னணியை உடைக்கக்கூடும்</string>
     <string name="pref_dangerous_header">ஆபத்தானது</string>
-    <string name="pref_shortcuts_header">குறுக்குவழிகள்</string>
     <string name="pref_captioning_preferences">தலைப்பு விருப்பத்தேர்வுகள்</string>
     <string name="pref_decoder_priority">டிகோடர் முன்னுரிமை</string>
     <string name="pref_decoder_priority_prefer_device">சாதன டிகோடர்களை விரும்புங்கள் (இயல்புநிலை)</string>

@@ -21,7 +21,6 @@
     <string name="pref_framerate_matching_off">Bildwiederholfrequenz nicht ändern</string>
     <string name="pref_framerate_matching_on">Bildwiederholfrequenz des Bildschirms zur Anpassung an die Videobildfrequenz umschalten</string>
     <string name="pref_framerate_matching">Automatische Anpassung der Bildfrequenz</string>
-    <string name="pref_general_header">Allgemein</string>
     <string name="pref_title">Einstellungen</string>
     <string name="pref_repeat_toggle">Wiederholung umschalten</string>
     <string name="pref_repeat_toggle_summary">Zusätzliches Steuerelement, um Videoschleifen auf unbestimmte Zeit zu ermöglichen (erfordert einen Neustart der Anwendung)</string>
@@ -33,7 +32,6 @@
     <string name="pref_file_access_auto">Automatisch</string>
     <string name="pref_file_access">Dateizugriff</string>
     <string name="mediastore_empty">Keine Videodateien gefunden</string>
-    <string name="pref_shortcuts_header">Verknüpfungen</string>
     <string name="pref_captioning_preferences">Untertitel-Einstellungen</string>
     <string name="pref_decoder_priority_prefer_device">Gerätedecoder bevorzugen (Standard)</string>
     <string name="pref_decoder_priority_prefer_app">App-Decoder bevorzugen</string>

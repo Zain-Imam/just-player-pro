@@ -21,7 +21,6 @@
     <string name="pref_framerate_matching_off">Χωρίς αλλαγή του ρυθμού ανανέωσης της οθόνης</string>
     <string name="pref_framerate_matching_on">Εναλλαγή του ρυθμού ανανέωσης της οθόνης για να ταιριάζει με το ρυθμό καρέ του βίντεο</string>
     <string name="pref_framerate_matching">Αυτόματη αντιστοίχιση ρυθμού καρέ</string>
-    <string name="pref_general_header">Γενικά</string>
     <string name="pref_title">Ρυθμίσεις</string>
     <string name="pref_repeat_toggle">Κουμπί επανάληψης</string>
     <string name="pref_repeat_toggle_summary">Πρόσθετο κουμπί για την επ\' αόριστο επανάληψη του βίντεο (απαιτεί επανεκκίνηση της εφαρμογής)</string>
@@ -33,7 +32,6 @@
     <string name="pref_file_access">Πρόσβαση σε αρχεία</string>
     <string name="pref_file_access_auto">Αυτόματο</string>
     <string name="mediastore_empty">Δεν βρέθηκαν αρχεία βίντεο.</string>
-    <string name="pref_shortcuts_header">Συντομεύσεις</string>
     <string name="pref_captioning_preferences">Προτιμήσεις υπότιτλων</string>
     <string name="pref_decoder_priority">Προτεραιότητα αποκωδικοποιητή</string>
     <string name="pref_decoder_priority_prefer_app">Προτίμηση αποκωδικοποιητών εφαρμογής</string>

@@ -9,9 +9,10 @@
     would read as a different app. The base tones are saturated enough to carry
     over video, which is what they sit on here.
 
-    The launcher icon does NOT follow this: it keeps @color/brand, because an
-    icon that changed colour under the user would stop being recognisable on a
-    launcher, and that is the one place a colour has to stay put.
+    The launcher icon does NOT follow this: it keeps its own
+    @color/ic_launcher_background, because an icon that changed colour under
+    the user would stop being recognisable on a launcher, and that is the one
+    place a colour has to stay put.
 -->
 <resources>
     <color name="accent_red">#DC2626</color>

@@ -11,7 +11,6 @@
     <string name="delete_query">លុបឯកសារនេះមែនទេ?</string>
     <string name="delete_confirmation">លុប</string>
     <string name="pref_title">ការកំណត់</string>
-    <string name="pref_general_header">ជាទូទៅ</string>
     <string name="pref_framerate_matching">ការផ្គូផ្គងអត្រាហ្វ្រែមស្វ័យប្រវត្តិ</string>
     <string name="pref_framerate_matching_on">ប្ដូរអត្រារីហ្វ្រេសអេក្រង់បង្ហាញឱ្យដូចអត្រាហ្វ្រែមវីដេអូ</string>
     <string name="pref_framerate_matching_off">ចូរកុំផ្លាស់ប្ដូរអត្រារីហ្វ្រេសអេក្រង់បង្ហាញ</string>
@@ -30,7 +29,6 @@
     <string name="pref_file_access_auto">ស្វ័យប្រវត្តិ</string>
     <string name="mediastore_empty">រកឯកសារវីដេអូមិនឃើញទេ</string>
     <string name="pref_dangerous_header">គ្រោះថ្នាក់ ⚠️</string>
-    <string name="pref_shortcuts_header">ផ្លូវកាត់</string>
     <string name="pref_captioning_preferences">ចំណូលចិត្តអក្សររត់</string>
     <string name="pref_decoder_priority">អាទិភាពវិកូដការី</string>
     <string name="pref_decoder_priority_prefer_device">ចំណង់វិកូដការីឧបករណ៍ (បុរេជម្រើស)</string>
@@ -40,12 +38,6 @@
     <string name="pref_language_track_device">ភាសាឧបករណ៍</string>
     <string name="pref_language_track_default">បុរេជម្រើស</string>
     <string name="pref_subtitle_header">ចំណងជើងរង</string>
-    <string name="pref_subtitle_style_embedded">រចនាបថដាក់បង្កប់</string>
-    <string name="pref_subtitle_style_embedded_on">អនុវត្តរចនាបថចំណងជើងរងដាក់បង្កប់</string>
-    <string name="pref_subtitle_style_embedded_off">ចូរកុំអនុវត្តរចនាបថចំណងជើងរងដាក់បង្កប់</string>
-    <string name="pref_subtitle_style_bold">រចនាបថដិតក្រាស់</string>
-    <string name="pref_subtitle_style_bold_on">ប្រើពុម្ពអក្សរដិតក្រាស់ជាធម្មតា</string>
-    <string name="pref_subtitle_style_bold_off">ប្រើបុរេជម្រើសពុម្ពអក្សរធម្មតា</string>
     <string name="pref_skip_silence_off">ចាក់មាតិកានៅជា</string>
     <string name="pref_repeat_toggle">ប៊ូតុងបិទបើកសាឡើងវិញ</string>
 </resources>

@@ -21,7 +21,6 @@
     <string name="pref_framerate_matching_off">不要更改显示刷新率</string>
     <string name="pref_framerate_matching_on">切换显示刷新率以匹配视频帧率</string>
     <string name="pref_framerate_matching">自动帧率匹配</string>
-    <string name="pref_general_header">一般</string>
     <string name="pref_title">设置</string>
     <string name="pref_repeat_toggle">重复切换</string>
     <string name="pref_repeat_toggle_summary">允许无限循环视频的额外控制（需要重新启动应用程序）</string>
@@ -34,7 +33,6 @@
     <string name="pref_file_access">文件访问</string>
     <string name="mediastore_empty">没有找到视频文件</string>
     <string name="pref_captioning_preferences">字幕选项</string>
-    <string name="pref_shortcuts_header">快捷方式</string>
     <string name="pref_decoder_priority_prefer_device">偏好设备解码器（默认）</string>
     <string name="pref_decoder_priority">解码器优先级</string>
     <string name="pref_decoder_priority_prefer_app">偏好应用解码器</string>
