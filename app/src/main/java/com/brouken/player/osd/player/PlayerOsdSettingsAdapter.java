@@ -11,8 +11,10 @@ import androidx.core.content.res.ResourcesCompat;
 import com.brouken.player.R;
 import com.brouken.player.mpv.MpvPlayer;
 import com.brouken.player.osd.OsdSettingsAdapter;
+import com.brouken.player.osd.item.AudioDelayOsdSettingsItem;
 import com.brouken.player.osd.item.BooleanOsdSettingsItem;
 import com.brouken.player.osd.item.ChoiceOsdSettingsItem;
+import com.brouken.player.osd.item.IntegerOsdSettingsItem;
 import com.brouken.player.osd.item.OsdSettingsItem;
 import com.brouken.player.osd.item.SimpleOsdSettingsItem;
 
@@ -37,9 +39,18 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
                                  final boolean overlayOnPause, final boolean skipSegments,
                                  final boolean adaptiveBuffering,
                                  final int sleepMinutes, final boolean sleepAtEnd,
-                                 final int videoTracks) {
+                                 final int videoTracks, final int audioDelayMs) {
+        /*
+         * The rows you change with the arrows first, the rows you press second.
+         *
+         * Not a tidiness: the two kinds do not look alike -- one carries a
+         * value between two arrows, the other a single icon and a title -- and
+         * a row of the first kind dropped among the second reads as a mistake
+         * and puts the arrows in a place the eye is not looking for them.
+         */
         final List<OsdSettingsItem> items = new ArrayList<>();
         items.add(createSpeedItem(speed));
+        items.add(createAudioDelayItem(audioDelayMs));
         items.add(createEngineItem(engine));
         items.add(createOverlayItem(overlayOnPause));
         items.add(createSkipItem(skipSegments));
@@ -208,6 +219,17 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
                 position -> listener.onOpenAudioTracks());
     }
 
+    /*
+     * Under the speed, with the other rows that carry a number between two
+     * arrows. Arrows rather than a list of set amounts: the right number is
+     * whatever makes the lips fit, and it is found by moving until they do.
+     */
+    private OsdSettingsItem createAudioDelayItem(final int delayMs) {
+        final IntegerOsdSettingsItem.Listener itemListener =
+                (position, newValue) -> listener.onAudioDelayChange(newValue);
+        return new AudioDelayOsdSettingsItem(context, delayMs, itemListener, this);
+    }
+
     private OsdSettingsItem createSubtitleSettingsItem() {
         @SuppressLint("PrivateResource")
         final Drawable icon = getDrawable(androidx.media3.ui.R.drawable.exo_styled_controls_subtitle_on);
@@ -251,6 +273,9 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
         void onOpenVideoTracks();
 
         void onOpenAudioTracks();
+
+        /** Move the sound against the picture, in milliseconds. */
+        void onAudioDelayChange(int delayMs);
 
         void onOpenSubtitleSettings();
 

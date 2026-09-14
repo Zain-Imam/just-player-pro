@@ -107,7 +107,7 @@ import com.brouken.player.dtpv.youtube.YouTubeOverlay;
 import com.brouken.player.osd.OsdSettingsController;
 import com.brouken.player.subtitle.CueModifier;
 import com.brouken.player.subtitle.parser.EnhancedSubtitleParserFactory;
-import com.brouken.player.subtitle.SubtitleDelayRenderersFactory;
+import com.brouken.player.render.DelayRenderersFactory;
 import com.brouken.player.online.ApiKeys;
 import com.getkeepsafe.taptargetview.TapTarget;
 import com.getkeepsafe.taptargetview.TapTargetView;
@@ -242,6 +242,8 @@ public class PlayerActivity extends Activity {
     private boolean alive;
     private final AtomicInteger subtitleDelayMs = new AtomicInteger();
     private final Runnable subtitleDelayApplyRunnable = this::applySubtitleDelay;
+    private final AtomicInteger audioDelayMs = new AtomicInteger();
+    private final Runnable audioDelayApplyRunnable = this::applyAudioDelay;
     public static boolean focusPlay = false;
     private Uri nextUri;
     private static boolean isTvBox;
@@ -1904,6 +1906,7 @@ public class PlayerActivity extends Activity {
 
         int subtitleDelay = mPrefs.getSubtitleDelayForUri(mPrefs.mediaUri);
         subtitleDelayMs.set(subtitleDelay);
+        audioDelayMs.set(mPrefs.getAudioDelayForUri(mPrefs.mediaUri));
 
         EnhancedSubtitleParserFactory enhancedSubtitleParserFactory = new EnhancedSubtitleParserFactory(0);
         SubtitleParser.Factory subtitleParserFactory = enhancedSubtitleParserFactory;
@@ -1914,7 +1917,7 @@ public class PlayerActivity extends Activity {
                 .setTsExtractorTimestampSearchBytes(1500 * TsExtractor.TS_PACKET_SIZE)
                 .setSubtitleParserFactory(subtitleParserFactory);
 
-        @SuppressLint("WrongConstant") RenderersFactory renderersFactory = new SubtitleDelayRenderersFactory(this, subtitleDelayMs)
+        @SuppressLint("WrongConstant") RenderersFactory renderersFactory = new DelayRenderersFactory(this, subtitleDelayMs, audioDelayMs)
                 .setExtensionRendererMode(mPrefs.decoderPriority)
                 .setMapDV7ToHevc(mPrefs.mapDV7ToHevc);
 
@@ -2392,6 +2395,7 @@ public class PlayerActivity extends Activity {
                     if (mPrefs.speed <= 0.99f || mPrefs.speed >= 1.01f) {
                         player.setPlaybackSpeed(mPrefs.speed);
                     }
+                    restoreDelays();
                     if (!apiAccess) {
                         setSelectedTracks(mPrefs.subtitleTrackId, mPrefs.audioTrackId);
                     }
@@ -3554,6 +3558,66 @@ public class PlayerActivity extends Activity {
             return;
         }
         restartPlayback();
+    }
+
+    /**
+     * The sound, moved against the picture.
+     *
+     * Written down straight away so the number on screen is the number that is
+     * kept, and applied half a second after the last press: a run of presses is
+     * one adjustment, not thirty, and on this engine each one costs the picture
+     * a moment of catching up.
+     */
+    public void updateAudioDelay(int delayMs) {
+        mPrefs.updateAudioDelay(delayMs);
+        playerView.removeCallbacks(audioDelayApplyRunnable);
+        playerView.postDelayed(audioDelayApplyRunnable, 500);
+    }
+
+    private void applyAudioDelay() {
+        final int newDelayMs = mPrefs.getAudioDelayForUri(mPrefs.mediaUri);
+        final int oldDelayMs = audioDelayMs.get();
+        if (player == null || newDelayMs == oldDelayMs) {
+            audioDelayMs.set(newDelayMs);
+            return;
+        }
+
+        if (player instanceof com.brouken.player.mpv.MpvPlayer) {
+            audioDelayMs.set(newDelayMs);
+            ((com.brouken.player.mpv.MpvPlayer) player).setAudioDelayMs(newDelayMs);
+            return;
+        }
+
+        /*
+         * Media3 reports the position through the delay, so the position has to
+         * be read before the new one is in place and then put back where the
+         * sound actually is. Seeking there costs a moment; not seeking costs
+         * more -- the reported position may never go backwards, so reducing a
+         * delay without one leaves the picture held until the sound catches up.
+         */
+        final long soundPositionMs = Math.max(0, player.getCurrentPosition() - oldDelayMs);
+        audioDelayMs.set(newDelayMs);
+        player.seekTo(soundPositionMs);
+    }
+
+    /**
+     * The delays this file was left with, put back once the engine is up.
+     *
+     * On Media3 the numbers are read when the renderers are built; on mpv the
+     * properties do not exist until the file is open, which is why this is
+     * where it is. Without it, a remembered delay was a Media3-only promise.
+     */
+    private void restoreDelays() {
+        final int subtitleDelay = mPrefs.getSubtitleDelayForUri(mPrefs.mediaUri);
+        final int audioDelay = mPrefs.getAudioDelayForUri(mPrefs.mediaUri);
+        subtitleDelayMs.set(subtitleDelay);
+        audioDelayMs.set(audioDelay);
+        if (player instanceof com.brouken.player.mpv.MpvPlayer) {
+            final com.brouken.player.mpv.MpvPlayer mpvPlayer =
+                    (com.brouken.player.mpv.MpvPlayer) player;
+            mpvPlayer.setSubtitleDelayMs(subtitleDelay);
+            mpvPlayer.setAudioDelayMs(audioDelay);
+        }
     }
 
     private void restartPlayback() {

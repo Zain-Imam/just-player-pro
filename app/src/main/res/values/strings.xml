@@ -318,6 +318,7 @@ URLs you open over the network are remembered so you can return to them without 
     <string name="osd_player_speed_title">Speed</string>
     <string name="osd_player_speed_normal">Normal</string>
     <string name="osd_player_all_settings">All settings…</string>
+    <string name="osd_audio_delay_title">Audio delay</string>
     <string name="osd_subtitle_title">@string/pref_subtitle_header</string>
     <string name="osd_subtitle_position_title">Position</string>
     <string name="osd_subtitle_delay_title">Delay</string>

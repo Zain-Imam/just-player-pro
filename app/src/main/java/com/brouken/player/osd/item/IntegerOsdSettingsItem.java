@@ -87,7 +87,17 @@ public class IntegerOsdSettingsItem extends LeftOrRightOsdSettingsItem {
         }
     }
 
-    private void updateCurrentValue(int position, int newValue) {
+    /** The range a row will accept, for the rows that have one. */
+    protected int clamp(int value) {
+        return value;
+    }
+
+    private void updateCurrentValue(int position, int rawValue) {
+        final int newValue = clamp(rawValue);
+        if (newValue == currentValue) {
+            // At the end of the range: nothing to redraw and nothing to tell.
+            return;
+        }
         currentValue = newValue;
         summary = getSummaryText(newValue);
         adapter.notifyItemChanged(position);

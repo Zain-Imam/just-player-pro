@@ -1324,6 +1324,20 @@ public final class MpvPlayer extends BasePlayer
         set("sub-delay", String.valueOf(delayMs / 1000.0));
     }
 
+    /**
+     * Move the sound relative to the picture.
+     *
+     * mpv has the property outright: positive means the sound arrives later,
+     * which is the same sense as the delay on the other engine and the same
+     * sense as the number the viewer sees.
+     */
+    public void setAudioDelayMs(final int delayMs) {
+        if (mpv == null) {
+            return;
+        }
+        set("audio-delay", String.valueOf(delayMs / 1000.0));
+    }
+
     @Nullable
     public java.util.List<String[]> chapterList() {
         if (mpv == null) {

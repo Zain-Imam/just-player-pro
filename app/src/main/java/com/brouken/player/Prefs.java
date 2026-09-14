@@ -69,6 +69,7 @@ public class Prefs {
     static final String PREF_KEY_SUBTITLE_CUSTOM_FONT_ENABLED = "subtitleCustomFontEnabled";
     static final String PREF_KEY_SUBTITLE_CUSTOM_FONT_NAME = "subtitleCustomFontName";
     private static final String PREF_KEY_SUBTITLE_DELAY_MAP = "subtitleDelayMap";
+    private static final String PREF_KEY_AUDIO_DELAY_MAP = "audioDelayMap";
 
     static final String SUBTITLE_CUSTOM_FONT_DIR = "fonts";
     static final String SUBTITLE_CUSTOM_FONT_FILE_NAME = "custom_subtitle_font";
@@ -138,6 +139,7 @@ public class Prefs {
 
     private LinkedHashMap positions;
     private final LinkedHashMap<String, Integer> subtitleDelayMap = new LinkedHashMap<>();
+    private final LinkedHashMap<String, Integer> audioDelayMap = new LinkedHashMap<>();
 
     public boolean persistentMode = true;
     public long nonPersitentPosition = -1L;
@@ -183,7 +185,8 @@ public class Prefs {
         askScope = mSharedPreferences.getBoolean(PREF_KEY_ASK_SCOPE, askScope);
         speed = mSharedPreferences.getFloat(PREF_KEY_SPEED, speed);
         loadUserPreferences();
-        loadSubtitleDelays();
+        loadDelays(subtitleDelayMap, PREF_KEY_SUBTITLE_DELAY_MAP);
+        loadDelays(audioDelayMap, PREF_KEY_AUDIO_DELAY_MAP);
     }
 
     public void loadUserPreferences() {
@@ -561,36 +564,59 @@ public class Prefs {
 
     public void updateSubtitleDelay(final int subtitleDelayMs) {
         if (mediaUri != null) {
-            updateSubtitleDelayForUri(mediaUri, subtitleDelayMs);
+            updateDelayForUri(subtitleDelayMap, PREF_KEY_SUBTITLE_DELAY_MAP, mediaUri, subtitleDelayMs);
         }
     }
 
     public int getSubtitleDelayForUri(@Nullable Uri uri) {
-        String key = getSubtitleDelayKeyFromUri(uri);
+        return getDelayForUri(subtitleDelayMap, uri);
+    }
+
+    /*
+     * The audio delay is remembered exactly as the subtitle delay is: by file
+     * name, twenty-five files deep, in its own list.
+     *
+     * A film that needs its sound moved needs it moved every time it is opened
+     * -- the fault is in the file, not in the sitting -- and a viewer who has
+     * found the right number should never have to find it twice.
+     */
+    public void updateAudioDelay(final int audioDelayMs) {
+        if (mediaUri != null) {
+            updateDelayForUri(audioDelayMap, PREF_KEY_AUDIO_DELAY_MAP, mediaUri, audioDelayMs);
+        }
+    }
+
+    public int getAudioDelayForUri(@Nullable Uri uri) {
+        return getDelayForUri(audioDelayMap, uri);
+    }
+
+    private int getDelayForUri(final LinkedHashMap<String, Integer> map, @Nullable Uri uri) {
+        String key = getDelayKeyFromUri(uri);
         if (key == null) {
             return 0;
         }
-        Integer delay = subtitleDelayMap.get(key);
+        Integer delay = map.get(key);
         return delay != null ? delay : 0;
     }
 
-    private void updateSubtitleDelayForUri(@NonNull Uri uri, int delayMs) {
-        String key = getSubtitleDelayKeyFromUri(uri);
+    private void updateDelayForUri(final LinkedHashMap<String, Integer> map, final String prefKey,
+                                   @NonNull Uri uri, int delayMs) {
+        String key = getDelayKeyFromUri(uri);
         if (key == null) {
             return;
         }
-        subtitleDelayMap.remove(key);
-        subtitleDelayMap.put(key, delayMs);
-        while (subtitleDelayMap.size() > MAX_SUBTITLE_DELAY_ENTRIES) {
-            String oldestKey = subtitleDelayMap.keySet().iterator().next();
-            subtitleDelayMap.remove(oldestKey);
+        map.remove(key);
+        map.put(key, delayMs);
+        while (map.size() > MAX_SUBTITLE_DELAY_ENTRIES) {
+            String oldestKey = map.keySet().iterator().next();
+            map.remove(oldestKey);
         }
-        saveSubtitleDelays();
+        saveDelays(map, prefKey);
     }
 
-    private void loadSubtitleDelays() {
-        subtitleDelayMap.clear();
-        String raw = mSharedPreferences.getString(PREF_KEY_SUBTITLE_DELAY_MAP, null);
+    private void loadDelays(final LinkedHashMap<String, Integer> map, final String prefKey) {
+        map.clear();
+        String raw = mSharedPreferences.getString(prefKey, null);
         if (raw == null || raw.isEmpty()) {
             return;
         }
@@ -605,14 +631,14 @@ public class Prefs {
                 if (storedKey == null || storedKey.isEmpty()) {
                     storedKey = entry.optString("uri", null);
                 }
-                String key = normalizeSubtitleDelayKey(storedKey);
+                String key = normalizeDelayKey(storedKey);
                 if (key == null || key.isEmpty()) {
                     continue;
                 }
                 int delayMs = entry.optInt("delay", 0);
-                subtitleDelayMap.remove(key);
-                subtitleDelayMap.put(key, delayMs);
-                if (subtitleDelayMap.size() >= MAX_SUBTITLE_DELAY_ENTRIES) {
+                map.remove(key);
+                map.put(key, delayMs);
+                if (map.size() >= MAX_SUBTITLE_DELAY_ENTRIES) {
                     break;
                 }
             }
@@ -621,10 +647,10 @@ public class Prefs {
         }
     }
 
-    private void saveSubtitleDelays() {
+    private void saveDelays(final LinkedHashMap<String, Integer> map, final String prefKey) {
         JSONArray array = new JSONArray();
         try {
-            for (Map.Entry<String, Integer> entry : subtitleDelayMap.entrySet()) {
+            for (Map.Entry<String, Integer> entry : map.entrySet()) {
                 JSONObject object = new JSONObject();
                 object.put("name", entry.getKey());
                 object.put("delay", entry.getValue());
@@ -635,12 +661,12 @@ public class Prefs {
             return;
         }
         final SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
-        sharedPreferencesEditor.putString(PREF_KEY_SUBTITLE_DELAY_MAP, array.toString());
+        sharedPreferencesEditor.putString(prefKey, array.toString());
         sharedPreferencesEditor.apply();
     }
 
     @Nullable
-    private String getSubtitleDelayKeyFromUri(@Nullable Uri uri) {
+    private String getDelayKeyFromUri(@Nullable Uri uri) {
         if (uri == null) {
             return null;
         }
@@ -652,7 +678,7 @@ public class Prefs {
     }
 
     @Nullable
-    private String normalizeSubtitleDelayKey(@Nullable String rawKey) {
+    private String normalizeDelayKey(@Nullable String rawKey) {
         if (rawKey == null || rawKey.isEmpty()) return null;
 
         boolean looksLikeUri = rawKey.contains("://")
@@ -660,7 +686,7 @@ public class Prefs {
                 || rawKey.startsWith("content:");
 
         if (looksLikeUri) {
-            String normalized = getSubtitleDelayKeyFromUri(Uri.parse(rawKey));
+            String normalized = getDelayKeyFromUri(Uri.parse(rawKey));
             if (normalized != null) {
                 return normalized;
             }

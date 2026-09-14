@@ -65,7 +65,8 @@ public class OsdSettingsController {
                 new PopupWindow(settingsView, com.brouken.player.Panels.width(context), FrameLayout.LayoutParams.MATCH_PARENT, true);
         playerAdapter = new PlayerOsdSettingsAdapter(context, createPlayerSettingsListener());
         playerAdapter.setInitialValues(prefs.speed, prefs.playbackEngine, true, true,
-                prefs.adaptiveBuffering, 0, false, 0);
+                prefs.adaptiveBuffering, 0, false, 0,
+                prefs.getAudioDelayForUri(prefs.mediaUri));
 
         View playerPanelView = LayoutInflater.from(context).inflate(R.layout.osd_settings, null);
         RecyclerView playerList = playerPanelView.findViewById(android.R.id.list);
@@ -104,7 +105,8 @@ public class OsdSettingsController {
                 prefs.adaptiveBuffering,
                 playerActivity.sleepMinutesLeft(),
                 playerActivity.sleepAtEndOfFile(),
-                playerActivity.videoTrackCount()
+                playerActivity.videoTrackCount(),
+                prefs.getAudioDelayForUri(prefs.mediaUri)
         );
         playerAdapter.notifyDataSetChanged();
 
@@ -207,6 +209,11 @@ public class OsdSettingsController {
             public void onOpenAudioTracks() {
                 playerSettingsWindow.dismiss();
                 playerActivity.showAudioMenu();
+            }
+
+            @Override
+            public void onAudioDelayChange(int delayMs) {
+                playerActivity.updateAudioDelay(delayMs);
             }
 
             @Override
