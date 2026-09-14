@@ -242,6 +242,14 @@ public class PlayerActivity extends Activity {
     private boolean alive;
     private final AtomicInteger subtitleDelayMs = new AtomicInteger();
     private final Runnable subtitleDelayApplyRunnable = this::applySubtitleDelay;
+    private boolean keptPlayingInBackground;
+    /** Whether this film has already been measured against the device. */
+    private boolean capabilityAsked;
+    @Nullable
+    private Thumbnails thumbnails;
+    private ImageView thumbnailView;
+    @Nullable
+    private com.brouken.player.net.NetworkSpeed networkSpeed;
     private final AtomicInteger audioDelayMs = new AtomicInteger();
     private final Runnable audioDelayApplyRunnable = this::applyAudioDelay;
     public static boolean focusPlay = false;
@@ -382,6 +390,7 @@ public class PlayerActivity extends Activity {
 
         ((DoubleTapPlayerView) playerView).setDoubleTapEnabled(false);
 
+        thumbnailView = playerView.findViewById(R.id.thumbnail_preview);
         timeBar = playerView.findViewById(R.id.exo_progress);
         timeBar.addListener(new TimeBar.OnScrubListener() {
             @Override
@@ -404,6 +413,7 @@ public class PlayerActivity extends Activity {
                 // being dragged, so the same drag finishes in the same place
                 // whichever one is playing.
                 seekToKeyframes(SeekParameters.CLOSEST_SYNC);
+                startThumbnails();
                 reportScrubbing(position);
             }
 
@@ -415,6 +425,7 @@ public class PlayerActivity extends Activity {
             @Override
             public void onScrubStop(TimeBar timeBar, long position, boolean canceled) {
                 playerView.setCustomErrorMessage(null);
+                hideThumbnail();
                 isScrubbing = false;
                 PlayerActivity.this.timeBar.releaseBufferedPosition();
                 if (restorePlayState) {
@@ -863,8 +874,13 @@ public class PlayerActivity extends Activity {
                 keepSubtitleButtonEnabled();
                 if (controllerVisible) {
                     startDurationTicker();
+                    // The top line carries the speed of a stream, which is the
+                    // one part of it that changes while it is being looked at.
+                    updateMetaLine();
+                    startMetaTicking();
                 } else {
                     playerView.removeCallbacks(durationTicker);
+                    stopMetaTicking();
                 }
 
 
@@ -972,7 +988,16 @@ public class PlayerActivity extends Activity {
             playerView.removeCallbacks(barsHider);
             Utils.toggleSystemUi(this, playerView, true);
         }
-        initializePlayer();
+        if (keptPlayingInBackground && player != null) {
+            // It never stopped, so it must not be built again: rebuilding would
+            // silence what is playing and start it over from the saved position.
+            // The window comes back, the surface with it, and the picture
+            // returns of its own accord.
+            keptPlayingInBackground = false;
+        } else {
+            keptPlayingInBackground = false;
+            initializePlayer();
+        }
         updateButtonRotation();
 
         // After the player exists, so the dialog sits over the idle player
@@ -1036,12 +1061,48 @@ public class PlayerActivity extends Activity {
             playerView.removeCallbacks(barsHider);
         }
         playerView.setCustomErrorMessage(null);
+
+        /*
+         * The film goes on being heard, if that is what was asked for.
+         *
+         * The player normally dies here, which is right for a video player: the
+         * screen has gone and decoding a picture nobody can see is a waste of a
+         * battery. It is wrong for the other thing people do with this, which
+         * is put the phone in a pocket and keep listening -- a lecture, a
+         * podcast, a long interview, the last twenty minutes of a film on a
+         * bus.
+         *
+         * Only while it is actually playing, and never on the way out: a paused
+         * film has nothing to keep, and a film the viewer has left is finished
+         * with. The picture stops by itself once the window is gone -- Media3
+         * loses the surface, mpv drops to no video output -- so what carries on
+         * is the sound alone.
+         */
+        if (keepPlayingInBackground()) {
+            keptPlayingInBackground = true;
+            savePlayer();
+            return;
+        }
+        keptPlayingInBackground = false;
         releasePlayer(false);
+    }
+
+    private boolean keepPlayingInBackground() {
+        return mPrefs != null && mPrefs.backgroundAudio
+                && player != null && player.isPlaying()
+                && haveMedia && !isFinishing();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // Whatever was kept alive to be listened to ends here: the activity is
+        // going, and a player with nothing to belong to would go on holding the
+        // audio device.
+        if (player != null) {
+            keptPlayingInBackground = false;
+            releasePlayer(false);
+        }
         mPrefs.mSharedPreferences.unregisterOnSharedPreferenceChangeListener(preferenceListener);
     }
 
@@ -1925,8 +1986,17 @@ public class PlayerActivity extends Activity {
                 new DefaultMediaSourceFactory(this, extractorsFactory)
                         .setSubtitleParserFactory(subtitleParserFactory);
 
+        /*
+         * A meter of our own, so the top line can say how fast a stream is
+         * arriving. It is the library's own meter with a counter wrapped round
+         * it, so the player chooses renditions exactly as it did before.
+         */
+        networkSpeed = new com.brouken.player.net.NetworkSpeed(
+                new androidx.media3.exoplayer.upstream.DefaultBandwidthMeter.Builder(this).build());
+
         ExoPlayer.Builder playerBuilder = new ExoPlayer.Builder(this, renderersFactory)
                 .setTrackSelector(trackSelector)
+                .setBandwidthMeter(networkSpeed)
                 .setMediaSourceFactory(mediaSourceFactory);
 
         if (haveMedia && isNetworkUri) {
@@ -2392,10 +2462,20 @@ public class PlayerActivity extends Activity {
 
                     updateLoading(false);
 
-                    if (mPrefs.speed <= 0.99f || mPrefs.speed >= 1.01f) {
-                        player.setPlaybackSpeed(mPrefs.speed);
+                    /*
+                     * The speed this file was last watched at, if it has one.
+                     *
+                     * A file with a speed of its own is set even when that
+                     * speed is normal: the last film may have been watched at
+                     * one and a half, and this one asked not to be.
+                     */
+                    final float speed = mPrefs.speedForUri(mPrefs.mediaUri);
+                    if (speed <= 0.99f || speed >= 1.01f
+                            || mPrefs.hasSpeedForUri(mPrefs.mediaUri)) {
+                        player.setPlaybackSpeed(speed);
                     }
                     restoreDelays();
+                    maybeWarnAboutCapability();
                     if (!apiAccess) {
                         setSelectedTracks(mPrefs.subtitleTrackId, mPrefs.audioTrackId);
                     }
@@ -3024,6 +3104,7 @@ public class PlayerActivity extends Activity {
      */
     private void forgetPreviousFilm() {
         skipLoadedFor = null;
+        capabilityAsked = false;
         mpvFallbackActive = false;
         subtitleFailureReported = false;
         sidecarSubtitleUris.clear();
@@ -3041,6 +3122,7 @@ public class PlayerActivity extends Activity {
         // A different file needs its own segments, its own card, and its own
         // chance at Media3 before Auto gives up on it.
         skipLoadedFor = null;
+        capabilityAsked = false;
         mpvFallbackActive = false;
         if (skipController != null) {
             skipController.release();
@@ -3388,7 +3470,48 @@ public class PlayerActivity extends Activity {
         snackbar.show();
     }
 
+    /*
+     * The preview, opened when a drag begins and closed when it ends.
+     *
+     * Opened then rather than with the film: it costs a second decoder on the
+     * same file, and most viewings never touch the bar at all. Closed again at
+     * the end of the drag so nothing holds a file open that nobody is reading.
+     */
+    private void startThumbnails() {
+        if (thumbnails != null || !Thumbnails.available(this, mPrefs.mediaUri)) {
+            return;
+        }
+        thumbnails = new Thumbnails(this, mPrefs.mediaUri);
+    }
+
+    private void showThumbnail(final long positionMs) {
+        if (thumbnails == null || thumbnailView == null) {
+            return;
+        }
+        thumbnails.request(positionMs, (at, bitmap) -> {
+            // The drag may have ended, or moved on, between asking and being
+            // answered; a picture of somewhere else is worse than none.
+            if (!isScrubbing || bitmap == null || thumbnailView == null) {
+                return;
+            }
+            thumbnailView.setImageBitmap(bitmap);
+            thumbnailView.setVisibility(View.VISIBLE);
+        });
+    }
+
+    private void hideThumbnail() {
+        if (thumbnailView != null) {
+            thumbnailView.setVisibility(View.GONE);
+            thumbnailView.setImageDrawable(null);
+        }
+        if (thumbnails != null) {
+            thumbnails.release();
+            thumbnails = null;
+        }
+    }
+
     void reportScrubbing(long position) {
+        showThumbnail(position);
         final long diff = position - scrubbingStart;
         if (Math.abs(diff) > 1000) {
             scrubbingNoticeable = true;
@@ -4168,8 +4291,190 @@ public class PlayerActivity extends Activity {
         // when something looks wrong.
         appendMeta(line, player instanceof com.brouken.player.mpv.MpvPlayer ? "mpv" : "Media3");
 
+        // And, for something coming over a connection, how fast it is coming.
+        // A file on the device arrives as fast as the disk allows, which is not
+        // a thing anybody needs told.
+        appendMeta(line, streamSpeed());
+
         metaView.setText(line.toString());
         metaView.setVisibility(line.length() == 0 ? View.GONE : View.VISIBLE);
+    }
+
+    /**
+     * Say so when the file is beyond this device, and let the viewer decide.
+     *
+     * A television was handed a 50GB 4K film: the sound played, the picture
+     * never came, and the app had to be killed from the recents list. Nothing
+     * crashed and nothing reported an error -- a decoder that cannot keep up
+     * simply stops producing frames, and every layer above it goes on waiting.
+     *
+     * So the device is measured before that happens, and the viewer is told:
+     * play it anyway, try the other engine where the other engine has a real
+     * chance, or close it. Asked once per file that warrants it, and never
+     * again after "do not warn me again".
+     *
+     * The film is held while the question is on screen. If it is going to lock
+     * up, it is better that it does so after an answer than during one.
+     */
+    private void maybeWarnAboutCapability() {
+        if (capabilityAsked || !haveMedia || player == null) {
+            return;
+        }
+        capabilityAsked = true;
+
+        if (!androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean("warnCapability", true)) {
+            return;
+        }
+
+        final Format video = selectedVideoFormat();
+        if (video == null || video.width <= 0 || video.height <= 0) {
+            return;
+        }
+        final int bitrate = video.bitrate > 0 ? video.bitrate : video.peakBitrate;
+        final Capability.Verdict verdict = Capability.check(video.sampleMimeType,
+                video.width, video.height, bitrate);
+        if (verdict == Capability.Verdict.FINE) {
+            return;
+        }
+
+        final boolean onMpv = player instanceof com.brouken.player.mpv.MpvPlayer;
+        final boolean wasPlaying = player.isPlaying();
+        if (wasPlaying) {
+            player.pause();
+        }
+
+        final StringBuilder detail = new StringBuilder();
+        detail.append(video.width).append('×').append(video.height);
+        if (video.frameRate > 0) {
+            detail.append(" · ").append(Math.round(video.frameRate)).append(" fps");
+        }
+        final String codec = TrackNames.codec(video);
+        if (codec != null && !codec.isEmpty()) {
+            detail.append(" · ").append(codec);
+        }
+        detail.append("\n\n").append(getString(verdict == Capability.Verdict.IMPOSSIBLE
+                ? R.string.capability_impossible : R.string.capability_hard));
+
+        @SuppressLint("InflateParams")
+        final View body = getLayoutInflater().inflate(R.layout.dialog_capability, null);
+        ((TextView) body.findViewById(R.id.capability_detail)).setText(detail.toString());
+        final android.widget.CheckBox dontWarn = body.findViewById(R.id.capability_dont_warn);
+
+        final Runnable rememberChoice = () -> {
+            if (dontWarn.isChecked()) {
+                androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
+                        .edit().putBoolean("warnCapability", false).apply();
+            }
+        };
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setTitle(R.string.capability_title)
+                .setView(body)
+                .setCancelable(false)
+                .setPositiveButton(R.string.capability_continue, (dialog, which) -> {
+                    rememberChoice.run();
+                    if (wasPlaying && player != null) {
+                        player.play();
+                    }
+                })
+                .setNegativeButton(R.string.capability_quit, (dialog, which) -> {
+                    rememberChoice.run();
+                    finish();
+                });
+
+        if (Capability.otherEngineMightDoBetter(verdict, onMpv)) {
+            final String other = getString(R.string.pref_engine_mpv);
+            builder.setNeutralButton(getString(R.string.capability_try_other, other),
+                    (dialog, which) -> {
+                        rememberChoice.run();
+                        androidx.preference.PreferenceManager
+                                .getDefaultSharedPreferences(PlayerActivity.this)
+                                .edit().putString("playbackEngine", "mpv").apply();
+                        mPrefs.loadUserPreferences();
+                        // Asked again on the way out of the other engine: if it
+                        // cannot manage the file either, that is worth saying
+                        // rather than leaving the viewer to find out. There is
+                        // no third engine, so the second time the choice is
+                        // play it anyway or close it.
+                        capabilityAsked = false;
+                        rebuildPlayer();
+                    });
+        }
+
+        Utils.showFocused(builder.create(), AlertDialog.BUTTON_POSITIVE);
+    }
+
+    /** The video track actually playing, which is what the device has to manage. */
+    @Nullable
+    private Format selectedVideoFormat() {
+        if (player != null) {
+            for (final Tracks.Group group : player.getCurrentTracks().getGroups()) {
+                if (group.getType() != C.TRACK_TYPE_VIDEO) {
+                    continue;
+                }
+                for (int i = 0; i < group.length; i++) {
+                    if (group.isTrackSelected(i)) {
+                        return group.getTrackFormat(i);
+                    }
+                }
+            }
+        }
+        return videoFormat();
+    }
+
+    /**
+     * How fast what is playing is arriving, when it is arriving from anywhere.
+     *
+     * Each engine has its own count: Media3's is the bytes the data sources
+     * report, mpv's is the rate its own cache is filling. Neither is asked
+     * about a local file.
+     */
+    @Nullable
+    private String streamSpeed() {
+        if (player == null || !Utils.isSupportedNetworkUri(mPrefs.mediaUri)) {
+            return null;
+        }
+        if (player instanceof com.brouken.player.mpv.MpvPlayer) {
+            return com.brouken.player.net.NetworkSpeed.format(
+                    ((com.brouken.player.mpv.MpvPlayer) player).cacheSpeedBytesPerSecond());
+        }
+        return networkSpeed == null ? null
+                : com.brouken.player.net.NetworkSpeed.format(networkSpeed.bytesPerSecond());
+    }
+
+    /*
+     * The line is rebuilt while it is on screen, once a second.
+     *
+     * Only while it is on screen: the speed is the only part that moves, and
+     * counting it against a hidden view is work done for nobody. The tick stops
+     * itself as soon as the bar goes.
+     */
+    private final Runnable metaTick = new Runnable() {
+        @Override
+        public void run() {
+            if (titleBar == null || titleBar.getVisibility() != View.VISIBLE) {
+                return;
+            }
+            updateMetaLine();
+            playerView.postDelayed(this, 1000);
+        }
+    };
+
+    private void startMetaTicking() {
+        if (playerView == null) {
+            return;
+        }
+        playerView.removeCallbacks(metaTick);
+        if (Utils.isSupportedNetworkUri(mPrefs.mediaUri)) {
+            playerView.postDelayed(metaTick, 1000);
+        }
+    }
+
+    private void stopMetaTicking() {
+        if (playerView != null) {
+            playerView.removeCallbacks(metaTick);
+        }
     }
 
     private static void appendMeta(final StringBuilder line, final String part) {
@@ -4464,14 +4769,66 @@ public class PlayerActivity extends Activity {
             }
         }
 
+        /*
+         * The delay belongs here as much as in the quick panel.
+         *
+         * Subtitles have always ended their list with everything else about
+         * subtitles, delay included. The sound had a list of tracks and nothing
+         * else, so the one setting that belongs to a soundtrack was only in a
+         * panel about the player as a whole — which is not where someone whose
+         * lips do not match is going to look for it.
+         *
+         * A row rather than the control itself: a list picker has no arrows.
+         */
+        final List<Runnable> actions = new ArrayList<>();
+        for (final AudioChoice choice : choices) {
+            actions.add(choice::select);
+        }
+        final List<com.brouken.player.online.ListPicker.Row> rows = new ArrayList<>(choices);
+        if (!rows.isEmpty()) {
+            rows.add(new AudioAction(getString(R.string.osd_audio_delay_title),
+                    getString(R.string.audio_menu_delay_detail)));
+            actions.add(() -> osdSettingsController.showAudioSettings());
+        }
+
         if (choices.isEmpty()) {
+            // No soundtrack at all: nothing to pick, and nothing to delay.
             Utils.showText(playerView, getString(R.string.audio_menu_none));
             return;
         }
 
         cardReturnsWhenClosed(com.brouken.player.online.ListPicker.show(
                 this, getString(R.string.audio_menu_title),
-                choices, index -> choices.get(index).select()));
+                rows, index -> actions.get(index).run()));
+    }
+
+    /** A row in the audio list that does something rather than picking a track. */
+    private static final class AudioAction implements com.brouken.player.online.ListPicker.Row {
+
+        private final String title;
+        private final String detail;
+
+        AudioAction(String title, String detail) {
+            this.title = title;
+            this.detail = detail;
+        }
+
+        @NonNull
+        @Override
+        public String title() {
+            return title;
+        }
+
+        @Nullable
+        @Override
+        public String detail() {
+            return detail;
+        }
+
+        @Override
+        public boolean current() {
+            return false;
+        }
     }
 
     int audioTrackCount() {
@@ -4742,6 +5099,8 @@ public class PlayerActivity extends Activity {
 
     public void setSpeed(final float speed) {
         mPrefs.speed = speed;
+        // And against this file, so returning to it returns to its speed.
+        mPrefs.updateSpeedForUri(speed);
         if (player != null) {
             player.setPlaybackSpeed(speed);
         }

@@ -23,6 +23,7 @@ import com.brouken.player.R;
 import androidx.preference.PreferenceManager;
 import android.content.SharedPreferences;
 
+import com.brouken.player.osd.audio.AudioOsdSettingsAdapter;
 import com.brouken.player.osd.player.PlayerOsdSettingsAdapter;
 import com.brouken.player.osd.subtitle.SubtitleEdgeType;
 import com.brouken.player.osd.subtitle.SubtitleOsdSettingsAdapter;
@@ -35,6 +36,9 @@ public class OsdSettingsController {
 
     private final SubtitleOsdSettingsAdapter subtitleAdapter;
     private final PopupWindow osdSettingsWindow;
+
+    private final AudioOsdSettingsAdapter audioAdapter;
+    private final PopupWindow audioSettingsWindow;
 
     private final PlayerOsdSettingsAdapter playerAdapter;
     private final PopupWindow playerSettingsWindow;
@@ -64,9 +68,20 @@ public class OsdSettingsController {
         osdSettingsWindow =
                 new PopupWindow(settingsView, com.brouken.player.Panels.width(context), FrameLayout.LayoutParams.MATCH_PARENT, true);
         playerAdapter = new PlayerOsdSettingsAdapter(context, createPlayerSettingsListener());
-        playerAdapter.setInitialValues(prefs.speed, prefs.playbackEngine, true, true,
+        playerAdapter.setInitialValues(prefs.speedForUri(prefs.mediaUri), prefs.playbackEngine, true, true,
                 prefs.adaptiveBuffering, 0, false, 0,
                 prefs.getAudioDelayForUri(prefs.mediaUri));
+
+        audioAdapter = new AudioOsdSettingsAdapter(context,
+                delayMs -> playerActivity.updateAudioDelay(delayMs));
+        audioAdapter.setInitialValues(prefs.getAudioDelayForUri(prefs.mediaUri));
+
+        View audioPanelView = LayoutInflater.from(context).inflate(R.layout.osd_settings, null);
+        RecyclerView audioList = audioPanelView.findViewById(android.R.id.list);
+        audioList.setAdapter(audioAdapter);
+        audioList.setLayoutManager(new LinearLayoutManager(context));
+        audioSettingsWindow =
+                new PopupWindow(audioPanelView, com.brouken.player.Panels.width(context), FrameLayout.LayoutParams.MATCH_PARENT, true);
 
         View playerPanelView = LayoutInflater.from(context).inflate(R.layout.osd_settings, null);
         RecyclerView playerList = playerPanelView.findViewById(android.R.id.list);
@@ -78,18 +93,21 @@ public class OsdSettingsController {
         // The same edge, the same width, the same slide in as the track lists:
         // opening one after the other should not move the panel about.
         osdSettingsWindow.setAnimationStyle(R.style.PanelAnimation);
+        audioSettingsWindow.setAnimationStyle(R.style.PanelAnimation);
         playerSettingsWindow.setAnimationStyle(R.style.PanelAnimation);
 
         // Closing a panel is the end of "you are busy", so the info card is
         // allowed back — three seconds later, and only if the film is still
         // paused. Without this it would stay away until the next pause.
         osdSettingsWindow.setOnDismissListener(playerActivity::hideOverlayCardForNow);
+        audioSettingsWindow.setOnDismissListener(playerActivity::hideOverlayCardForNow);
         playerSettingsWindow.setOnDismissListener(playerActivity::hideOverlayCardForNow);
 
         if (Util.SDK_INT < 23) {
             // Work around issue where tapping outside of the menu area or pressing the back button
             // doesn't dismiss the menu as expected. See: https://github.com/google/ExoPlayer/issues/8272.
             osdSettingsWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            audioSettingsWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             playerSettingsWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
     }
@@ -98,7 +116,7 @@ public class OsdSettingsController {
         // Same for the quick panel: one thing on screen at a time.
         playerActivity.hideOverlayCardForNow();
         playerAdapter.setInitialValues(
-                prefs.speed,
+                prefs.speedForUri(prefs.mediaUri),
                 prefs.playbackEngine,
                 preferences().getBoolean("overlayOnPause", false),
                 preferences().getBoolean("skipSegments", true),
@@ -117,6 +135,25 @@ public class OsdSettingsController {
 
         // Same reason as the subtitle panel: without the delay the controller
         // comes straight back when the panel is opened from a remote.
+        playerActivity.playerView.postDelayed(playerActivity.playerView::hideController, 100);
+    }
+
+    /**
+     * The sound's settings, from the audio button.
+     *
+     * Read fresh every time, like the others: the delay is kept per file, so
+     * the panel has to show this file's rather than whatever was set last.
+     */
+    public void showAudioSettings() {
+        playerActivity.hideOverlayCardForNow();
+        audioAdapter.setInitialValues(prefs.getAudioDelayForUri(prefs.mediaUri));
+        audioAdapter.notifyDataSetChanged();
+
+        TextView titleTextView = audioSettingsWindow.getContentView().findViewById(android.R.id.text1);
+        titleTextView.setText(R.string.osd_audio_title);
+        audioSettingsWindow.showAtLocation(playerActivity.playerView, Gravity.END | Gravity.TOP, 0, 0);
+        focusFirstRow(audioSettingsWindow);
+
         playerActivity.playerView.postDelayed(playerActivity.playerView::hideController, 100);
     }
 

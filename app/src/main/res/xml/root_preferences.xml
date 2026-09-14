@@ -65,6 +65,27 @@
             app:title="@string/pref_auto_pip" />
 
         <SwitchPreferenceCompat
+            app:key="backgroundAudio"
+            app:defaultValue="false"
+            app:summaryOn="@string/pref_background_audio_on"
+            app:summaryOff="@string/pref_background_audio_off"
+            app:title="@string/pref_background_audio" />
+
+        <SwitchPreferenceCompat
+            app:key="warnCapability"
+            app:defaultValue="true"
+            app:summaryOn="@string/pref_warn_capability_on"
+            app:summaryOff="@string/pref_warn_capability_off"
+            app:title="@string/pref_warn_capability" />
+
+        <SwitchPreferenceCompat
+            app:key="scrubThumbnails"
+            app:defaultValue="true"
+            app:summaryOn="@string/pref_scrub_thumbnails_on"
+            app:summaryOff="@string/pref_scrub_thumbnails_off"
+            app:title="@string/pref_scrub_thumbnails" />
+
+        <SwitchPreferenceCompat
             app:key="volumeBoost"
             app:defaultValue="false"
             app:summaryOn="@string/pref_volume_boost_on"

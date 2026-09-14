@@ -110,4 +110,25 @@
 
     </LinearLayout>
 
+    <!--
+         The frame you are dragging towards.
+
+         Above the bar rather than beside the thumb: on a phone the thumb is
+         under a finger, and on a television there is no thumb to be beside.
+         Centred, so it never runs off either end.
+
+         Out here with the spinner and for the same reason — it is drawn over
+         the controller instead of inside it, so nothing about the controls'
+         own showing and hiding can take it away mid-drag.
+    -->
+    <ImageView android:id="@+id/thumbnail_preview"
+        android:layout_width="180dp"
+        android:layout_height="101dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="64dp"
+        android:background="@android:color/black"
+        android:contentDescription="@string/pref_scrub_thumbnails"
+        android:scaleType="centerCrop"
+        android:visibility="gone"/>
+
 </merge>

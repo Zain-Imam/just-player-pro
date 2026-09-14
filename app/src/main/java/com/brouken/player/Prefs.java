@@ -46,6 +46,7 @@ public class Prefs {
     private static final String PREF_KEY_SCOPE_URIS = "scopeUris";
     private static final String PREF_KEY_ASK_SCOPE = "askScope";
     private static final String PREF_KEY_AUTO_PIP = "autoPiP";
+    private static final String PREF_KEY_BACKGROUND_AUDIO = "backgroundAudio";
     private static final String PREF_KEY_ASK_RESUME = "askResume";
     private static final String PREF_KEY_PLAYBACK_ENGINE = "playbackEngine";
     private static final String PREF_KEY_ADAPTIVE_BUFFERING = "adaptiveBuffering";
@@ -70,6 +71,7 @@ public class Prefs {
     static final String PREF_KEY_SUBTITLE_CUSTOM_FONT_NAME = "subtitleCustomFontName";
     private static final String PREF_KEY_SUBTITLE_DELAY_MAP = "subtitleDelayMap";
     private static final String PREF_KEY_AUDIO_DELAY_MAP = "audioDelayMap";
+    private static final String PREF_KEY_SPEED_MAP = "speedMap";
 
     static final String SUBTITLE_CUSTOM_FONT_DIR = "fonts";
     static final String SUBTITLE_CUSTOM_FONT_FILE_NAME = "custom_subtitle_font";
@@ -113,6 +115,8 @@ public class Prefs {
     public boolean firstRun = true;
     public boolean askScope = true;
     public boolean autoPiP = false;
+    /** Whether the sound goes on when the player is put away. Off unless asked for. */
+    public boolean backgroundAudio = false;
     public boolean askResume = true;
     public boolean adaptiveBuffering = true;
     public String playbackEngine = "auto";
@@ -140,6 +144,7 @@ public class Prefs {
     private LinkedHashMap positions;
     private final LinkedHashMap<String, Integer> subtitleDelayMap = new LinkedHashMap<>();
     private final LinkedHashMap<String, Integer> audioDelayMap = new LinkedHashMap<>();
+    private final LinkedHashMap<String, Integer> speedMap = new LinkedHashMap<>();
 
     public boolean persistentMode = true;
     public long nonPersitentPosition = -1L;
@@ -187,10 +192,12 @@ public class Prefs {
         loadUserPreferences();
         loadDelays(subtitleDelayMap, PREF_KEY_SUBTITLE_DELAY_MAP);
         loadDelays(audioDelayMap, PREF_KEY_AUDIO_DELAY_MAP);
+        loadDelays(speedMap, PREF_KEY_SPEED_MAP);
     }
 
     public void loadUserPreferences() {
         autoPiP = mSharedPreferences.getBoolean(PREF_KEY_AUTO_PIP, autoPiP);
+        backgroundAudio = mSharedPreferences.getBoolean(PREF_KEY_BACKGROUND_AUDIO, backgroundAudio);
         askResume = mSharedPreferences.getBoolean(PREF_KEY_ASK_RESUME, askResume);
         adaptiveBuffering = mSharedPreferences.getBoolean(PREF_KEY_ADAPTIVE_BUFFERING, adaptiveBuffering);
         playbackEngine = mSharedPreferences.getString(PREF_KEY_PLAYBACK_ENGINE, playbackEngine);
@@ -588,6 +595,36 @@ public class Prefs {
 
     public int getAudioDelayForUri(@Nullable Uri uri) {
         return getDelayForUri(audioDelayMap, uri);
+    }
+
+    /*
+     * The speed a file was last watched at, kept the same way and in
+     * hundredths, because the store underneath holds whole numbers.
+     *
+     * The plain `speed` stays exactly what it was -- the last speed chosen,
+     * which is what a file nobody has watched before opens at -- so nothing
+     * about a first viewing changes. What changes is the second one: a
+     * documentary you watch at one and a quarter opens at one and a quarter
+     * again, however many films you have watched at normal speed since.
+     */
+    public void updateSpeedForUri(final float speed) {
+        if (mediaUri != null) {
+            updateDelayForUri(speedMap, PREF_KEY_SPEED_MAP, mediaUri, Math.round(speed * 100));
+        }
+    }
+
+    /** The speed this file should open at: its own if it has one, else the last used. */
+    public float speedForUri(@Nullable Uri uri) {
+        final int hundredths = getDelayForUri(speedMap, uri);
+        if (hundredths <= 0) {
+            return speed;
+        }
+        return hundredths / 100f;
+    }
+
+    /** Whether this file has a speed of its own, as opposed to inheriting one. */
+    public boolean hasSpeedForUri(@Nullable Uri uri) {
+        return getDelayForUri(speedMap, uri) > 0;
     }
 
     private int getDelayForUri(final LinkedHashMap<String, Integer> map, @Nullable Uri uri) {

@@ -1024,9 +1024,28 @@ public final class MpvPlayer extends BasePlayer
 
     @Override
     public void setPlaybackParameters(@NonNull PlaybackParameters parameters) {
+        final float previousSpeed = playbackParameters.speed;
         playbackParameters = parameters;
         if (mpv != null) {
             set("speed", String.valueOf(parameters.speed));
+            /*
+             * And make mpv act on it now.
+             *
+             * The property takes the new value immediately -- read it back and
+             * it is there -- but the sound already filtered goes on being
+             * played at the speed it was filtered at, and mpv only rebuilds the
+             * chain when playback next restarts. Changed from the panel, which
+             * pauses the film to show itself, that restart may be a dozen
+             * seconds away: the viewer picks a speed, presses play, and watches
+             * the film carry on at the old one.
+             *
+             * A seek of zero seconds is a playback restart that does not move.
+             * The chain is rebuilt at the position it is already at, and the
+             * new speed is what comes out of it.
+             */
+            if (fileOpened && Math.abs(previousSpeed - parameters.speed) > 0.001f) {
+                mpv.command(new String[]{"seek", "0", "relative+exact"});
+            }
         }
         listeners.sendEvent(Player.EVENT_PLAYBACK_PARAMETERS_CHANGED, listener ->
                 listener.onPlaybackParametersChanged(parameters));
@@ -1322,6 +1341,24 @@ public final class MpvPlayer extends BasePlayer
             return;
         }
         set("sub-delay", String.valueOf(delayMs / 1000.0));
+    }
+
+    /**
+     * How fast the stream is coming in, in bytes a second.
+     *
+     * mpv keeps this itself as the rate its cache is filling, which is the same
+     * question the other engine answers by counting the bytes its data sources
+     * report. Nothing is coming in on a local file, and -1 says so.
+     */
+    public long cacheSpeedBytesPerSecond() {
+        if (mpv == null) {
+            return -1;
+        }
+        final Double speed = mpv.getPropertyDouble("cache-speed");
+        if (speed == null || speed <= 0) {
+            return -1;
+        }
+        return (long) (double) speed;
     }
 
     /**
