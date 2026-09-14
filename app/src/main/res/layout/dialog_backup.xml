@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What goes in an exported file.
+
+  Its own layout rather than a dialog's multi-choice list, because the note
+  underneath has to be read at the same time as the boxes are ticked: an
+  AlertDialog takes a message or a list of choices and quietly drops the list
+  when given both.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+
+        <CheckBox
+            android:id="@+id/backup_settings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/pref_backup_part_settings" />
+
+        <CheckBox
+            android:id="@+id/backup_keys"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/pref_backup_part_keys" />
+
+        <CheckBox
+            android:id="@+id/backup_history"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/pref_backup_part_history" />
+
+        <CheckBox
+            android:id="@+id/backup_per_file"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/pref_backup_part_per_file" />
+
+        <TextView
+            android:id="@+id/backup_note"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/pref_backup_note"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="13sp" />
+
+    </LinearLayout>
+
+</ScrollView>

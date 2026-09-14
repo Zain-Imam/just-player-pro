@@ -355,6 +355,20 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/pref_backup_header">
+
+        <Preference
+            app:key="backupExport"
+            app:title="@string/pref_backup_export"
+            app:summary="@string/pref_backup_export_summary" />
+
+        <Preference
+            app:key="backupImport"
+            app:title="@string/pref_backup_import"
+            app:summary="@string/pref_backup_import_summary" />
+
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/pref_dangerous_header">
 
         <Preference

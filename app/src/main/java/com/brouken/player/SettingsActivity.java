@@ -1,5 +1,6 @@
 package com.brouken.player;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -127,6 +128,9 @@ public class SettingsActivity extends AppCompatActivity {
         private Preference customSubtitleFontChoose;
         private ActivityResultLauncher<String[]> customSubtitleFontPicker;
         private ActivityResultLauncher<Uri> subtitleFolderPicker;
+        private ActivityResultLauncher<String> backupExportPicker;
+        private ActivityResultLauncher<String[]> backupImportPicker;
+        private java.util.Set<Backup.Part> pendingExportParts;
         private Preference subtitleFolderChoose;
         private boolean pendingCustomFontFallbackPermission;
 
@@ -141,6 +145,134 @@ public class SettingsActivity extends AppCompatActivity {
                     new ActivityResultContracts.OpenDocumentTree(),
                     this::handleSubtitleFolderPick
             );
+            backupExportPicker = registerForActivityResult(
+                    new ActivityResultContracts.CreateDocument("application/json"),
+                    this::writeBackupTo
+            );
+            backupImportPicker = registerForActivityResult(
+                    new ActivityResultContracts.OpenDocument(),
+                    this::readBackupFrom
+            );
+        }
+
+        /*
+         * What goes in the file is asked; what comes out of one is not.
+         *
+         * Exporting is a thing someone does deliberately and may not want their
+         * keys in -- a file shared with somebody else, say -- so the parts are
+         * offered. Importing is the opposite: the file holds what it holds, and
+         * asking which half of it to take is a question nobody can answer
+         * without having read the file first.
+         */
+        @SuppressLint("InflateParams")
+        private void askWhatToExport() {
+            // Everything ticked to begin with: the common case is a new phone.
+            final View body = getLayoutInflater().inflate(R.layout.dialog_backup, null);
+            final android.widget.CheckBox settings = body.findViewById(R.id.backup_settings);
+            final android.widget.CheckBox keys = body.findViewById(R.id.backup_keys);
+            final android.widget.CheckBox history = body.findViewById(R.id.backup_history);
+            final android.widget.CheckBox perFile = body.findViewById(R.id.backup_per_file);
+
+            new android.app.AlertDialog.Builder(requireContext())
+                    .setTitle(R.string.pref_backup_choose)
+                    .setView(body)
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(R.string.pref_backup_export_go, (dialog, which) -> {
+                        pendingExportParts = java.util.EnumSet.noneOf(Backup.Part.class);
+                        if (settings.isChecked()) {
+                            pendingExportParts.add(Backup.Part.SETTINGS);
+                        }
+                        if (keys.isChecked()) {
+                            pendingExportParts.add(Backup.Part.KEYS);
+                        }
+                        if (history.isChecked()) {
+                            pendingExportParts.add(Backup.Part.HISTORY);
+                        }
+                        if (perFile.isChecked()) {
+                            pendingExportParts.add(Backup.Part.PER_FILE);
+                        }
+                        if (pendingExportParts.isEmpty()) {
+                            Toast.makeText(requireContext(), R.string.pref_backup_nothing,
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        try {
+                            backupExportPicker.launch(Backup.suggestedFileName());
+                        } catch (android.content.ActivityNotFoundException e) {
+                            Toast.makeText(requireContext(), R.string.pref_backup_failed,
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    })
+                    .show();
+        }
+
+        private void writeBackupTo(@Nullable final Uri uri) {
+            if (uri == null || pendingExportParts == null) {
+                return;
+            }
+            final java.util.Set<Backup.Part> parts = pendingExportParts;
+            pendingExportParts = null;
+            try {
+                final String json = Backup.export(requireContext(), parts);
+                try (java.io.OutputStream out =
+                             requireContext().getContentResolver().openOutputStream(uri, "wt")) {
+                    if (out == null) {
+                        throw new java.io.IOException("nothing to write to");
+                    }
+                    out.write(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                }
+                final int count = new org.json.JSONObject(json).getJSONObject("values").length();
+                Toast.makeText(requireContext(),
+                        getString(R.string.pref_backup_exported, count),
+                        Toast.LENGTH_LONG).show();
+            } catch (Exception e) {
+                Utils.log("The backup could not be written: " + e);
+                Toast.makeText(requireContext(), R.string.pref_backup_failed,
+                        Toast.LENGTH_LONG).show();
+            }
+        }
+
+        private void readBackupFrom(@Nullable final Uri uri) {
+            if (uri == null) {
+                return;
+            }
+            final String json;
+            try (java.io.InputStream in =
+                         requireContext().getContentResolver().openInputStream(uri)) {
+                if (in == null) {
+                    throw new java.io.IOException("nothing to read from");
+                }
+                final java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+                final byte[] chunk = new byte[8192];
+                int read;
+                while ((read = in.read(chunk)) > 0) {
+                    buffer.write(chunk, 0, read);
+                    if (buffer.size() > 4 * 1024 * 1024) {
+                        // A backup is a few kilobytes. Anything of this size is
+                        // not one, and is not going to be read into memory.
+                        throw new java.io.IOException("far too big to be a backup");
+                    }
+                }
+                json = buffer.toString("UTF-8");
+            } catch (Exception e) {
+                Utils.log("The backup could not be read: " + e);
+                Toast.makeText(requireContext(), R.string.pref_backup_failed,
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            final Backup.Result result = Backup.restore(requireContext(), json);
+            if (!result.recognised) {
+                Toast.makeText(requireContext(), R.string.pref_backup_not_ours,
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+            Toast.makeText(requireContext(),
+                    getString(R.string.pref_backup_imported, result.applied),
+                    Toast.LENGTH_LONG).show();
+            // The screen is showing the old values, so it is rebuilt from the
+            // new ones rather than left lying.
+            requireActivity().recreate();
         }
 
         /*
@@ -529,6 +661,37 @@ public class SettingsActivity extends AppCompatActivity {
                             .replace(R.id.settings, new FoldersFragment())
                             .addToBackStack(null)
                             .commit();
+                    return true;
+                });
+            }
+
+            final Preference preferenceExport = findPreference("backupExport");
+            if (preferenceExport != null) {
+                preferenceExport.setOnPreferenceClickListener(preference -> {
+                    askWhatToExport();
+                    return true;
+                });
+            }
+
+            final Preference preferenceImport = findPreference("backupImport");
+            if (preferenceImport != null) {
+                preferenceImport.setOnPreferenceClickListener(preference -> {
+                    /*
+                     * Any type, not application/json.
+                     *
+                     * A file that came off another device, through a chat app
+                     * or a cloud folder, often arrives typed as something else
+                     * or as nothing at all -- and a picker that will not show
+                     * the file you are looking straight at is the sort of thing
+                     * people give up on. What it holds is checked when it is
+                     * read, which is the only reliable check anyway.
+                     */
+                    try {
+                        backupImportPicker.launch(new String[]{"*/*"});
+                    } catch (android.content.ActivityNotFoundException e) {
+                        Toast.makeText(requireContext(), R.string.pref_backup_failed,
+                                Toast.LENGTH_LONG).show();
+                    }
                     return true;
                 });
             }

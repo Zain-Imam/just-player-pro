@@ -209,6 +209,9 @@ dependencies {
      * here crashed the app on the phone.
      */
     testImplementation 'junit:junit:4.13.2'
+    // Android's org.json is a stub in unit tests; the real one lets the backup
+    // format be tested on any machine rather than only on a device.
+    testImplementation 'org.json:json:20231013'
     androidTestImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test:runner:1.6.2'
