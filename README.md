@@ -15,7 +15,7 @@ driven by a finger on a phone or by a D-pad from across the room, and behaves th
 [![Engines](https://img.shields.io/badge/engines-Media3%20%2B%20mpv-4C8BF5?style=flat-square)](#the-two-engines)
 [![Platforms](https://img.shields.io/badge/platforms-touch%20%2B%20remote-2EA043?style=flat-square)](#two-platforms)
 [![Decoders](https://img.shields.io/badge/mpv%20decoders-501-9C6ADE?style=flat-square)](#about-the-claim)
-[![Licence](https://img.shields.io/badge/licence-Unlicense-8A8A8A?style=flat-square)](LICENSE)
+[![Licence](https://img.shields.io/badge/licence-GPL--3.0-8A8A8A?style=flat-square)](LICENSE)
 
 <img src="docs/screenshots/01-info-card.jpg" alt="The info card over a paused film">
 
@@ -598,4 +598,35 @@ Smaller borrowings — a parser's shape, the way one app or another hands subtit
 
 This product uses the TMDB API but is not endorsed or certified by TMDB.
 
-Released into the public domain under the Unlicense, like Just Player.
+---
+
+## Licence
+
+**GNU General Public License v3.0** — see [LICENSE](LICENSE) and
+[COPYRIGHT](COPYRIGHT).
+
+Fork it, change it, build it for whatever you need. If you hand your version to
+anyone else, its source has to be available under the same licence — so the next
+person gets what you got. That is the whole of the obligation.
+
+* The project began as a fork of [Just Player](https://github.com/moneytoo/Player),
+  which is public domain under the Unlicense. Those parts remain available from
+  upstream on those terms; the work done here is under the GPL.
+* Bundled libraries keep their own licences, listed with their sources in
+  [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) — mpv, FFmpeg, libass and
+  libplacebo are LGPL, Media3 and most of the rest Apache-2.0.
+* **The name and the logo are not covered by the licence.** Fork the code freely
+  and give the fork its own name and icon, so people can tell which one they are
+  installing.
+
+### Verifying a build came from here
+
+Releases are signed with one key. Anything reporting a different certificate did
+not come from this project, whatever it is called:
+
+```
+SHA-256  6d:c1:c9:16:44:76:06:b1:ce:ba:13:3e:1c:50:6f:a8:
+         8e:11:25:9b:08:2c:d3:16:61:d0:c6:6c:12:42:dc:a6
+
+apksigner verify --print-certs just-player-pro-3.0.0-arm64-v8a.apk
+```

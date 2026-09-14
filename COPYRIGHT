@@ -1,0 +1,47 @@
+Just Player Pro
+Copyright (C) 2026 Zain Imam
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program. If not, see <https://www.gnu.org/licenses/>.
+
+The full text is in LICENSE.
+
+
+WHAT CAME FROM ELSEWHERE
+
+This project began as a fork of Just Player (https://github.com/moneytoo/Player)
+by Marcel Dopita, which is released into the public domain under the Unlicense.
+Those parts remain available from the upstream project under those terms; the
+work done here, and the project as a whole, is under the GPL as above.
+
+Third-party libraries, including the mpv and FFmpeg builds shipped inside the
+app, keep their own licences. They are listed in THIRD-PARTY-NOTICES.md, with
+where to obtain their source.
+
+
+THE NAME AND THE LOGO
+
+"Just Player Pro", the logo and the icon are not covered by the GNU General
+Public License, and no permission to use them is granted by it. Fork the code
+freely; give the fork a name and an icon of its own, so that people can tell
+which one they are installing and who to ask when something breaks.
+
+
+VERIFYING A BUILD IS GENUINE
+
+Official releases are signed with one key. Any build that reports a different
+signing certificate did not come from this project, whatever it calls itself:
+
+  SHA-256  6d:c1:c9:16:44:76:06:b1:ce:ba:13:3e:1c:50:6f:a8:
+           8e:11:25:9b:08:2c:d3:16:61:d0:c6:6c:12:42:dc:a6
+
+  Check a file with:  apksigner verify --print-certs <apk>
