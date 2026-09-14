@@ -543,6 +543,64 @@ public class SettingsActivity extends AppCompatActivity {
             super.onDestroyView();
         }
 
+        /*
+         * A green tick against anything that is already set.
+         *
+         * A key row shows its title and nothing else, and a key is not shown
+         * back to you once it is in -- rightly -- so the screen looked exactly
+         * the same whether a key had been entered or never had. The only way to
+         * find out was to open the row, see an empty box, and wonder whether
+         * that was the box being empty or the app refusing to show it.
+         *
+         * The tick is in the summary, where a row already has somewhere to put
+         * a line of text, and it is green because that is what a tick is.
+         */
+        private static final int TICK_GREEN = 0xFF4CAF50;
+
+        private void markWhatIsSet() {
+            for (final String key : new String[]{
+                    com.brouken.player.online.ApiKeys.PREF_TMDB,
+                    com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES,
+                    com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES_USER,
+                    com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES_PASSWORD,
+                    com.brouken.player.online.ApiKeys.PREF_SUBDL,
+                    com.brouken.player.online.ApiKeys.PREF_WYZIE}) {
+                final Preference preference = findPreference(key);
+                if (preference == null) {
+                    continue;
+                }
+                final String value = PreferenceManager.getDefaultSharedPreferences(requireContext())
+                        .getString(key, null);
+                mark(preference, value != null && !value.trim().isEmpty(),
+                        getString(R.string.pref_key_set), getString(R.string.pref_key_not_set));
+            }
+
+            final Preference addons = findPreference("subtitleAddons");
+            if (addons != null) {
+                final int count = com.brouken.player.online.SubtitleAddons
+                        .saved(requireContext()).size();
+                mark(addons, count > 0,
+                        getResources().getQuantityString(
+                                R.plurals.pref_addons_summary_count, count, count),
+                        getString(R.string.pref_addons_summary));
+            }
+        }
+
+        private void mark(final Preference preference, final boolean set,
+                          final String whenSet, final String whenNot) {
+            if (!set) {
+                preference.setSummary(whenNot);
+                return;
+            }
+            final String text = "✓  " + whenSet;
+            final android.text.SpannableString ticked = new android.text.SpannableString(text);
+            // The tick alone, not the words: a whole green line reads as a
+            // warning of some sort rather than as "this one is done".
+            ticked.setSpan(new android.text.style.ForegroundColorSpan(TICK_GREEN), 0, 1,
+                    android.text.Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
+            preference.setSummary(ticked);
+        }
+
         private void attachKeyChecks(final String... keys) {
             for (final String key : keys) {
                 final EditTextPreference preference = findPreference(key);
@@ -552,6 +610,10 @@ public class SettingsActivity extends AppCompatActivity {
                 preference.setOnPreferenceChangeListener((changed, newValue) -> {
                     final String value = newValue == null ? "" : newValue.toString().trim();
                     if (value.isEmpty()) {
+                        // Cleared. The tick has to go with it, and the write
+                        // happens after this returns, so the refresh waits a turn.
+                        new android.os.Handler(android.os.Looper.getMainLooper())
+                                .post(this::markWhatIsSet);
                         return true;
                     }
                     checkThenSave((EditTextPreference) changed, key, value);
@@ -577,6 +639,7 @@ public class SettingsActivity extends AppCompatActivity {
                     }
                     if (result.ok) {
                         preference.setText(value);
+                        markWhatIsSet();
                     }
                     android.widget.Toast.makeText(context, result.message,
                             android.widget.Toast.LENGTH_LONG).show();
@@ -605,6 +668,28 @@ public class SettingsActivity extends AppCompatActivity {
                     com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES,
                     com.brouken.player.online.ApiKeys.PREF_SUBDL,
                     com.brouken.player.online.ApiKeys.PREF_WYZIE);
+
+            /*
+             * The login pair has no key check of its own -- there is no service
+             * call that says whether a username and password go together
+             * without using up a sign-in -- so they only need the tick kept up
+             * to date when they change.
+             */
+            for (final String key : new String[]{
+                    com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES_USER,
+                    com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES_PASSWORD}) {
+                final Preference preference = findPreference(key);
+                if (preference != null) {
+                    preference.setOnPreferenceChangeListener((changed, newValue) -> {
+                        new android.os.Handler(android.os.Looper.getMainLooper())
+                                .post(this::markWhatIsSet);
+                        return true;
+                    });
+                }
+            }
+
+            // And say which of them are already in.
+            markWhatIsSet();
 
             subtitleFolderChoose = findPreference("subtitleFolderChoose");
             if (subtitleFolderChoose != null) {
@@ -812,6 +897,9 @@ public class SettingsActivity extends AppCompatActivity {
         @Override
         public void onResume() {
             super.onResume();
+            // A key cleared, an addon added, a backup imported: whatever
+            // happened while this screen was away, the ticks follow it.
+            markWhatIsSet();
             if (pendingCustomFontFallbackPermission) {
                 pendingCustomFontFallbackPermission = false;
                 if (!needsManageExternalStoragePermission()) {

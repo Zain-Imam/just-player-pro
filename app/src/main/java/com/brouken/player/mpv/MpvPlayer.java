@@ -202,12 +202,7 @@ public final class MpvPlayer extends BasePlayer
         for (final MediaItem.SubtitleConfiguration subtitle : pendingSubtitles) {
             final String flag =
                     (subtitle.selectionFlags & C.SELECTION_FLAG_DEFAULT) != 0 ? "select" : "auto";
-            final String title = subtitle.label;
-            if (title != null && !title.isEmpty()) {
-                mpv.command(new String[]{"sub-add", subtitle.uri.toString(), flag, title});
-            } else {
-                mpv.command(new String[]{"sub-add", subtitle.uri.toString(), flag});
-            }
+            subAdd(subtitle.uri, subtitle.label, flag);
             if (subtitle.language != null && !subtitle.language.isEmpty()) {
                 final Integer count = mpv.getPropertyInt("track-list/count");
                 if (count != null && count > 0) {
@@ -1330,11 +1325,48 @@ public final class MpvPlayer extends BasePlayer
         if (mpv == null || uri == null) {
             return;
         }
-        if (title == null || title.trim().isEmpty()) {
-            mpv.command(new String[]{"sub-add", uri.toString(), "select"});
-        } else {
-            mpv.command(new String[]{"sub-add", uri.toString(), "select", title.trim()});
+        subAdd(uri, title, "select");
+    }
+
+    /**
+     * Hand a subtitle to mpv, and notice when it will not take it.
+     *
+     * sub-add reports nothing a caller can read: a file mpv cannot open -- no
+     * permission, a dead link, a format it will not parse -- leaves the track
+     * list exactly as it was and playback carrying on as though nothing had
+     * been asked. The other engine says "that subtitle would not load" in that
+     * situation, and someone who has just picked one is owed the same answer
+     * whichever engine happens to be playing.
+     *
+     * The track list is the only honest signal there is, so it is counted
+     * either side of the command.
+     */
+    private void subAdd(final android.net.Uri uri, @Nullable final String title,
+                        final String flag) {
+        if (mpv == null) {
+            return;
         }
+        final Integer before = mpv.getPropertyInt("track-list/count");
+        if (title == null || title.trim().isEmpty()) {
+            mpv.command(new String[]{"sub-add", uri.toString(), flag});
+        } else {
+            mpv.command(new String[]{"sub-add", uri.toString(), flag, title.trim()});
+        }
+        final Integer after = mpv.getPropertyInt("track-list/count");
+        if (before != null && after != null && after <= before) {
+            final Runnable listener = subtitleFailureListener;
+            if (listener != null) {
+                handler.post(listener);
+            }
+        }
+    }
+
+    @Nullable
+    private Runnable subtitleFailureListener;
+
+    /** What to do when a subtitle mpv was given never arrived. */
+    public void setSubtitleFailureListener(@Nullable final Runnable listener) {
+        this.subtitleFailureListener = listener;
     }
     public void setSubtitleDelayMs(final int delayMs) {
         if (mpv == null) {

@@ -1,64 +1,48 @@
 #!/bin/bash
-# A downloaded subtitle keeps its release name in the picker.
+# A downloaded subtitle is known by its release name, not by the digits the file
+# was saved under.
 #
-# One search and one download, no more: the daily limits are small.
+# One search and one download, no more: these services count what they hand out.
+# The search is done through Wyzie, which is the one with room to spare.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
 SCREEN_H="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f2 | tr -d '\r')"
+SNAP="$WORK/snap-subname.txt"
+snap() {
+  local n
+  for n in 1 2 3; do
+    dump > "$SNAP"
+    [ -s "$SNAP" ] && grep -q 'bounds=' "$SNAP" && return 0
+    sleep 2
+  done
+  return 0
+}
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1
          adb pull /sdcard/jpp-shot.png "$(hostpath "$WORK/shots/$1.png")" >/dev/null 2>&1; }
-long_press() { require_player; adb shell "input swipe $1 $2 $(($1+2)) $(($2+2)) 900" >/dev/null 2>&1; }
+texts() { snap; grep -oE 'text="[^"]+"' "$SNAP" | sed 's/text=//;s/"//g'; }
 
 prepare
 open_film
 
-# The strip scrolls on a narrow screen, so reach for it the way tap_control
-# does rather than only looking at what happens to be visible.
-reach() {
-  local at n row y
-  show_controls >/dev/null
-  at="$(find_control "$@")"
-  [ -n "$at" ] && { echo "$at"; return 0; }
-  row="$(bounds_of resource-id "$PKG:id/controls_scroll_view")"
-  if [ -n "$row" ]; then
-    y="$(echo "$row" | awk '{print int(($2 + $4) / 2)}')"
-    for n in 1 2 3 4 5; do
-      swipe $((SCREEN_W - 60)) "$y" 100 "$y" 250
-      sleep 1
-      at="$(find_control "$@")"
-      [ -n "$at" ] && { echo "$at"; return 0; }
-    done
-  fi
-  return 1
-}
-
-echo "--- subtitle sources, then search online ---"
-OPEN="$(reach 'Open file' Open 'Open…')"
-if [ -z "$OPEN" ]; then
-  fail "no open button" "descs: $(dump | grep -oE 'content-desc="[^"]+"' | sort -u | tr '\n' ' ')"
+echo "--- the subtitle picker, and the search in it ---"
+if ! tap_control 'Disable subtitles' 'Enable subtitles' Subtitles Subtitle; then
+  fail "no subtitle button"
   exit 1
 fi
-long_press $OPEN
-sleep 3
-SEARCH_ROW=""
-for n in 1 2 3; do
-  SEARCH_ROW="$(centre text 'Search online subtitles…')"
-  [ -n "$SEARCH_ROW" ] && break
-  echo "  (the sources dialog was not up yet; pressing and holding again)"
-  long_press $OPEN
-  sleep 3
-done
-if [ -z "$SEARCH_ROW" ]; then
-  fail "the subtitle sources dialog never opened" \
-       "on screen: $(dump | grep -oE 'text="[^"]+"' | head -6 | tr '\n' ' ')"
+sleep 2
+SEARCH="$(centre text 'Search online subtitles…')"
+if [ -z "$SEARCH" ]; then
+  fail "the picker does not offer an online search" "$(texts | tr '\n' '|')"
   exit 1
 fi
-tap $SEARCH_ROW
-sleep 3
+pass "the picker offers an online search"
+tap $SEARCH
+sleep 4
 
+echo "--- asking for a film by name ---"
 FIELD="$(centre class android.widget.EditText)"
-[ -z "$FIELD" ] && { fail "no input box"; exit 1; }
+[ -z "$FIELD" ] && { fail "no box to type a title in" "$(texts | tr '\n' '|')"; exit 1; }
 CLEAR="$(centre text 'CLEAR')"
 [ -n "$CLEAR" ] && { tap $CLEAR; sleep 1; }
 tap $FIELD
@@ -68,43 +52,71 @@ sleep 2
 adb shell "input keyevent KEYCODE_BACK" >/dev/null 2>&1
 sleep 2
 GO="$(centre text 'SEARCH')"
-[ -z "$GO" ] && { fail "could not reach Search"; exit 1; }
+[ -z "$GO" ] && GO="$(centre text 'Search')"
+[ -z "$GO" ] && { fail "could not reach the search button"; exit 1; }
 tap $GO
 sleep 8
+shot subname-posters
 PICK="$(centre text 'Inception')"
-[ -z "$PICK" ] && { fail "no Inception in the posters"; exit 1; }
+[ -z "$PICK" ] && { fail "nothing came back for that title" "$(texts | tr '\n' '|')"; exit 1; }
 tap $PICK
-sleep 10
-
-echo "--- the results ---"
-shot subname-results
-FIRST="$(dump | grep -oE 'text="[A-Za-z0-9][^"]*"' | sed -n '4p' | sed 's/text=//;s/"//g')"
-echo "  first result row: $FIRST"
-AT="$(centre text "$FIRST")"
-[ -z "$AT" ] && { fail "could not find the first result row"; exit 1; }
-echo "--- downloading it ---"
-tap $AT
 sleep 12
+
+echo "--- what came back ---"
+shot subname-results
+LIST="$(texts)"
+echo "$LIST" | head -12 | sed 's/^/    /'
+# The first row that is actually a subtitle.
+#
+# Not simply the first line with letters in it: the list begins with a count
+# ("149 subtitles") and two actions, and tapping one of those downloads nothing
+# and wastes the run. A result is a title with its source and language on the
+# line under it, so that pairing is what is looked for.
+FIRST="$(echo "$LIST" | awk '
+  NR > 1 && $0 ~ /·/ && $0 ~ /(Wyzie|OpenSubtitles|SubDL|addon)/ { print previous; exit }
+  { previous = $0 }')"
+if [ -z "$FIRST" ]; then
+  fail "no subtitles were offered"
+  exit 1
+fi
+echo "  the first one offered: $FIRST"
+AT="$(centre text "$FIRST")"
+[ -z "$AT" ] && { fail "could not reach the first result"; exit 1; }
+
+echo "--- downloading exactly one ---"
+tap $AT
+sleep 14
 shot subname-downloaded
 
-echo "--- what the subtitle picker calls it now ---"
+echo "--- and what the picker calls it now ---"
 show_controls >/dev/null
-AT2="$(reach 'Disable subtitles' 'Enable subtitles' Subtitles Subtitle)"
-[ -z "$AT2" ] && { fail "no subtitle button"; exit 1; }
-tap $AT2
+if ! tap_control 'Disable subtitles' 'Enable subtitles' Subtitles Subtitle; then
+  fail "no subtitle button after the download"
+  exit 1
+fi
 sleep 3
 shot subname-picker
-LIST="$(dump | grep -oE 'text="[^"]+"' | tr '\n' ' ')"
-echo "  picker shows: $LIST"
+NOW="$(texts | tr '\n' '|')"
+echo "  the picker shows: $NOW"
 
-if echo "$LIST" | grep -qE 'text="[0-9]{5,}"'; then
-  fail "the picker is showing a row of digits"
+if echo "$NOW" | grep -qE '\|[0-9]{5,}\|'; then
+  fail "the picker is showing a row of digits" "$NOW"
 else
-  pass "no bare id in the picker"
+  pass "no bare file id in the picker"
 fi
-if echo "$LIST" | grep -qiF "$(echo "$FIRST" | cut -c1-12)"; then
-  pass "the release name is what the track is called"
+
+# The release name it was picked under, or at least the start of it: the row in
+# the picker may be shortened, and a release name is long.
+STEM="$(echo "$FIRST" | cut -c1-12)"
+if echo "$NOW" | grep -qF "$STEM"; then
+  pass "the track is called what the subtitle was called: $STEM…"
 else
-  echo "  (looked for: $(echo "$FIRST" | cut -c1-12))"
-  fail "the release name is not in the picker"
+  echo "  (looked for: $STEM)"
+  fail "the downloaded subtitle is not named after the release" "$NOW"
+fi
+
+if [ "$(crashed)" = 0 ]; then
+  pass "nothing crashed"
+else
+  fail "the player crashed" "$(adb logcat -b crash -d | grep -A6 'FATAL EXCEPTION' | head -12)"
 fi

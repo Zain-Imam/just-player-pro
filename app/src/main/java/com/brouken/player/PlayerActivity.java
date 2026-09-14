@@ -2030,9 +2030,27 @@ public class PlayerActivity extends Activity {
         // have to follow whichever one is about to play.
         mPrefs.setSubtitleEngine(mpv ? "mpv" : "media3");
         if (mpv) {
-            player = new com.brouken.player.mpv.MpvPlayer(this,
-                    new com.brouken.player.mpv.MpvOptions(mPrefs.mediaUri)
-                            .withHeaders(apiHeaders));
+            final com.brouken.player.mpv.MpvPlayer mpvPlayer =
+                    new com.brouken.player.mpv.MpvPlayer(this,
+                            new com.brouken.player.mpv.MpvOptions(mPrefs.mediaUri)
+                                    .withHeaders(apiHeaders));
+            /*
+             * The same sentence the other engine says, from this one.
+             *
+             * A subtitle that will not load is reported on Media3 through a
+             * load error; mpv has no such thing to report, so it notices that
+             * its track list did not grow and says so here. Once per film,
+             * like the other: a viewer needs telling, not nagging.
+             */
+            mpvPlayer.setSubtitleFailureListener(() -> {
+                if (subtitleFailureReported) {
+                    return;
+                }
+                subtitleFailureReported = true;
+                Utils.log("Subtitle would not load");
+                Utils.showText(playerView, getString(R.string.subtitle_would_not_load), 3500);
+            });
+            player = mpvPlayer;
         } else {
             player = playerBuilder.build();
         }
@@ -2080,6 +2098,7 @@ public class PlayerActivity extends Activity {
                                 return;
                             }
                             subtitleFailureReported = true;
+                            Utils.log("Subtitle would not load");
                             Utils.showText(playerView,
                                     getString(R.string.subtitle_would_not_load), 3500);
                         }
@@ -4983,10 +5002,24 @@ public class PlayerActivity extends Activity {
     }
 
     private void attachSubtitle(final Uri uri, @Nullable final String label) {
-        if (uri != null && label != null && !label.trim().isEmpty()) {
-            subtitleLabels.put(uri.toString(), label.trim());
+        final String named = label == null ? null : label.trim();
+        if (uri != null && named != null && !named.isEmpty()) {
+            subtitleLabels.put(uri.toString(), named);
         }
         handleSubtitles(uri);
+        /*
+         * The name has to follow the file to its new address.
+         *
+         * A subtitle is converted to UTF-8 on the way in, and the converted
+         * copy has an address of its own -- so the name filed under the
+         * address it arrived at was never found again, and the picker fell back
+         * to the last part of the new one. Which for something saved through
+         * MediaStore is a row of digits: exactly the thing this name exists to
+         * avoid, and exactly what was still on screen after a download.
+         */
+        if (mPrefs.subtitleUri != null && named != null && !named.isEmpty()) {
+            subtitleLabels.put(mPrefs.subtitleUri.toString(), named);
+        }
         pendingSubtitleLabel = subtitleLabelFor(mPrefs.subtitleUri);
 
         if (player instanceof com.brouken.player.mpv.MpvPlayer) {
