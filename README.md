@@ -10,7 +10,7 @@ Media3/ExoPlayer and a full build of mpv ship inside one app, and the player mov
 its own — so a file one cannot decode is handled by the other instead of failing. The same build is
 driven by a finger on a phone or by a D-pad from across the room, and behaves the same either way.
 
-[![Release](https://img.shields.io/badge/release-v2.0.0-F4601E?style=flat-square)](https://github.com/Zain-Imam/just-player-pro/releases/latest)
+[![Release](https://img.shields.io/badge/release-v3.0.0-F4601E?style=flat-square)](https://github.com/Zain-Imam/just-player-pro/releases/latest)
 [![Android](https://img.shields.io/badge/Android-7.1%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](#building)
 [![Engines](https://img.shields.io/badge/engines-Media3%20%2B%20mpv-4C8BF5?style=flat-square)](#the-two-engines)
 [![Platforms](https://img.shields.io/badge/platforms-touch%20%2B%20remote-2EA043?style=flat-square)](#two-platforms)
@@ -30,8 +30,9 @@ straight to the device's decoders.
 It installs as a separate app (`app.justplayerpro.android`), so it can sit alongside any other
 player you already use.
 
-> This was tailored to my own use. It is shared in case it is useful, but it is not a product:
-> do not expect new features, a roadmap, or fixes on request. I may add things, I may not.
+> Built from real use rather than from a roadmap: things land when they are worth shipping, and
+> each one is tested on a device before it is released. There is no support desk behind it — issues
+> and pull requests are read, and nothing is promised beyond that.
 
 ## Download
 
@@ -39,12 +40,30 @@ Grab the newest build from **[Releases](https://github.com/Zain-Imam/just-player
 
 | File | For |
 |---|---|
-| `just-player-pro-2.0.0-arm64-v8a.apk` | Almost every phone, tablet and TV box made since 2017 |
-| `just-player-pro-2.0.0-armeabi-v7a.apk` | Older 32-bit devices |
-| `just-player-pro-2.0.0-x86_64.apk` · `-x86.apk` | Emulators and the few x86 devices |
-| `just-player-pro-2.0.0-universal.apk` | All four at once — four times the mpv payload, so only if you are unsure |
+| `just-player-pro-3.0.0-arm64-v8a.apk` | Almost every phone, tablet and TV box made since 2017 |
+| `just-player-pro-3.0.0-armeabi-v7a.apk` | Older 32-bit devices |
+| `just-player-pro-3.0.0-x86_64.apk` · `-x86.apk` | Emulators and the few x86 devices |
+| `just-player-pro-3.0.0-universal.apk` | All four at once — four times the mpv payload, so only if you are unsure |
 
 Android 7.1 or newer. The mpv engine additionally needs Android 8.0 and is offered only there.
+
+### New in 3.0
+
+Everything here works on **both engines** and under **both input methods**, which is the bar each
+one had to clear before it shipped:
+
+| | |
+|---|---|
+| **Audio delay** | ±5 s either way, per file, with an accelerating hold |
+| **Subtitle delay, live** | applied to the running player — no re-buffer, no stall, and it is in the quick panel too |
+| **Speed per file** | a file reopens at the speed it was last watched at |
+| **Keep playing the sound** | screen off, or the player put away, and the sound carries on *(off by default)* |
+| **Preview while seeking** | the frame you are dragging towards, for files on the device |
+| **Demanding-file warning** | measured against the device's own decoders before it stalls |
+| **Network speed** | on the top line, for streams, counted from the bytes that arrive |
+| **Export and import** | settings, keys, history and per-file memory, in one file |
+| **Subtitles from storage** | and any number of folders the player may read |
+| **Settings without a restart** | the film is held at the frame it was on; only what must reopen, reopens |
 
 ---
 
@@ -158,6 +177,16 @@ row** asks again, and what you choose there is what sticks, for that file, from 
 </div>
 
 * **Online search and download** from OpenSubtitles, SubDL and Wyzie, with the language you set.
+* **Open one you already have** — a row in the subtitle picker opens the file picker, so a subtitle
+  sitting on the device is two taps away rather than hidden behind a long press.
+* **Any number of folders** — the player can be given several places to read from, so a library
+  split across internal storage and a card is searched in both for the next episode or a subtitle
+  beside the film. Granting a second folder no longer silently replaces the first.
+* **A delay that moves as fast as you need it to** — holding the arrow accelerates, so ten seconds
+  is about a second and a half of holding rather than a hundred presses.
+* **Adjusting it never reopens the file.** The delay is applied to the running player on both
+  engines, so nothing re-buffers, nothing stalls, and the number follows the arrow as it is pressed.
+  It sits in the subtitle panel and in the quick panel, beside the audio delay.
 * **Custom Stremio subtitle addons** — up to five, each verified against a known film before it is
   saved, so a broken addon is caught when you add it and not when you need it. Addon 1 comes
   pre-filled with the official OpenSubtitles addon and works as-is.
@@ -209,9 +238,11 @@ row** asks again, and what you choose there is what sticks, for that file, from 
   <img src="docs/screenshots/03-quick-settings.jpg" alt="The quick settings panel">
 </div>
 
-One tap of the gear brings the quick panel in along the edge: speed, engine, info card, skip
-markers, buffering, sleep timer, the track pickers, the film's address on the clipboard, and a way
-into the full settings screen. Panels come in **along the trailing edge at full height**, all the
+One tap of the gear brings the quick panel in along the edge: speed, audio delay, subtitle delay,
+engine, info card, skip markers, buffering, sleep timer, the track pickers, the film's address on
+the clipboard, and a way into the full settings screen. The rows you change with arrows sit
+together, above the rows you press. The audio button has a panel of its own too, so the sound's
+delay is where somebody adjusting the sound would look for it. Panels come in **along the trailing edge at full height**, all the
 same width, barely dimming the film — because what is being chosen is almost always a decision about
 what is on screen at that moment.
 
@@ -219,8 +250,10 @@ what is on screen at that moment.
   whether a track is forced, for the hard of hearing, or an audio description — in one fixed order,
   identically on both engines, so two English soundtracks are never two identical rows.
 * **A second line under the title** saying what is actually playing: `1920×804 · HEVC · 23.98 fps ·
-  E-AC-3 5.1 · mpv`, built from the tracks the player settled on rather than from the file, and
-  ending with the engine — which on Auto is the only way to know which one a file landed on.
+  E-AC-3 5.1 · mpv · 2.1 MB/s`, built from the tracks the player settled on rather than from the
+  file, ending with the engine — which on Auto is the only way to know which one a file landed on —
+  and, for a stream, how fast it is arriving. The speed is counted from the bytes that actually
+  come in rather than from a bandwidth estimate, and a file on the device is given none.
 * **Video track picker** — a stream served as a ladder of bitrates, or a file carrying more than one
   video track, gets a list with Auto at the top.
 * **Ten scaling modes, each with its own icon** — Default, Crop, Stretch, then 16:9, 4:3, 16:10,
@@ -238,11 +271,24 @@ what is on screen at that moment.
   <img src="docs/screenshots/05-settings-playback.jpg" alt="The playback settings">
 </div>
 
-* **Adaptive buffering** — a port of my mpv `auto_profile.lua` and `mpv.conf`, applied to *both*
-  engines so they buffer alike. The profile is picked from device memory, battery level and whether
-  the source is a live stream: `device-low` (30s/120s), `device-balanced` (50s/300s),
-  `device-high` (60s/600s) or `live-stream` (5s/15s). Back buffer is held at 25% of the forward
-  buffer at every tier, matching the mpv config rather than approximating it.
+* **Adaptive buffering** — the same device-aware profiles applied to *both* engines, so they buffer
+  alike. The profile is picked from device memory, battery level and whether the source is a live
+  stream: `device-low` (30s/120s), `device-balanced` (50s/300s), `device-high` (60s/600s) or
+  `live-stream` (5s/15s). Back buffer is held at 25% of the forward buffer at every tier.
+* **Audio delay** — ±5 seconds either way, per file, on both engines. mpv has the property; Media3
+  has no such thing, so the delay is applied to the clock the audio renderer reports, which is what
+  the picture follows. Holding an arrow accelerates, and the number is remembered against the file.
+* **Playback speed per file** — a documentary watched at 1.25× opens at 1.25× next time, however
+  many films at normal speed came in between. The last speed chosen is still what an unwatched file
+  opens at.
+* **Keep playing the sound** *(off by default)* — the screen can go off, or the player be put away,
+  and the sound carries on. Picture-in-picture still wins on Home when it is enabled.
+* **Preview while seeking** *(on by default)* — dragging the bar shows the frame you are heading
+  for, decoded from the file itself. Local files only: doing it over a connection would mean
+  fetching the film twice.
+* **A warning before a file stalls the device** — the decoders are measured against what is about to
+  play, and a file beyond them offers *play anyway*, *try the other engine* where the other engine
+  has a real chance, or *close*. Once per file, with a *do not warn me again*.
 * **Volume boost** — up to 150%, applied through a `LoudnessEnhancer` on Media3 and mpv's own
   volume on mpv. No restart, and the scale stays 0–100 either way.
 * **Picture-in-picture on Home** — pressing Home drops the film into PiP instead of pausing it.
@@ -270,6 +316,16 @@ what is on screen at that moment.
 Sectioned and shorter, with every switch saying what it currently does rather than what it is
 called. **Test keys and addons** checks every service on demand rather than only as a key is typed
 in: one that stopped answering last week still looked fine until the evening it was needed.
+
+* **A green tick against everything already set** — a key is never shown back once entered, so
+  without one the screen looks identical whether a key was typed in or never was.
+* **Leaving settings does not restart the film.** It is held at the frame it was on for the length
+  of the trip, and only the handful decided when a player is built — the engine, the buffering, the
+  decoders, tunneling, Dolby Vision mapping — reopen the file. Each of those rows says so.
+* **Export and import** — settings, keys and addons, history, and the per-file delays and speeds,
+  written to one JSON file through the system file picker. The export asks which parts to include,
+  so a file can be shared without the keys in it; the import takes whatever the file holds. Folder
+  permissions cannot travel between devices, and the dialog says so rather than failing quietly.
 
 ### Make it yours
 

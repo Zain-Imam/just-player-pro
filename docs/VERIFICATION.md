@@ -1,6 +1,6 @@
 # What was verified, and how
 
-Run against the APKs in `release-apks/`, on a moto g54 5G (Android 15).
+Run against the APKs in `release-apks/`, on an Android 15 phone.
 Everything below is something a command printed. Where something was not
 covered, it says so at the end rather than being left out.
 
@@ -42,8 +42,8 @@ Proved, not assumed:
 
 ```
 GUARD REFUSED
-  activity:  mFocusedApp=ActivityRecord{... com.motorola.launcher3/...}
-  window:    mCurrentFocus=Window{... com.motorola.launcher3/...}
+  activity:  mFocusedApp=ActivityRecord{... com.android.launcher/…}
+  window:    mCurrentFocus=Window{... com.android.launcher/…}
 exit=3
 ```
 
@@ -517,7 +517,7 @@ back as missing. The screen is measured from the window now, once there is one.
 
 ## What this does not prove
 
-* **One device, one orientation.** A moto g54 in portrait, Android 15. Not a
+* **One device, one orientation.** One Android 15 phone in portrait. Not a
   television, not a tablet, not Android 8. The remote is simulated by sending
   key events to a phone, which is the same input path a television uses but not
   the same device.
