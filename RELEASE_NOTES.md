@@ -1,3 +1,156 @@
+# 3.0.0
+
+Twelve things that were asked for, the bugs found while proving each one works,
+and a licence that finally says what this project actually wants.
+
+Nothing was removed. If 2.0 did it, 3.0 still does it.
+
+Every feature below was tested on a device **on both engines and under both
+input methods** — finger and remote — before it shipped. Where that is not true
+of something, it says so.
+
+## The headline
+
+**The player stops interrupting itself.** Three separate things used to throw
+the film away and open it again: nudging the subtitle delay by a tenth of a
+second, walking into the settings screen and back, and changing the audio delay
+in either direction. On a local file that is a stutter. On a stream it is a
+spinner, a stall, and the film starting over — for a setting that needed none of
+it. All three are gone, and the places where a reopen is genuinely unavoidable
+now say so in the row that causes it.
+
+**Sound you can move, and sound that keeps going.** An audio delay on both
+engines, ±5 seconds either way, remembered per file — and, if you ask for it, a
+player that carries on playing when the screen goes off or the app is put away.
+
+## New
+
+* **Audio delay** — ±5 s either way, per file, holding an arrow to move it
+  quickly. mpv has such a property; Media3 has nothing of the kind, so the delay
+  is applied to the clock the audio renderer reports, which is the clock the
+  picture follows. It is reachable from the audio button as well as the quick
+  panel, because that is where somebody fixing the sound will look for it.
+* **Subtitle delay in the quick panel too**, beside the audio delay, still in the
+  subtitle panel where it has always been, and the two never disagree.
+* **Playback speed per file** — a documentary left at 1.25× opens at 1.25× next
+  time, however many films at normal speed came in between.
+* **Keep playing the sound** *(off by default)* — the screen can go off, or the
+  player be put away, and the sound carries on. Picture-in-picture still wins on
+  Home when that is switched on.
+* **Preview while seeking** *(on by default)* — dragging the bar shows the frame
+  you are heading for. Files on the device only: doing it over a connection
+  would mean fetching the film a second time to look at pictures of it.
+* **A warning before a file stalls the device.** A 4K file on hardware that
+  cannot manage it does not fail — it plays the sound, never shows a picture, and
+  has to be killed from the recents list. The decoders are now measured against
+  what is about to play, and a file beyond them offers *play anyway*, *try the
+  other engine* where the other engine has a real chance, or *close*. Asked once
+  per file, with a *do not warn me again*, and a switch in settings to bring the
+  warnings back.
+* **Network speed on the top line** — `1280×720 · H.264 · 25 fps · AAC · mpv ·
+  109 KB/s` — counted from the bytes that actually arrive rather than from a
+  bandwidth estimate, which goes on claiming a number long after the downloading
+  has stopped. Streams only; a file on the device is given none.
+* **Export and import** — settings, keys and addons, history, and the per-file
+  delays and speeds, written to one file through the system picker. The export
+  asks which parts to include, so a file can be handed to somebody else without
+  your keys in it; the import takes whatever the file holds. Folder permissions
+  belong to one installation and cannot travel, and the dialog says so rather
+  than failing quietly later.
+* **Open a subtitle you already have** — a row in the subtitle picker, rather
+  than a long press nobody finds.
+* **Any number of folders the player may read.** There was one, and granting a
+  second silently replaced the first — so a library split across internal storage
+  and a card could never work: whichever half was granted second was the only
+  half searched for the next episode or a subtitle sitting beside the film.
+* **A delay that moves as fast as you need it to.** Holding the arrow
+  accelerates: ten seconds is about a second and a half of holding rather than a
+  hundred presses. Both delays, both engines, finger or remote.
+* **A green tick against every key that is set.** A key is never shown back once
+  entered, so the screen used to look identical whether one had been typed in or
+  never had.
+* **Settings say which of them reopen the file.** Five do — engine, buffering,
+  decoder priority, tunneling, Dolby Vision mapping — because they are decided
+  when the player is built. Each of those rows says so now. Everything else
+  applies to the film already playing.
+
+## Fixed along the way
+
+* **A downloaded subtitle was listed as a row of digits.** You picked
+  `Inception.2010.1080p.BluRay.DTS.x264-CtrlHD` and the picker showed
+  `1000161164`. The release name was filed under the address the file arrived at
+  — and every subtitle is rewritten as UTF-8 on the way in, which gives it a
+  different address, so the name was never found again and the last part of the
+  new address was shown instead. The name follows the file now.
+* **On mpv, a subtitle that would not load said nothing at all.** Media3 reports
+  a load failure; mpv's `sub-add` reports nothing a caller can read, so a file it
+  could not open — no permission, a dead link, a format it will not parse — left
+  the picker looking exactly as though nothing had been asked. It now counts the
+  track list either side of the command and says the same sentence the other
+  engine says.
+* **On mpv, changing the speed did nothing for about twelve seconds.** The
+  property took the new value immediately and the sound went on at the old one:
+  mpv rebuilds its audio chain only at a playback restart, and set from a panel
+  that pauses the film to show itself, that restart could be a long way off. A
+  zero-length seek is a restart that does not move.
+* **A remembered subtitle delay was restored on one engine only.** It was kept
+  per file and put back on Media3; on mpv the file opened at zero every time.
+* **The buffering spinner vanished with the controls.** The moment you most want
+  to know the film is still loading is exactly the moment you have pressed Back
+  to get the furniture out of the way.
+* **Leaving settings restarted the film.** It is held at the frame it was on now
+  — paused for the trip if it was playing, left alone if it was not — and only
+  the five that cannot be applied to a running player reopen anything.
+* **The subtitle and audio language order used to arrive by accident**, carried
+  in on that restart. It is handed to the track selector directly, so it applies
+  without reopening anything.
+
+## Licence
+
+**Just Player Pro is now under the GNU General Public License v3.0.** It was
+previously the Unlicense, inherited from upstream, which granted everyone the
+right to take it, close it and sell it without so much as a mention — not
+something anybody had decided on purpose.
+
+Nothing about using the app changes. What changes is what a fork owes: the code
+can be changed and rebuilt for whatever you need, and a version handed to
+somebody else has to come with its source under the same terms, so the next
+person gets what you got.
+
+* Parts inherited from [Just Player](https://github.com/moneytoo/Player) remain
+  available from upstream under the Unlicense. The work done here is GPL.
+* The name and the logo are not covered by the licence — fork the code and give
+  the fork its own name and icon, so people can tell which one they installed.
+* **THIRD-PARTY-NOTICES.md** now lists every bundled component, its licence and
+  where its source can be had. The app ships mpv, FFmpeg, libass and libplacebo
+  as native libraries, all LGPL, and carried no licence text for any of them
+  before this release.
+
+Releases are signed with one key, and its fingerprint is published in the README,
+so any build claiming to be this one can be checked with `apksigner`.
+
+## Known limits
+
+* On mpv, 2× on 1080p60 film asks for 120 frames a second of decoding, which
+  ordinary phone hardware cannot do — playback runs at whatever it manages. At 30
+  fps it reaches 2× exactly. Media3 drops frames instead and keeps the clock.
+* The Media3 audio delay costs a moment of catching up after a seek: the picture
+  and the sound start a seek together, so one of them has to move. mpv avoids
+  this by seeking the two streams to different places, which a Media3 media
+  source cannot do.
+* Seek previews are decoded from the file and need a container that can be
+  indexed — mp4 and mkv are fine, a raw transport stream often is not.
+* Keeping the sound going has no foreground service behind it, so Android may
+  reclaim the app under memory pressure during a long screen-off listen.
+
+## Which APK
+
+One per architecture, plus a universal one that contains all four and is about
+four times the size. Almost every phone, tablet and television made since 2017
+is **arm64-v8a**. If in doubt, take the universal one.
+
+---
+
 # 2.0.0
 
 A year's worth of things I kept meaning to fix, plus the parts of the other
