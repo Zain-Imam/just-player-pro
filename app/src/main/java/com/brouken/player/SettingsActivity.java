@@ -516,6 +516,23 @@ public class SettingsActivity extends AppCompatActivity {
                 });
             }
 
+            Preference preferenceFolders = findPreference("foldersOpen");
+            if (preferenceFolders != null) {
+                final int folders = new Prefs(requireContext()).scopeUris.size();
+                preferenceFolders.setSummary(folders == 0
+                        ? getString(R.string.pref_folders_summary_empty)
+                        : getResources().getQuantityString(
+                                R.plurals.pref_folders_summary, folders, folders));
+                preferenceFolders.setOnPreferenceClickListener(preference -> {
+                    requireActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.settings, new FoldersFragment())
+                            .addToBackStack(null)
+                            .commit();
+                    return true;
+                });
+            }
+
             Preference preferenceHistory = findPreference("historyOpen");
             if (preferenceHistory != null) {
                 int count = History.load(PreferenceManager.getDefaultSharedPreferences(requireContext())).size();

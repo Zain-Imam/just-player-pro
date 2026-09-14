@@ -43,6 +43,7 @@ public class Prefs {
     private static final String PREF_KEY_ORIENTATION = "orientation";
     private static final String PREF_KEY_SCALE = "scale";
     private static final String PREF_KEY_SCOPE_URI = "scopeUri";
+    private static final String PREF_KEY_SCOPE_URIS = "scopeUris";
     private static final String PREF_KEY_ASK_SCOPE = "askScope";
     private static final String PREF_KEY_AUTO_PIP = "autoPiP";
     private static final String PREF_KEY_ASK_RESUME = "askResume";
@@ -83,7 +84,20 @@ public class Prefs {
     public Uri mediaUri;
     public Uri subtitleUri;
     public final java.util.List<Uri> subtitleUris = new java.util.ArrayList<>();
+    /*
+     * The folder the player was last given, and every folder it has been given.
+     *
+     * There was only ever one. Granting a second silently replaced the first,
+     * so a library split across two cards or two drives could never work: the
+     * half you granted second was the only half the player could look in for
+     * the next episode or a subtitle sitting beside the film.
+     *
+     * scopeUri is kept, and kept meaning what it always meant -- the most
+     * recent grant -- so nothing that reads it has to change. The list is the
+     * new thing, and the single one migrates into it on first load.
+     */
     public Uri scopeUri;
+    public final java.util.List<Uri> scopeUris = new java.util.ArrayList<>();
     public String mediaType;
     private int currentVideoHeight = 0;
     public int resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT;
@@ -165,6 +179,7 @@ public class Prefs {
         scale = mSharedPreferences.getFloat(PREF_KEY_SCALE, scale);
         if (mSharedPreferences.contains(PREF_KEY_SCOPE_URI))
             scopeUri = Uri.parse(mSharedPreferences.getString(PREF_KEY_SCOPE_URI, null));
+        loadScopes();
         askScope = mSharedPreferences.getBoolean(PREF_KEY_ASK_SCOPE, askScope);
         speed = mSharedPreferences.getFloat(PREF_KEY_SPEED, speed);
         loadUserPreferences();
@@ -420,6 +435,63 @@ public class Prefs {
         else
             sharedPreferencesEditor.putString(PREF_KEY_SCOPE_URI, uri.toString());
         sharedPreferencesEditor.apply();
+
+        if (uri != null) {
+            // Newest first: the folder just granted is the likeliest place to
+            // find whatever is being played.
+            scopeUris.remove(uri);
+            scopeUris.add(0, uri);
+            saveScopes();
+        }
+    }
+
+    /** Stop looking in a folder. The system grant is released by the caller. */
+    public void removeScope(final Uri uri) {
+        if (uri == null) {
+            return;
+        }
+        scopeUris.remove(uri);
+        saveScopes();
+        if (uri.equals(scopeUri)) {
+            // Whatever is left becomes the one that answers for the old single
+            // setting, so nothing reading scopeUri sees a folder that has gone.
+            updateScope(scopeUris.isEmpty() ? null : scopeUris.get(0));
+        }
+    }
+
+    private void loadScopes() {
+        scopeUris.clear();
+        final String saved = mSharedPreferences.getString(PREF_KEY_SCOPE_URIS, null);
+        if (saved != null && !saved.isEmpty()) {
+            try {
+                final org.json.JSONArray all = new org.json.JSONArray(saved);
+                for (int i = 0; i < all.length(); i++) {
+                    final String each = all.optString(i, null);
+                    if (each != null && !each.isEmpty()) {
+                        final Uri uri = Uri.parse(each);
+                        if (!scopeUris.contains(uri)) {
+                            scopeUris.add(uri);
+                        }
+                    }
+                }
+            } catch (org.json.JSONException e) {
+                // A list that will not parse is no worse than no list; the
+                // single folder below still gets the player working.
+            }
+        }
+        // Anyone upgrading has one folder and no list.
+        if (scopeUri != null && !scopeUris.contains(scopeUri)) {
+            scopeUris.add(0, scopeUri);
+            saveScopes();
+        }
+    }
+
+    private void saveScopes() {
+        final org.json.JSONArray all = new org.json.JSONArray();
+        for (final Uri uri : scopeUris) {
+            all.put(uri.toString());
+        }
+        mSharedPreferences.edit().putString(PREF_KEY_SCOPE_URIS, all.toString()).apply();
     }
 
     public void updateSubtitleVerticalPosition(final int subtitleVerticalPosition) {

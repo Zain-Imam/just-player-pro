@@ -49,7 +49,12 @@ public final class OnlineController {
         @Nullable
         String mediaName();
 
-        void loadSubtitle(Uri uri);
+        /**
+         * @param label what the subtitle should be called in the picker, which
+         *              the download already knows and the file may not. See the
+         *              note where this is called.
+         */
+        void loadSubtitle(Uri uri, @Nullable String label);
     }
 
     public OnlineController(final Context context, final Host host) {
@@ -684,7 +689,19 @@ public final class OnlineController {
                     return;
                 }
 
-                host.loadSubtitle(saved.uri);
+                /*
+                 * The name goes with it, rather than being read back off the
+                 * file.
+                 *
+                 * Reading it back looked equivalent and was not. A subtitle
+                 * saved through MediaStore comes back as
+                 * content://media/external/downloads/1321321, and when the
+                 * display-name column cannot be read the only thing left to
+                 * fall back on is the last part of the address -- so the track
+                 * you had just chosen by name appeared in the picker as a row
+                 * of digits. The release name was in hand all along.
+                 */
+                host.loadSubtitle(saved.uri, stem);
                 Toast.makeText(context,
                         saved.location == null
                                 ? context.getString(R.string.online_loaded)

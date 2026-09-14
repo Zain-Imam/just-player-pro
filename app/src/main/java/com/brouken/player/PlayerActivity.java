@@ -195,6 +195,32 @@ public class PlayerActivity extends Activity {
     private boolean showRemainingTime;
     
     private String pendingSubtitleLabel;
+
+    /*
+     * What a subtitle should be called, where something told us.
+     *
+     * A downloaded subtitle knows its release name at the moment it is fetched.
+     * Everything after that point only has the address it was saved to, and an
+     * address is not always a name: through MediaStore it is
+     * content://media/external/downloads/1321321, and asking the resolver for a
+     * display name can come back with nothing -- leaving the file name to be
+     * guessed from the last part of the address, which is the row id. So the
+     * name is kept here, against the address, and preferred wherever the track
+     * is labelled. Anything not in here is named as it always was.
+     */
+    private final java.util.Map<String, String> subtitleLabels = new java.util.HashMap<>();
+
+    @Nullable
+    private String subtitleLabelFor(final Uri uri) {
+        if (uri == null) {
+            return null;
+        }
+        final String known = subtitleLabels.get(uri.toString());
+        if (known != null && !known.trim().isEmpty()) {
+            return known.trim();
+        }
+        return Utils.getFileName(this, uri, false);
+    }
     private String appliedAccent;
     /** The spinner and its label together: shown and hidden as one. */
     private View loadingProgressBar;
@@ -426,13 +452,7 @@ public class PlayerActivity extends Activity {
         });
 
         buttonOpen.setOnLongClickListener(view -> {
-            final Runnable loadFile = () -> {
-                if (!isTvBox && mPrefs.askScope) {
-                    askForScope(true, false);
-                } else {
-                    loadSubtitleFile(mPrefs.mediaUri);
-                }
-            };
+            final Runnable loadFile = this::openSubtitleFilePicker;
             // Unconfigured, this behaves exactly as it always did.
             if (onlineController != null && onlineController.isConfigured()) {
                 OpenMenu.showSubtitleSources(this, loadFile, this::searchOnlineSubtitles,
@@ -684,8 +704,8 @@ public class PlayerActivity extends Activity {
                     }
 
                     @Override
-                    public void loadSubtitle(Uri uri) {
-                        attachSubtitle(uri);
+                    public void loadSubtitle(Uri uri, String label) {
+                        attachSubtitle(uri, label);
                     }
                 });
 
@@ -3569,17 +3589,7 @@ public class PlayerActivity extends Activity {
             final String scheme = mPrefs.mediaUri.getScheme();
 
             if (mPrefs.scopeUri != null) {
-                if ("com.android.externalstorage.documents".equals(mPrefs.mediaUri.getHost()) ||
-                        "org.courville.nova.provider".equals(mPrefs.mediaUri.getHost())) {
-                    // Fast search based on path in uri
-                    video = SubtitleUtils.findUriInScope(this, mPrefs.scopeUri, mPrefs.mediaUri);
-                } else {
-                    // Slow search based on matching metadata, no path in uri
-                    // Provider "com.android.providers.media.documents" when using "Videos" tab in file picker
-                    DocumentFile fileScope = DocumentFile.fromTreeUri(this, mPrefs.scopeUri);
-                    DocumentFile fileMedia = DocumentFile.fromSingleUri(this, mPrefs.mediaUri);
-                    video = SubtitleUtils.findDocInScope(fileScope, fileMedia);
-                }
+                video = findInScopes(mPrefs.mediaUri);
             } else if (ContentResolver.SCHEME_FILE.equals(scheme)) {
                 videoRaw = new File(mPrefs.mediaUri.getSchemeSpecificPart());
                 video = DocumentFile.fromFile(videoRaw);
@@ -3602,6 +3612,62 @@ public class PlayerActivity extends Activity {
         }
     }
 
+    /*
+     * Find a file inside whichever granted folder actually holds it.
+     *
+     * Both callers used to do this against the one folder there was. With a
+     * list they ask each in turn and take the first that answers -- newest
+     * grant first, which is nearly always the right one, and the cost of a miss
+     * is one failed lookup in a folder the file is not in.
+     *
+     * The two ways of looking are unchanged: a provider that puts the path in
+     * the address can be matched on the path, and anything else has to be
+     * matched on the document's own details, which is slower.
+     */
+    @Nullable
+    private DocumentFile findInScopes(final Uri media) {
+        if (media == null) {
+            return null;
+        }
+        final boolean pathInUri =
+                "com.android.externalstorage.documents".equals(media.getHost())
+                        || "org.courville.nova.provider".equals(media.getHost());
+
+        for (final Uri scope : mPrefs.scopeUris) {
+            DocumentFile found = null;
+            try {
+                if (pathInUri) {
+                    found = SubtitleUtils.findUriInScope(this, scope, media);
+                }
+                /*
+                 * The slow way is a fallback, not an alternative.
+                 *
+                 * The two callers disagreed about which providers put a usable
+                 * path in the address -- one counted Nova, the other did not --
+                 * and sharing this code had to pick one. Picking either would
+                 * have quietly changed what the other found. So the fast match
+                 * is tried where the address looks like it carries a path, and
+                 * anything it does not turn up is looked for the slow way
+                 * regardless, which is what the more careful of the two callers
+                 * did all along.
+                 */
+                if (found == null) {
+                    final DocumentFile fileScope = DocumentFile.fromTreeUri(this, scope);
+                    final DocumentFile fileMedia = DocumentFile.fromSingleUri(this, media);
+                    found = SubtitleUtils.findDocInScope(fileScope, fileMedia);
+                }
+            } catch (SecurityException | IllegalArgumentException e) {
+                // A folder whose grant has gone, or a card that has been
+                // removed. Not a reason to stop looking in the others.
+                Utils.log("A granted folder could not be read: " + e);
+            }
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
     Uri findNext() {
         // TODO: Unify with searchSubtitles()
         if (mPrefs.scopeUri != null || isTvBox) {
@@ -3609,16 +3675,7 @@ public class PlayerActivity extends Activity {
             File videoRaw = null;
 
             if (!isTvBox && mPrefs.scopeUri != null) {
-                if ("com.android.externalstorage.documents".equals(mPrefs.mediaUri.getHost())) {
-                    // Fast search based on path in uri
-                    video = SubtitleUtils.findUriInScope(this, mPrefs.scopeUri, mPrefs.mediaUri);
-                } else {
-                    // Slow search based on matching metadata, no path in uri
-                    // Provider "com.android.providers.media.documents" when using "Videos" tab in file picker
-                    DocumentFile fileScope = DocumentFile.fromTreeUri(this, mPrefs.scopeUri);
-                    DocumentFile fileMedia = DocumentFile.fromSingleUri(this, mPrefs.mediaUri);
-                    video = SubtitleUtils.findDocInScope(fileScope, fileMedia);
-                }
+                video = findInScopes(mPrefs.mediaUri);
             } else if (isTvBox) {
                 videoRaw = new File(mPrefs.mediaUri.getSchemeSpecificPart());
                 video = DocumentFile.fromFile(videoRaw);
@@ -3675,9 +3732,22 @@ public class PlayerActivity extends Activity {
         if (enableLoading) {
             exoPlayPause.setVisibility(View.GONE);
             loadingProgressBar.setVisibility(View.VISIBLE);
+            /*
+             * The card gets out of the way of the spinner.
+             *
+             * They both want the middle of the screen, and of the two the one
+             * that matters while a film is still loading is the one saying so.
+             * The card comes back on its own when the buffering ends, below.
+             */
+            hideOverlayCard();
         } else {
             loadingProgressBar.setVisibility(View.GONE);
             exoPlayPause.setVisibility(View.VISIBLE);
+            // Buffering is over. On a paused film that is the moment the card
+            // is allowed back; on a playing one this correctly does nothing.
+            if (player != null && !player.isPlaying()) {
+                updateOverlayCard(false);
+            }
             if (focusPlay) {
                 focusPlay = false;
                 exoPlayPause.requestFocus();
@@ -4069,6 +4139,22 @@ public class PlayerActivity extends Activity {
         playerView.setKeepScreenOn(isPlaying || mPrefs.keepScreenOn);
     }
 
+    /*
+     * Open a subtitle file the person already has.
+     *
+     * Asks for a folder first where that has not been settled, because without
+     * one the system hands back a single file and the player can neither find
+     * the subtitle beside the next episode nor look for one automatically.
+     * A television has no document picker, so it never asks.
+     */
+    void openSubtitleFilePicker() {
+        if (!isTvBox && mPrefs.askScope) {
+            askForScope(true, false);
+        } else {
+            loadSubtitleFile(mPrefs.mediaUri);
+        }
+    }
+
     private void showSubtitleMenu() {
         hideOverlayCardForNow();
         final List<SubtitleChoice> choices = new ArrayList<>();
@@ -4088,6 +4174,17 @@ public class PlayerActivity extends Activity {
         }
 
         choices.add(SubtitleChoice.off(this, !anySelected));
+        /*
+         * A subtitle you already have, from where you keep it.
+         *
+         * This was only ever on a long press of the folder button, which is
+         * both undiscoverable and a poor thing to ask of a remote -- so the
+         * picker offered to search the internet for a subtitle while refusing
+         * to open the one sitting on the drive. It is the same code path as the
+         * long press, so the two cannot drift apart.
+         */
+        choices.add(SubtitleChoice.action(getString(R.string.subtitle_source_file),
+                getString(R.string.subtitle_menu_file_detail), this::openSubtitleFilePicker));
         choices.add(SubtitleChoice.action(getString(R.string.online_search_subtitles),
                 getString(R.string.subtitle_menu_search_detail), this::searchOnlineSubtitles));
         choices.add(SubtitleChoice.action(getString(R.string.osd_subtitle_title),
@@ -4455,17 +4552,27 @@ public class PlayerActivity extends Activity {
                 continue;
             }
             subtitles.add(SubtitleUtils.buildSubtitle(this, uri,
-                    Utils.getFileName(this, uri, false), uri.equals(mPrefs.subtitleUri)));
+                    subtitleLabelFor(uri), uri.equals(mPrefs.subtitleUri)));
         }
         return subtitles;
     }
 
     private void attachSubtitle(final Uri uri) {
+        attachSubtitle(uri, null);
+    }
+
+    private void attachSubtitle(final Uri uri, @Nullable final String label) {
+        if (uri != null && label != null && !label.trim().isEmpty()) {
+            subtitleLabels.put(uri.toString(), label.trim());
+        }
         handleSubtitles(uri);
-        pendingSubtitleLabel = Utils.getFileName(this, mPrefs.subtitleUri, false);
+        pendingSubtitleLabel = subtitleLabelFor(mPrefs.subtitleUri);
 
         if (player instanceof com.brouken.player.mpv.MpvPlayer) {
-            ((com.brouken.player.mpv.MpvPlayer) player).addSubtitle(mPrefs.subtitleUri);
+            // mpv is told the title as well, so the name is the same on both
+            // engines rather than depending on which one happens to be playing.
+            ((com.brouken.player.mpv.MpvPlayer) player)
+                    .addSubtitle(mPrefs.subtitleUri, pendingSubtitleLabel);
             return;
         }
 

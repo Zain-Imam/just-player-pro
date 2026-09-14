@@ -1296,10 +1296,26 @@ public final class MpvPlayer extends BasePlayer
     }
 
     public void addSubtitle(final android.net.Uri uri) {
+        addSubtitle(uri, null);
+    }
+
+    /**
+     * Add a subtitle and select it, under the name it should be known by.
+     *
+     * mpv's sub-add takes a title after the flags, and given one it uses that
+     * instead of naming the track after the file. Which matters for a
+     * downloaded subtitle: the file it was saved to may be called
+     * 1321321 while the thing you picked had a release name.
+     */
+    public void addSubtitle(final android.net.Uri uri, @Nullable final String title) {
         if (mpv == null || uri == null) {
             return;
         }
-        mpv.command(new String[]{"sub-add", uri.toString(), "select"});
+        if (title == null || title.trim().isEmpty()) {
+            mpv.command(new String[]{"sub-add", uri.toString(), "select"});
+        } else {
+            mpv.command(new String[]{"sub-add", uri.toString(), "select", title.trim()});
+        }
     }
     public void setSubtitleDelayMs(final int delayMs) {
         if (mpv == null) {

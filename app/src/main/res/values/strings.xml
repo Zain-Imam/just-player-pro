@@ -143,6 +143,7 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="subtitle_menu_off">Off</string>
     <string name="subtitle_menu_current">Playing now</string>
     <string name="subtitle_menu_track">Track %1$d</string>
+    <string name="subtitle_menu_file_detail">Open one you already have on this device</string>
     <string name="subtitle_menu_search_detail">Find one online for this episode</string>
     <string name="subtitle_menu_settings_detail">Size, position, delay and style</string>
     <string name="online_search">Search</string>
@@ -208,6 +209,17 @@ Auto starts on Media3 and switches only for a file Media3 fails on.</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">Play</string>
     <string name="open_url_invalid">That does not look like a URL a player can open</string>
+    <string name="pref_folders_header">Folders</string>
+    <string name="pref_folders">Folders the player may read</string>
+    <string name="pref_folders_note">Needed to find the next episode, and a subtitle saved beside the film. Add as many as you keep films in.</string>
+    <string name="pref_folders_empty">None yet. Without one, the player only sees the single file you opened.</string>
+    <string name="pref_folders_add">Add a folder…</string>
+    <string name="pref_folders_remove">Tap to stop reading this folder</string>
+    <string name="pref_folders_remove_confirm">The player will no longer look here for the next episode or for subtitles.</string>
+    <string name="pref_folders_remove_confirm_yes">Remove</string>
+    <string name="pref_folders_failed">Android would not keep that permission. Try choosing the folder again.</string>
+    <string name="pref_folders_no_picker">This device has no folder picker.</string>
+    <string name="pref_folders_summary_empty">No folders yet</string>
     <string name="pref_history_header">History</string>
     <string name="error_code">Show a code</string>
     <string name="osd_info_card">Show info card</string>
@@ -255,6 +267,10 @@ Auto starts on Media3 and switches only for a file Media3 fails on.</string>
     <string name="pref_history_failed_on">Everything opened is listed, including links that failed</string>
     <string name="pref_history_failed_off">Only what actually played is listed</string>
     <string name="pref_history_summary_empty">Nothing played from a network URL yet</string>
+    <plurals name="pref_folders_summary">
+        <item quantity="one">%d folder</item>
+        <item quantity="other">%d folders</item>
+    </plurals>
     <plurals name="pref_addons_summary_count">
         <item quantity="one">%d addon</item>
         <item quantity="other">%d addons</item>

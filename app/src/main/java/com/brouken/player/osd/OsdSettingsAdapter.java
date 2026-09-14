@@ -94,8 +94,20 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
             View button1 = itemView.findViewById(android.R.id.button1);
             View button2 = itemView.findViewById(android.R.id.button2);
 
-            button1.setOnClickListener(v -> notifySettingLeftPressed());
-            button2.setOnClickListener(v -> notifySettingRightPressed());
+            /*
+             * Held down, these repeat.
+             *
+             * A remote already repeats on its own -- Android sends a run of key
+             * events while an arrow is held -- but a finger on the screen got
+             * one step per tap and nothing else, so the two input methods were
+             * nowhere near each other. Holding either now does the same thing,
+             * and the step itself accelerates in IntegerOsdSettingsItem.
+             *
+             * The first repeat waits out the system's own long-press threshold
+             * so a normal tap is still exactly one step.
+             */
+            repeatWhileHeld(button1, this::notifySettingLeftPressed);
+            repeatWhileHeld(button2, this::notifySettingRightPressed);
 
             itemView.setOnKeyListener((v, keyCode, event) -> {
                 if (event.getAction() == KeyEvent.ACTION_DOWN) {
@@ -140,14 +152,67 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
             }
         }
 
+        /**
+         * One press on a tap, and a stream of them while a finger stays down.
+         *
+         * The click listener is left in place so that everything which is not a
+         * finger -- an accessibility service, a hardware Enter on the focused
+         * button -- goes on working exactly as before; the touch listener only
+         * adds the repeats, and cancels them the moment the finger lifts or
+         * leaves the button.
+         */
+        private void repeatWhileHeld(final View button, final Runnable press) {
+            button.setOnClickListener(v -> press.run());
+
+            final long first = android.view.ViewConfiguration.getLongPressTimeout();
+            final long gap = 60;
+            final Runnable[] repeater = new Runnable[1];
+            repeater[0] = () -> {
+                press.run();
+                button.postDelayed(repeater[0], gap);
+            };
+
+            button.setOnTouchListener((v, event) -> {
+                switch (event.getActionMasked()) {
+                    case android.view.MotionEvent.ACTION_DOWN:
+                        button.postDelayed(repeater[0], first);
+                        break;
+                    case android.view.MotionEvent.ACTION_UP:
+                    case android.view.MotionEvent.ACTION_CANCEL:
+                        button.removeCallbacks(repeater[0]);
+                        break;
+                    default:
+                        break;
+                }
+                // Never consumed: the click listener, the ripple and the
+                // accessibility events all still need this event.
+                return false;
+            });
+        }
+
+        /*
+         * Both of these check the position first.
+         *
+         * They did not need to when the only way in was a click, which cannot
+         * arrive after the row has gone. A repeat can: it is posted to the view
+         * and could fire once more after the panel closed or the row was
+         * recycled, when the position is NO_POSITION and the lookup would be
+         * out of bounds.
+         */
         private void notifySettingLeftPressed() {
-            int position = getBindingAdapterPosition();
+            final int position = getBindingAdapterPosition();
+            if (position < 0 || position >= items.length) {
+                return;
+            }
             LeftOrRightOsdSettingsItem item = (LeftOrRightOsdSettingsItem) items[position];
             item.listener.onSettingLeftClick(position);
         }
 
         private void notifySettingRightPressed() {
-            int position = getBindingAdapterPosition();
+            final int position = getBindingAdapterPosition();
+            if (position < 0 || position >= items.length) {
+                return;
+            }
             LeftOrRightOsdSettingsItem item = (LeftOrRightOsdSettingsItem) items[position];
             item.listener.onSettingRightClick(position);
         }

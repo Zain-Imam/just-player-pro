@@ -311,6 +311,14 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/pref_folders_header">
+
+        <Preference
+            app:key="foldersOpen"
+            app:title="@string/pref_folders" />
+
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/pref_history_header">
 
         <Preference
