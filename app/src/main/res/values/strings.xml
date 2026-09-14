@@ -39,7 +39,7 @@
     <string name="pref_framerate_matching_on">Display follows the video</string>
     <string name="pref_framerate_matching_off">Display rate left alone</string>
     <string name="pref_tunneling">Tunneled playback</string>
-    <string name="pref_tunneling_summary">Tunneling provides better support for 4K/HDR content, but may not work on all devices</string>
+    <string name="pref_tunneling_summary">Tunneling provides better support for 4K/HDR content, but may not work on all devices. Changing it reopens whatever is playing.</string>
     <string name="pref_auto_pip">Auto picture-in-picture</string>
     <string name="pref_auto_pip_on">Home or a swipe away keeps it playing in a corner</string>
     <string name="pref_auto_pip_off">Stay in the app</string>
@@ -70,8 +70,8 @@
     <string name="pref_repeat_toggle">Loop button</string>
     <string name="pref_repeat_toggle_summary">Adds a repeat control (needs a restart)</string>
     <string name="pref_map_dv7">Dolby Vision profile 7 fallback</string>
-    <string name="pref_map_dv7_on">Play Dolby Vision profile 7 content on HDR displays</string>
-    <string name="pref_map_dv7_off">Play UHD Blu-ray content containing Dolby Vision as is</string>
+    <string name="pref_map_dv7_on">Play Dolby Vision profile 7 content on HDR displays. Changing it reopens whatever is playing.</string>
+    <string name="pref_map_dv7_off">Play UHD Blu-ray content containing Dolby Vision as is. Changing it reopens whatever is playing.</string>
     <string name="shortcut_videos">Videos</string>
     <string name="button_open">Open</string>
     <string name="button_crop">Resize</string>
@@ -113,6 +113,7 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="pref_key_subdl_dialog">Free from subdl.com/panel/api.</string>
     <string name="pref_key_wyzie">Wyzie key · optional</string>
     <string name="pref_key_wyzie_dialog">Free from sub.wyzie.io/redeem.</string>
+    <string name="pref_reopens_file">Changing it reopens whatever is playing.</string>
     <string name="pref_key_checking">Checking the key…</string>
     <string name="pref_key_set">Set</string>
     <string name="pref_key_not_set">Not set</string>
@@ -204,8 +205,8 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
 Auto starts on Media3 and switches only for a file Media3 fails on.</string>
     <string name="pref_media3_only">Media3 only — not used by mpv</string>
     <string name="pref_adaptive_buffering">Adaptive buffering</string>
-    <string name="pref_adaptive_buffering_on">Sized from memory, battery and source</string>
-    <string name="pref_adaptive_buffering_off">One fixed size</string>
+    <string name="pref_adaptive_buffering_on">Sized from memory, battery and source. Changing it reopens whatever is playing.</string>
+    <string name="pref_adaptive_buffering_off">One fixed size. Changing it reopens whatever is playing.</string>
     <string name="pref_subtitle_folder">Subtitle download folder</string>
     <string name="pref_subtitle_folder_default">Downloads / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">Choose a folder</string>
@@ -351,6 +352,7 @@ URLs you open over the network are remembered so you can return to them without 
     <string name="osd_player_speed_normal">Normal</string>
     <string name="osd_player_all_settings">All settings…</string>
     <string name="osd_audio_delay_title">Audio delay</string>
+    <string name="osd_subtitle_delay_full">Subtitle delay</string>
     <string name="osd_audio_title">@string/audio_title</string>
     <string name="audio_title">Audio</string>
     <string name="osd_subtitle_title">@string/pref_subtitle_header</string>

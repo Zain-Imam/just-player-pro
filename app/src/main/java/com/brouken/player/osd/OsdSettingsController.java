@@ -70,7 +70,8 @@ public class OsdSettingsController {
         playerAdapter = new PlayerOsdSettingsAdapter(context, createPlayerSettingsListener());
         playerAdapter.setInitialValues(prefs.speedForUri(prefs.mediaUri), prefs.playbackEngine, true, true,
                 prefs.adaptiveBuffering, 0, false, 0,
-                prefs.getAudioDelayForUri(prefs.mediaUri));
+                prefs.getAudioDelayForUri(prefs.mediaUri),
+                prefs.getSubtitleDelayForUri(prefs.mediaUri));
 
         audioAdapter = new AudioOsdSettingsAdapter(context,
                 delayMs -> playerActivity.updateAudioDelay(delayMs));
@@ -124,7 +125,8 @@ public class OsdSettingsController {
                 playerActivity.sleepMinutesLeft(),
                 playerActivity.sleepAtEndOfFile(),
                 playerActivity.videoTrackCount(),
-                prefs.getAudioDelayForUri(prefs.mediaUri)
+                prefs.getAudioDelayForUri(prefs.mediaUri),
+                prefs.getSubtitleDelayForUri(prefs.mediaUri)
         );
         playerAdapter.notifyDataSetChanged();
 
@@ -251,6 +253,15 @@ public class OsdSettingsController {
             @Override
             public void onAudioDelayChange(int delayMs) {
                 playerActivity.updateAudioDelay(delayMs);
+            }
+
+            @Override
+            public void onSubtitleDelayChange(int delayMs) {
+                playerActivity.updateSubtitleDelay(delayMs);
+                // The subtitle panel has the same number in it; it is rebuilt
+                // from the preference whenever it opens, so nothing to do but
+                // keep this one honest.
+                subtitleAdapter.setSubtitleDelay(delayMs);
             }
 
             @Override

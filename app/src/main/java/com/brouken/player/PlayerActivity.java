@@ -779,8 +779,7 @@ public class PlayerActivity extends Activity {
 
         exoSettings.setOnLongClickListener(view -> {
             //askForScope(false, false);
-            Intent intent = new Intent(this, SettingsActivity.class);
-            startActivityForResult(intent, REQUEST_SETTINGS);
+            openSettingsScreen();
             return true;
         });
 
@@ -993,8 +992,19 @@ public class PlayerActivity extends Activity {
             // The window comes back, the surface with it, and the picture
             // returns of its own accord.
             keptPlayingInBackground = false;
+        } else if (keptPlayerForSettings && player != null) {
+            /*
+             * Nothing is decided here, and that is the point.
+             *
+             * What settings did is not known yet: this device runs onStart
+             * before it delivers the result of the trip, so anything decided
+             * here would be decided against the values from before it. The
+             * decision waits for onResume, which the platform runs after the
+             * result has arrived, whichever order the two before it come in.
+             */
         } else {
             keptPlayingInBackground = false;
+            keptPlayerForSettings = false;
             initializePlayer();
         }
         updateButtonRotation();
@@ -1041,6 +1051,26 @@ public class PlayerActivity extends Activity {
         // restyles between the two, and doing it in both places costs nothing
         // and removes a device test that had no business existing.
         updateSubtitleStyle(this);
+
+        /*
+         * The settings trip is settled here, where what was changed is known.
+         *
+         * The platform hands over an activity result immediately before this,
+         * whichever side of onStart it arrives on -- so this is the first
+         * moment both facts are in: that the player was kept, and whether
+         * anything was changed that a kept player cannot take.
+         */
+        if (keptPlayerForSettings && player != null) {
+            keptPlayerForSettings = false;
+            if (settingsWantARebuild) {
+                settingsWantARebuild = false;
+                resumeAfterSettings = false;
+                rebuildPlayer();
+            } else if (resumeAfterSettings) {
+                resumeAfterSettings = false;
+                player.play();
+            }
+        }
     }
 
     @Override
@@ -1083,6 +1113,25 @@ public class PlayerActivity extends Activity {
             return;
         }
         keptPlayingInBackground = false;
+
+        /*
+         * And the trip to this app's own settings keeps it too.
+         *
+         * Not for the sound -- the film is paused while you are in there -- but
+         * so that coming back is coming back, rather than the file being opened
+         * again from the beginning of a buffer. Only for our settings screen,
+         * only while a film is loaded, and the picture is let go of: the window
+         * is gone, so there is nothing to draw on until it returns.
+         */
+        if (keptPlayerForSettings && player != null) {
+            resumeAfterSettings = player.isPlaying();
+            if (resumeAfterSettings) {
+                player.pause();
+            }
+            savePlayer();
+            return;
+        }
+
         releasePlayer(false);
     }
 
@@ -1695,6 +1744,9 @@ public class PlayerActivity extends Activity {
         } else if (requestCode == REQUEST_SETTINGS) {
             mPrefs.loadUserPreferences();
             applyImmediatePreferences();
+            settingsWantARebuild = keptPlayerForSettings && settingsNeedTheFileReopened();
+            Utils.log("Back from settings: kept=" + keptPlayerForSettings
+                    + " rebuild=" + settingsWantARebuild);
 
             if (!Accent.stored(this).equals(appliedAccent)) {
                 recreate();
@@ -1704,6 +1756,9 @@ public class PlayerActivity extends Activity {
             // A URL picked from the history screen comes back as the result data.
             if (resultCode == RESULT_OK && data != null && data.getData() != null) {
                 setMedia(data.getData(), data.getType());
+                // A different film is the one case where the player kept for
+                // the trip is no use: it is holding the wrong file.
+                settingsWantARebuild = true;
             }
         } else {
             super.onActivityResult(requestCode, resultCode, data);
@@ -1924,6 +1979,10 @@ public class PlayerActivity extends Activity {
     public void initializePlayer() {
         boolean isNetworkUri = Utils.isSupportedNetworkUri(mPrefs.mediaUri);
         haveMedia = mPrefs.mediaUri != null;
+
+        // Said out loud in a debug build, because "did that reopen the file?"
+        // is otherwise a question only a stopwatch can answer.
+        Utils.log("Building the player");
 
         if (player != null) {
             player.removeListener(playerListener);
@@ -3738,15 +3797,22 @@ public class PlayerActivity extends Activity {
         }
 
         /*
-         * Media3 reports the position through the delay, so the position has to
-         * be read before the new one is in place and then put back where the
-         * sound actually is. Seeking there costs a moment; not seeking costs
-         * more -- the reported position may never go backwards, so reducing a
-         * delay without one leaves the picture held until the sound catches up.
+         * Media3 reports the position through the delay, and a seek is how the
+         * two streams are put back together -- but only when they have to be.
+         *
+         * Raising the delay moves the reported position forward, which the
+         * player accepts as it stands: the picture catches up by itself and
+         * nothing is reopened. Lowering it asks the position to go backwards,
+         * which the renderer refuses -- it never lets the clock run back -- so
+         * without a seek the picture would simply hold until the sound caught
+         * up. That is the only case worth a seek, and on a stream it is the
+         * only case worth a moment of buffering.
          */
         final long soundPositionMs = Math.max(0, player.getCurrentPosition() - oldDelayMs);
         audioDelayMs.set(newDelayMs);
-        player.seekTo(soundPositionMs);
+        if (newDelayMs < oldDelayMs) {
+            player.seekTo(soundPositionMs);
+        }
     }
 
     /**
@@ -4167,6 +4233,21 @@ public class PlayerActivity extends Activity {
     private void applyImmediatePreferences() {
         if (youTubeOverlay != null) {
             youTubeOverlay.seekSeconds(mPrefs.doubleTapSeekSeconds);
+        }
+        /*
+         * The language order, applied to the player that is already running.
+         *
+         * It used to arrive by accident: the player was rebuilt on the way out
+         * of settings and read the new order as it was built. Now that the file
+         * is not reopened for it, the track selector is told directly -- which
+         * is better anyway, because it re-picks the tracks without a reopen.
+         */
+        if (trackSelector != null) {
+            final String[] audioLanguages = Languages.audio(this);
+            final String[] textLanguages = Languages.subtitle(this);
+            trackSelector.setParameters(trackSelector.buildUponParameters()
+                    .setPreferredAudioLanguages(audioLanguages)
+                    .setPreferredTextLanguages(textLanguages));
         }
         updateSubtitleStyle(this);
         applyVolumeBoost();
@@ -5507,8 +5588,57 @@ public class PlayerActivity extends Activity {
         }
     }
 
+    /*
+     * Settings, without the film being thrown away to get there.
+     *
+     * The player used to die on the way in and be rebuilt on the way out,
+     * because that is what the activity lifecycle does -- so a trip to settings
+     * to change anything at all cost a reopen, which on a stream is a spinner
+     * and a stall. Almost nothing in there needs the file reopened; the few
+     * things that do are listed in REBUILD_ON_RETURN and say so in their own
+     * rows.
+     *
+     * What they looked like on the way in is written down here so the way out
+     * can tell whether any of them actually moved.
+     */
+    private static final String[] REBUILD_ON_RETURN = {
+            "playbackEngine", "adaptiveBuffering", "tunneling",
+            "decoderPriority", "mapDV7ToHevc",
+    };
+
+    private final java.util.Map<String, String> settingsOnTheWayIn = new java.util.HashMap<>();
+    private boolean keptPlayerForSettings;
+    private boolean resumeAfterSettings;
+    private boolean settingsWantARebuild;
+
     public void openSettingsScreen() {
+        rememberSettingsForComparison();
         startActivityForResult(new Intent(this, SettingsActivity.class), REQUEST_SETTINGS);
+    }
+
+    private void rememberSettingsForComparison() {
+        final SharedPreferences preferences =
+                androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        settingsOnTheWayIn.clear();
+        for (final String key : REBUILD_ON_RETURN) {
+            final Object value = preferences.getAll().get(key);
+            settingsOnTheWayIn.put(key, value == null ? "" : String.valueOf(value));
+        }
+        keptPlayerForSettings = player != null && haveMedia;
+    }
+
+    /** Whether anything changed that the player cannot pick up without being rebuilt. */
+    private boolean settingsNeedTheFileReopened() {
+        final SharedPreferences preferences =
+                androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        for (final String key : REBUILD_ON_RETURN) {
+            final Object value = preferences.getAll().get(key);
+            final String now = value == null ? "" : String.valueOf(value);
+            if (!now.equals(settingsOnTheWayIn.get(key))) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

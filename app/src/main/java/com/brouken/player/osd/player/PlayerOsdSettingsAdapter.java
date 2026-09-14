@@ -12,6 +12,7 @@ import com.brouken.player.R;
 import com.brouken.player.mpv.MpvPlayer;
 import com.brouken.player.osd.OsdSettingsAdapter;
 import com.brouken.player.osd.item.AudioDelayOsdSettingsItem;
+import com.brouken.player.osd.item.DelayOsdSettingsItem;
 import com.brouken.player.osd.item.BooleanOsdSettingsItem;
 import com.brouken.player.osd.item.ChoiceOsdSettingsItem;
 import com.brouken.player.osd.item.IntegerOsdSettingsItem;
@@ -39,7 +40,8 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
                                  final boolean overlayOnPause, final boolean skipSegments,
                                  final boolean adaptiveBuffering,
                                  final int sleepMinutes, final boolean sleepAtEnd,
-                                 final int videoTracks, final int audioDelayMs) {
+                                 final int videoTracks, final int audioDelayMs,
+                                 final int subtitleDelayMs) {
         /*
          * The rows you change with the arrows first, the rows you press second.
          *
@@ -51,6 +53,7 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
         final List<OsdSettingsItem> items = new ArrayList<>();
         items.add(createSpeedItem(speed));
         items.add(createAudioDelayItem(audioDelayMs));
+        items.add(createSubtitleDelayItem(subtitleDelayMs));
         items.add(createEngineItem(engine));
         items.add(createOverlayItem(overlayOnPause));
         items.add(createSkipItem(skipSegments));
@@ -230,6 +233,21 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
         return new AudioDelayOsdSettingsItem(context, delayMs, itemListener, this);
     }
 
+    /*
+     * Beside the audio delay, because they are asked for together.
+     *
+     * The subtitles have had a delay of their own in their own panel since the
+     * beginning, and it stays there. This is the same number in the place
+     * somebody reaches for when the sound is out and the words are out with it:
+     * one panel, two arrows each, no hunting.
+     */
+    private OsdSettingsItem createSubtitleDelayItem(final int delayMs) {
+        final IntegerOsdSettingsItem.Listener itemListener =
+                (position, newValue) -> listener.onSubtitleDelayChange(newValue);
+        return new DelayOsdSettingsItem(context.getString(R.string.osd_subtitle_delay_full),
+                delayMs, itemListener, this);
+    }
+
     private OsdSettingsItem createSubtitleSettingsItem() {
         @SuppressLint("PrivateResource")
         final Drawable icon = getDrawable(androidx.media3.ui.R.drawable.exo_styled_controls_subtitle_on);
@@ -276,6 +294,9 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
 
         /** Move the sound against the picture, in milliseconds. */
         void onAudioDelayChange(int delayMs);
+
+        /** Move the subtitles against the picture, in milliseconds. */
+        void onSubtitleDelayChange(int delayMs);
 
         void onOpenSubtitleSettings();
 

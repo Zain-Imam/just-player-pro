@@ -39,6 +39,19 @@ public class SubtitleOsdSettingsAdapter extends OsdSettingsAdapter {
         notifyItemChanged(2);
     }
 
+    /**
+     * The delay, when it was changed somewhere else.
+     *
+     * The same number now lives in the quick panel as well, and two panels
+     * showing one number must not disagree: this one is rebuilt whenever it
+     * opens, but it may be built already and simply not on screen.
+     */
+    public void setSubtitleDelay(int subtitleDelay) {
+        // Index 3: position is at 2, and the delay sits under it.
+        this.items[3] = createDelayItem(subtitleDelay);
+        notifyItemChanged(3);
+    }
+
     private OsdSettingsItem[] createSubtitleSettingsArray(int subtitlePosition, int subtitleDelay, int size, SubtitleEdgeType edgeType, SubtitleTypeface typeface, boolean embeddedStyles) {
         return new OsdSettingsItem[]{
                 createOnlineSearchItem(),

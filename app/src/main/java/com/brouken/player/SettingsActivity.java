@@ -733,6 +733,26 @@ public class SettingsActivity extends AppCompatActivity {
                 });
             }
 
+            /*
+             * The few that cannot be applied to a player already running.
+             *
+             * Coming back from here no longer reopens the file -- the picture
+             * is where it was, at the frame it was on -- except for these,
+             * which are decided when the player is built: which engine, how it
+             * buffers, which decoders. Their rows say so, so that the one
+             * moment of buffering left is one somebody chose.
+             */
+            for (final String key : new String[]{"playbackEngine", "decoderPriority"}) {
+                final ListPreference list = findPreference(key);
+                if (list == null || !list.isEnabled()) {
+                    continue;
+                }
+                list.setSummaryProvider(preference -> {
+                    final CharSequence entry = ((ListPreference) preference).getEntry();
+                    return (entry == null ? "" : entry + "\n") + getString(R.string.pref_reopens_file);
+                });
+            }
+
             Preference preferenceFolders = findPreference("foldersOpen");
             if (preferenceFolders != null) {
                 final int folders = new Prefs(requireContext()).scopeUris.size();
