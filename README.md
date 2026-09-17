@@ -11,6 +11,7 @@ its own — so a file one cannot decode is handled by the other instead of faili
 driven by a finger on a phone or by a D-pad from across the room, and behaves the same either way.
 
 [![Release](https://img.shields.io/badge/release-v3.0.0-F4601E?style=flat-square)](https://github.com/Zain-Imam/just-player-pro/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/Zain-Imam/just-player-pro/total?style=flat-square&color=F4601E&label=downloads)](https://github.com/Zain-Imam/just-player-pro/releases)
 [![Android](https://img.shields.io/badge/Android-7.1%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](#building)
 [![Engines](https://img.shields.io/badge/engines-Media3%20%2B%20mpv-4C8BF5?style=flat-square)](#the-two-engines)
 [![Platforms](https://img.shields.io/badge/platforms-touch%20%2B%20remote-2EA043?style=flat-square)](#two-platforms)
