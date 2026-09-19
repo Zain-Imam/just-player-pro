@@ -40,6 +40,9 @@
     <string name="pref_framerate_matching_off">Display rate left alone</string>
     <string name="pref_tunneling">Tunneled playback</string>
     <string name="pref_tunneling_summary">Tunneling provides better support for 4K/HDR content, but may not work on all devices. Changing it reopens whatever is playing.</string>
+    <string name="pref_auto_next">Play the next file automatically</string>
+    <string name="pref_auto_next_on">When a film ends, the next one in the same folder starts</string>
+    <string name="pref_auto_next_off">Playback stops at the end of each file</string>
     <string name="pref_auto_pip">Auto picture-in-picture</string>
     <string name="pref_auto_pip_on">Home or a swipe away keeps it playing in a corner</string>
     <string name="pref_auto_pip_off">Stay in the app</string>
@@ -68,17 +71,21 @@
     <string name="pref_skip_silence_on">Silent stretches are skipped</string>
     <string name="pref_skip_silence_off">Played as is</string>
     <string name="pref_repeat_toggle">Loop button</string>
-    <string name="pref_repeat_toggle_summary">Adds a repeat control (needs a restart)</string>
+    <string name="pref_repeat_toggle_summary">Adds a repeat control. Changing it reopens whatever is playing.</string>
     <string name="pref_map_dv7">Dolby Vision profile 7 fallback</string>
     <string name="pref_map_dv7_on">Play Dolby Vision profile 7 content on HDR displays. Changing it reopens whatever is playing.</string>
     <string name="pref_map_dv7_off">Play UHD Blu-ray content containing Dolby Vision as is. Changing it reopens whatever is playing.</string>
     <string name="shortcut_videos">Videos</string>
     <string name="button_open">Open</string>
+    <string name="button_back">Back</string>
+    <string name="button_previous">Previous file</string>
+    <string name="button_next">Next file</string>
     <string name="button_crop">Resize</string>
     <string name="button_rotate">Rotate</string>
     <string name="button_pip">Picture-in-picture</string>
     <string name="pref_file_access">File access</string>
     <string name="pref_file_access_auto">Auto</string>
+    <string name="pref_file_access_home">Home browser</string>
     <string name="mediastore_empty">No video files found</string>
     <string name="pref_online_header">Online info and subtitles</string>
     <string name="pref_identify_auto">Automatically · experimental</string>
@@ -142,6 +149,7 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="online_no_subtitles">No subtitles found for this one</string>
     <string name="online_search_hint">Title to search for</string>
     <string name="online_clear">Clear</string>
+    <string name="online_back">Back</string>
     <string name="online_search_again">Search again…</string>
     <string name="online_search_again_detail">Wrong film? Look it up by name</string>
     <string name="online_change_title">Change title…</string>
@@ -216,8 +224,8 @@ Auto starts on Media3 and switches only for a file Media3 fails on.</string>
     <string name="resume_accept">Play</string>
     <string name="resume_decline">Not now</string>
     <string name="pref_ask_resume">Ask before resuming</string>
-    <string name="pref_ask_resume_on">Offers the last video at startup</string>
-    <string name="pref_ask_resume_off">Plays the last video at startup</string>
+    <string name="pref_ask_resume_on">Offers the last video when the app opens, home screen or not</string>
+    <string name="pref_ask_resume_off">Never asks</string>
     <string name="open_source_title">Play from</string>
     <string name="open_source_local">Local file</string>
     <string name="open_source_url">Network URL</string>
@@ -269,6 +277,7 @@ Auto starts on Media3 and switches only for a file Media3 fails on.</string>
     <string name="update_open">Open the page</string>
     <string name="update_downloading">Downloading…</string>
     <string name="update_failed">Could not check for an update.</string>
+    <string name="update_none_title">You are up to date</string>
     <string name="update_none">You have %1$s. The newest published is %2$s.</string>
     <string name="update_none_published">Nothing has been published yet. You have %1$s.</string>
     <string name="osd_info_card_search_again">Search again</string>
@@ -413,4 +422,51 @@ Addon 1 comes set to the official OpenSubtitles addon, which works as-is. The ot
     <string name="accent_fuchsia">Fuchsia</string>
     <string name="accent_pink">Pink</string>
     <string name="accent_slate">Slate</string>
+
+    <!-- The home screen -->
+    <string name="home_title">Just Player Pro</string>
+    <string name="home_choose">Choose a video</string>
+    <string name="home_search">Search</string>
+    <string name="home_search_hint">Search videos</string>
+    <string name="home_sort">Sort</string>
+    <string name="home_sort_title">Sort by</string>
+    <string name="home_sort_name">Name</string>
+    <string name="home_sort_count">Number of videos</string>
+    <string name="home_sort_size">Size</string>
+    <string name="home_sort_date">Date</string>
+    <string name="home_sort_duration">Length</string>
+    <string name="home_sort_order">Order</string>
+    <string name="home_order_az">A to Z</string>
+    <string name="home_order_za">Z to A</string>
+    <string name="home_order_most">Most first</string>
+    <string name="home_order_fewest">Fewest first</string>
+    <string name="home_order_largest">Largest first</string>
+    <string name="home_order_smallest">Smallest first</string>
+    <string name="home_order_newest">Newest first</string>
+    <string name="home_order_oldest">Oldest first</string>
+    <string name="home_order_longest">Longest first</string>
+    <string name="home_order_shortest">Shortest first</string>
+    <string name="home_pin">Add to favourites</string>
+    <string name="home_unpin">Remove from favourites</string>
+    <string name="home_pinned">Added to favourites</string>
+    <string name="home_unpinned">Removed from favourites</string>
+    <string name="home_section_recent">Recent</string>
+    <string name="home_section_pinned">Favourites</string>
+    <string name="home_section_folders">Folders</string>
+    <string name="home_section_results">Results</string>
+    <string name="home_grant">Allow access</string>
+    <string name="home_empty_permission">Just Player Pro needs permission to list the videos on this device.\n\nNothing is uploaded anywhere, and files can still be opened one at a time without it.</string>
+    <string name="home_empty_none">No videos on this device yet.\n\nThe link button above plays a network address, and anything sent here from another app opens as usual.</string>
+    <string name="home_empty_folder">This folder is empty.</string>
+    <string name="home_empty_results">No videos match that name.</string>
+    <string name="home_videos_one">1 video</string>
+    <string name="home_videos_many">%1$d videos</string>
+
+    <!-- Where the application opens -->
+    <string name="pref_home_header">Home screen</string>
+    <string name="pref_start_on">Start on</string>
+    <string name="start_on_home">Home screen</string>
+    <string name="start_on_last">Last video</string>
+    <string name="pref_start_on_note">The home screen lists the folders on this device. Choosing the last video instead opens the player straight away, as earlier versions did.</string>
+
 </resources>

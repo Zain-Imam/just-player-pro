@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One playable file: what it is called, how long it runs, how big it is.
+
+    No thumbnail. Drawing one means decoding a frame out of every file in the
+    folder, which is the single most expensive thing a list like this can do and
+    the reason browsers of this kind feel slow on the hardware this player is
+    meant for. The name is what people scan for anyway.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?android:attr/selectableItemBackground"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:minHeight="64dp"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp">
+
+    <!-- A frame out of the film where there is one, and the plain icon until
+         there is. Sized 16:9 so a thumbnail fills it without letterboxing and
+         the rows all line up whatever shape the films are.
+
+         The icon is dimmed and the frame is not, which is why the alpha is set
+         from code rather than here: every row carries the same icon, so it says
+         nothing and should not compete with the name, while a frame is the one
+         thing on the row worth looking at. -->
+    <ImageView
+        android:id="@+id/video_icon"
+        android:layout_width="64dp"
+        android:layout_height="36dp"
+        android:layout_marginEnd="16dp"
+        android:alpha="0.45"
+        android:contentDescription="@null"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_movie_24dp" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- One line, cut in the middle.
+             Release names are long and the two ends are the parts that
+             identify a file: the title at the front and the extension at the
+             back. Two lines with a middle cut is not a combination the platform
+             actually supports, and it renders the second line blank on some
+             devices, so one line, and the same shape as a folder row. -->
+        <TextView
+            android:id="@+id/video_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="middle"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/video_meta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="13sp" />
+    </LinearLayout>
+</LinearLayout>

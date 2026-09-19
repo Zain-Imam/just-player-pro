@@ -11,6 +11,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 
 import java.util.ArrayList;
@@ -19,6 +20,18 @@ import java.util.List;
 final class OpenMenu {
 
     private OpenMenu() {
+    }
+
+    /**
+     * Whoever is going to play what the box returns.
+     *
+     * <p>The address box is the same box wherever it is opened from, and the
+     * only thing that differs is where the answer goes: the player plays it
+     * itself, the home screen hands it to the player. Passing that in keeps one
+     * dialog rather than two that drift apart.
+     */
+    interface OnPlay {
+        void play(Uri uri, @Nullable String type);
     }
 
     private static boolean isPlayable(final Uri uri) {
@@ -64,7 +77,7 @@ final class OpenMenu {
         actions.add(() -> activity.openFile(activity.mPrefs.mediaUri));
 
         labels.add(activity.getString(R.string.open_source_url));
-        actions.add(() -> showUrlInput(activity, recent));
+        actions.add(() -> showUrlInput(activity, activity::playMedia));
 
         // Offered only when there is something in it, so the menu does not grow a
         // dead end on a fresh install.
@@ -79,7 +92,12 @@ final class OpenMenu {
                 .show();
     }
 
-    private static void showUrlInput(final PlayerActivity activity, final List<History.Entry> recent) {
+    /** The address box, from the home screen. */
+    static void showUrl(final android.app.Activity activity, final OnPlay onPlay) {
+        showUrlInput(activity, onPlay);
+    }
+
+    private static void showUrlInput(final android.app.Activity activity, final OnPlay onPlay) {
         final EditText input = new EditText(activity);
         input.setInputType(InputType.TYPE_TEXT_VARIATION_URI);
         input.setImeOptions(EditorInfo.IME_ACTION_GO);
@@ -124,14 +142,14 @@ final class OpenMenu {
                 .setView(container)
                 .setNegativeButton(android.R.string.cancel, null)
                 .setNeutralButton(R.string.open_url_paste, null)
-                .setPositiveButton(R.string.open_url_play, (d, which) -> play(activity, input.getText().toString()))
+                .setPositiveButton(R.string.open_url_play, (d, which) -> play(activity, onPlay, input.getText().toString()))
                 .create();
 
         // Enter on a keyboard, or the remote's centre key, plays without having
         // to travel to the button.
         input.setOnEditorActionListener((view, actionId, event) -> {
             dialog.dismiss();
-            play(activity, input.getText().toString());
+            play(activity, onPlay, input.getText().toString());
             return true;
         });
 
@@ -167,7 +185,7 @@ final class OpenMenu {
                 .show();
     }
 
-    private static void play(final PlayerActivity activity, final String text) {
+    private static void play(final android.app.Activity activity, final OnPlay onPlay, final String text) {
         final String trimmed = text == null ? "" : text.trim();
         if (trimmed.isEmpty()) {
             return;
@@ -181,7 +199,7 @@ final class OpenMenu {
 
         // Type is left to be worked out from the response, as it is for a URL
         // arriving by intent.
-        activity.playMedia(uri, null);
+        onPlay.play(uri, null);
     }
 
     /**

@@ -54,19 +54,53 @@
         android:theme="@style/Theme.Player"
         tools:replace="android:allowBackup"
         tools:targetApi="n">
+        <!--
+            The screen the application opens on, and the only thing in the
+            launcher. The player is still every bit as reachable from another
+            application: it keeps all of the filters below, and nothing about
+            a hand-off from Stremio, a file manager or a browser changes.
+        -->
         <activity
-            android:name=".PlayerActivity"
+            android:name=".HomeActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|touchscreen"
             android:exported="true"
-            android:launchMode="singleTask"
-            android:supportsPictureInPicture="true"
-            tools:targetApi="n">
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Player.Home">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
+            <!-- The launcher shortcut list lives on whichever activity carries
+                 MAIN and LAUNCHER, which is this one now. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity>
+        <!--
+            singleTop, where this was singleTask until the home screen arrived.
+
+            singleTask puts an activity at the root of a task and pulls any
+            launch into the one task it lives in. With the player as the only
+            screen that was invisible. With a home screen underneath it, a film
+            sent over from another application would have joined this task,
+            landed on top of the home screen, and Back would have gone to the
+            folder list instead of back to whoever sent the film — which is
+            precisely the thing the back arrow exists to get right.
+
+            singleTop keeps a launch from elsewhere in the sender's own task,
+            so Back returns there. The home screen adds CLEAR_TOP when it opens
+            something, which is what stops a second player stacking on top of
+            one already running.
+        -->
+        <activity
+            android:name=".PlayerActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|touchscreen"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:supportsPictureInPicture="true"
+            tools:targetApi="n">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -715,9 +749,6 @@
                 <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\.WEBM" />
                 <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\.WEBM" />
             </intent-filter>
-            <meta-data
-                android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" />
         </activity>
         <activity
             android:name=".MediaStoreChooserActivity"

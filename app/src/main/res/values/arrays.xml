@@ -2,6 +2,7 @@
 <resources>
   <string-array name="file_access_entries">
     <item>@string/pref_file_access_auto</item>
+    <item>@string/pref_file_access_home</item>
     <item>Storage Access Framework</item>
     <item>MediaStore</item>
     <item>Legacy</item>
@@ -9,6 +10,7 @@
 
   <string-array name="file_access_values">
     <item>auto</item>
+    <item>home</item>
     <item>saf</item>
     <item>mediastore</item>
     <item>legacy</item>
@@ -123,5 +125,16 @@
         <item>fuchsia</item>
         <item>pink</item>
         <item>slate</item>
+    </string-array>
+
+    <!-- Where the application opens. -->
+    <string-array name="start_on_entries">
+        <item>@string/start_on_home</item>
+        <item>@string/start_on_last</item>
+    </string-array>
+
+    <string-array name="start_on_values" translatable="false">
+        <item>home</item>
+        <item>last</item>
     </string-array>
 </resources>

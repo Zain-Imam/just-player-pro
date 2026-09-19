@@ -17,6 +17,19 @@
     <style name="Theme.Player" parent="BaseTheme.Player">
     </style>
 
+    <!-- The home screen, for the same reason the settings screen has its own:
+         it is a list of text on a background rather than a film behind glass,
+         so it follows the device between light and dark like every other
+         browsing screen. The accent arrives the same way, which is what makes
+         the folder icons and section headings match the player. -->
+    <style name="Theme.Player.Home" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="accentColor">@color/accent_orange</item>
+        <item name="colorAccent">?attr/accentColor</item>
+        <item name="android:colorAccent">?attr/accentColor</item>
+        <item name="android:statusBarColor">?android:attr/colorBackground</item>
+        <item name="android:navigationBarColor">?android:attr/colorBackground</item>
+    </style>
+
     <!-- The settings screen cannot use Theme.Player: it needs an AppCompat
          DayNight theme for the preference widgets. It gets the brand accent the
          same way, so category headings and switches match the rest of the app. -->

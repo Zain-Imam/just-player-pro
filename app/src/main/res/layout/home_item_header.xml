@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A section name. Never focusable: a remote travelling down a list should
+     not have to step through the labels between the things it can act on. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/header_text"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:focusable="false"
+    android:paddingStart="16dp"
+    android:paddingTop="20dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="6dp"
+    android:textAllCaps="true"
+    android:textColor="?attr/accentColor"
+    android:textSize="13sp"
+    android:textStyle="bold" />
