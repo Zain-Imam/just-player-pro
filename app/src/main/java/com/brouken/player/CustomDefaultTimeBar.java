@@ -40,10 +40,32 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
     private long keyTargetMs = -1;
     private long keyLastAt;
 
+    /**
+     * Whether the whole film is already here, so the bar can say so.
+     *
+     * <p>A file on the device is not being fetched from anywhere, but the
+     * player still reports a buffered position that creeps along a little way
+     * ahead of the picture, because that is how much of it has been read into
+     * memory. Drawn on the bar that reads as a download in progress, on a file
+     * that finished downloading before it was ever opened. For anything local
+     * the band is simply the whole bar.
+     */
+    private boolean wholeFileHere;
+
+    void setWholeFileHere(final boolean here) {
+        wholeFileHere = here;
+        if (here && durationMs > 0) {
+            super.setBufferedPosition(durationMs);
+        }
+    }
+
     @Override
     public void setDuration(final long duration) {
         durationMs = duration;
         super.setDuration(duration);
+        if (wholeFileHere && duration > 0) {
+            super.setBufferedPosition(duration);
+        }
     }
 
     @Override
@@ -269,6 +291,10 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
 
     @Override
     public void setBufferedPosition(final long bufferedPosition) {
+        if (wholeFileHere && durationMs > 0) {
+            super.setBufferedPosition(durationMs);
+            return;
+        }
         if (holdingBuffered) {
             heldBufferedPosition = Math.max(heldBufferedPosition, bufferedPosition);
             super.setBufferedPosition(heldBufferedPosition);

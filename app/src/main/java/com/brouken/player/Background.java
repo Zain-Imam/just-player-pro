@@ -22,8 +22,27 @@ public final class Background {
     }
 
     public static ExecutorService single(final String name) {
-        return Executors.newSingleThreadExecutor(runnable -> {
+        return pool(name, 1);
+    }
+
+    /**
+     * The same, with more than one thread.
+     *
+     * <p>For work that is independent piece by piece and slow enough that doing
+     * it one at a time shows: decoding a frame out of each file in a folder
+     * takes about a second apiece, and in a single queue the fifth row sat on a
+     * grey rectangle for five seconds while the device had cores to spare.
+     *
+     * <p>Kept small on purpose. Decoding is the heaviest thing this application
+     * does outside playback, and a wide pool on a television box would take the
+     * cores the film is using.
+     */
+    public static ExecutorService pool(final String name, final int threads) {
+        return Executors.newFixedThreadPool(Math.max(1, threads), runnable -> {
             final Thread thread = new Thread(runnable, name);
+            // Below the player's own work: a picture for a list nobody has
+            // scrolled to yet must never compete with the film.
+            thread.setPriority(Thread.MIN_PRIORITY);
             thread.setUncaughtExceptionHandler((t, error) ->
                     Utils.log(name + " gave up: " + error));
             return thread;

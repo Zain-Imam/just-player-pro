@@ -75,6 +75,20 @@ public final class SleepTimer {
         return left <= 0 ? 0 : (int) ((left + 59_999) / 60_000);
     }
 
+    /**
+     * Whether this timer is waiting for the film to end.
+     *
+     * <p>Asked before the ending is handed over, because handling it cancels
+     * the timer — and what wants to know is whether the film ending was the
+     * thing somebody asked to stop on. "Stop at the end of the film" and "play
+     * the next file automatically" are a direct contradiction, and the timer
+     * wins: it was set deliberately, for tonight, and the other is a standing
+     * preference.
+     */
+    public boolean willStopAtEndOfFile() {
+        return running && atEndOfFile;
+    }
+
     /** Called when playback reaches the end, for the end-of-file setting. */
     public void onPlaybackEnded(final Player player) {
         if (running && atEndOfFile) {

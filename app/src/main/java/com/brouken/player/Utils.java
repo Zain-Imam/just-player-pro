@@ -69,7 +69,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-class Utils {
+public class Utils {
 
     public static final String TAG = "JustPlayer";
 
@@ -481,6 +481,28 @@ class Utils {
             e.printStackTrace();
         }
         return false;
+    }
+
+    /**
+     * How much to keep clear at each end of the controls.
+     *
+     * <p>One number for both ends, being the largest of everything that has to
+     * be avoided at either: a camera cut into an edge, a navigation bar that
+     * moves to the side in landscape, the curve of a waterfall screen.
+     *
+     * <p>The same at both ends on purpose. Insetting only the side that has
+     * something on it is what the platform asks for and what looks broken: on a
+     * phone whose camera lands on the left in landscape, the seek bar started a
+     * camera's width in and ran clean off the other edge, which reads as a bug
+     * rather than as room left for a camera. Where there is nothing to avoid at
+     * either end -- portrait, a tablet, a television -- this is zero and
+     * nothing is moved at all.
+     */
+    public static int safeSideInset(final int systemLeft, final int systemRight,
+                                    final int cutoutLeft, final int cutoutRight) {
+        final int left = Math.max(systemLeft, cutoutLeft);
+        final int right = Math.max(systemRight, cutoutRight);
+        return Math.max(Math.max(left, right), 0);
     }
 
     public static boolean isSupportedNetworkUri(final Uri uri) {

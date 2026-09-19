@@ -188,6 +188,40 @@ final class History {
         }
         return scheme + "://" + authority + (uri.getPath() == null ? "" : uri.getPath());
     }
+
+    /**
+     * Give an entry a name, but never in place of a better one.
+     *
+     * <p>Identifying a film answers with the name of the work -- "Silo" -- and
+     * that is the right thing to show on the card and the wrong thing to offer
+     * as the last video, where "Silo" could be any of thirty episodes. It is
+     * still far better than the identifier out of the link, so it is written
+     * only where nothing has named the entry yet: a launcher's title and a name
+     * resolved from the server are both the file itself, and both win.
+     */
+    static void fillInName(final SharedPreferences preferences, @Nullable final Uri uri,
+                           @Nullable final String name) {
+        if (uri == null || name == null || name.trim().isEmpty()) {
+            return;
+        }
+        final List<Entry> entries = load(preferences);
+        final String key = uri.toString();
+        boolean changed = false;
+
+        for (int i = 0; i < entries.size(); i++) {
+            final Entry entry = entries.get(i);
+            if (!key.equals(entry.uri.toString()) || resolved(entry)) {
+                continue;
+            }
+            entries.set(i, new Entry(entry.uri, name.trim(), entry.type, entry.time,
+                    entry.played));
+            changed = true;
+        }
+
+        if (changed) {
+            save(preferences, entries);
+        }
+    }
     static void rename(final SharedPreferences preferences, @Nullable final Uri uri,
                        @Nullable final String name) {
         if (uri == null || name == null || name.trim().isEmpty()) {
