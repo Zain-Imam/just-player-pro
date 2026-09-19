@@ -49,6 +49,22 @@ public class SettingsActivity extends AppCompatActivity {
 
     static RecyclerView recyclerView;
 
+    /**
+     * Up goes back to whoever opened this, rather than to the player.
+     *
+     * <p>The manifest names the player as this screen's parent, which was the
+     * only possible answer while the player was the only other screen. It is
+     * now reachable from the home screen as well, and the default behaviour
+     * would have started a player nobody asked for. Finishing returns to
+     * whichever of the two it was — the same thing Back already does, so the
+     * arrow and the key stop disagreeing.
+     */
+    @Override
+    public boolean onSupportNavigateUp() {
+        finish();
+        return true;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 

@@ -34,6 +34,10 @@ public final class Updater {
     private static final String RELEASES =
             "https://api.github.com/repos/Zain-Imam/just-player-pro/releases/latest";
 
+    /** Where a person is sent, as opposed to where the answer is fetched from. */
+    private static final String LATEST_PAGE =
+            "https://github.com/Zain-Imam/just-player-pro/releases/latest";
+
     private final Activity activity;
     private final Handler main = new Handler(Looper.getMainLooper());
 
@@ -71,9 +75,26 @@ public final class Updater {
                     return;
                 }
                 if (!isNewer(release.version, BuildConfig.VERSION_NAME)) {
+                    /*
+                     * Said in a box, not a toast.
+                     *
+                     * Somebody who presses "check for updates" has asked a
+                     * question and is waiting for the answer. A toast slides
+                     * away after two seconds, frequently behind the finger that
+                     * pressed the row, and leaves them none the wiser about
+                     * whether anything happened at all.
+                     *
+                     * Only when asked out loud: the quiet check runs on its own
+                     * and has no business putting a box in front of anyone to
+                     * say that nothing has changed.
+                     */
                     if (!quiet) {
-                        toast(activity.getString(R.string.update_none,
-                                BuildConfig.VERSION_NAME, release.version));
+                        Utils.showFocused(new AlertDialog.Builder(activity)
+                                .setTitle(R.string.update_none_title)
+                                .setMessage(activity.getString(R.string.update_none,
+                                        BuildConfig.VERSION_NAME, release.version))
+                                .setPositiveButton(android.R.string.ok, null)
+                                .create(), AlertDialog.BUTTON_POSITIVE);
                     }
                     return;
                 }
@@ -89,8 +110,22 @@ public final class Updater {
                         ? activity.getString(R.string.update_ready)
                         : trim(release.notes))
                 .setNegativeButton(android.R.string.cancel, null)
+                /*
+                 * The canonical address rather than the one this release
+                 * happens to sit at.
+                 *
+                 * /releases/latest always points at whatever is newest and
+                 * opens with the download list already on screen, where the tag
+                 * URL is one release frozen in time -- and if a newer one lands
+                 * between the check and the tap, the tag URL sends somebody to
+                 * the old one.
+                 *
+                 * The button beside it does better still: it fetches the right
+                 * build for this device straight into the installer, with no
+                 * page to read and nothing to scroll past.
+                 */
                 .setNeutralButton(R.string.update_open, (dialog, which) ->
-                        open(Uri.parse(release.page)))
+                        open(Uri.parse(LATEST_PAGE)))
                 .setPositiveButton(R.string.update_install, (dialog, which) -> download(release))
                 .create(), AlertDialog.BUTTON_POSITIVE);
     }
@@ -106,7 +141,8 @@ public final class Updater {
 
     private void download(final Release release) {
         if (release.apk == null) {
-            open(Uri.parse(release.page));
+            // Nothing to fetch, so hand over the page that lists everything.
+            open(Uri.parse(release.page == null ? LATEST_PAGE : release.page));
             return;
         }
         toast(activity.getString(R.string.update_downloading));

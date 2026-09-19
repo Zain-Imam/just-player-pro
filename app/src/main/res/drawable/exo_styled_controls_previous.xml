@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The mirror of exo_styled_controls_next: the same gradient behind the same
+    inset, so the pair either side of the play button match each other exactly.
+    The icon itself comes from the player library.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/controls_gradient"/>
+    <item
+        android:drawable="@drawable/exo_icon_previous"
+        android:top="3dp"
+        android:left="3dp"
+        android:right="3dp"
+        android:bottom="3dp">
+    </item>
+</layer-list>

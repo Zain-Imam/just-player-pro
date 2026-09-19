@@ -21,6 +21,22 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/pref_home_header">
+
+        <ListPreference
+            app:key="startOn"
+            app:defaultValue="home"
+            app:entries="@array/start_on_entries"
+            app:entryValues="@array/start_on_values"
+            app:title="@string/pref_start_on"
+            app:useSimpleSummaryProvider="true" />
+
+        <Preference
+            app:selectable="false"
+            app:summary="@string/pref_start_on_note" />
+
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/pref_playback_header">
 
         <ListPreference
@@ -56,6 +72,13 @@
             app:summaryOn="@string/pref_framerate_matching_on"
             app:summaryOff="@string/pref_framerate_matching_off"
             app:title="@string/pref_framerate_matching" />
+
+        <SwitchPreferenceCompat
+            app:key="autoPlayNext"
+            app:defaultValue="false"
+            app:summaryOn="@string/pref_auto_next_on"
+            app:summaryOff="@string/pref_auto_next_off"
+            app:title="@string/pref_auto_next" />
 
         <SwitchPreferenceCompat
             app:key="autoPiP"
@@ -376,7 +399,7 @@
             app:summary="@string/pref_dangerous_warning" />
 
         <ListPreference
-            app:defaultValue="auto"
+            app:defaultValue="home"
             app:entries="@array/file_access_entries"
             app:entryValues="@array/file_access_values"
             app:key="fileAccess"

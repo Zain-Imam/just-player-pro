@@ -53,6 +53,22 @@ final class PosterPicker {
 
     static AlertDialog show(final Activity activity, final CharSequence title,
                             final List<? extends Item> items, final OnPicked onPicked) {
+        return show(activity, title, items, onPicked, null);
+    }
+
+    /**
+     * @param onBack one step back, or null when this is the first step.
+     *               <p>
+     *               A series is three questions deep — which programme, which
+     *               season, which episode — and answering one of them wrongly
+     *               used to mean cancelling out to the film and typing the
+     *               title again, because Cancel is the only thing a dialog
+     *               offers. The lists are already in hand by then, so going
+     *               back a step costs nothing and asks nobody anything.
+     */
+    static AlertDialog show(final Activity activity, final CharSequence title,
+                            final List<? extends Item> items, final OnPicked onPicked,
+                            @Nullable final Runnable onBack) {
         final RecyclerView grid = new RecyclerView(activity);
         grid.setLayoutManager(new GridLayoutManager(activity, spanCount(activity)));
         grid.setHasFixedSize(true);
@@ -60,11 +76,14 @@ final class PosterPicker {
         grid.setPadding(pad, pad, pad, pad);
         grid.setClipToPadding(false);
 
-        final AlertDialog dialog = new AlertDialog.Builder(activity)
+        final AlertDialog.Builder builder = new AlertDialog.Builder(activity)
                 .setTitle(title)
                 .setView(grid)
-                .setNegativeButton(android.R.string.cancel, null)
-                .create();
+                .setNegativeButton(android.R.string.cancel, null);
+        if (onBack != null) {
+            builder.setNeutralButton(R.string.online_back, (d, which) -> onBack.run());
+        }
+        final AlertDialog dialog = builder.create();
 
         grid.setAdapter(new Adapter(items, index -> {
             dialog.dismiss();

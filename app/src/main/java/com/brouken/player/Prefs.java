@@ -46,6 +46,7 @@ public class Prefs {
     private static final String PREF_KEY_SCOPE_URIS = "scopeUris";
     private static final String PREF_KEY_ASK_SCOPE = "askScope";
     private static final String PREF_KEY_AUTO_PIP = "autoPiP";
+    private static final String PREF_KEY_AUTO_NEXT = "autoPlayNext";
     private static final String PREF_KEY_BACKGROUND_AUDIO = "backgroundAudio";
     private static final String PREF_KEY_ASK_RESUME = "askResume";
     private static final String PREF_KEY_PLAYBACK_ENGINE = "playbackEngine";
@@ -115,6 +116,14 @@ public class Prefs {
     public boolean firstRun = true;
     public boolean askScope = true;
     public boolean autoPiP = false;
+    /**
+     * Whether the end of a film starts the one after it.
+     *
+     * <p>Off, because a folder is not always a series: turning it on for
+     * everybody would mean a folder of holiday clips running straight through
+     * on its own, which nobody asked for.
+     */
+    public boolean autoPlayNext = false;
     /** Whether the sound goes on when the player is put away. Off unless asked for. */
     public boolean backgroundAudio = false;
     public boolean askResume = true;
@@ -128,7 +137,7 @@ public class Prefs {
     public boolean keepScreenOn = false;
     public boolean frameRateMatching = false;
     public boolean repeatToggle = false;
-    public String fileAccess = "auto";
+    public String fileAccess = "home";
     public int decoderPriority = DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON;
     public boolean mapDV7ToHevc = false;
     public String languageAudio = TRACK_DEVICE;
@@ -142,6 +151,15 @@ public class Prefs {
     public String subtitleCustomFontName;
 
     private LinkedHashMap positions;
+
+    /**
+     * How close to the end counts as having watched the whole thing.
+     *
+     * <p>Generous on purpose. Films often carry a second or two of black after
+     * the last frame, and some engines report the end a little short of the
+     * length the container claims; neither is somebody who stopped watching.
+     */
+    private static final long FINISHED_MS = 3_000;
     private final LinkedHashMap<String, Integer> subtitleDelayMap = new LinkedHashMap<>();
     private final LinkedHashMap<String, Integer> audioDelayMap = new LinkedHashMap<>();
     private final LinkedHashMap<String, Integer> speedMap = new LinkedHashMap<>();
@@ -197,6 +215,7 @@ public class Prefs {
 
     public void loadUserPreferences() {
         autoPiP = mSharedPreferences.getBoolean(PREF_KEY_AUTO_PIP, autoPiP);
+        autoPlayNext = mSharedPreferences.getBoolean(PREF_KEY_AUTO_NEXT, autoPlayNext);
         backgroundAudio = mSharedPreferences.getBoolean(PREF_KEY_BACKGROUND_AUDIO, backgroundAudio);
         askResume = mSharedPreferences.getBoolean(PREF_KEY_ASK_RESUME, askResume);
         adaptiveBuffering = mSharedPreferences.getBoolean(PREF_KEY_ADAPTIVE_BUFFERING, adaptiveBuffering);
@@ -243,18 +262,34 @@ public class Prefs {
         // through this method, so the history cannot quietly miss one.
         History.record(mSharedPreferences, mediaUri, mediaType);
 
-        if (persistentMode) {
-            final SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
-            if (mediaUri == null)
-                sharedPreferencesEditor.remove(PREF_KEY_MEDIA_URI);
-            else
-                sharedPreferencesEditor.putString(PREF_KEY_MEDIA_URI, mediaUri.toString());
-            if (mediaType == null)
-                sharedPreferencesEditor.remove(PREF_KEY_MEDIA_TYPE);
-            else
-                sharedPreferencesEditor.putString(PREF_KEY_MEDIA_TYPE, mediaType);
-            sharedPreferencesEditor.apply();
-        }
+        /*
+         * The last film is written down whoever started it.
+         *
+         * This used to sit inside the persistent-mode check below, and that was
+         * wrong in a way nobody would guess from the outside: an application
+         * that hands a film over with extras -- a position to start at, a
+         * request for the position back, or a set of subtitles, which Stremio
+         * and Nuvio all send -- puts this player into non-persistent mode, and
+         * the last-played pointer was then never updated. So an evening spent
+         * watching through another application left the pointer on whatever was
+         * last opened from inside this one, and "Play last video?" offered a
+         * film from days ago as though it were the one just watched.
+         *
+         * What non-persistent mode is actually for is the position: the
+         * launcher passed one and expects it handed back, so it owns that
+         * number. Which film was last played is this application's own business
+         * and belongs to it either way.
+         */
+        final SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        if (mediaUri == null)
+            sharedPreferencesEditor.remove(PREF_KEY_MEDIA_URI);
+        else
+            sharedPreferencesEditor.putString(PREF_KEY_MEDIA_URI, mediaUri.toString());
+        if (mediaType == null)
+            sharedPreferencesEditor.remove(PREF_KEY_MEDIA_TYPE);
+        else
+            sharedPreferencesEditor.putString(PREF_KEY_MEDIA_TYPE, mediaType);
+        sharedPreferencesEditor.apply();
     }
 
     private void loadSubtitleUris() {
@@ -315,18 +350,64 @@ public class Prefs {
         }
     }
     public void updatePosition(final long position) {
+        updatePosition(position, 0L);
+    }
+
+    /**
+     * Where the film was left, with the length of it so that the end can be
+     * told apart from the middle.
+     *
+     * <p>A film watched all the way through is written down as not started.
+     * Otherwise it is remembered as sitting on its last frame: opening it again
+     * shows that frame and a play button rather than the film, and with "play
+     * the next file automatically" turned on it is worse still -- the film ends
+     * the instant it loads, so the folder is walked through at speed until it
+     * reaches something nobody has finished.
+     *
+     * <p>A duration of zero means the length is not known, and then nothing is
+     * assumed: the position is kept as it is.
+     */
+    public void updatePosition(final long position, final long duration) {
         if (mediaUri == null)
             return;
 
         while (positions.size() > 100)
             positions.remove(positions.keySet().toArray()[0]);
 
-        if (persistentMode) {
-            positions.put(mediaUri.toString(), position);
-            savePositions();
-        } else {
+        /*
+         * Kept in both places for a film another application started.
+         *
+         * nonPersitentPosition is the number handed back to that application
+         * when the player closes, and it has to stay exactly what it was: the
+         * launcher asked for it and is keeping its own count. Writing the same
+         * number into this player's own list as well takes nothing away from
+         * that, and is what lets the film be picked up again from here --
+         * without it, a film watched through Stremio and then reopened from the
+         * home screen started again from the beginning.
+         */
+        positions.put(mediaUri.toString(), watchedThrough(position, duration) ? 0L : position);
+        savePositions();
+        if (!persistentMode) {
             nonPersitentPosition = position;
         }
+    }
+
+    /**
+     * Whether a film left at this point was watched all the way through.
+     *
+     * <p>A duration of zero or less means the length is not known -- a live
+     * stream, or a file the engine has not measured yet -- and nothing is
+     * assumed of it.
+     *
+     * <p>The allowance never runs past the middle of the film, so that a clip
+     * shorter than the allowance itself is not counted as finished before it
+     * has been started.
+     */
+    static boolean watchedThrough(final long position, final long duration) {
+        if (duration <= 0) {
+            return false;
+        }
+        return position >= duration - Math.min(FINISHED_MS, duration / 2);
     }
 
     public void updateBrightness(final int brightness) {

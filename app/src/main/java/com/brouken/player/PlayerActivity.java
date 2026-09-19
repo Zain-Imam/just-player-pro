@@ -128,6 +128,15 @@ import kotlin.Unit;
 
 public class PlayerActivity extends Activity {
 
+    /**
+     * The player that is up, so a second one can close it. See onCreate.
+     *
+     * <p>Weak, because this outlives the activity by definition and a strong
+     * reference here would hold a whole player -- surfaces, decoders, the lot
+     * -- alive for as long as the process.
+     */
+    private static java.lang.ref.WeakReference<PlayerActivity> currentInstance;
+
     private PlayerListener playerListener;
     private BroadcastReceiver mReceiver;
     private AudioManager mAudioManager;
@@ -180,6 +189,7 @@ public class PlayerActivity extends Activity {
     private TextView metaView;
     private LinearLayout titleBar;
     private ImageButton buttonOpen;
+    private ImageButton buttonBack;
     private ImageButton buttonLock;
     private ImageButton buttonPlayPause;
     private ImageButton buttonAudioTrack;
@@ -222,6 +232,17 @@ public class PlayerActivity extends Activity {
         return Utils.getFileName(this, uri, false);
     }
     private String appliedAccent;
+    /**
+     * Whether the loop button was wanted when these controls were built.
+     *
+     * <p>The button strip is assembled once, in onCreate, so a switch that adds
+     * or removes a button cannot be honoured by a running screen -- it used to
+     * say "needs a restart" and mean it. Noting what was built makes it
+     * possible to tell, on the way back from settings, that the strip is now
+     * wrong and rebuild the screen rather than leave somebody looking for a
+     * button they just asked for.
+     */
+    private boolean appliedRepeatToggle;
     /** The spinner and its label together: shown and hidden as one. */
     private View loadingProgressBar;
     private PlayerControlView controlView;
@@ -234,6 +255,20 @@ public class PlayerActivity extends Activity {
     private boolean restorePlayState;
     private boolean restorePlayStateAllowed;
     private boolean play;
+    /**
+     * Whether the film about to load should start rather than wait.
+     *
+     * <p>Set by everything that opens a film to watch it: a launch from another
+     * application, a row chosen in a list, the answer to "play the last
+     * video?", the next and previous buttons. Not set by the things that build
+     * the player again around the film already in it -- changing engine, or a
+     * setting that cannot be applied to a running player -- which is the whole
+     * point of having a flag rather than simply always playing.
+     *
+     * <p>Cleared as soon as it has been read, because it belongs to one
+     * loading and not to the player.
+     */
+    private boolean playOnLoad;
     // private float subtitlesScale;
     private boolean isScrubbing;
     private boolean scrubbingNoticeable;
@@ -253,6 +288,19 @@ public class PlayerActivity extends Activity {
     private final Runnable audioDelayApplyRunnable = this::applyAudioDelay;
     public static boolean focusPlay = false;
     private Uri nextUri;
+    /**
+     * The folder the film was opened from, when something said which.
+     *
+     * <p>The home screen puts it on the intent. A film handed over by another
+     * application carries none, and there is then nothing to step through --
+     * which is right: the next file in somebody else.s folder is not this
+     * player.s business to guess at.
+     */
+    private String folderOfCurrent;
+    /** What sits either side, recomputed whenever the film changes. */
+    private com.brouken.player.home.Neighbours.Either neighbours =
+            com.brouken.player.home.Neighbours.none();
+    private Thread neighboursThread;
     private static boolean isTvBox;
     public static boolean locked = false;
     private Thread nextUriThread;
@@ -311,6 +359,7 @@ public class PlayerActivity extends Activity {
 
         Accent.apply(this);
         appliedAccent = Accent.stored(this);
+        appliedRepeatToggle = mPrefs.repeatToggle;
         if (Build.VERSION.SDK_INT == 28 && Build.MANUFACTURER.equalsIgnoreCase("xiaomi") &&
                 (Build.DEVICE.equalsIgnoreCase("oneday") || Build.DEVICE.equalsIgnoreCase("once"))) {
             setContentView(R.layout.activity_player_textureview);
@@ -329,6 +378,28 @@ public class PlayerActivity extends Activity {
                 }
             }
         }
+
+        /*
+         * One player, however many ways in there are.
+         *
+         * The manifest used to say singleTask, which guaranteed this by hand:
+         * every launch was routed to the one instance. That had to go when the
+         * home screen arrived -- it also dragged launches from other
+         * applications into this app's task, so Back stopped returning to
+         * whoever sent the film. See the note in the manifest.
+         *
+         * singleTop does not guarantee it, and one case genuinely breaks
+         * without this: with "keep playing the sound" switched on, a film
+         * started from here goes on playing after its window is gone, and a
+         * second film arriving from another application would have played over
+         * the top of it. So the previous one is closed here, which is what
+         * singleTask did silently.
+         */
+        final PlayerActivity previous = currentInstance == null ? null : currentInstance.get();
+        if (previous != null && previous != this && !previous.isFinishing()) {
+            previous.finish();
+        }
+        currentInstance = new java.lang.ref.WeakReference<>(this);
 
         isTvBox = Utils.isTvBox(this);
 
@@ -553,11 +624,40 @@ public class PlayerActivity extends Activity {
          * engines now report, so it reads the same on either.
          */
         titleBar = new LinearLayout(this);
-        titleBar.setOrientation(LinearLayout.VERTICAL);
+        titleBar.setOrientation(LinearLayout.HORIZONTAL);
+        titleBar.setGravity(Gravity.CENTER_VERTICAL);
         titleBar.setBackgroundResource(R.color.ui_controls_background);
         titleBar.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         titleBar.setPadding(titleViewPaddingHorizontal, titleViewPaddingVertical, titleViewPaddingHorizontal, titleViewPaddingVertical);
         titleBar.setVisibility(View.GONE);
+
+        /*
+         * One way out, in the corner every other application puts it.
+         *
+         * It does not need to know where it came from. Back already returns to
+         * whoever started the player -- the home screen when the file was
+         * picked there, Stremio when Stremio handed it over -- so the arrow
+         * does what leaving does and the task stack decides the rest.
+         *
+         * Not the Back path itself: that hides the controls first, and this
+         * button only exists while they are up, so it would take two presses to
+         * do what it plainly says.
+         */
+        buttonBack = new ImageButton(this, null, 0, R.style.ExoStyledControls_Button_Bottom);
+        buttonBack.setImageResource(R.drawable.ic_arrow_back_24dp);
+        buttonBack.setId(View.generateViewId());
+        buttonBack.setContentDescription(getString(R.string.button_back));
+        buttonBack.setOnClickListener(view -> leavePlayer());
+        titleBar.addView(buttonBack);
+
+        /*
+         * The name and the meta line stack beside the arrow rather than under
+         * it, so the bar stays one row tall however long the file name is.
+         */
+        final LinearLayout titleColumn = new LinearLayout(this);
+        titleColumn.setOrientation(LinearLayout.VERTICAL);
+        titleColumn.setLayoutParams(new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
         titleView = new TextView(this);
         titleView.setTextColor(Color.WHITE);
@@ -566,7 +666,7 @@ public class PlayerActivity extends Activity {
         titleView.setMaxLines(1);
         titleView.setEllipsize(TextUtils.TruncateAt.END);
         titleView.setTextDirection(View.TEXT_DIRECTION_LOCALE);
-        titleBar.addView(titleView);
+        titleColumn.addView(titleView);
 
         metaView = new TextView(this);
         metaView.setTextColor(0xB3FFFFFF);
@@ -576,7 +676,9 @@ public class PlayerActivity extends Activity {
         metaView.setEllipsize(TextUtils.TruncateAt.END);
         metaView.setTextDirection(View.TEXT_DIRECTION_LOCALE);
         metaView.setVisibility(View.GONE);
-        titleBar.addView(metaView);
+        titleColumn.addView(metaView);
+
+        titleBar.addView(titleColumn);
 
         centerView.addView(titleBar);
 
@@ -615,36 +717,61 @@ public class PlayerActivity extends Activity {
                     }
                 }
 
-                int insetLeft = windowInsets.getSystemWindowInsetLeft();
-                int insetRight = windowInsets.getSystemWindowInsetRight();
-
-                int paddingLeft = 0;
-                int marginLeft = insetLeft;
-
-                int paddingRight = 0;
-                int marginRight = insetRight;
-
+                /*
+                 * One safe margin, the same at both ends.
+                 *
+                 * What has to be kept clear of differs by device and by which
+                 * way round the phone is held: a camera cut into one edge, a
+                 * navigation bar that moves to a side in landscape, the curve
+                 * of a waterfall screen. Insetting only the side that has
+                 * something on it is correct and looks broken -- on a Pixel the
+                 * seek bar started a camera's width in from the left and ran
+                 * clean off the right, which reads as a bug rather than as
+                 * room left for a camera.
+                 *
+                 * So both ends get the larger of the two. Nothing can sit under
+                 * an obstruction, both ends match whichever way the phone is
+                 * turned, and where there is nothing to avoid -- portrait, a
+                 * tablet, a television -- the number is zero and nothing moves.
+                 * The picture itself is not inset: it still fills the screen
+                 * and runs under the cutout, as it should.
+                 *
+                 * Padding rather than margins, on all three rows. Mixing the
+                 * two is what let them disagree with each other: the bars were
+                 * margined for a navigation bar and padded for a cutout, while
+                 * the seek bar was only ever padded.
+                 */
+                final int cutoutLeft;
+                final int cutoutRight;
                 if (Build.VERSION.SDK_INT >= 28 && windowInsets.getDisplayCutout() != null) {
-                    if (windowInsets.getDisplayCutout().getSafeInsetLeft() == insetLeft) {
-                        paddingLeft = insetLeft;
-                        marginLeft = 0;
-                    }
-                    if (windowInsets.getDisplayCutout().getSafeInsetRight() == insetRight) {
-                        paddingRight = insetRight;
-                        marginRight = 0;
-                    }
+                    cutoutLeft = windowInsets.getDisplayCutout().getSafeInsetLeft();
+                    cutoutRight = windowInsets.getDisplayCutout().getSafeInsetRight();
+                } else {
+                    cutoutLeft = 0;
+                    cutoutRight = 0;
                 }
+
+                final int side = Utils.safeSideInset(
+                        windowInsets.getSystemWindowInsetLeft(),
+                        windowInsets.getSystemWindowInsetRight(),
+                        cutoutLeft, cutoutRight);
 
                 int bottomBarPaddingBottom = 0;
                 int progressBarMarginBottom = 0;
 
                 if (Build.VERSION.SDK_INT >= 35) {
-                    final int left = windowInsets.getInsets(WindowInsets.Type.navigationBars()).left;
-                    final int right = windowInsets.getInsets(WindowInsets.Type.navigationBars()).right;
-
+                    /*
+                     * The band behind the status bar covers the whole width.
+                     *
+                     * It used to stop short of a navigation bar at one side,
+                     * which left the clock and the battery sitting on bare
+                     * picture at one corner and on the band everywhere else.
+                     * It is a scrim, not a control: nothing in it can be under
+                     * anything, so it has nothing to keep clear of.
+                     */
                     final View exoTop = findViewById(R.id.exo_top);
                     exoTop.getLayoutParams().height = windowInsets.getSystemWindowInsetTop();
-                    Utils.setViewMargins(exoTop, left, 0, right, 0);
+                    Utils.setViewMargins(exoTop, 0, 0, 0, 0);
 
                     final FrameLayout exoBottomBar = findViewById(R.id.exo_bottom_bar);
                     ViewGroup.LayoutParams params = exoBottomBar.getLayoutParams();
@@ -671,13 +798,13 @@ public class PlayerActivity extends Activity {
                     view.setPadding(0, windowInsets.getSystemWindowInsetTop(), 0, windowInsets.getSystemWindowInsetBottom());
                 }
 
-                Utils.setViewParams(titleBar, paddingLeft + titleViewPaddingHorizontal, titleViewPaddingVertical, paddingRight + titleViewPaddingHorizontal, titleViewPaddingVertical,
-                        marginLeft, windowInsets.getSystemWindowInsetTop(), marginRight, 0);
+                Utils.setViewParams(titleBar, side + titleViewPaddingHorizontal, titleViewPaddingVertical, side + titleViewPaddingHorizontal, titleViewPaddingVertical,
+                        0, windowInsets.getSystemWindowInsetTop(), 0, 0);
 
-                Utils.setViewParams(findViewById(R.id.exo_bottom_bar), paddingLeft, 0, paddingRight, bottomBarPaddingBottom,
-                        marginLeft, 0, marginRight, 0);
+                Utils.setViewParams(findViewById(R.id.exo_bottom_bar), side, 0, side, bottomBarPaddingBottom,
+                        0, 0, 0, 0);
 
-                Utils.setViewParams(findViewById(R.id.exo_progress), windowInsets.getSystemWindowInsetLeft(), 0, windowInsets.getSystemWindowInsetRight(), 0,
+                Utils.setViewParams(findViewById(R.id.exo_progress), side, 0, side, 0,
                         0, 0, 0, getResources().getDimensionPixelSize(R.dimen.exo_styled_progress_margin_bottom) + progressBarMarginBottom);
 
                 Utils.setViewMargins(findViewById(R.id.exo_error_message), 0, windowInsets.getSystemWindowInsetTop() / 2, 0, getResources().getDimensionPixelSize(R.dimen.exo_error_message_margin_bottom) + windowInsets.getSystemWindowInsetBottom() / 2);
@@ -736,10 +863,29 @@ public class PlayerActivity extends Activity {
         findViewById(R.id.delete).setOnClickListener(view -> askDeleteMedia());
 
         findViewById(R.id.next).setOnClickListener(view -> {
-            if (!isTvBox && mPrefs.askScope) {
+            /*
+             * The folder the film came from decides, where there is one.
+             *
+             * The older route below reads the folder through the Storage Access
+             * Framework, which is why it has to ask for a grant first. A film
+             * opened from the home screen needs none of that: the list it came
+             * out of is already known, in the order it was being shown in.
+             */
+            if (neighbours.next != null) {
+                playInFolder(neighbours.next);
+            } else if (!isTvBox && mPrefs.askScope) {
                 askForScope(false, true);
             } else {
                 skipToNext();
+            }
+        });
+
+        final View previousButton = findViewById(R.id.prev);
+        previousButton.setContentDescription(getString(R.string.button_previous));
+        findViewById(R.id.next).setContentDescription(getString(R.string.button_next));
+        previousButton.setOnClickListener(view -> {
+            if (neighbours.previous != null) {
+                playInFolder(neighbours.previous);
             }
         });
 
@@ -1167,6 +1313,21 @@ public class PlayerActivity extends Activity {
         super.onBackPressed();
     }
 
+    /**
+     * Leaving, from the arrow in the title bar.
+     *
+     * The same ending as Back reaches once the controls are already down, so
+     * whoever started the player gets the film handed back to them the way they
+     * expect -- including the position an external application asked for.
+     */
+    private void leavePlayer() {
+        if (locked) {
+            return;
+        }
+        restorePlayStateAllowed = false;
+        finish();
+    }
+
     @Override
     public void finish() {
         if (intentReturnResult) {
@@ -1238,6 +1399,26 @@ public class PlayerActivity extends Activity {
                     player.play();
                 }
                 return true;
+            /*
+             * The skip keys on a headset, a remote or a car stereo.
+             *
+             * They mean the same thing as the two buttons, and do nothing where
+             * those two are not on screen: a film with nothing either side of
+             * it has nowhere to send them, and swallowing the press would be
+             * worse than letting the system have it.
+             */
+            case KeyEvent.KEYCODE_MEDIA_NEXT:
+                if (neighbours.next != null) {
+                    playInFolder(neighbours.next);
+                    return true;
+                }
+                break;
+            case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
+                if (neighbours.previous != null) {
+                    playInFolder(neighbours.previous);
+                    return true;
+                }
+                break;
             case KeyEvent.KEYCODE_VOLUME_UP:
             case KeyEvent.KEYCODE_VOLUME_DOWN:
                 if (adjustPlayerVolume(keyCode == KeyEvent.KEYCODE_VOLUME_UP)) {
@@ -1748,7 +1929,11 @@ public class PlayerActivity extends Activity {
             Utils.log("Back from settings: kept=" + keptPlayerForSettings
                     + " rebuild=" + settingsWantARebuild);
 
-            if (!Accent.stored(this).equals(appliedAccent)) {
+            // Two things the screen cannot be told about: the colour it was
+            // themed with and which buttons were put in the strip. Both are
+            // decided as the screen is built, so both mean building it again.
+            if (!Accent.stored(this).equals(appliedAccent)
+                    || mPrefs.repeatToggle != appliedRepeatToggle) {
                 recreate();
                 return;
             }
@@ -1983,6 +2168,13 @@ public class PlayerActivity extends Activity {
         // Said out loud in a debug build, because "did that reopen the file?"
         // is otherwise a question only a stopwatch can answer.
         Utils.log("Building the player");
+
+        // A file on the device is not arriving from anywhere, so the bar shows
+        // the whole of it as held rather than creeping along behind the read
+        // ahead. See CustomDefaultTimeBar.
+        if (timeBar != null) {
+            timeBar.setWholeFileHere(haveMedia && !isNetworkUri);
+        }
 
         if (player != null) {
             player.removeListener(playerListener);
@@ -2271,9 +2463,10 @@ public class PlayerActivity extends Activity {
 
             updateLoading(true);
 
-            if (mPrefs.getPosition() == 0L || apiAccess || apiAccessPartial) {
+            if (mPrefs.getPosition() == 0L || apiAccess || apiAccessPartial || playOnLoad) {
                 play = true;
             }
+            playOnLoad = false;
 
             if (apiTitle != null) {
                 titleView.setText(apiTitle);
@@ -2335,7 +2528,8 @@ public class PlayerActivity extends Activity {
             if (haveMedia) {
                 // Prevent overwriting temporarily inaccessible media position
                 if (player.isCurrentMediaItemSeekable()) {
-                    mPrefs.updatePosition(player.getCurrentPosition());
+                    mPrefs.updatePosition(player.getCurrentPosition(),
+                            player.getDuration() == C.TIME_UNSET ? 0L : player.getDuration());
                 }
                 mPrefs.updateMeta(getSelectedTrack(C.TRACK_TYPE_AUDIO),
                         getSelectedTrack(C.TRACK_TYPE_TEXT),
@@ -2559,11 +2753,28 @@ public class PlayerActivity extends Activity {
                 }
             } else if (state == Player.STATE_ENDED) {
                 playbackFinished = true;
+                // Asked before the timer is told, because being told is what
+                // cancels it.
+                final boolean sleepWantedThisEnding =
+                        sleepTimer != null && sleepTimer.willStopAtEndOfFile();
                 if (sleepTimer != null) {
                     sleepTimer.onPlaybackEnded(player);
                 }
                 if (apiAccess) {
                     finish();
+                    return;
+                }
+                /*
+                 * Straight on to the next one, where that was asked for.
+                 *
+                 * After the sleep timer has had the ending, so a timer set to
+                 * stop at the end of the film still stops at the end of the
+                 * film rather than at the end of the folder. And never for a
+                 * film another application sent: it belongs to that
+                 * application's list, not to a folder here.
+                 */
+                if (mPrefs.autoPlayNext && neighbours.next != null && !sleepWantedThisEnding) {
+                    playInFolder(neighbours.next);
                 }
             }
         }
@@ -2713,15 +2924,52 @@ public class PlayerActivity extends Activity {
         }
     }
 
+    /**
+     * Whether Open leads to this application's own folder list.
+     *
+     * <p>What Auto now means, with one exception: a television box below
+     * Android 11. The folder list is built on the media store, and on those
+     * boxes the media store is frequently close to empty — films arrive on a
+     * stick or over a network and were never indexed. The vendored browser
+     * reads the disk directly, so it is still the only thing that works there,
+     * and Auto still chooses it.
+     *
+     * <p>Set explicitly to anything else and nothing here applies: the
+     * Storage Access Framework, the media store chooser and the legacy browser
+     * all remain exactly what they were.
+     */
+    boolean useHomeBrowser() {
+        if ("home".equals(mPrefs.fileAccess)) {
+            return true;
+        }
+        if (!"auto".equals(mPrefs.fileAccess)) {
+            return false;
+        }
+        return !(isTvBox && Build.VERSION.SDK_INT < 30);
+    }
+
     boolean useMediaStore() {
         final int targetSdkVersion = getApplicationContext().getApplicationInfo().targetSdkVersion;
         return (isTvBox && Build.VERSION.SDK_INT >= 30 && targetSdkVersion >= 30 && mPrefs.fileAccess.equals("auto")) || mPrefs.fileAccess.equals("mediastore");
     }
 
+    /**
+     * Open a film, and play it.
+     *
+     * <p>Everything that reaches here is somebody choosing a film: a row in a
+     * folder, the answer to "play the last video?", the next or previous
+     * button, an address typed into the Open box. All of them mean watch it,
+     * including when there is a place remembered in it -- and the two engines
+     * disagreed about that until it was said here. Media3 starts a player
+     * paused and mpv starts one playing, so a half-watched film opened from a
+     * list came up on its last frame under one engine and carried on under the
+     * other, from the same row, on the same device.
+     */
     void playMedia(final Uri uri, final String type) {
         if (uri == null) {
             return;
         }
+        playOnLoad = true;
         releasePlayer();
         setMedia(uri, type);
         initializePlayer();
@@ -3100,7 +3348,15 @@ public class PlayerActivity extends Activity {
      * film described underneath it.
      */
     private void openFromLaunch(final Intent intent) {
+        // A film that has been handed over is a film to watch. playMedia says
+        // the same for every other way one is opened.
+        playOnLoad = true;
+
         forgetPreviousFilm();
+
+        // Which list this came out of, where the sender knew. Read before the
+        // media is set, because setting it clears whatever was there before.
+        final String folder = intent.getStringExtra(HomeActivity.EXTRA_FOLDER);
 
         resetApiAccess();
         final Uri uri = intent.getData();
@@ -3121,6 +3377,25 @@ public class PlayerActivity extends Activity {
             }
 
             mPrefs.updateMedia(this, uri, intent.getType());
+            /*
+             * The name across the top of the player is the name to remember it
+             * by.
+             *
+             * A film handed over by Stremio or Nuvio arrives as a link ending
+             * in an identifier -- 713424c6-f0b8-4baf-a82a-804b21916c8b -- and
+             * the launcher sends the real name along beside it, which is what
+             * the title bar shows. Nothing wrote that down, so "play the last
+             * video?" offered the identifier instead, and the recent list was a
+             * column of them. Written straight after updateMedia, which is what
+             * creates the entry this renames.
+             */
+            if (apiTitle != null && !apiTitle.trim().isEmpty()) {
+                History.rename(androidx.preference.PreferenceManager
+                        .getDefaultSharedPreferences(this), uri, apiTitle);
+            }
+            // After updateMedia, which is where a film changing hands clears
+            // whatever list the last one belonged to.
+            useFolder(folder);
 
             if (bundle != null) {
                 /*
@@ -3208,15 +3483,37 @@ public class PlayerActivity extends Activity {
         if (overlayCard != null) {
             overlayCard.hide();
         }
+        // And its own subtitles: the list held for the last file is not a list
+        // of subtitles for this one.
+        if (onlineController != null) {
+            onlineController.forgetResults();
+        }
         resetApiAccess();
         restorePlayState = false;
         mPrefs.setPersistent(true);
         mPrefs.updateMedia(this, uri, type);
+        // A different film belongs to a different list until something says
+        // otherwise, so the buttons go until the answer comes back.
+        folderOfCurrent = null;
+        setNeighbours(com.brouken.player.home.Neighbours.none());
         searchSubtitles();
     }
 
     void openFile(Uri pickerInitialUri) {
-        if (useMediaStore()) {
+        if (useHomeBrowser()) {
+            /*
+             * This application's own folder list, which is the same screen it
+             * opens on. The system picker is fine on a phone and poor with a
+             * remote, and it has never known which folders hold films.
+             *
+             * It comes back through the media store path because that is what
+             * it hands over: a content address that needs no persisted
+             * permission, exactly like the chooser next door.
+             */
+            final Intent intent = new Intent(this, HomeActivity.class);
+            intent.setAction(Intent.ACTION_PICK);
+            startActivityForResult(intent, REQUEST_CHOOSER_VIDEO_MEDIASTORE);
+        } else if (useMediaStore()) {
             Intent intent = new Intent(this, MediaStoreChooserActivity.class);
             startActivityForResult(intent, REQUEST_CHOOSER_VIDEO_MEDIASTORE);
         } else if ((isTvBox && mPrefs.fileAccess.equals("auto")) || mPrefs.fileAccess.equals("legacy")) {
@@ -4089,9 +4386,32 @@ public class PlayerActivity extends Activity {
         enterPictureInPictureMode(((PictureInPictureParams.Builder) mPictureInPictureParamsBuilder).build());
     }
 
+    /**
+     * Delete and Next, which belong to the end of a film.
+     *
+     * <p>Both are GONE rather than INVISIBLE when they are not wanted. They
+     * used to hold their places so that nothing moved when they arrived, which
+     * worked while they were one on each side and balanced each other. They are
+     * not balanced any more -- previous joined the left -- and a held place on
+     * one side only pushes the whole row off the middle of the screen. The row
+     * keeps the play button centred by itself now, so a button that is not
+     * there can cost nothing.
+     */
     void setEndControlsVisible(boolean visible) {
-        final int deleteVisible = (visible && haveMedia && Utils.isDeletable(this, mPrefs.mediaUri)) ? View.VISIBLE : View.INVISIBLE;
-        final int nextVisible = (visible && haveMedia && (nextUri != null || (mPrefs.askScope && !isTvBox))) ? View.VISIBLE : View.INVISIBLE;
+        final int deleteVisible = (visible && haveMedia && Utils.isDeletable(this, mPrefs.mediaUri)) ? View.VISIBLE : View.GONE;
+        /*
+         * Next is two things wearing one button.
+         *
+         * It was the end-of-file offer beside Delete, shown in the last few
+         * seconds of a film and hidden the rest of the time. It is also, now,
+         * half of an ordinary pair of skip controls -- and where the film came
+         * out of a folder that pair is available throughout, not only at the
+         * end. So a known neighbour keeps it on screen whatever this is doing.
+         */
+        final boolean endOffer = visible && haveMedia
+                && (nextUri != null || (mPrefs.askScope && !isTvBox));
+        final int nextVisible = (endOffer || neighbours.next != null)
+                ? View.VISIBLE : View.GONE;
         findViewById(R.id.delete).setVisibility(deleteVisible);
         findViewById(R.id.next).setVisibility(nextVisible);
     }
@@ -4146,8 +4466,83 @@ public class PlayerActivity extends Activity {
         }
     }
 
+    /**
+     * Play a neighbour, staying in the list it came from.
+     *
+     * <p>Opening a film normally forgets whatever list the last one belonged
+     * to, which is right -- a film chosen some other way is not in this folder.
+     * Stepping along the folder is the one case where it is the same list, so
+     * it is handed back afterwards.
+     */
+    private void playInFolder(final Uri uri) {
+        final String folder = folderOfCurrent;
+        playMedia(uri, null);
+        useFolder(folder);
+    }
+
+    /**
+     * Remember which list the film belongs to, and work out what is either
+     * side of it.
+     *
+     * <p>On a thread of its own: it is a media store query, and a folder of
+     * several hundred files is not something to ask about while a film is
+     * starting. The buttons appear when the answer arrives, which is a fraction
+     * of a second later and long before anybody reaches the end of anything.
+     */
+    private void useFolder(@Nullable final String folder) {
+        folderOfCurrent = folder;
+        setNeighbours(com.brouken.player.home.Neighbours.none());
+        if (folder == null || mPrefs.mediaUri == null) {
+            return;
+        }
+        if (neighboursThread != null) {
+            neighboursThread.interrupt();
+        }
+        final Uri asked = mPrefs.mediaUri;
+        neighboursThread = new Thread(Background.safely(() -> {
+            final com.brouken.player.home.Neighbours.Either found =
+                    com.brouken.player.home.Neighbours.of(this, folder, asked);
+            runOnUiThread(() -> {
+                // Only if it is still the film that was asked about: a second
+                // one can be opened while the first is still being counted.
+                if (asked.equals(mPrefs.mediaUri)) {
+                    setNeighbours(found);
+                }
+            });
+        }), "neighbours");
+        neighboursThread.start();
+    }
+
+    private void setNeighbours(final com.brouken.player.home.Neighbours.Either found) {
+        neighbours = found;
+        updateSkipButtons();
+    }
+
+    /**
+     * Show a skip button only where there is somewhere to skip to.
+     *
+     * <p>A button that is there is a button that does something, which is how
+     * the rest of these controls behave. It also means the pair take
+     * themselves out of the row that the info card mirrors, so nothing dead is
+     * copied into the time line either.
+     */
+    private void updateSkipButtons() {
+        final View previous = findViewById(R.id.prev);
+        if (previous != null) {
+            previous.setVisibility(neighbours.previous != null ? View.VISIBLE : View.GONE);
+        }
+        final View next = findViewById(R.id.next);
+        if (next != null && neighbours.next != null) {
+            // The end-of-file logic below also shows this one; where there is a
+            // folder to step through it is simply always available.
+            next.setVisibility(View.VISIBLE);
+        }
+    }
+
     void skipToNext() {
         if (nextUri != null) {
+            // The launcher asking for the next file means play it.
+            playOnLoad = true;
             releasePlayer();
             mPrefs.updateMedia(this, nextUri, null);
             searchSubtitles();
@@ -4253,6 +4648,18 @@ public class PlayerActivity extends Activity {
         applyVolumeBoost();
         applyKeepScreenOn(player != null && player.isPlaying());
         updateClock();
+        /*
+         * Both ways, not just on.
+         *
+         * Where the player is built this is set only when the setting is on,
+         * which is correct there and leaves nothing to turn it off again: a
+         * film opened with it on kept skipping silence for the rest of its
+         * length however many times the switch was flicked. Media3's alone --
+         * mpv has no equivalent, and the settings screen says so.
+         */
+        if (exo() != null) {
+            exo().setSkipSilenceEnabled(mPrefs.skipSilence);
+        }
         if (onlineController != null && !onlineController.skipEnabled()) {
             updateSkipEnabled(false);
         }
@@ -5206,7 +5613,7 @@ public class PlayerActivity extends Activity {
                 return;
             }
             if (identity.title != null && !identity.title.isEmpty()) {
-                History.rename(androidx.preference.PreferenceManager
+                History.fillInName(androidx.preference.PreferenceManager
                         .getDefaultSharedPreferences(this), uri, identity.title);
             }
             skipLoadedFor = null;
@@ -5642,6 +6049,39 @@ public class PlayerActivity extends Activity {
     }
 
 
+    /**
+     * The buttons of the centre row, in the order they are drawn.
+     *
+     * <p>The row holds a half either side of the play button rather than one
+     * flat line of buttons, so that the play button sits on the middle of the
+     * screen whatever else is showing. This walks into those two halves, and
+     * only those two: everything else in the row is a button, and some of them
+     * -- the seek pair the library supplies -- are a frame around a button and
+     * a label, which must be mirrored whole rather than taken apart.
+     */
+    private java.util.List<View> centerControlChildren() {
+        final java.util.List<View> found = new java.util.ArrayList<>();
+        if (centerControls == null) {
+            return found;
+        }
+        for (int i = 0; i < centerControls.getChildCount(); i++) {
+            final View child = centerControls.getChildAt(i);
+            final int id = child.getId();
+            if (id == R.id.center_controls_before || id == R.id.center_controls_after) {
+                if (child.getVisibility() != View.VISIBLE) {
+                    continue;
+                }
+                final ViewGroup half = (ViewGroup) child;
+                for (int j = 0; j < half.getChildCount(); j++) {
+                    found.add(half.getChildAt(j));
+                }
+                continue;
+            }
+            found.add(child);
+        }
+        return found;
+    }
+
     private void setCardControlsVisible(final boolean cardUp) {
         if (centerControls == null || cardControls == null) {
             return;
@@ -5654,8 +6094,7 @@ public class PlayerActivity extends Activity {
             return;
         }
 
-        for (int i = 0; i < centerControls.getChildCount(); i++) {
-            final View child = centerControls.getChildAt(i);
+        for (final View child : centerControlChildren()) {
             if (child == exoPlayPause) {
                 // Already permanently in the time row; two would be silly.
                 continue;

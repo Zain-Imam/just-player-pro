@@ -42,6 +42,23 @@ public final class OnlineController {
     // Named, and unable to take the app down with it: see Background.
     private final ExecutorService worker = com.brouken.player.Background.single("online");
 
+    /*
+     * The list the last search returned, kept for the file it was fetched for.
+     *
+     * Downloading the wrong subtitle is normal -- several releases of the same
+     * film sit in the list and only the name tells them apart, and the name is
+     * often wrong. Getting back to the list meant identifying the film again
+     * and searching every source again: two dialogs and a network round trip to
+     * undo one tap. It is held for as long as the file is open, so the second
+     * choice costs what the first one did.
+     *
+     * Only for this file, and only until the film is identified differently --
+     * see forget(), where a new identity throws the list away, because results
+     * for the wrong film are worse than no results.
+     */
+    private Uri lastResultsUri;
+    private List<Subtitles.Result> lastResults;
+
     public interface Host {
         @Nullable
         Uri mediaUri();
@@ -267,9 +284,43 @@ public final class OnlineController {
         }
     }
 
+    // ------------------------------------------------- the last result list
+
+    /** Whether the results held are the results for this file. */
+    private boolean hasResultsFor(@Nullable final Uri uri) {
+        return uri != null && lastResults != null && !lastResults.isEmpty()
+                && uri.equals(lastResultsUri);
+    }
+
+    private void rememberResults(@Nullable final Uri uri,
+                                 @Nullable final List<Subtitles.Result> results) {
+        if (uri == null || results == null || results.isEmpty()) {
+            return;
+        }
+        lastResultsUri = uri;
+        // A copy: what is handed back must not change underneath the list.
+        lastResults = new ArrayList<>(results);
+    }
+
+    /**
+     * Throw the held list away.
+     *
+     * Called wherever the film stops being the film those results were for --
+     * a different identity, or a different file.
+     */
+    public void forgetResults() {
+        lastResultsUri = null;
+        lastResults = null;
+    }
+
     public void forget(@Nullable final Uri uri) {
         if (uri == null) {
             return;
+        }
+        // The identity is about to change, so the results no longer belong to
+        // what is playing.
+        if (uri.equals(lastResultsUri)) {
+            forgetResults();
         }
         try {
             final JSONObject all = new JSONObject(preferences().getString(PREF_KEY_IDENTITIES, "{}"));
@@ -337,6 +388,20 @@ public final class OnlineController {
          * comes up every time.
          */
         final Uri uri = host.mediaUri();
+
+        /*
+         * The list from last time, if it is still the list for this file.
+         *
+         * Straight to the results, because that is what the button was pressed
+         * for -- and the row at the top of them still reopens the question, so
+         * nothing is lost by not asking it first. "Change selection" is the
+         * other way in, and it comes through here with reIdentify set.
+         */
+        if (!reIdentify && hasResultsFor(uri)) {
+            showResults(activity, lastResults);
+            return;
+        }
+
         final boolean ask = reIdentify || !autoSearchSubtitles();
         final Identity known = ask ? null : remembered(uri);
         if (known != null) {
@@ -499,20 +564,29 @@ public final class OnlineController {
         });
     }
 
+    /*
+     * Which programme, which season, which episode.
+     *
+     * Each step carries the list behind it so the step can be undone: the
+     * seasons are fetched once and handed to the episode list, which hands them
+     * back if you go back. Nothing below is fetched twice, and no wrong answer
+     * costs more than the one press that made it.
+     */
     private void chooseCandidate(final Activity activity, final List<Tmdb.Candidate> candidates,
                                  final ReleaseName.Info parsed, final OnIdentified callback) {
         PosterPicker.show(activity, context.getString(R.string.online_identify_title), candidates,
                 index -> {
                     final Tmdb.Candidate candidate = candidates.get(index);
                     if (candidate.isSeries) {
-                        chooseSeason(activity, candidate, parsed, callback);
+                        chooseSeason(activity, candidates, candidate, parsed, callback);
                     } else {
                         resolve(activity, candidate, null, null, callback);
                     }
                 });
     }
 
-    private void chooseSeason(final Activity activity, final Tmdb.Candidate candidate,
+    private void chooseSeason(final Activity activity, final List<Tmdb.Candidate> candidates,
+                              final Tmdb.Candidate candidate,
                               final ReleaseName.Info parsed, final OnIdentified callback) {
         if (parsed.season != null && parsed.episode != null) {
             resolve(activity, candidate, parsed.season, parsed.episode, callback);
@@ -529,14 +603,27 @@ public final class OnlineController {
                     askSeasonEpisode(activity, candidate, parsed, callback);
                     return;
                 }
-                PosterPicker.show(activity, candidate.title, seasons, index ->
-                        chooseEpisode(activity, candidate, seasons.get(index).number, callback));
+                showSeasons(activity, candidates, candidate, seasons, parsed, callback);
             });
         });
     }
 
-    private void chooseEpisode(final Activity activity, final Tmdb.Candidate candidate,
-                               final int season, final OnIdentified callback) {
+    /** The season list, shown again on the way back without fetching it twice. */
+    private void showSeasons(final Activity activity, final List<Tmdb.Candidate> candidates,
+                             final Tmdb.Candidate candidate, final List<Tmdb.Season> seasons,
+                             final ReleaseName.Info parsed, final OnIdentified callback) {
+        PosterPicker.show(activity, candidate.title, seasons,
+                index -> chooseEpisode(activity, candidates, candidate, seasons,
+                        seasons.get(index).number, parsed, callback),
+                candidates.size() > 1
+                        ? () -> chooseCandidate(activity, candidates, parsed, callback)
+                        : null);
+    }
+
+    private void chooseEpisode(final Activity activity, final List<Tmdb.Candidate> candidates,
+                               final Tmdb.Candidate candidate, final List<Tmdb.Season> seasons,
+                               final int season, final ReleaseName.Info parsed,
+                               final OnIdentified callback) {
         final ProgressDialog progress = progress(activity, R.string.online_identifying);
         worker.execute(() -> {
             final List<Tmdb.Episode> episodes = Tmdb.episodes(context, candidate.id, season);
@@ -549,7 +636,8 @@ public final class OnlineController {
                 }
                 PosterPicker.show(activity, candidate.title + "  ·  S" + (season < 10 ? "0" : "") + season,
                         episodes, index ->
-                                resolve(activity, candidate, season, episodes.get(index).number, callback));
+                                resolve(activity, candidate, season, episodes.get(index).number, callback),
+                        () -> showSeasons(activity, candidates, candidate, seasons, parsed, callback));
             });
         });
     }
@@ -612,6 +700,7 @@ public final class OnlineController {
                     toast(R.string.online_no_subtitles);
                     return;
                 }
+                rememberResults(host.mediaUri(), results);
                 showResults(activity, results);
             });
         });

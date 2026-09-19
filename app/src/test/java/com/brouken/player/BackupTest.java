@@ -111,4 +111,78 @@ public class BackupTest {
         assertNotNull("ours, and empty, is not the same as not ours", back);
         assertTrue(back.isEmpty());
     }
+
+    /**
+     * Everything the home screen remembers travels with a backup.
+     *
+     * Named one by one rather than trusted to the rule that says "anything
+     * unrecognised is a setting". That rule is what carries them today, and it
+     * is one edit away from not doing — a new prefix in KEY_PREFIXES, a name
+     * added to NEVER — and a favourite that silently stops being exported is
+     * the kind of loss nobody notices until they have already wiped the phone.
+     */
+    @Test
+    public void theHomeScreenIsPartOfTheSettings() throws Exception {
+        final Map<String, Object> stored = new LinkedHashMap<>();
+        stored.put("homePinnedFolders", "[\"/storage/emulated/0/Films\"]");
+        stored.put("homeFolderSort", "SIZE");
+        stored.put("homeVideoSort", "RECENT");
+        stored.put("startOn", "home");
+
+        final String written = Backup.write(stored, EnumSet.of(Backup.Part.SETTINGS));
+        final Map<String, Object> read = Backup.read(written);
+
+        assertNotNull(read);
+        assertEquals("[\"/storage/emulated/0/Films\"]", read.get("homePinnedFolders"));
+        assertEquals("SIZE", read.get("homeFolderSort"));
+        assertEquals("RECENT", read.get("homeVideoSort"));
+        assertEquals("home", read.get("startOn"));
+    }
+
+    /** And they are not quietly counted as keys or as per-file memory. */
+    @Test
+    public void theHomeScreenIsNotExportedWithTheKeys() throws Exception {
+        final Map<String, Object> stored = new LinkedHashMap<>();
+        stored.put("homePinnedFolders", "[\"/storage/emulated/0/Films\"]");
+        stored.put("apiKeyTmdb", "secret");
+
+        final String keysOnly = Backup.write(stored, EnumSet.of(Backup.Part.KEYS));
+        final Map<String, Object> read = Backup.read(keysOnly);
+
+        assertNotNull(read);
+        assertEquals("secret", read.get("apiKeyTmdb"));
+        assertNull("a favourite is not a key", read.get("homePinnedFolders"));
+    }
+
+    /**
+     * A file written by 3.0 still imports, and leaves 4.0's own settings alone.
+     *
+     * The restore puts back what the file holds and touches nothing else, so a
+     * backup made before the home screen existed cannot reset it: the keys are
+     * simply not in the document, and what is not in the document is not
+     * written.
+     */
+    @Test
+    public void aBackupFromBeforeTheHomeScreenStillReadsBack() {
+        final String fromThree = "{\n"
+                + "  \"format\": \"just-player-pro-backup\",\n"
+                + "  \"version\": 1,\n"
+                + "  \"app\": \"3.0.0\",\n"
+                + "  \"parts\": [\"settings\"],\n"
+                + "  \"values\": {\n"
+                + "    \"playbackEngine\": {\"t\": \"s\", \"v\": \"mpv\"},\n"
+                + "    \"askResume\": {\"t\": \"b\", \"v\": true}\n"
+                + "  }\n"
+                + "}";
+
+        final Map<String, Object> read = Backup.read(fromThree);
+
+        assertNotNull("a 3.0 file is still one of ours", read);
+        assertEquals("mpv", read.get("playbackEngine"));
+        assertEquals(Boolean.TRUE, read.get("askResume"));
+        // Nothing about the home screen in it, so nothing about the home screen
+        // is written back, and what 4.0 already has survives the import.
+        assertFalse(read.containsKey("homePinnedFolders"));
+        assertFalse(read.containsKey("startOn"));
+    }
 }

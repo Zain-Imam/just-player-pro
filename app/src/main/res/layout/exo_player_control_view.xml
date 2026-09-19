@@ -68,10 +68,32 @@
 
       </LinearLayout>
 
-      <LinearLayout android:id="@+id/exo_basic_controls"
+      <!-- The strip scrolls, because in portrait it does not fit.
+
+           Eight buttons at the smallest size a finger can be asked to hit is
+           more width than a phone held upright has left once the clock has had
+           its share, so four of them, settings and the padlock among them,
+           were simply cut off the end of the screen with nothing to say they
+           were there. Shrinking them was not an option: they are already at the
+           minimum a touch target may be.
+
+           So it scrolls, with a fading edge to say so. In landscape everything
+           fits, the fade never appears, and fillViewport with the end gravity
+           below keeps the buttons hard against the right exactly as before. -->
+      <HorizontalScrollView
+          android:id="@+id/basic_controls_scroll"
           android:layout_width="0dp"
-          android:layout_height="wrap_content"
+          android:layout_height="match_parent"
           android:layout_weight="1"
+          android:fillViewport="true"
+          android:scrollbars="none"
+          android:requiresFadingEdge="horizontal"
+          android:fadingEdgeLength="24dp"
+          android:layoutDirection="ltr">
+
+      <LinearLayout android:id="@+id/exo_basic_controls"
+          android:layout_width="wrap_content"
+          android:layout_height="match_parent"
           android:gravity="end|center_vertical"
           android:layoutDirection="ltr">
 
@@ -102,6 +124,7 @@
             style="@style/ExoStyledControls.Button.Bottom.OverflowShow"/>
 
       </LinearLayout>
+      </HorizontalScrollView>
 
     </LinearLayout>
 
@@ -155,23 +178,67 @@
 
   </LinearLayout>
 
+  <!--
+       Play/pause is anchored to the middle of the screen, not to the middle of
+       whatever buttons happen to be on show.
+
+       This was one centred row of buttons, and what is in that row changes:
+       delete appears as a film ends, previous and next come and go with the
+       folder the film was opened from. Centring the row meant centring
+       whatever it currently held, so the play button wandered, and because
+       delete reserved its space on the left even while invisible, with next
+       and previous both showing the whole group sat a button's width right of
+       centre. In portrait, where there is no picture either side to hide it,
+       it looked like the controls had slipped off the middle of the screen.
+
+       Two equal halves either side of the play button fix that for every
+       combination: the halves are the same width whatever is in them, each
+       packs its buttons against the middle, and anything hidden is GONE and
+       costs nothing. The play button cannot move.
+  -->
   <LinearLayout
       android:id="@+id/exo_center_controls"
-      android:layout_width="wrap_content"
+      android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:layout_gravity="center"
       android:background="@android:color/transparent"
       android:gravity="center"
+      android:orientation="horizontal"
       android:padding="@dimen/exo_styled_controls_padding">
 
-    <ImageButton android:id="@+id/delete"
-        style="@style/ExoStyledControls.Button.Center.Secondary"
-        android:src="@drawable/exo_styled_controls_delete"/>
+    <LinearLayout
+        android:id="@+id/center_controls_before"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="end|center_vertical"
+        android:orientation="horizontal">
 
-    <ImageButton android:id="@+id/exo_prev"
-        style="@style/ExoStyledControls.Button.Center.Previous"/>
+      <ImageButton android:id="@+id/delete"
+          style="@style/ExoStyledControls.Button.Center.Secondary"
+          android:src="@drawable/exo_styled_controls_delete"/>
 
-    <include layout="@layout/exo_player_control_rewind_button" />
+      <!--
+           The file before this one in the folder it came from.
+
+           Its own button rather than exo_prev beside it: the player library's
+           previous and next move between items in a playlist, and this player
+           holds one item at a time and opens a different file instead. Driving
+           those two would mean fighting what they are for.
+
+           Placed opposite @id/next, so the pair sit either side of the play
+           button the way they do in every other player.
+      -->
+      <ImageButton android:id="@+id/prev"
+          style="@style/ExoStyledControls.Button.Center.Secondary"
+          android:src="@drawable/exo_styled_controls_previous"/>
+
+      <ImageButton android:id="@+id/exo_prev"
+          style="@style/ExoStyledControls.Button.Center.Previous"/>
+
+      <include layout="@layout/exo_player_control_rewind_button" />
+
+    </LinearLayout>
 
     <ImageButton android:id="@+id/exo_play_pause"
         style="@style/ExoStyledControls.Button.Center.PlayPause"/>
@@ -185,14 +252,24 @@
          outside the controller, where only playback state decides it.
     -->
 
-    <include layout="@layout/exo_player_control_ffwd_button" />
+    <LinearLayout
+        android:id="@+id/center_controls_after"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="start|center_vertical"
+        android:orientation="horizontal">
 
-    <ImageButton android:id="@+id/exo_next"
-        style="@style/ExoStyledControls.Button.Center.Next"/>
+      <include layout="@layout/exo_player_control_ffwd_button" />
 
-    <ImageButton android:id="@+id/next"
-        style="@style/ExoStyledControls.Button.Center.Secondary"
-        android:src="@drawable/exo_styled_controls_next"/>
+      <ImageButton android:id="@+id/exo_next"
+          style="@style/ExoStyledControls.Button.Center.Next"/>
+
+      <ImageButton android:id="@+id/next"
+          style="@style/ExoStyledControls.Button.Center.Secondary"
+          android:src="@drawable/exo_styled_controls_next"/>
+
+    </LinearLayout>
 
   </LinearLayout>
 
