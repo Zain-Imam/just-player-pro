@@ -1,8 +1,11 @@
 # 4.0.0
 
-The application opens on a screen of its own now. Everything 3.0 did, it still
-does — the player is unchanged behind it, and every file that reaches it from
-another application reaches it exactly as before.
+Sixteen things the application could not do before, the bugs found while proving
+each one works, and a screen to open all of them from.
+
+Nothing was removed. If 3.0 did it, 4.0 still does it — the player is unchanged
+behind the new screen, and every file that reaches it from another application
+reaches it exactly as before.
 
 Every feature below was built for **both engines and both input methods** —
 Media3 and mpv, finger and remote — because that is the rule this project has
@@ -17,21 +20,23 @@ many and how much, and one press gets into them. What you were last watching is
 at the top, the folders you use can be starred to the top, and there is a
 search field for the times you know the name and not the folder.
 
-It is the default, on a fresh install and on an upgrade alike. **Settings →
-Home screen → Start on → Last video** puts the old behaviour back, and *File
-access* is untouched — it still decides what the player's own Open button does.
+It is where the application opens, on a fresh install and on an upgrade alike.
+**Settings → Home screen → Start on → Last video** puts the old behaviour back.
 
-**And a way out of the player.** An arrow in the top left, beside the title. It
-does what leaving does: back to the home screen when the film was picked there,
-back to Stremio when Stremio handed it over. Nothing is remembered or guessed at
-to manage that — the task stack already knows, and the arrow simply leaves.
+**A way out of the player.** An arrow in the top left, beside the title. It does
+what leaving does: back to the home screen when the film was picked there, back
+to Stremio when Stremio handed it over. Nothing is remembered or guessed at to
+manage that — the task stack already knows, and the arrow simply leaves.
+
+**And a way on.** Next and previous, either side of play/pause, stepping through
+the folder the film came out of — so a series is watched by pressing one button
+at the end of each episode instead of going back to find the next one.
 
 ## New
 
-* **The home screen** — a folder list, not a library: no scan to wait for, no
-  database, no thumbnails to decode. It reads what Android already
-  knows about and groups it, which is why it appears at once even on a box that
-  struggles to draw a list at all.
+* **The home screen** — a folder list, not a library: no scan to wait for and no
+  database. It reads what Android already knows about and groups it, which is
+  why it appears at once even on a box that struggles to draw a list at all.
 * **Favourites** — a star on every folder row keeps the ones you use at the top.
   It is a button rather than a long press, so a remote reaches it by moving
   right rather than by holding something down and hoping, and the star follows
@@ -44,11 +49,25 @@ to manage that — the task stack already knows, and the arrow simply leaves.
   files by name, date, size or length; and each order names its own two
   directions rather than offering "ascending" and leaving you to work out what
   that means for size. Remembered, and in the backup.
+* **Next and previous**, either side of play/pause. They step through the folder
+  the film was opened from, in the order that folder was being shown in — sorted
+  newest first and started from the top, *next* means the second newest, not
+  whatever comes next alphabetically. Whichever end you are at, the button for
+  the direction there is nothing in is not drawn rather than drawn dead, and a
+  film that belongs to no folder — an address, a search result, one another
+  application sent over — has neither. The headphone and steering-wheel keys
+  work too, and when the film's synopsis is on screen the two buttons move down
+  beside the clock so the card is not covering them.
+* **Play the next file automatically** *(off by default)*, under Settings →
+  Playback. When a film ends the next one in the same folder starts. A sleep
+  timer set to stop at the end of the film still stops there: it was set
+  deliberately, for tonight, and this is a standing preference.
 * **A frame from every file on the device**, beside its name in a folder and in
-  search results. Taken from the media store where it already has one, decoded
-  one at a time where it does not, held in memory and never fetched twice.
-  Nothing is decoded for a row that has scrolled away, and nothing at all for
-  an address on the internet.
+  search results. Taken from the media store where it already has one and
+  decoded where it does not, on three threads at the lowest priority the system
+  offers — so a folder fills in quickly without ever taking a core the film
+  wants. Held in memory and never fetched twice; nothing is decoded for a row
+  that has scrolled away, and nothing at all for an address on the internet.
 * **Folders that share a name say where they are.** A phone with two WhatsApp
   accounts has five directories called "WhatsApp Video", four of them under a
   folder called "Media" — so the parent tells you nothing. Each one now carries
@@ -60,19 +79,20 @@ to manage that — the task stack already knows, and the arrow simply leaves.
   to hand you Android's document picker, which is adequate with a finger, poor
   with a remote, and has never known which of your folders hold films. It now
   opens the same folder list, with the same search and the same sort. **File
-  access** still decides: *Auto* means this, and *Storage Access Framework*,
-  *MediaStore* and *Legacy* are all exactly what they were. The one exception is
-  a television box below Android 11, where *Auto* still chooses the old browser
-  — the media store on those is frequently empty, and only a browser that reads
-  the disk directly finds anything at all.
+  access** still decides, and it starts on its new *Home browser* setting;
+  *Auto*, *Storage Access Framework*, *MediaStore* and *Legacy* are all still
+  there and are exactly what they were. *Auto* now means the folder list as
+  well, except on a television box below Android 11 — the media store on those
+  is frequently empty, and only a browser that reads the disk directly finds
+  anything at all.
 * **The back arrow in the player**, reachable by finger and by remote.
 * **Start on** — *Home screen* or *Last video*, in Settings under Home screen.
 * **Ask before resuming** now works over the home screen too, so the offer to
   carry on with the last file is still there and can still be switched off. It
-  no longer offers a file it cannot name -- a deleted one used to come back as
-  a row of digits.
-* **The accent colour applies at once**, on the home screen as it already did
-  on the player and in settings. The loop button does too, where it used to say
+  no longer offers a file it cannot name — a deleted one used to come back as a
+  row of digits.
+* **The accent colour applies at once**, on the home screen as it already did on
+  the player and in settings. The loop button does too, where it used to say
   "needs a restart" and mean it.
 * **A local file shows the whole bar as held.** Nothing is being fetched, so the
   band that says how much is here is the whole of it rather than creeping along
@@ -81,65 +101,26 @@ to manage that — the task stack already knows, and the arrow simply leaves.
   is published, rather than a toast that slides away behind your finger. Where
   there is a newer one it offers the right build for this device, the page, or
   nothing at all.
-* **Next and previous**, either side of play/pause. They step through the
-  folder the film was opened from, in the order that folder was being shown in
-  — sorted newest first and started from the top, *next* means the second
-  newest, not whatever comes next alphabetically. Whichever end you are at, the
-  button for the direction there is nothing in is not drawn rather than drawn
-  dead, and a film that belongs to no folder — an address, a search result, one
-  another application sent over — has neither. The headphone and steering-wheel
-  keys work too, and when the film's synopsis is on screen the two buttons move
-  down beside the clock so the card is not covering them.
-* **Play the next file automatically**, off by default, under Settings →
-  Playback. When a film ends the next one in the same folder starts. A sleep
-  timer set to stop at the end of the film still stops there: it was set
-  deliberately, for tonight, and this is a standing preference.
 
 ## Fixed along the way
 
-* **The controls leave the same room at both ends.** A phone with a camera cut
-  into one edge reports that edge as out of bounds and the other as free, and
-  the player did as it was told: in landscape the seek bar started a camera's
-  width in from one side and ran flush to the other, the back arrow sat away
-  from the corner, and the button row stopped short. Correct, and it reads as a
-  fault. Both ends now take the larger of whatever has to be avoided at either —
-  a camera, a navigation bar that moves to the side in landscape, the curve of a
-  waterfall screen — so nothing sits under an obstruction and nothing is
-  lopsided, whichever way the phone is turned. Where there is nothing to avoid,
-  which is portrait on most phones and every television, the number is zero and
-  nothing moves. The picture itself is not inset: it still fills the screen.
-  The band behind the status bar is full width too, rather than stopping short
-  of a navigation bar and leaving the clock on bare picture at one corner.
-* **Play, previous and next sit on the middle of the screen.** They were a
-  single centred row, and the delete button held its place at the left of that
-  row even while invisible — so with previous and next both showing, the whole
-  group sat a button's width right of centre. In landscape the picture either
-  side hid it; in portrait it looked like the controls had slipped. The row is
-  two equal halves either side of the play button now, so the play button
-  cannot move whatever else is on show.
-* **Every button in the bottom bar is reachable in portrait.** Eight buttons at
-  the smallest size a finger can be asked to hit is wider than an upright phone
-  has left once the clock has had its share, so four of them — settings and the
-  padlock among them — were cut off the end of the screen with nothing to say
-  they were there. The strip scrolls now, with a fading edge to say so. Nothing
-  changes in landscape, where all eight fit.
-* **The last video is offered by its real name.** A film handed over by Stremio
-  or Nuvio arrives as a link ending in an identifier, and the launcher sends the
-  real name along beside it — which the player put across the top of the screen
-  and then threw away. "Play last video?" offered
-  `713424c6-f0b8-4baf-a82a-804b21916c8b`, and the recent list was a column of
-  those. The name on the title bar is now the name that is kept. Identifying the
-  film can still fill in a name where nothing else knows one, but it no longer
-  replaces one: it answers with the name of the programme, and "Silo" is not an
-  answer to which episode you were watching.
 * **A film another application sent is the one offered to resume.** Watch
   something through Stremio or Nuvio, come back to Just Player Pro, and it
   offered the last film *you* had opened here — a different film entirely, from
   whenever you last used the home screen. The player kept two records of where
   it was up to, one for films it opened itself and one to hand back to whoever
   had sent a film over, and only the first was ever consulted. It now writes
-  both, so the number the sender gets back is untouched and the film still
-  turns up here, at the minute you left it.
+  both, so the number the sender gets back is untouched and the film still turns
+  up here, at the minute you left it.
+* **The last video is offered by its real name.** A film handed over by Stremio
+  or Nuvio arrives as a link ending in an identifier, and the launcher sends the
+  real name along beside it — which the player put across the top of the screen
+  and then threw away. *Play last video?* offered
+  `713424c6-f0b8-4baf-a82a-804b21916c8b`, and the recent list was a column of
+  those. The name on the title bar is now the name that is kept. Identifying the
+  film can still fill in a name where nothing else knows one, but it no longer
+  replaces one: it answers with the name of the programme, and "Silo" is not an
+  answer to which episode you were watching.
 * **The two engines agree about resuming.** A half-watched film opened from a
   list came up on its last frame under Media3 and carried straight on under
   mpv — the same row, the same file, the same device. The libraries differ:
@@ -154,6 +135,32 @@ to manage that — the task stack already knows, and the arrow simply leaves.
   on it was worse: every already-watched file in the folder ended the instant it
   loaded, so one ending walked through the folder at speed until it reached
   something nobody had finished.
+* **Play, previous and next sit on the middle of the screen.** They were a
+  single centred row, and the delete button held its place at the left of that
+  row even while invisible — so with previous and next both showing, the whole
+  group sat a button's width right of centre. In landscape the picture either
+  side hid it; in portrait it looked like the controls had slipped. The row is
+  two equal halves either side of the play button now, so the play button cannot
+  move whatever else is on show.
+* **Every button in the bottom bar is reachable in portrait.** Eight buttons at
+  the smallest size a finger can be asked to hit is wider than an upright phone
+  has left once the clock has had its share, so four of them — settings and the
+  padlock among them — were cut off the end of the screen with nothing to say
+  they were there. The strip scrolls now, with a fading edge to say so. Nothing
+  changes in landscape, where all eight fit.
+* **The controls leave the same room at both ends.** A phone with a camera cut
+  into one edge reports that edge as out of bounds and the other as free, and
+  the player did as it was told: in landscape the seek bar started a camera's
+  width in from one side and ran flush to the other, the back arrow sat away
+  from the corner, and the button row stopped short. Correct, and it reads as a
+  fault. Both ends now take the larger of whatever has to be avoided at either —
+  a camera, a navigation bar that moves to the side in landscape, the curve of a
+  waterfall screen — so nothing sits under an obstruction and nothing is
+  lopsided, whichever way the phone is turned. Where there is nothing to avoid,
+  which is portrait on most phones and every television, the number is zero and
+  nothing moves. The picture itself is not inset: it still fills the screen. The
+  band behind the status bar is full width too, rather than stopping short of a
+  navigation bar and leaving the clock on bare picture at one corner.
 * **The subtitle results are kept while the file is open.** Several releases of
   the same film sit in that list and only the name tells them apart — so picking
   the wrong one is normal. Getting back to the list meant identifying the film
@@ -201,6 +208,10 @@ arriving from elsewhere would have played over the top of it.
 * The home screen needs permission to see videos. Without it the screen says so
   and offers to ask again; the player itself is unaffected and opens files one
   at a time as it always has.
+* The delete button that appears as a film ends belongs to files the player has
+  write access to — one opened through *Storage Access Framework*, or a plain
+  path. A file opened from the home screen arrives through the media store,
+  which grants no such thing, so the button stays away.
 
 ## Which APK
 
