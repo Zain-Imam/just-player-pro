@@ -10,7 +10,7 @@ Media3/ExoPlayer and a full build of mpv ship inside one app, and the player mov
 its own — so a file one cannot decode is handled by the other instead of failing. The same build is
 driven by a finger on a phone or by a D-pad from across the room, and behaves the same either way.
 
-[![Release](https://img.shields.io/badge/release-v3.0.0-F4601E?style=flat-square)](https://github.com/Zain-Imam/just-player-pro/releases/latest)
+[![Release](https://img.shields.io/badge/release-v4.0.0-F4601E?style=flat-square)](https://github.com/Zain-Imam/just-player-pro/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Zain-Imam/just-player-pro/total?style=flat-square&color=F4601E&label=downloads)](https://github.com/Zain-Imam/just-player-pro/releases)
 [![Android](https://img.shields.io/badge/Android-7.1%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](#building)
 [![Engines](https://img.shields.io/badge/engines-Media3%20%2B%20mpv-4C8BF5?style=flat-square)](#the-two-engines)
@@ -18,7 +18,14 @@ driven by a finger on a phone or by a D-pad from across the room, and behaves th
 [![Decoders](https://img.shields.io/badge/mpv%20decoders-501-9C6ADE?style=flat-square)](#about-the-claim)
 [![Licence](https://img.shields.io/badge/licence-GPL--3.0-8A8A8A?style=flat-square)](LICENSE)
 
-<img src="docs/screenshots/01-info-card.jpg" alt="The info card over a paused film">
+<img src="docs/screenshots/01-touch-and-tv.jpg" alt="The same build on a television and on a phone: a film playing with its info card, the folder list, and a subtitle search">
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/02-library.jpg" alt="The home screen, a folder, and the sort dialog"></td>
+<td width="50%"><img src="docs/screenshots/03-search.jpg" alt="Searching the library by file name"></td>
+</tr>
+</table>
 
 </div>
 
@@ -41,17 +48,38 @@ Grab the newest build from **[Releases](https://github.com/Zain-Imam/just-player
 
 | File | For |
 |---|---|
-| `just-player-pro-3.0.0-arm64-v8a.apk` | Almost every phone, tablet and TV box made since 2017 |
-| `just-player-pro-3.0.0-armeabi-v7a.apk` | Older 32-bit devices |
-| `just-player-pro-3.0.0-x86_64.apk` · `-x86.apk` | Emulators and the few x86 devices |
-| `just-player-pro-3.0.0-universal.apk` | All four at once — four times the mpv payload, so only if you are unsure |
+| `just-player-pro-4.0.0-arm64-v8a.apk` | Almost every phone, tablet and TV box made since 2017 |
+| `just-player-pro-4.0.0-armeabi-v7a.apk` | Older 32-bit devices |
+| `just-player-pro-4.0.0-x86_64.apk` · `-x86.apk` | Emulators and the few x86 devices |
+| `just-player-pro-4.0.0-universal.apk` | All four at once — four times the mpv payload, so only if you are unsure |
 
 Android 7.1 or newer. The mpv engine additionally needs Android 8.0 and is offered only there.
 
-### New in 3.0
+### New in 4.0
 
 Everything here works on **both engines** and under **both input methods**, which is the bar each
 one had to clear before it shipped:
+
+| | |
+|---|---|
+| **A home screen** | folders with counts and sizes, the files inside them, and what you were last watching — the app opens here now |
+| **Favourite a folder** | a star keeps the ones you actually use at the top |
+| **Thumbnails** | a frame from every file on the device, beside its name |
+| **Search** | by file name, across everything on the device |
+| **Sort, either way round** | folders by name, size, count or date; files by name, date, size or length |
+| **Next and previous** | step through the folder the film came from, in the order it was shown in — with an option to go on to the next one by itself |
+| **Both engines resume alike** | a part-watched film opened from a list plays on Media3 and mpv both — it used to wait on its last frame under one of them |
+| **A back arrow in the player** | returns to the home screen, or to whatever handed the film over |
+| **Open leads to it too** | *Play from → Local file* opens the same folder list, and *File access* now starts on *Home browser* |
+| **Subtitle results kept** | downloading the wrong one costs one tap to fix, not another search |
+| **A way back through the series pickers** | wrong season no longer means typing the title again |
+| **Films remembered by name** | *Play last video?* and the recent list show the file's real name, not the identifier out of a link |
+| **Even edges on every screen** | the controls leave the same room at both ends, so a camera cut into one edge no longer pushes the seek bar off centre |
+
+Everything that was fixed along the way is in [RELEASE_NOTES.md](RELEASE_NOTES.md).
+
+<details>
+<summary>New in 3.0</summary>
 
 | | |
 |---|---|
@@ -66,7 +94,33 @@ one had to clear before it shipped:
 | **Subtitles from storage** | and any number of folders the player may read |
 | **Settings without a restart** | the film is held at the frame it was on; only what must reopen, reopens |
 
+</details>
+
 ---
+
+## What it is
+
+A video player that plays what you give it, on a phone or on a television, without a library to
+build or an account to make.
+
+* **Two decoders in one app.** Media3 uses the device's hardware; a bundled mpv carries 501 of its
+  own. On *Auto* a file that one cannot decode is handed to the other, keeping your position.
+* **It opens on your videos.** Folders with counts and sizes, the files inside them, what you were
+  last watching, and a search — not a picker.
+* **Subtitles that arrive and fit.** Search OpenSubtitles, SubDL, Wyzie or a Stremio addon, adjust
+  the delay without re-buffering, and keep the styling the same on either engine.
+* **It knows what it is playing.** A release filename becomes a title, poster, rating and synopsis,
+  and intro markers you can skip.
+* **The same build for a remote.** Every screen takes focus and moves under arrows; nothing is
+  hidden behind a gesture a D-pad cannot make.
+* **It asks for very little.** No account, no telemetry, no analytics, nothing running in the
+  background. It needs permission to list the videos on the device, and it reaches the network only
+  when you ask it to — the online features work from keys you supply and nobody else's.
+
+---
+
+<details>
+<summary><b>Two engines, and how the player chooses between them</b></summary>
 
 ## The two engines
 
@@ -114,7 +168,11 @@ Live streams work on both: HLS live, HLS on demand and DASH all play, on either 
 The honest exception: **DRM-protected streams** (Widevine and friends) are not supported by either
 engine here, and nothing in this app tries to work around that.
 
----
+
+</details>
+
+<details>
+<summary><b>Touch and remote: one build, driven either way</b></summary>
 
 ## Two platforms
 
@@ -134,12 +192,16 @@ Layouts are in dp and sp throughout and reflow rather than clip, so portrait, la
 televisions all get the same build. The detail — and what a television genuinely cannot do — is in
 [Televisions and remotes](#televisions-and-remotes).
 
----
+
+</details>
+
+<details>
+<summary><b>Titles, posters and info cards</b></summary>
 
 ## Knowing what you are watching
 
 <div align="center">
-  <img src="docs/screenshots/04-identify.jpg" alt="Choosing the right film from a grid of posters">
+  <img src="docs/screenshots/07-identify.jpg" alt="Confirming which film a file is, then picking the episode">
 </div>
 
 A release filename goes to TMDB and comes back as a title, year, rating, poster and synopsis. When
@@ -169,12 +231,16 @@ row** asks again, and what you choose there is what sticks, for that file, from 
 * **History with real titles** — the recently-played list and the "Play last video?" prompt show
   the film's name, not a UUID from the URL.
 
----
+
+</details>
+
+<details>
+<summary><b>Subtitles: search, delay, styling, skip markers</b></summary>
 
 ## Subtitles
 
 <div align="center">
-  <img src="docs/screenshots/02-subtitles.jpg" alt="The subtitle panel along the trailing edge">
+  <img src="docs/screenshots/06-info-and-subtitles.jpg" alt="An info card over a paused film, and the subtitle search beside it">
 </div>
 
 * **Online search and download** from OpenSubtitles, SubDL and Wyzie, with the language you set.
@@ -231,12 +297,16 @@ row** asks again, and what you choose there is what sticks, for that file, from 
 * A **Skip intro / Skip credits** button appears only while a marker is live. It takes focus, so OK
   on a remote presses it, and it offers to **undo** the skip for three seconds afterwards.
 
----
+
+</details>
+
+<details>
+<summary><b>Everything in the player: panels, playback, settings, themes</b></summary>
 
 ## Everything to hand
 
 <div align="center">
-  <img src="docs/screenshots/03-quick-settings.jpg" alt="The quick settings panel">
+  <img src="docs/screenshots/05-quick-settings.jpg" alt="The quick settings panel and the playback settings behind it">
 </div>
 
 One tap of the gear brings the quick panel in along the edge: speed, audio delay, subtitle delay,
@@ -269,7 +339,7 @@ what is on screen at that moment.
 ### Playback
 
 <div align="center">
-  <img src="docs/screenshots/05-settings-playback.jpg" alt="The playback settings">
+  <img src="docs/screenshots/04-playback.jpg" alt="A film playing on a phone, with the playback settings beside it">
 </div>
 
 * **Adaptive buffering** — the same device-aware profiles applied to *both* engines, so they buffer
@@ -296,6 +366,8 @@ what is on screen at that moment.
 * **Double-tap seek step** is configurable, and the arrows on a remote use the same setting rather
   than a fixed ten seconds.
 * **Hold the picture for double speed**, let go to drop back.
+* **Play the next file automatically** *(off by default)* — when a film ends, the next one in the
+  same folder starts. A sleep timer set to stop at the end of the film still stops there.
 * **Sleep timer** — a set number of minutes or at the end of the file, fading the sound out over the
   last thirty seconds rather than cutting it.
 * **Ask before resuming** — the last file is offered rather than started, and declining keeps it
@@ -307,12 +379,9 @@ what is on screen at that moment.
 
 ### Settings you can read
 
-<table>
-<tr>
-<td width="50%"><img src="docs/screenshots/06-settings-subtitles.jpg" alt="Gesture and subtitle settings"></td>
-<td width="50%"><img src="docs/screenshots/07-settings-sources.jpg" alt="Subtitle sources, addons and history"></td>
-</tr>
-</table>
+<div align="center">
+  <img src="docs/screenshots/10-backup-and-history.jpg" alt="History and backup, beside the subtitle sources and identification settings">
+</div>
 
 Sectioned and shorter, with every switch saying what it currently does rather than what it is
 called. **Test keys and addons** checks every service on demand rather than only as a key is typed
@@ -331,15 +400,16 @@ in: one that stopped answering last week still looked fine until the evening it 
 ### Make it yours
 
 <div align="center">
-  <img src="docs/screenshots/08-theme-colour.jpg" alt="Eleven accent colours">
+  <img src="docs/screenshots/09-appearance.jpg" alt="The eleven accent colours, and the settings they colour">
 </div>
 
 **Eleven accent colours**, orange by default. The chosen colour runs through the controls, the seek
 bar and every highlight. The launcher icon stays orange.
 
 * **Rebuilt bottom bar** — play/pause is the leftmost item in the time row, tapping the time
-  toggles remaining-versus-total, and the row shares one line with the button strip so nothing
-  becomes unreachable in portrait.
+  toggles remaining-versus-total, and the button strip shares that line rather than sitting on top
+  of it. In portrait, where eight buttons at a usable size are wider than the screen has left, the
+  strip scrolls with a fading edge instead of cutting the last four off the end.
 * **Tap the timeline to seek there** — anywhere *on* the line, and nothing outside it. The stock bar
   accepted a press anywhere in a 48dp band the height of the whole bottom bar.
 * **The buffered band stays visible while you drag.** Media3 discards its buffer on a seek outside
@@ -349,7 +419,7 @@ bar and every highlight. The launcher icon stays orange.
 ### Set up from your phone
 
 <div align="center">
-  <img src="docs/screenshots/09-set-up-from-phone.png" width="300" alt="The setup page open in a phone browser">
+  <img src="docs/screenshots/08-online-setup.jpg" alt="The key and addon settings, and the setup page open in a browser">
 </div>
 
 Typing an API key with a remote is miserable, so settings offers a PIN-gated page on your local
@@ -367,7 +437,11 @@ subtitle settings reachable by long-pressing the subtitle icon.
 Subtitle delay is applied at render time, so negative delays actually move embedded MKV subtitles
 earlier rather than just shortening them, in 100 ms steps with a `+` prefix on positive values.
 
----
+
+</details>
+
+<details>
+<summary><b>Televisions and remotes</b></summary>
 
 ## Televisions and remotes
 
@@ -402,7 +476,11 @@ that never happened.
 Layouts are in dp and sp throughout and reflow rather than clip, so the same build is used on
 phones in either orientation, on tablets, and on televisions.
 
----
+
+</details>
+
+<details>
+<summary><b>The few settings that belong to one engine</b></summary>
 
 ## Settings that belong to one engine
 
@@ -420,7 +498,11 @@ hook is Media3-only too, because mpv opens its own audio output and exposes no s
 Everything else — decoder priority, subtitle size, position, edge style, typeface and embedded
 styles, volume boost, PiP, gestures, chapters, skip markers, online subtitles — works on both.
 
----
+
+</details>
+
+<details>
+<summary><b>Every gesture, control and key</b></summary>
 
 ## Using it
 
@@ -443,6 +525,8 @@ styles, volume boost, PiP, gestures, chapters, skip markers, online subtitles �
 | Control | What it does |
 |---|---|
 | Play/pause, far left of the clock | Play or pause |
+| The big play button, in the middle | Play or pause. It sits on the centre of the screen and stays there, whatever else is showing |
+| Previous and next, either side of it | Step to the file before or after this one in the folder it was opened from, in the order that folder was shown in. Absent at the ends of the list, and on a film that belongs to no folder |
 | The clock | Tap it to swap between time remaining and total running time |
 | The timeline | Tap anywhere **on the line** to seek there; drag the circle to scrub |
 | Subtitle button | Pick a track, or search online for one |
@@ -469,6 +553,7 @@ styles, volume boost, PiP, gestures, chapters, skip markers, online subtitles �
 | Back | Hide the controls; again to leave |
 | Back or OK, while locked | Unlock |
 | Volume, while locked | Still changes the volume: the lock is for pockets, not for buttons |
+| Media previous / next, on a headset or a wheel | Step to the file before or after this one in its folder |
 
 The Skip intro and Skip credits buttons take focus while they are on screen, so OK skips without
 hunting for them.
@@ -497,7 +582,11 @@ Two switches worth knowing:
 * **Search subtitles automatically** — off by default, so a search only happens when you ask for
   one, and it asks which film first.
 
----
+
+</details>
+
+<details>
+<summary><b>Building from source</b></summary>
 
 ## Building
 
@@ -566,7 +655,11 @@ and subtitle search — depends on that. The key is free. OpenSubtitles, SubDL a
 optional and only enable those sources. All of them are entered in Settings → Online; none are
 compiled into the app.
 
----
+
+</details>
+
+<details>
+<summary><b>Thanks, and the libraries this is built on</b></summary>
 
 ## Thanks
 
@@ -599,7 +692,11 @@ Smaller borrowings — a parser's shape, the way one app or another hands subtit
 
 This product uses the TMDB API but is not endorsed or certified by TMDB.
 
----
+
+</details>
+
+<details>
+<summary><b>Licence, trademark and verifying a build</b></summary>
 
 ## Licence
 
@@ -629,5 +726,6 @@ not come from this project, whatever it is called:
 SHA-256  6d:c1:c9:16:44:76:06:b1:ce:ba:13:3e:1c:50:6f:a8:
          8e:11:25:9b:08:2c:d3:16:61:d0:c6:6c:12:42:dc:a6
 
-apksigner verify --print-certs just-player-pro-3.0.0-arm64-v8a.apk
+apksigner verify --print-certs just-player-pro-4.0.0-arm64-v8a.apk
 ```
+</details>

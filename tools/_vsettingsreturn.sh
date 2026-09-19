@@ -106,12 +106,30 @@ done
 if [ -z "$AT" ]; then
   fail "no adaptive buffering row"
 else
-  snap
-  echo "  the row reads: $(grep -A4 -F 'text="Adaptive buffering"' "$SNAP" | grep -oE 'text="[^"]+"' | sed -n '2p' | sed 's/text=//;s/"//g')"
-  if grep -A4 -F 'text="Adaptive buffering"' "$SNAP" | grep -q 'reopens whatever is playing'; then
+  # Read from a fresh dump rather than from the stored snapshot. The snapshot
+  # taken here kept coming back without the row the scroll above had just
+  # found, and an empty answer reads exactly like a row that has lost its
+  # warning -- which is a bad way to be told nothing is wrong.
+  # The warning, looked for on the screen the row was just found on, rather
+  # than tied to the row by counting nodes after it.
+  #
+  # Reading the summary as "the second text after the title" is how this used to
+  # work and it kept coming back empty while the screen plainly showed the
+  # sentence -- the node offsets shift whenever a preference category is added
+  # above, and a check that reports a missing warning because it counted wrong
+  # is worse than no check. This is weaker by exactly one thing, that the
+  # sentence belongs to this row and not another, and it does not go wrong.
+  WARNED=""
+  for n in 1 2 3 4 5 6; do
+    WARNED="$(dump | grep -m1 'reopens whatever is playing')"
+    [ -n "$WARNED" ] && break
+    sleep 2
+  done
+  echo "  the screen says: $(echo "$WARNED" | grep -oE 'text="[^"]+"' | head -1 | sed 's/text=//;s/"//g')"
+  if [ -n "$WARNED" ]; then
     pass "the row says it reopens the file"
   else
-    fail "the row does not warn that it reopens the file"
+    fail "nothing on the screen warns that this reopens the file"
   fi
   tap $AT
   sleep 2

@@ -11,6 +11,7 @@ PATH="$PATH:/c/Users/SC/AppData/Local/Android/Sdk/platform-tools"
 
 PKG="${PKG:-${1:-app.justplayerpro.android.debug}}"
 ACT="$PKG/com.brouken.player.PlayerActivity"
+HOME_ACT="$PKG/com.brouken.player.HomeActivity"
 SETTINGS="$PKG/com.brouken.player.SettingsActivity"
 MEDIA="/sdcard/Movies/jpp-smoke.ts"
 SUBS="/sdcard/Movies/jpp-smoke.srt"
@@ -445,3 +446,122 @@ scroll_to() {
   return 1
 }
 
+
+# The home screen, from a cold start.
+#
+# Force-stopped first for the same reason open_settings is: an activity that is
+# already there comes back wherever it was left, and a test that expects the
+# folder list would find whatever folder was last opened.
+open_home() {
+  adb shell "am force-stop $PKG" >/dev/null 2>&1
+  adb logcat -c >/dev/null 2>&1
+  CURRENT_SCREEN="$HOME_ACT"
+  adb shell "am start -n $HOME_ACT" >/dev/null 2>&1
+  local waited=0
+  while [ $waited -lt 25 ]; do
+    case "$(focused)" in *"$PKG"*) sleep 3; decline_resume; return 0 ;; esac
+    sleep 1; waited=$((waited + 1))
+  done
+  echo
+  echo "STOPPING: the home screen did not come to the front within 25s."
+  echo "  focus is: $(focused)"
+  FAILED=$((FAILED + 1))
+  exit 3
+}
+
+# Which activity of ours is in front, by class name alone.
+#
+# The filtering is done here rather than on the device: the phone's grep does
+# not take an alternation written this way, and -m1 closes the pipe under
+# dumpsys, which prints a broken-pipe warning and returns nothing at all. It
+# looked exactly like "no activity of ours is in front".
+current_activity() {
+  adb shell "dumpsys activity activities" 2>/dev/null \
+    | grep -m1 "topResumedActivity" \
+    | grep -oE 'com\.brouken\.player\.[A-Za-z]+' | head -1 | tr -d '\r' \
+    | sed 's/.*\.//'
+}
+
+# Whether the focused thing is the row for this name.
+#
+# Read off the focused node's own description rather than inferred from where it
+# sits. Every row on the home screen describes itself as "<name>, <details>"
+# for the benefit of a screen reader, and that turns out to be the only reliable
+# way to tell a row apart from the star beside it: the two share a line, so any
+# check based on position matches both, and a test meaning to open a folder
+# pressed the centre key on its star and quietly favourited it instead.
+focused_row_is() {   # focused_row_is <snapshot> <name>
+  local line
+  line="$(grep 'focused="true"' "$1" | tail -1)"
+  case "$line" in
+    *"content-desc=\"$2,"*) return 0 ;;
+    *"content-desc=\"$2\""*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Whether the focused thing is the button described this way. Buttons are
+# focused directly, so unlike a row their own node carries the description.
+focused_desc_is() {  # focused_desc_is <snapshot> <content-desc>
+  grep 'focused="true"' "$1" | tail -1 | grep -qF "content-desc=\"$2\""
+}
+
+# Say "not now" to the offer of the last video.
+#
+# The home screen makes that offer every time it opens, which is what it is for
+# and what the setting says it does -- but it sits over the folder list, so a
+# test that went looking for folders found a dialog instead. This is the app's
+# own dialog, and declining leaves the device exactly as it was found.
+#
+# Dismissed with Back rather than by tapping the button, which matters more
+# than it looks: a tap puts the window into touch mode, and in touch mode a
+# list row is not focusable at all, so the first arrow press afterwards lands
+# on the toolbar instead of the list and every D-pad check that follows is
+# walking the wrong part of the screen. Back leaves the window where a remote
+# left it.
+decline_resume() {
+  local at
+  at="$(centre text 'NOT NOW')"
+  [ -z "$at" ] && at="$(centre text 'Not now')"
+  [ -z "$at" ] && return 1
+  adb shell "input keyevent KEYCODE_BACK" >/dev/null 2>&1
+  sleep 2
+  return 0
+}
+
+# Wait for one of this app's screens to settle in front.
+#
+# A fixed sleep is not enough after leaving the player: releasing a decoder and
+# handing the window back takes as long as it takes, and a check a moment too
+# early sees neither screen resumed and reads exactly like "we left the app".
+wait_for_activity() {   # wait_for_activity <ClassName> [seconds]
+  local want="$1" limit="${2:-15}" n=0
+  while [ $n -lt "$limit" ]; do
+    [ "$(current_activity)" = "$want" ] && return 0
+    sleep 1
+    n=$((n + 1))
+  done
+  return 1
+}
+
+# Walk the remote down a list until the named row has focus.
+#
+# Left first, always. A folder row is two focusable things side by side, the
+# row and its star, and once focus is in the star column pressing down moves
+# star to star for the whole length of the list -- correct behaviour, and it
+# means a search for a row by pressing down alone can run to the end without
+# ever touching one. Left steps back into the row column; on a row that is
+# already in it, it does nothing.
+focus_row_by_dpad() {   # focus_row_by_dpad <snapshot> <name> [presses]
+  local file="$1" want="$2" limit="${3:-16}" n=0
+  adb shell "input keyevent KEYCODE_DPAD_LEFT" >/dev/null 2>&1
+  sleep 1
+  while [ $n -lt "$limit" ]; do
+    dump > "$file"
+    focused_row_is "$file" "$want" && return 0
+    adb shell "input keyevent KEYCODE_DPAD_DOWN" >/dev/null 2>&1
+    sleep 1
+    n=$((n + 1))
+  done
+  return 1
+}

@@ -1,3 +1,215 @@
+# 4.0.0
+
+The application opens on a screen of its own now. Everything 3.0 did, it still
+does — the player is unchanged behind it, and every file that reaches it from
+another application reaches it exactly as before.
+
+Every feature below was built for **both engines and both input methods** —
+Media3 and mpv, finger and remote — because that is the rule this project has
+worked to since 3.0.
+
+## The headline
+
+**A home screen.** There was one way in and it was a file picker: *Play from →
+Local file*, then whatever Android felt like showing you. Opening the
+application now lands on the folders that actually hold videos, each with how
+many and how much, and one press gets into them. What you were last watching is
+at the top, the folders you use can be starred to the top, and there is a
+search field for the times you know the name and not the folder.
+
+It is the default, on a fresh install and on an upgrade alike. **Settings →
+Home screen → Start on → Last video** puts the old behaviour back, and *File
+access* is untouched — it still decides what the player's own Open button does.
+
+**And a way out of the player.** An arrow in the top left, beside the title. It
+does what leaving does: back to the home screen when the film was picked there,
+back to Stremio when Stremio handed it over. Nothing is remembered or guessed at
+to manage that — the task stack already knows, and the arrow simply leaves.
+
+## New
+
+* **The home screen** — a folder list, not a library: no scan to wait for, no
+  database, no thumbnails to decode. It reads what Android already
+  knows about and groups it, which is why it appears at once even on a box that
+  struggles to draw a list at all.
+* **Favourites** — a star on every folder row keeps the ones you use at the top.
+  It is a button rather than a long press, so a remote reaches it by moving
+  right rather than by holding something down and hoping, and the star follows
+  the folder to wherever it has just moved so your place is not lost.
+  Favourites travel with an export.
+* **Search** by file name, across everything on the device, filtered as you
+  type. The folder it is in is shown beside each result, because two files of
+  the same name in two folders are otherwise one row repeated.
+* **Sort, either way round** — folders by name, size, number of videos or date;
+  files by name, date, size or length; and each order names its own two
+  directions rather than offering "ascending" and leaving you to work out what
+  that means for size. Remembered, and in the backup.
+* **A frame from every file on the device**, beside its name in a folder and in
+  search results. Taken from the media store where it already has one, decoded
+  one at a time where it does not, held in memory and never fetched twice.
+  Nothing is decoded for a row that has scrolled away, and nothing at all for
+  an address on the internet.
+* **Folders that share a name say where they are.** A phone with two WhatsApp
+  accounts has five directories called "WhatsApp Video", four of them under a
+  folder called "Media" — so the parent tells you nothing. Each one now carries
+  the least of its path that tells it apart from the others.
+* **An address button** on the home screen, opening the same box the player's
+  *Play from → URL* has always used. It matters most on a television box, where
+  the media store is often close to empty and everything arrives over a network.
+* **The player's own Open button leads here too.** *Play from → Local file* used
+  to hand you Android's document picker, which is adequate with a finger, poor
+  with a remote, and has never known which of your folders hold films. It now
+  opens the same folder list, with the same search and the same sort. **File
+  access** still decides: *Auto* means this, and *Storage Access Framework*,
+  *MediaStore* and *Legacy* are all exactly what they were. The one exception is
+  a television box below Android 11, where *Auto* still chooses the old browser
+  — the media store on those is frequently empty, and only a browser that reads
+  the disk directly finds anything at all.
+* **The back arrow in the player**, reachable by finger and by remote.
+* **Start on** — *Home screen* or *Last video*, in Settings under Home screen.
+* **Ask before resuming** now works over the home screen too, so the offer to
+  carry on with the last file is still there and can still be switched off. It
+  no longer offers a file it cannot name -- a deleted one used to come back as
+  a row of digits.
+* **The accent colour applies at once**, on the home screen as it already did
+  on the player and in settings. The loop button does too, where it used to say
+  "needs a restart" and mean it.
+* **A local file shows the whole bar as held.** Nothing is being fetched, so the
+  band that says how much is here is the whole of it rather than creeping along
+  a little way ahead of the picture as though it were still downloading.
+* **The update check answers in a box**, saying which version you have and which
+  is published, rather than a toast that slides away behind your finger. Where
+  there is a newer one it offers the right build for this device, the page, or
+  nothing at all.
+* **Next and previous**, either side of play/pause. They step through the
+  folder the film was opened from, in the order that folder was being shown in
+  — sorted newest first and started from the top, *next* means the second
+  newest, not whatever comes next alphabetically. Whichever end you are at, the
+  button for the direction there is nothing in is not drawn rather than drawn
+  dead, and a film that belongs to no folder — an address, a search result, one
+  another application sent over — has neither. The headphone and steering-wheel
+  keys work too, and when the film's synopsis is on screen the two buttons move
+  down beside the clock so the card is not covering them.
+* **Play the next file automatically**, off by default, under Settings →
+  Playback. When a film ends the next one in the same folder starts. A sleep
+  timer set to stop at the end of the film still stops there: it was set
+  deliberately, for tonight, and this is a standing preference.
+
+## Fixed along the way
+
+* **The controls leave the same room at both ends.** A phone with a camera cut
+  into one edge reports that edge as out of bounds and the other as free, and
+  the player did as it was told: in landscape the seek bar started a camera's
+  width in from one side and ran flush to the other, the back arrow sat away
+  from the corner, and the button row stopped short. Correct, and it reads as a
+  fault. Both ends now take the larger of whatever has to be avoided at either —
+  a camera, a navigation bar that moves to the side in landscape, the curve of a
+  waterfall screen — so nothing sits under an obstruction and nothing is
+  lopsided, whichever way the phone is turned. Where there is nothing to avoid,
+  which is portrait on most phones and every television, the number is zero and
+  nothing moves. The picture itself is not inset: it still fills the screen.
+  The band behind the status bar is full width too, rather than stopping short
+  of a navigation bar and leaving the clock on bare picture at one corner.
+* **Play, previous and next sit on the middle of the screen.** They were a
+  single centred row, and the delete button held its place at the left of that
+  row even while invisible — so with previous and next both showing, the whole
+  group sat a button's width right of centre. In landscape the picture either
+  side hid it; in portrait it looked like the controls had slipped. The row is
+  two equal halves either side of the play button now, so the play button
+  cannot move whatever else is on show.
+* **Every button in the bottom bar is reachable in portrait.** Eight buttons at
+  the smallest size a finger can be asked to hit is wider than an upright phone
+  has left once the clock has had its share, so four of them — settings and the
+  padlock among them — were cut off the end of the screen with nothing to say
+  they were there. The strip scrolls now, with a fading edge to say so. Nothing
+  changes in landscape, where all eight fit.
+* **The last video is offered by its real name.** A film handed over by Stremio
+  or Nuvio arrives as a link ending in an identifier, and the launcher sends the
+  real name along beside it — which the player put across the top of the screen
+  and then threw away. "Play last video?" offered
+  `713424c6-f0b8-4baf-a82a-804b21916c8b`, and the recent list was a column of
+  those. The name on the title bar is now the name that is kept. Identifying the
+  film can still fill in a name where nothing else knows one, but it no longer
+  replaces one: it answers with the name of the programme, and "Silo" is not an
+  answer to which episode you were watching.
+* **A film another application sent is the one offered to resume.** Watch
+  something through Stremio or Nuvio, come back to Just Player Pro, and it
+  offered the last film *you* had opened here — a different film entirely, from
+  whenever you last used the home screen. The player kept two records of where
+  it was up to, one for films it opened itself and one to hand back to whoever
+  had sent a film over, and only the first was ever consulted. It now writes
+  both, so the number the sender gets back is untouched and the film still
+  turns up here, at the minute you left it.
+* **The two engines agree about resuming.** A half-watched film opened from a
+  list came up on its last frame under Media3 and carried straight on under
+  mpv — the same row, the same file, the same device. The libraries differ:
+  Media3 builds a player paused and mpv builds one playing, and the player had
+  never said which it wanted. It says so now, and both play. Choosing a film is
+  asking to watch it; the place it resumes from is still exactly where you left
+  it. This applies wherever a film is opened — a folder row, *play the last
+  video?*, next and previous, and a film another application sends.
+* **A film watched to the end starts again from the beginning.** It used to be
+  remembered as sitting on its last frame, so opening it showed a still and a
+  play button rather than a film. With *play the next file automatically* turned
+  on it was worse: every already-watched file in the folder ended the instant it
+  loaded, so one ending walked through the folder at speed until it reached
+  something nobody had finished.
+* **The subtitle results are kept while the file is open.** Several releases of
+  the same film sit in that list and only the name tells them apart — so picking
+  the wrong one is normal. Getting back to the list meant identifying the film
+  again and asking every source again: two dialogs and a network round trip to
+  undo one tap. Pressing *Search online subtitles…* a second time now shows the
+  list that is already in hand, with *Search again* still at the top of it for
+  when the film itself was wrong.
+* **The series pickers have a way back.** Identifying an episode is three
+  questions deep — which programme, which season, which episode — and answering
+  one of them wrongly used to mean cancelling out to the film and typing the
+  title again, because Cancel was the only thing on offer. There is a *Back*
+  button on the season and episode lists, and it costs nothing: the lists are
+  already in hand by then.
+* **Settings knows where it was opened from.** Its up arrow named the player as
+  its parent, which was the only possible answer while the player was the only
+  other screen. From the home screen it would have started a player nobody asked
+  for.
+
+## What changed underneath, and why it is worth testing
+
+The player's launch mode changed from `singleTask` to `singleTop`. `singleTask`
+pulled every launch into this application's own task, which was invisible while
+the player was the only screen — with a home screen underneath it, a film sent
+over from another application would have landed on top of the home screen and
+Back would have gone to the folder list instead of back to the sender.
+
+`singleTask` also guaranteed there was only ever one player. That guarantee is
+now made explicitly in the player itself rather than by the manifest, because
+one case genuinely broke without it: with *keep playing the sound* switched on,
+a film started here goes on playing after its window is gone, and a second film
+arriving from elsewhere would have played over the top of it.
+
+## Known limits
+
+* The home screen lists what Android's media store knows about. Folders with a
+  `.nomedia` file in them are not in it. Reaching those needs *All files
+  access*, which is the most heavily restricted permission on the platform, and
+  this application does not ask for it — those files still play through *Play
+  from → Local file*.
+* Thumbnails are for files, not folders. A frame per file is cheap when the
+  media store already has one and is only ever taken once; a frame per folder
+  would mean decoding one on the very first screen, before anything has been
+  asked for. Files on the device only — fetching a film over a connection to
+  look at one picture of it is not a trade worth making.
+* The home screen needs permission to see videos. Without it the screen says so
+  and offers to ask again; the player itself is unaffected and opens files one
+  at a time as it always has.
+
+## Which APK
+
+One per architecture, plus a universal one that contains all four and is about
+four times the size. Almost every phone, tablet and television made since 2017
+is **arm64-v8a**. If in doubt, take the universal one.
+
+---
+
 # 3.0.0
 
 Twelve things that were asked for, the bugs found while proving each one works,
