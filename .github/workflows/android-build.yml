@@ -87,18 +87,17 @@ jobs:
           ls -la release-apks
 
 
-      # The licences have to reach whoever downloads a binary, not only whoever
-      # browses the repository, so they ride along with every release.
+      # Named to sort below the APKs rather than among them, and so that nobody
+      # mistakes it for something to install.
       - name: Bundle the licence texts
         run: |
-          version="$(grep -oP 'versionName\s+"\K[^"]+' app/build.gradle | head -1)"
           staging="$(mktemp -d)"
           cp -r licenses "$staging/"
           cp THIRD-PARTY-NOTICES.md "$staging/"
           cp LICENSE "$staging/LICENSE-GPL-3.0.txt"
-          (cd "$staging" && zip -qr licenses.zip .)
-          mv "$staging/licenses.zip" "release-apks/just-player-pro-$version-licenses.zip"
-          unzip -l "release-apks/just-player-pro-$version-licenses.zip"
+          (cd "$staging" && zip -qr bundle.zip .)
+          mv "$staging/bundle.zip" "release-apks/third-party-licenses.zip"
+          unzip -l "release-apks/third-party-licenses.zip"
 
       - name: Keep them as artifacts either way
         uses: actions/upload-artifact@v4
@@ -106,7 +105,7 @@ jobs:
           name: apks
           path: |
             release-apks/*.apk
-            release-apks/*-licenses.zip
+            release-apks/third-party-licenses.zip
 
       - name: Draft a release, but only if they are properly signed
         if: steps.signing.outputs.signed == 'true' && startsWith(github.ref, 'refs/tags/')
@@ -114,6 +113,6 @@ jobs:
         with:
           files: |
             release-apks/*.apk
-            release-apks/*-licenses.zip
+            release-apks/third-party-licenses.zip
           draft: true
           generate_release_notes: true

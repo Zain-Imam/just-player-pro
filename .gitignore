@@ -27,3 +27,6 @@ local.properties
 
 # Video the smoke test downloads to drive the player with.
 /.smoke-media/
+
+# Local planning note, not part of the project
+v4.1.0Roadmap.md
