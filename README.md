@@ -22,10 +22,17 @@ driven by a finger on a phone or by a D-pad from across the room, and behaves th
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screenshots/02-library.jpg" alt="The home screen, a folder, and the sort dialog"></td>
-<td width="50%"><img src="docs/screenshots/03-search.jpg" alt="Searching the library by file name"></td>
+<td width="33%"><img src="docs/screenshots/02-library.jpg" alt="The home screen, a folder, and the sort dialog"></td>
+<td width="33%"><img src="docs/screenshots/09-appearance.jpg" alt="The eleven accent colours, and the settings they colour"></td>
+<td width="33%"><img src="docs/screenshots/08-online-setup.jpg" alt="The key and addon settings, and the setup page open in a browser"></td>
 </tr>
 </table>
+
+<details>
+<summary>Searching by file name</summary>
+<br>
+<img src="docs/screenshots/03-search.jpg" alt="Searching the library by file name">
+</details>
 
 </div>
 
