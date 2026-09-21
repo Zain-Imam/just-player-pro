@@ -28,27 +28,6 @@ driven by a finger on a phone or by a D-pad from across the room, and behaves th
 </tr>
 </table>
 
-<details>
-<summary>Playing a film</summary>
-<br>
-<img src="docs/screenshots/04-playback.jpg" alt="A film playing on a phone, with the playback settings beside it">
-<img src="docs/screenshots/05-quick-settings.jpg" alt="The quick settings panel and the playback settings behind it">
-</details>
-
-<details>
-<summary>Titles and subtitles</summary>
-<br>
-<img src="docs/screenshots/06-info-and-subtitles.jpg" alt="An info card over a paused film, and the subtitle search beside it">
-<img src="docs/screenshots/07-identify.jpg" alt="Confirming which film a file is, then picking the episode">
-</details>
-
-<details>
-<summary>Finding and keeping things</summary>
-<br>
-<img src="docs/screenshots/03-search.jpg" alt="Searching the library by file name">
-<img src="docs/screenshots/10-backup-and-history.jpg" alt="History and backup, beside the subtitle sources and identification settings">
-</details>
-
 </div>
 
 ---
@@ -64,6 +43,54 @@ player you already use.
 > each one is tested on a device before it is released. There is no support desk behind it — issues
 > and pull requests are read, and nothing is promised beyond that.
 
+<details>
+<summary>📸 More screenshots</summary>
+
+### Playing a film
+
+<img src="docs/screenshots/04-playback.jpg" alt="A film playing on a phone, with the playback settings beside it">
+<img src="docs/screenshots/05-quick-settings.jpg" alt="The quick settings panel and the playback settings behind it">
+
+### Titles and subtitles
+
+<img src="docs/screenshots/06-info-and-subtitles.jpg" alt="An info card over a paused film, and the subtitle search beside it">
+<img src="docs/screenshots/07-identify.jpg" alt="Confirming which film a file is, then picking the episode">
+
+### Finding and keeping things
+
+<img src="docs/screenshots/03-search.jpg" alt="Searching the library by file name">
+<img src="docs/screenshots/10-backup-and-history.jpg" alt="History and backup, beside the subtitle sources and identification settings">
+
+</details>
+
+## 🔭 Overview
+
+**Just Player Pro** plays the video files you already have — on a phone, a tablet or a
+television — with no library to build, no account to make and no advertising.
+
+It opens on the folders that actually hold videos, hands the bitstream straight to the
+device's decoders, and carries a second engine for the files the first one cannot manage.
+Where you want more than playback it will look a film up for its title, poster and
+synopsis, search several sources for subtitles, and skip past intros — each of those
+optional, each using a key you supply, and none of it touching the network until you ask.
+
+## ✨ Key features
+
+| | Feature | What it does |
+|---|---|---|
+| ⚡ | **Two engines, one app** | Media3 hands the bitstream to the device's own decoders; a bundled mpv carries 501 of its own. On *Auto* the player starts on Media3 and moves to mpv for a file Media3 cannot take |
+| 📺 | **Touch and remote, one build** | The same APK on a phone, a tablet and an Android TV. Every control a finger reaches, a D-pad reaches — nothing is switched on by guessing what kind of device it is |
+| 🔎 | **Search and sort** | The home screen opens on the folders that hold videos, with counts and sizes, and stars the ones you use. Search by file name across the whole device, or sort folders and files four ways in either direction |
+| 🎬 | **Info card while paused** | Poster, title, season and episode, date, rating and synopsis, centred on the picture and sized to it. How solid it sits over the film is a slider |
+| 🔍 | **Identify what you are watching** | A release name becomes a title through TMDB. Wrong guess? Pick from a grid of posters, then jump straight to an episode |
+| 💬 | **Subtitles from several sources** | OpenSubtitles, SubDL and Wyzie, plus any Stremio subtitle addon you add — searched separately, so each one only widens the net |
+| ⏩ | **Skip intros and credits** | Chapter marks where the file carries them; where it does not, community timings from IntroDB, TheIntroDB, SkipDB, SkipMe, IntroHater and AniSkip |
+| 📱 | **Set up from your phone** | Typing an API key with a remote is miserable, so settings serves a PIN-gated page on your own network. Type the keys on a real keyboard |
+| 🎨 | **Eleven accent colours** | Applied at once, no restart. The colour runs through the controls, the seek bar and every highlight |
+| 🧠 | **Adaptive buffering** | Profiles chosen from device memory, battery level and whether the source is a live stream — and applied to *both* engines, so they buffer alike |
+| 💾 | **Export and import** | Settings, keys, history and the per-file delays and speeds, in one file. The export asks what goes in it |
+| 🛡 | **Stays offline until you ask** | No ads, no tracking, no account, barely any permissions. Every online feature waits on a key of your own |
+
 ## Download
 
 Grab the newest build from **[Releases](https://github.com/Zain-Imam/just-player-pro/releases/latest)**.
@@ -77,67 +104,7 @@ Grab the newest build from **[Releases](https://github.com/Zain-Imam/just-player
 
 Android 7.1 or newer. The mpv engine additionally needs Android 8.0 and is offered only there.
 
-### New in 4.0
-
-Everything here works on **both engines** and under **both input methods**, which is the bar each
-one had to clear before it shipped:
-
-| | |
-|---|---|
-| **A home screen** | folders with counts and sizes, the files inside them, and what you were last watching — the app opens here now |
-| **Favourite a folder** | a star keeps the ones you actually use at the top |
-| **Thumbnails** | a frame from every file on the device, beside its name |
-| **Search** | by file name, across everything on the device |
-| **Sort, either way round** | folders by name, size, count or date; files by name, date, size or length |
-| **Next and previous** | step through the folder the film came from, in the order it was shown in — with an option to go on to the next one by itself |
-| **Both engines resume alike** | a part-watched film opened from a list plays on Media3 and mpv both — it used to wait on its last frame under one of them |
-| **A back arrow in the player** | returns to the home screen, or to whatever handed the film over |
-| **Open leads to it too** | *Play from → Local file* opens the same folder list, and *File access* now starts on *Home browser* |
-| **Subtitle results kept** | downloading the wrong one costs one tap to fix, not another search |
-| **A way back through the series pickers** | wrong season no longer means typing the title again |
-| **Films remembered by name** | *Play last video?* and the recent list show the file's real name, not the identifier out of a link |
-| **Even edges on every screen** | the controls leave the same room at both ends, so a camera cut into one edge no longer pushes the seek bar off centre |
-
-Everything that was fixed along the way is in [RELEASE_NOTES.md](RELEASE_NOTES.md).
-
-<details>
-<summary>New in 3.0</summary>
-
-| | |
-|---|---|
-| **Audio delay** | ±5 s either way, per file, with an accelerating hold |
-| **Subtitle delay, live** | applied to the running player — no re-buffer, no stall, and it is in the quick panel too |
-| **Speed per file** | a file reopens at the speed it was last watched at |
-| **Keep playing the sound** | screen off, or the player put away, and the sound carries on *(off by default)* |
-| **Preview while seeking** | the frame you are dragging towards, for files on the device |
-| **Demanding-file warning** | measured against the device's own decoders before it stalls |
-| **Network speed** | on the top line, for streams, counted from the bytes that arrive |
-| **Export and import** | settings, keys, history and per-file memory, in one file |
-| **Subtitles from storage** | and any number of folders the player may read |
-| **Settings without a restart** | the film is held at the frame it was on; only what must reopen, reopens |
-
-</details>
-
----
-
-## What it is
-
-A video player that plays what you give it, on a phone or on a television, without a library to
-build or an account to make.
-
-* **Two decoders in one app.** Media3 uses the device's hardware; a bundled mpv carries 501 of its
-  own. On *Auto* a file that one cannot decode is handed to the other, keeping your position.
-* **It opens on your videos.** Folders with counts and sizes, the files inside them, what you were
-  last watching, and a search — not a picker.
-* **Subtitles that arrive and fit.** Search OpenSubtitles, SubDL, Wyzie or a Stremio addon, adjust
-  the delay without re-buffering, and keep the styling the same on either engine.
-* **It knows what it is playing.** A release filename becomes a title, poster, rating and synopsis,
-  and intro markers you can skip.
-* **The same build for a remote.** Every screen takes focus and moves under arrows; nothing is
-  hidden behind a gesture a D-pad cannot make.
-* **It asks for very little.** No account, no telemetry, no analytics, nothing running in the
-  background. It needs permission to list the videos on the device, and it reaches the network only
-  when you ask it to — the online features work from keys you supply and nobody else's.
+Every version, and what was fixed in each, is in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
 ---
 
