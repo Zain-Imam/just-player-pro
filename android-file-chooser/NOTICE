@@ -1,0 +1,23 @@
+android-file-chooser
+Copyright the hedzr/android-file-chooser authors
+https://github.com/hedzr/android-file-chooser
+
+Licensed under the Apache License, Version 2.0. The full licence text is in
+licenses/Apache-2.0.txt at the root of this repository, and is distributed with
+this software.
+
+MODIFICATIONS
+-------------
+
+This copy has been modified and is not the upstream release. Apache-2.0
+section 4(b) requires modified files to say so, and this notice covers the
+module.
+
+The changes were made by the Just Player project (https://github.com/moneytoo/Player),
+from which Just Player Pro is forked, and were inherited here unchanged. They
+cover listing multiple removable storage volumes on Android TV, separating
+storage volumes from their contents in the list, theming, and keeping the module
+building against current Android and Gradle versions. The commit history of this
+repository records each change against this directory.
+
+Just Player Pro has made no further changes to this module.

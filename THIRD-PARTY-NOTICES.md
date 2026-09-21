@@ -8,6 +8,13 @@ get its source.
 Nothing here is optional reading for anyone redistributing the app: the licences
 below require these notices to travel with the binary.
 
+**The licence texts themselves are in [`licenses/`](licenses/).** Naming a
+licence is not the same as providing one — MIT and ISC require their permission
+notice in every copy, and Apache-2.0 section 4(a) requires a copy of the licence
+to reach every recipient. That folder carries the full text of each, and
+[`licenses/README.md`](licenses/README.md) maps every component below to the
+licence that covers it.
+
 ---
 
 ## Shipped inside the APK as native libraries
@@ -58,8 +65,8 @@ needed something the published versions do not do.
 
 | Module | Upstream | Licence |
 |---|---|---|
-| `doubletapplayerview/` | [vkay94/DoubleTapPlayerView](https://github.com/vkay94/DoubleTapPlayerView) — Copyright (c) 2019 Viktor Krez | MIT |
-| `android-file-chooser/` | [hedzr/android-file-chooser](https://github.com/hedzr/android-file-chooser) | Apache-2.0 |
+| `doubletapplayerview/` (resources) and `app/src/main/java/com/brouken/player/dtpv/` (the Java, translated from the original Kotlin) | [vkay94/DoubleTapPlayerView](https://github.com/vkay94/DoubleTapPlayerView) — Copyright (c) 2019 Viktor Krez | MIT, text in [`licenses/MIT-DoubleTapPlayerView.txt`](licenses/MIT-DoubleTapPlayerView.txt) |
+| `android-file-chooser/` | [hedzr/android-file-chooser](https://github.com/hedzr/android-file-chooser) | Apache-2.0, text in [`licenses/Apache-2.0.txt`](licenses/Apache-2.0.txt) |
 
 ## The project this one is built on
 

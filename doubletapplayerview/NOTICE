@@ -1,0 +1,28 @@
+DoubleTapPlayerView
+Copyright (c) 2019 Viktor Krez
+https://github.com/vkay94/DoubleTapPlayerView
+
+Licensed under the MIT licence. The full licence text is in
+licenses/MIT-DoubleTapPlayerView.txt at the root of this repository, and is
+distributed with this software.
+
+WHAT IS IN THIS DIRECTORY
+-------------------------
+
+Resources only — layouts, drawables, strings and plurals. There is no Java or
+Kotlin here. The code that goes with them was translated into Java and lives in
+app/src/main/java/com/brouken/player/dtpv/, where each file carries its own
+copyright header.
+
+MODIFICATIONS
+-------------
+
+This copy has been modified and is not the upstream release. The changes were
+made by the Just Player project (https://github.com/moneytoo/Player), from which
+Just Player Pro is forked, and were inherited here: the library was brought
+in-tree as a local module with its own resources rather than pulled as a
+dependency, and its translations were extended.
+
+Just Player Pro has made no further changes to this directory. Its one change to
+the double-tap code is recorded in the header of
+app/src/main/java/com/brouken/player/dtpv/youtube/YouTubeOverlay.java.
