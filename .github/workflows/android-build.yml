@@ -86,16 +86,34 @@ jobs:
              "release-apks/just-player-pro-$version-universal.apk"
           ls -la release-apks
 
+
+      # The licences have to reach whoever downloads a binary, not only whoever
+      # browses the repository, so they ride along with every release.
+      - name: Bundle the licence texts
+        run: |
+          version="$(grep -oP 'versionName\s+"\K[^"]+' app/build.gradle | head -1)"
+          staging="$(mktemp -d)"
+          cp -r licenses "$staging/"
+          cp THIRD-PARTY-NOTICES.md "$staging/"
+          cp LICENSE "$staging/LICENSE-GPL-3.0.txt"
+          (cd "$staging" && zip -qr licenses.zip .)
+          mv "$staging/licenses.zip" "release-apks/just-player-pro-$version-licenses.zip"
+          unzip -l "release-apks/just-player-pro-$version-licenses.zip"
+
       - name: Keep them as artifacts either way
         uses: actions/upload-artifact@v4
         with:
           name: apks
-          path: release-apks/*.apk
+          path: |
+            release-apks/*.apk
+            release-apks/*-licenses.zip
 
       - name: Draft a release, but only if they are properly signed
         if: steps.signing.outputs.signed == 'true' && startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: release-apks/*.apk
+          files: |
+            release-apks/*.apk
+            release-apks/*-licenses.zip
           draft: true
           generate_release_notes: true
