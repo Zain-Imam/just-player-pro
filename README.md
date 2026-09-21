@@ -29,9 +29,24 @@ driven by a finger on a phone or by a D-pad from across the room, and behaves th
 </table>
 
 <details>
-<summary>Searching by file name</summary>
+<summary>Playing a film</summary>
+<br>
+<img src="docs/screenshots/04-playback.jpg" alt="A film playing on a phone, with the playback settings beside it">
+<img src="docs/screenshots/05-quick-settings.jpg" alt="The quick settings panel and the playback settings behind it">
+</details>
+
+<details>
+<summary>Titles and subtitles</summary>
+<br>
+<img src="docs/screenshots/06-info-and-subtitles.jpg" alt="An info card over a paused film, and the subtitle search beside it">
+<img src="docs/screenshots/07-identify.jpg" alt="Confirming which film a file is, then picking the episode">
+</details>
+
+<details>
+<summary>Finding and keeping things</summary>
 <br>
 <img src="docs/screenshots/03-search.jpg" alt="Searching the library by file name">
+<img src="docs/screenshots/10-backup-and-history.jpg" alt="History and backup, beside the subtitle sources and identification settings">
 </details>
 
 </div>
