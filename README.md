@@ -634,8 +634,8 @@ every class file and resolving every call between them, and fails the build if t
 
 The device tests exist for the questions a laptop cannot answer: Android's regular-expression engine
 rejects patterns desktop Java accepts, and timing behaves differently on a real main-thread handler.
-`tools/smoke.sh` drives the shipped APK over adb; what it covers, and what it does not, is written
-down in [docs/VERIFICATION.md](docs/VERIFICATION.md).
+`tools/smoke.sh` drives the shipped APK over adb, and refuses to press anything unless the player
+is the window in front.
 
 ### Online features need keys
 

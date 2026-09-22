@@ -3,11 +3,33 @@
 # Shared harness for the scripts that drive the player over adb.
 #
 # The interlock lives here so there is one copy of it: nothing is pressed
-# unless the player is the thing in front. See docs/VERIFICATION.md.
+# unless the player is the thing in front. If the player is not in front, a
+# press would land on the launcher and open whatever sits under it, so the
+# run stops instead.
 
 set -u
 export MSYS_NO_PATHCONV=1
-PATH="$PATH:/c/Users/SC/AppData/Local/Android/Sdk/platform-tools"
+
+# adb has to be reachable. Use it if it is already on PATH; otherwise take the
+# SDK location from the environment, and failing that look where the SDK
+# installs by default on each platform.
+if ! command -v adb >/dev/null 2>&1; then
+  for sdk in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}" \
+             "$HOME/AppData/Local/Android/Sdk" \
+             "$HOME/Android/Sdk" \
+             "$HOME/Library/Android/sdk"; do
+    [ -n "$sdk" ] || continue
+    if [ -x "$sdk/platform-tools/adb" ] || [ -x "$sdk/platform-tools/adb.exe" ]; then
+      PATH="$PATH:$sdk/platform-tools"
+      break
+    fi
+  done
+fi
+
+if ! command -v adb >/dev/null 2>&1; then
+  echo "adb is not on PATH. Set ANDROID_HOME to your SDK and try again." >&2
+  exit 1
+fi
 
 PKG="${PKG:-${1:-app.justplayerpro.android.debug}}"
 ACT="$PKG/com.brouken.player.PlayerActivity"
