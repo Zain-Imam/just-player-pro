@@ -1,3 +1,103 @@
+# 4.1.0
+
+Eight things reported from real use, fixed — and the two that were owed from
+last month. Nothing was removed, and nothing about how a film reaches the player
+has changed.
+
+Every fix below was made for **both engines and both input methods** — Media3
+and mpv, finger and remote — because that is the rule this project has worked to
+since 3.0.
+
+## The headline
+
+**Three faults that only appeared while a subtitle was loading, and were one
+fault underneath.** Attaching a subtitle rebuilds the file and reads it again,
+and three separate things fell out of that: the film jumped back to a position
+minutes old and refused to stay where it was dragged, the aspect-ratio button
+stopped doing anything at all, and a newly loaded subtitle did nothing while the
+previous one stayed on screen. All three are gone, and the cause is fixed rather
+than each symptom.
+
+**The app opens where you told it to.** *Start on → Home screen* was only ever
+read when the folder list was being created from nothing, so every other way
+back into the app — returning to it after a while, or anything that reached the
+player directly — carried straight on with the last film instead. Power saving
+made it happen more often on some devices rather than causing it.
+
+**The licences are in the app.** The full text of all nine, under
+**Settings → Licences**. A licence attached to a release only reaches somebody
+who downloaded it from that page; these travel inside the APK wherever it goes.
+
+## Fixed
+
+* **Volume moves one step at a time.** A device offers a fixed number of volume
+  steps — usually fifteen — so the swipe could only ever read 0, 7, 13, 20 and
+  upwards, jumping in sevens while brightness beside it moved one at a time. The
+  swipe now has its own scale of a hundred, with the engine making up the
+  difference inside each of the device's own steps. The hardware keys are
+  deliberately unchanged: those should agree with the panel the system shows.
+* **The film stays where it is dragged to.** A source failing to load released
+  the player without writing the position down, so the next one started from
+  whatever had last been saved — often minutes behind.
+* **The aspect-ratio button works after a subtitle loads.** It read the shape of
+  the picture at the moment it was pressed, which during a rebuild is nothing at
+  all, and wrote that nothing into the frame.
+* **A newly loaded subtitle is the one that shows.** The choice was matched by
+  name, and when the name did not match it gave up silently and left the
+  previous subtitle selected. It now falls back to position in the list. Picking
+  *None* once also stopped every subtitle loaded afterwards from being chosen,
+  for the life of the player.
+* **The introduction no longer fires over a playing film.** The two pointers
+  shown on a first run were written when the player was the only screen; with a
+  folder list in front of it they appeared over a film already playing, drew
+  themselves cut off, and the first pointed at a button that is no longer how
+  anybody starts.
+
+## New
+
+* **The buttons go where you want them.** *Settings → Reorder the buttons* lists
+  the nine along the bottom of the player, top of the list being the leftmost.
+  Arrows rather than dragging, because dragging does not exist on a remote, and
+  a tick beside each to hide the ones you never use. The gear cannot be hidden,
+  since it is the way back. Rotate, picture-in-picture and the loop button are
+  listed even where this device does not show them, greyed and with the reason,
+  so their place can be chosen in advance.
+* **The timeline behind a lock.** *Settings → Timeline while locked*, off by
+  default. With it on, tapping a locked screen shows how far through you are —
+  played, left and the whole length — beside the padlock. The bar cannot be
+  dragged: a lock that can be scrubbed by a pocket is not a lock.
+* **Licences, in full, inside the app** — Settings → Licences.
+* **An introduction worth reading** — four cards on the folder list, covering
+  the things that cannot be discovered by looking: gestures, long presses, and
+  the free key that turns the rest on. Back, Skip and Next, and
+  **Settings → Show the introduction again** brings it back.
+* **The controls decide how long to stay.** Three to thirty seconds, where it
+  was fixed and not offered at all. The number is how long they are actually on
+  screen: Media3 spends a further two and a quarter seconds fading them out
+  once the time is up, and that is now taken off the front rather than added to
+  the end, so fifteen seconds means fifteen rather than something closer to
+  eighteen.
+* **Double-tap seek starts at three seconds**, in steps of one, up to thirty. It
+  was five to sixty in steps of five, so three and seven were not reachable.
+* **The info card can wait up to a minute** before appearing, where fifteen
+  seconds was the most it would take.
+* **A hint where it is needed.** The empty folder list now says that the list
+  comes from Android's own index of media, and points at *Settings → File
+  access* for a folder that is missing from it.
+* **Two APKs with fixed names** on every release —
+  `just-player-pro-arm64-v8a.apk` and `just-player-pro-armeabi-v7a.apk` — so a
+  download link, or a Downloader code on a television, keeps working from one
+  release to the next.
+
+## Changed
+
+* **Quick settings → "Customise subtitles…"**, which is what it opens. It read
+  *Subtitle*, which said nothing, while every row beside it is named for what it
+  does.
+* **Locking is the padlock.** Holding two fingers on the picture is no longer
+  described anywhere, having proved unreliable. The padlock in the controls
+  locks and unlocks, and holding OK does it on a remote.
+
 # 4.0.0
 
 Sixteen things the application could not do before, the bugs found while proving
@@ -459,8 +559,8 @@ Media3 reported everything.
 * **The theme colour list shows colours**, once, rather than a list of names
   with the colours hiding behind it.
 * **The clock no longer sits on top of the title.**
-* **Locking has its own gesture again** — two fingers held — so the plain hold
-  can be double speed without one of them losing out.
+* **Locking has its own control again**, so the plain hold can be double speed
+  without one of them losing out.
 * **The update check says which of the three things happened**: newer build,
   nothing newer, or could not ask. And it names the version it found.
 * **The setup page tests addons**, not only keys, and probes one before saving
@@ -500,8 +600,8 @@ Media3 reported everything.
   and on Auto. The crash above was every one of them.
 * **Sleep timer**, by minutes or at the end of the file, fading out over the
   last thirty seconds instead of cutting.
-* **Hold the picture for double speed**, and hold it with two fingers to lock.
-  One gesture used to have to be both.
+* **Hold the picture for double speed.** One gesture used to have to be both
+  that and the lock.
 * **A clock on screen** while the controls are up.
 * **Volume keys can change the film** rather than the ringtone.
 * **The arrows seek by the step set in Settings**, not a fixed ten seconds.

@@ -10,7 +10,7 @@ Media3/ExoPlayer and a full build of mpv ship inside one app, and the player mov
 its own — so a file one cannot decode is handled by the other instead of failing. The same build is
 driven by a finger on a phone or by a D-pad from across the room, and behaves the same either way.
 
-[![Release](https://img.shields.io/badge/release-v4.0.0-F4601E?style=flat-square)](https://github.com/Zain-Imam/just-player-pro/releases/latest)
+[![Release](https://img.shields.io/badge/release-v4.1.0-F4601E?style=flat-square)](https://github.com/Zain-Imam/just-player-pro/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Zain-Imam/just-player-pro/total?style=flat-square&color=F4601E&label=downloads)](https://github.com/Zain-Imam/just-player-pro/releases)
 [![Android](https://img.shields.io/badge/Android-7.1%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](#building)
 [![Engines](https://img.shields.io/badge/engines-Media3%20%2B%20mpv-4C8BF5?style=flat-square)](#the-two-engines)
@@ -97,12 +97,30 @@ Grab the newest build from **[Releases](https://github.com/Zain-Imam/just-player
 
 | File | For |
 |---|---|
-| `just-player-pro-4.0.0-arm64-v8a.apk` | Almost every phone, tablet and TV box made since 2017 |
-| `just-player-pro-4.0.0-armeabi-v7a.apk` | Older 32-bit devices |
-| `just-player-pro-4.0.0-x86_64.apk` · `-x86.apk` | Emulators and the few x86 devices |
-| `just-player-pro-4.0.0-universal.apk` | All four at once — four times the mpv payload, so only if you are unsure |
+| `just-player-pro-4.1.0-arm64-v8a.apk` | Almost every phone, tablet and TV box made since 2017 |
+| `just-player-pro-4.1.0-armeabi-v7a.apk` | Older 32-bit devices |
+| `just-player-pro-4.1.0-x86_64.apk` · `-x86.apk` | Emulators and the few x86 devices |
+| `just-player-pro-4.1.0-universal.apk` | All four at once — four times the mpv payload, so only if you are unsure |
 
 Android 7.1 or newer. The mpv engine additionally needs Android 8.0 and is offered only there.
+
+### On a television
+
+Typing a URL with a remote is miserable, so every release also carries the same two builds under
+names that never change. These links always point at the newest release:
+
+| Link | For |
+|---|---|
+| `github.com/Zain-Imam/just-player-pro/releases/latest/download/just-player-pro-arm64-v8a.apk` | Almost every TV box and stick |
+| `github.com/Zain-Imam/just-player-pro/releases/latest/download/just-player-pro-armeabi-v7a.apk` | Older 32-bit boxes |
+
+On a Fire TV stick or an Android TV box, open **[Downloader by AFTVnews](https://www.aftvnews.com/downloader/)**,
+type one of the addresses above into its URL box and press Go. Android will ask once for permission
+to install from Downloader; allow it, and the player installs.
+
+Because those two filenames never change, the address keeps working for every release from now on.
+The same address can be shortened once at [go.aftvnews.com](https://go.aftvnews.com/) into a numeric
+**Downloader code**, which is quicker again to type with a remote.
 
 Every version, and what was fixed in each, is in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
@@ -175,7 +193,7 @@ kind of device this is — only by what you actually press.
 | Volume and brightness | Drag up or down, left half or right | The device's own keys, past 100% for the boost |
 | Pick a track or a setting | Tap a row | Arrows and OK — every panel takes the focus as it opens |
 | Zoom the picture | Pinch, or hold the frame button | Hold the frame button, then the arrows |
-| Lock the screen | Hold two fingers on the picture | Hold OK |
+| Lock the screen | The padlock in the controls | Hold OK |
 
 Layouts are in dp and sp throughout and reflow rather than clip, so portrait, landscape, tablets and
 televisions all get the same build. The detail — and what a television genuinely cannot do — is in
@@ -306,6 +324,13 @@ delay is where somebody adjusting the sound would look for it. Panels come in **
 same width, barely dimming the film — because what is being chosen is almost always a decision about
 what is on screen at that moment.
 
+* **The button strip is yours to arrange.** *Settings → Reorder the buttons* moves the nine along
+  the bottom into whatever order you want, and hides the ones you never use. Arrows rather than
+  dragging, so it works identically with a thumb and a D-pad. The gear cannot be hidden, since it is
+  the way back.
+* **A timeline behind the lock**, if you want one. Off by default, a locked screen shows only the
+  padlock — as it always has. Switched on in settings, a tap also shows how far through you are:
+  played, left, and the whole length. The bar is there to read, not to drag.
 * **Tracks described properly.** Resolution, channel layout, codec, sample rate, bit rate, and
   whether a track is forced, for the hard of hearing, or an audio description — in one fixed order,
   identically on both engines, so two English soundtracks are never two identical rows.
@@ -506,7 +531,6 @@ styles, volume boost, PiP, gestures, chapters, skip markers, online subtitles �
 | Drag up and down, **right** half | Volume — keep going past 100% for the boost |
 | Drag left and right | Scrub through the film |
 | Long press | Hold for double speed; let go to drop back. While locked, it unlocks |
-| Long press, **two fingers** | Lock the controls. Hold again, with either hand, to unlock |
 | Pinch | Zoom the picture |
 
 ### On the controls
@@ -702,6 +726,9 @@ person gets what you got. That is the whole of the obligation.
 * Bundled libraries keep their own licences, listed with their sources in
   [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) — mpv, FFmpeg, libass and
   libplacebo are LGPL, Media3 and most of the rest Apache-2.0.
+* **The full text of all nine ships inside the app**, under
+  **Settings → Licences**, so the notices travel with the APK however it was
+  obtained. The same texts are in [licenses/](licenses/).
 * **The name and the logo are not covered by the licence.** Fork the code freely
   and give the fork its own name and icon, so people can tell which one they are
   installing.
@@ -715,6 +742,6 @@ not come from this project, whatever it is called:
 SHA-256  6d:c1:c9:16:44:76:06:b1:ce:ba:13:3e:1c:50:6f:a8:
          8e:11:25:9b:08:2c:d3:16:61:d0:c6:6c:12:42:dc:a6
 
-apksigner verify --print-certs just-player-pro-4.0.0-arm64-v8a.apk
+apksigner verify --print-certs just-player-pro-4.1.0-arm64-v8a.apk
 ```
 </details>

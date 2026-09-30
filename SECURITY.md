@@ -43,7 +43,7 @@ different certificate did not come from this project, whatever it is called and
 wherever it was downloaded from:
 
 ```
-apksigner verify --print-certs just-player-pro-4.0.0-arm64-v8a.apk
+apksigner verify --print-certs just-player-pro-4.1.0-arm64-v8a.apk
 ```
 
 Releases are published only on the
