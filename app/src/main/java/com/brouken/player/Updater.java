@@ -17,6 +17,8 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 /*
  * Checking GitHub for a newer build, since that is where this one came from.
@@ -37,6 +39,14 @@ public final class Updater {
     /** Where a person is sent, as opposed to where the answer is fetched from. */
     private static final String LATEST_PAGE =
             "https://github.com/Zain-Imam/just-player-pro/releases/latest";
+
+    /**
+     * Marks the copies kept under a name that never changes, so a television
+     * download code keeps working between releases. They are the same build as
+     * the versioned file beside them, and this is only here so the versioned
+     * one is the one offered when both would do.
+     */
+    private static final String DOWNLOADER_COPY = "downloader";
 
     private final Activity activity;
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -248,9 +258,25 @@ public final class Updater {
             release.page = json.optString("html_url", null);
             release.notes = json.optString("body", "");
 
-            // Prefer the build for this device's architecture over the
-            // universal one, which is four times the size.
+            /*
+             * The best build for this device, not the last one that matches.
+             *
+             * SUPPORTED_ABIS lists every architecture the device can run, best
+             * first -- a 64-bit phone reports arm64-v8a AND armeabi-v7a. This
+             * used to assign on every match as it walked the assets, so the
+             * winner was whichever matching file happened to come last in the
+             * release, and every device ended up on the 32-bit ARM build: it
+             * runs, but with 32-bit mpv and FFmpeg and less room on big files.
+             *
+             * So the architectures are walked in the order the device prefers
+             * them, and the first one with a matching asset wins. The versioned
+             * filename is taken over the fixed-name copy kept for television
+             * download links -- they are the same build, but the versioned one
+             * is the file this release is actually named for.
+             */
             final JSONArray assets = json.optJSONArray("assets");
+            final List<String> names = new ArrayList<>();
+            final List<String> urls = new ArrayList<>();
             String universal = null;
             for (int i = 0; assets != null && i < assets.length(); i++) {
                 final JSONObject asset = assets.optJSONObject(i);
@@ -264,12 +290,36 @@ public final class Updater {
                 }
                 if (name.contains("universal")) {
                     universal = url;
-                } else if (matchesThisDevice(name)) {
-                    release.apk = url;
+                } else {
+                    names.add(name);
+                    urls.add(url);
+                }
+            }
+            for (final String abi : android.os.Build.SUPPORTED_ABIS) {
+                // The whole of the name's tail, not a substring of it: "x86" is
+                // inside "x86_64", so a 32-bit x86 device asking for "x86"
+                // matched the 64-bit file and installed something that cannot
+                // run. Every asset ends in -<abi>.apk, which is exact.
+                final String tail = "-" + abi + ".apk";
+                for (int i = 0; i < names.size(); i++) {
+                    if (!names.get(i).endsWith(tail)) {
+                        continue;
+                    }
+                    if (release.apk == null || !names.get(i).contains(DOWNLOADER_COPY)) {
+                        release.apk = urls.get(i);
+                    }
+                }
+                if (release.apk != null) {
+                    break;
                 }
             }
             if (release.apk == null) {
                 release.apk = universal;
+            }
+            if (BuildConfig.DEBUG) {
+                Utils.log("Update: this device offers "
+                        + android.text.TextUtils.join(", ", android.os.Build.SUPPORTED_ABIS)
+                        + " and will fetch " + release.apk);
             }
             if (release.version.isEmpty()) {
                 nothingPublished = true;
@@ -279,15 +329,6 @@ public final class Updater {
         } catch (Exception e) {
             return null;
         }
-    }
-
-    private static boolean matchesThisDevice(final String assetName) {
-        for (final String abi : android.os.Build.SUPPORTED_ABIS) {
-            if (assetName.contains(abi)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /** Compares dotted versions, so 1.10.0 is newer than 1.9.0 rather than older. */
