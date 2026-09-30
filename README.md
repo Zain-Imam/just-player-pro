@@ -111,7 +111,7 @@ Open **[Downloader by AFTVnews](https://www.aftvnews.com/downloader/)** and type
 | Code | For |
 |---|---|
 | **`1728018`** | Almost every TV box and stick |
-| **`7339697`** | Older 32-bit boxes |
+| **`4999398`** | Older 32-bit boxes |
 
 Both always fetch the newest release.
 

@@ -91,10 +91,26 @@ jobs:
             # APK instead of interleaving with them -- which looked like two
             # mystery builds sitting in the middle of the list. The name also
             # says what they are for.
+            #
+            # The 32-bit one is named to sort BEFORE the 64-bit one, and that
+            # ordering is load-bearing. Up to 4.1.0 the updater took the last
+            # asset whose name matched any architecture the device supports,
+            # and a 64-bit phone supports both -- so whichever arm file came
+            # last alphabetically is what every phone downloaded. Digits sort
+            # before letters, so "32bit-armeabi-v7a" falls before "arm64-v8a"
+            # and the last arm match is the 64-bit build, which is right.
+            #
+            # 4.1.0 and later choose properly and do not care. This is here for
+            # the versions already in people's hands, and can go once they are
+            # not.
             case "$abi" in
-              arm64-v8a|armeabi-v7a)
+              arm64-v8a)
                 cp app/build/outputs/apk/latestUniversal/release/just_player_pro.apk \
-                   "release-apks/just-player-pro-downloader-$abi.apk"
+                   "release-apks/just-player-pro-downloader-arm64-v8a.apk"
+                ;;
+              armeabi-v7a)
+                cp app/build/outputs/apk/latestUniversal/release/just_player_pro.apk \
+                   "release-apks/just-player-pro-downloader-32bit-armeabi-v7a.apk"
                 ;;
             esac
           done
