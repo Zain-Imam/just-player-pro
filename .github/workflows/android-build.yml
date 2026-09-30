@@ -85,10 +85,16 @@ jobs:
             # address is looked up by exact filename, so a name carrying the
             # version changes every release and any link to it dies. These two
             # never change, which is what lets a Downloader code keep working.
+            #
+            # Named "downloader" rather than left version-less: assets sort by
+            # name, digits before letters, so these fall below every versioned
+            # APK instead of interleaving with them -- which looked like two
+            # mystery builds sitting in the middle of the list. The name also
+            # says what they are for.
             case "$abi" in
               arm64-v8a|armeabi-v7a)
                 cp app/build/outputs/apk/latestUniversal/release/just_player_pro.apk \
-                   "release-apks/just-player-pro-$abi.apk"
+                   "release-apks/just-player-pro-downloader-$abi.apk"
                 ;;
             esac
           done

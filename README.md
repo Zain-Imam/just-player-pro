@@ -106,21 +106,14 @@ Android 7.1 or newer. The mpv engine additionally needs Android 8.0 and is offer
 
 ### On a television
 
-Typing a URL with a remote is miserable, so every release also carries the same two builds under
-names that never change. These links always point at the newest release:
+Open **[Downloader by AFTVnews](https://www.aftvnews.com/downloader/)** and type the code:
 
-| Link | For |
+| Code | For |
 |---|---|
-| `github.com/Zain-Imam/just-player-pro/releases/latest/download/just-player-pro-arm64-v8a.apk` | Almost every TV box and stick |
-| `github.com/Zain-Imam/just-player-pro/releases/latest/download/just-player-pro-armeabi-v7a.apk` | Older 32-bit boxes |
+| **`1728018`** | Almost every TV box and stick |
+| **`7339697`** | Older 32-bit boxes |
 
-On a Fire TV stick or an Android TV box, open **[Downloader by AFTVnews](https://www.aftvnews.com/downloader/)**,
-type one of the addresses above into its URL box and press Go. Android will ask once for permission
-to install from Downloader; allow it, and the player installs.
-
-Because those two filenames never change, the address keeps working for every release from now on.
-The same address can be shortened once at [go.aftvnews.com](https://go.aftvnews.com/) into a numeric
-**Downloader code**, which is quicker again to type with a remote.
+Both always fetch the newest release.
 
 Every version, and what was fixed in each, is in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
