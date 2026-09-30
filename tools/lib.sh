@@ -54,8 +54,29 @@ pass() { echo "PASS  $1"; PASSED=$((PASSED + 1)); }
 fail() { echo "FAIL  $1"; [ -n "${2:-}" ] && echo "        $2"; FAILED=$((FAILED + 1)); }
 check() { if [ "$2" = "0" ]; then pass "$1"; else fail "$1" "${3:-}"; fi; }
 
+#
+# One dump at a time, with a breath between them.
+#
+# Each dump registers an automation service with the accessibility framework
+# and unregisters it again. Run back to back, a new one can arrive before the
+# last has let go -- "UiAutomationService already registered" -- and on one
+# phone that took the system's own accessibility menu down with it, putting a
+# "keeps stopping" dialog in front of whatever was being tested.
+#
+# A lock file makes two dumps from one run impossible, and the short wait after
+# each gives the framework time to release. It costs a fraction of a second per
+# dump and removes a failure that looked like the application's fault.
+#
 dump() {
+  local lock="${WORK:-/tmp}/dump.lock" waited=0
+  while [ -e "$lock" ] && [ $waited -lt 30 ]; do
+    sleep 0.2
+    waited=$((waited + 1))
+  done
+  : > "$lock"
   adb shell "uiautomator dump /sdcard/jpp-ui.xml >/dev/null 2>&1; cat /sdcard/jpp-ui.xml" 2>/dev/null | tr '<' '\n'
+  rm -f "$lock"
+  sleep 0.3
 }
 
 bounds_of() {
@@ -443,23 +464,92 @@ panel_row() {
 # so a row can go past between one look and the next, and a hunt for something
 # that is plainly there reports it missing. A slow drag over a short distance
 # moves exactly as far as it is told.
+#
+# The screen as it is now, which is not what `wm size` answers.
+#
+# `wm size` reports the panel: 1080x2400 whichever way up the phone is. Held
+# sideways the screen is 2400x1080, so a drag computed from that starts at
+# y=2040 -- a thousand pixels below the bottom of it. The press lands nowhere,
+# nothing scrolls, and a row plainly on the screen is reported missing. Two
+# rows were, and neither was a fault in the application.
+#
+# The root node of a dump is the window, so its bounds are the screen the right
+# way round. The panel size is kept as a fallback for the case where a dump
+# comes back empty, which it sometimes does over a moving picture.
+#
+# Asked of the window manager, never of uiautomator.
+#
+# Reading the size from a dump works, but a dump registers an automation
+# service against the accessibility framework, and this harness already takes
+# more of those than the framework is comfortable with -- enough, on one phone,
+# to crash the system's own accessibility menu with "UiAutomationService
+# already registered". The rotation is a plain dumpsys read and costs nothing,
+# so the panel size is simply turned the right way round instead.
+screen_now() {   # echoes "<width> <height>"
+  local size
+  # cur= is the display as it stands, already the right way round. Working it
+  # out from the rotation instead is a trap: the field reads ROTATION_90, and
+  # taking the last digit of that gives 9 rather than 1, so a sideways screen
+  # was read as upright and every drag went off the bottom of it.
+  size="$(adb shell dumpsys window displays 2>/dev/null \
+        | grep -m1 -oE 'cur=[0-9]+x[0-9]+' | cut -d= -f2 | tr -d '\r')"
+  [ -z "$size" ] && size="$(adb shell wm size 2>/dev/null \
+        | grep -oE '[0-9]+x[0-9]+' | head -1 | tr -d '\r')"
+  [ -z "$size" ] && { echo "${SCREEN_W:-1080} ${SCREEN_H:-2400}"; return 0; }
+  echo "${size%x*} ${size#*x}"
+}
+
+#
+# A row in the quick settings panel, scrolling the panel to reach it.
+#
+# The panel is a list of fourteen anchored to one edge, and only a handful are
+# in view at once -- fewer still with the phone held sideways. Looking without
+# scrolling found the rows near the top and reported the rest missing, and
+# because the panel was then left open over the controls, the step after it
+# could not find its button either: one row out of view failed a whole section.
+#
+# Scrolled at the panel's own x rather than the middle of the screen, since the
+# middle is beside the panel, not on it.
+#
+panel_row() {   # panel_row <row text>
+  local at n anchor px w h
+  at="$(centre text "$1")"
+  [ -n "$at" ] && { echo "$at"; return 0; }
+
+  anchor="$(centre text 'Quick settings')"
+  [ -z "$anchor" ] && anchor="$(centre text 'Speed')"
+  [ -z "$anchor" ] && { echo ""; return 1; }
+
+  set -- $(screen_now) "$1"
+  w="$1"; h="$2"; shift 2
+  px="$(echo "$anchor" | awk '{print $1}')"
+
+  for n in $(seq 1 8); do
+    swipe "$px" $(( (h * 75) / 100 )) "$px" $(( (h * 30) / 100 )) 600
+    sleep 1
+    at="$(centre text "$1")"
+    [ -n "$at" ] && { echo "$at"; return 0; }
+  done
+  echo ""
+  return 1
+}
+
 scroll_to() {
-  local at n from to
+  local at n from to w h
   at="$(centre text "$1")"
   [ -n "$at" ] && { echo "$at"; return 0; }
 
   # Most of the window, but never all of it.
   #
-  # It used to move a quarter of the height at a time, which in landscape is a
-  # quarter of 1080 rather than of 2400 -- so thirty drags fell short of the
-  # bottom of the settings list and rows that were plainly there were reported
-  # missing. Two thirds is still less than one screenful, so no row can pass
-  # through the visible area between one look and the next, which is the thing
-  # a long drag would otherwise get wrong.
-  from=$(( (SCREEN_H * 85) / 100 ))
-  to=$(( (SCREEN_H * 20) / 100 ))
+  # Two thirds is still less than one screenful, so no row can pass through the
+  # visible area between one look and the next, which is the thing a long drag
+  # would otherwise get wrong.
+  set -- $(screen_now) "$1"
+  w="$1"; h="$2"; shift 2
+  from=$(( (h * 85) / 100 ))
+  to=$(( (h * 20) / 100 ))
   for n in $(seq 1 30); do
-    swipe $((SCREEN_W / 2)) "$from" $((SCREEN_W / 2)) "$to" 700
+    swipe $((w / 2)) "$from" $((w / 2)) "$to" 700
     sleep 1
     at="$(centre text "$1")"
     [ -n "$at" ] && { echo "$at"; return 0; }

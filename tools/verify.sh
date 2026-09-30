@@ -280,7 +280,9 @@ ListPreference|File access
 ListPreference|Identify files
 ListPreference|Subtitle language
 SeekBarPreference|Double-tap seek
-SeekBarPreference|Card delay
+SeekBarPreference|Controls stay for
+SwitchPreferenceCompat|Timeline while locked
+SeekBarPreference|Card appears after
 SwitchPreferenceCompat|Adaptive buffering
 SwitchPreferenceCompat|Ask before resuming
 SwitchPreferenceCompat|Auto picture-in-picture
@@ -291,7 +293,7 @@ SwitchPreferenceCompat|Show the time
 SwitchPreferenceCompat|Volume boost
 SwitchPreferenceCompat|Volume keys change this app only
 SwitchPreferenceCompat|Info card when paused
-SwitchPreferenceCompat|Skip intros and credits
+SwitchPreferenceCompat|Skip intros and credits · experimental
 SwitchPreferenceCompat|Search subtitles automatically
 SwitchPreferenceCompat|Fill search from file name
 SwitchPreferenceCompat|Custom subtitle font
@@ -307,6 +309,9 @@ EditTextPreference|Subtitle language order
 Preference|Choose custom font
 Preference|Subtitle download folder
 Preference|Test keys and addons
+Preference|Show the introduction again
+Preference|Reorder the buttons
+Preference|Licences
 ROWS
 }
 
@@ -629,7 +634,7 @@ online_features() {
   # Ask for the card: with a key configured this goes to TMDB for real.
   if tap_control Settings; then
     local card
-    card="$(centre text 'Show info card')"
+    card="$(panel_row 'Show info card')"
     if [ -n "$card" ]; then
       tap $card
       local settled=1 i
@@ -647,6 +652,10 @@ online_features() {
       back_if_something_is_open
     else
       fail "found Show info card"
+      # Closed either way. Left open, the panel covers the controls and the
+      # subtitle search below never finds its button -- one missing row used to
+      # take the whole of the online section with it.
+      back_if_something_is_open
     fi
   fi
 
