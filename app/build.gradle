@@ -39,8 +39,8 @@ android {
         applicationId "app.justplayerpro.android"
         minSdkVersion 25
         targetSdkVersion 36
-        versionCode 4
-        versionName "4.0.0"
+        versionCode 5
+        versionName "4.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         if (abiFilter) {
             def abiCodeMap = ["x86": 1, "x86_64": 2, "armeabi-v7a": 3, "arm64-v8a": 4]
@@ -120,6 +120,17 @@ android {
     sourceSets {
         test.java.srcDirs += 'src/sharedTest/java'
         androidTest.java.srcDirs += 'src/sharedTest/java'
+        /*
+         * The licence texts travel inside the APK.
+         *
+         * A licence attached to a GitHub release only reaches somebody who
+         * downloaded it from that page, and an APK passed around any other way
+         * carried no notices at all -- which MIT, ISC and Apache all require to
+         * accompany the binary. Generated rather than copied into the source
+         * tree, so there is one copy of each text in the repository and it
+         * cannot drift from the one that ships.
+         */
+        main.assets.srcDirs += "${buildDir}/generated/licenses"
     }
 
     lint {
@@ -220,4 +231,76 @@ dependencies {
     implementation project(path: ':doubletapplayerview')
     implementation project(path: ':android-file-chooser')
     implementation fileTree(dir: "libs", include: ["lib-*.aar"])
+}
+
+/*
+ * Gather the licence texts into the APK's assets.
+ *
+ * The texts themselves live in licenses/ at the root of the repository, which
+ * is also what the release zip is built from, so there is exactly one copy of
+ * each and the screen in the app cannot fall out of step with it. The project's
+ * own licence and the third-party notices go in beside them.
+ *
+ * An index file is written alongside so the screen does not have to guess at
+ * filenames: one line per entry, the title and the file separated by a bar.
+ */
+def licenseAssets = tasks.register('licenseAssets', Copy) {
+    def out = layout.buildDirectory.dir('generated/licenses/licenses')
+    from(rootProject.file('licenses')) {
+        include '*.txt'
+    }
+    from(rootProject.file('LICENSE')) {
+        rename { 'GPL-3.0.txt' }
+    }
+    from(rootProject.file('THIRD-PARTY-NOTICES.md'))
+    into out
+
+    doLast {
+        def dir = out.get().asFile
+        def titles = [
+                'GPL-3.0.txt'                              : 'Just Player Pro (GNU GPL v3)',
+                'THIRD-PARTY-NOTICES.md'                   : 'Third-party notices',
+                'Apache-2.0.txt'                           : 'Apache License 2.0',
+                'Apache-2.0-with-LLVM-exception-libcxx.txt': 'Apache 2.0 with LLVM exception (libc++)',
+                'GPL-2.0.txt'                              : 'GNU GPL v2 (mpv, FFmpeg)',
+                'LGPL-2.1.txt'                             : 'GNU LGPL v2.1 (FFmpeg)',
+                'ISC-libass.txt'                           : 'ISC (libass)',
+                'MIT-DoubleTapPlayerView.txt'              : 'MIT (DoubleTapPlayerView)',
+                'MIT-libmpv-android.txt'                   : 'MIT (libmpv-android)',
+        ]
+        def lines = []
+        titles.each { file, title ->
+            if (new File(dir, file).exists()) {
+                lines << "${title}|${file}"
+            }
+        }
+        // Anything added to licenses/ later still appears, named after itself,
+        // so a new dependency cannot be shipped with its notice left out.
+        dir.listFiles().sort { it.name }.each { f ->
+            if (f.name != 'index.txt' && !titles.containsKey(f.name)) {
+                lines << "${f.name - ~/\.(txt|md)$/}|${f.name}"
+            }
+        }
+        new File(dir, 'index.txt').text = lines.join('\n') + '\n'
+    }
+}
+
+/*
+ * Everything that reads the asset directories waits for this to fill one.
+ *
+ * Named rather than matched precisely, because the set of tasks that look at
+ * assets is larger than it appears: the asset merge, of course, but also every
+ * lint task, which builds a model of the sources and fails the build outright
+ * if a directory it is reading is written by a task it does not depend on. A
+ * regex listing them one by one missed a new one each time, so this asks the
+ * broad question instead -- does this task have anything to do with assets or
+ * lint -- and the task itself is excluded so it cannot wait for itself.
+ */
+tasks.configureEach { task ->
+    if (task.name == 'licenseAssets') {
+        return
+    }
+    if (task.name.contains('Assets') || task.name.toLowerCase().contains('lint')) {
+        task.dependsOn licenseAssets
+    }
 }

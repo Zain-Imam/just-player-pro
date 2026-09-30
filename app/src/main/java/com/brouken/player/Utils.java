@@ -210,8 +210,128 @@ public class Utils {
         return 100 + PlayerActivity.boostLevel * (50 / BOOST_STEPS);
     }
 
+    /** How much one step of the vertical swipe moves the volume, in percent. */
+    public static final int VOLUME_FINE_STEP = 1;
+
+    /**
+     * Volume in single percent, for the vertical swipe.
+     *
+     * <p>A device has a fixed number of volume steps -- fifteen on most -- so
+     * stepping the device itself and showing the result as a percentage could
+     * only ever read 0, 7, 13, 20 and upwards. Beside brightness, which moves
+     * one level at a time, that looked broken.
+     *
+     * <p>So the swipe moves along its own scale of a hundred, the device is set
+     * to the nearest step it actually has at or above that, and the engine's
+     * own volume is turned down inside that step to land on the exact figure.
+     * The hardware keys are deliberately left alone: those should agree with
+     * the panel the system puts on screen, which knows nothing of this.
+     *
+     * <p>The real stream range is used rather than {@link #getVolume}, whose
+     * Samsung path reports a virtual range that {@code setStreamVolume} would
+     * not understand.
+     */
+    public static void adjustVolumeFine(final Context context, final AudioManager audioManager,
+                                        final CustomPlayerView playerView, final boolean raise,
+                                        final boolean canBoost) {
+        /*
+         * Leave this alone where the player has a volume of its own.
+         *
+         * That setting hands the volume keys to the player rather than the
+         * device, so the two are deliberately independent. Fine steps work by
+         * turning the player down inside one of the device's own steps, which
+         * would write straight over whatever the keys had set -- so where it is
+         * on, the swipe stays on the device's volume exactly as it always was.
+         */
+        if (androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean("volumeKeysPlayerOnly", false)) {
+            adjustVolume(context, audioManager, playerView, raise, canBoost, false);
+            return;
+        }
+
+        playerView.removeCallbacks(playerView.textClearRunnable);
+
+        final int max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        if (max <= 0) {
+            return;
+        }
+        final int device = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+
+        /*
+         * Take the device's word for it when it disagrees.
+         *
+         * Anything else on the phone can move the volume while a film is
+         * playing -- the hardware keys, a notification, another app. When the
+         * step no longer matches what this last set, the scale is read back
+         * from the device so the next swipe carries on from what is audible
+         * rather than from a figure that is no longer true.
+         */
+        int percent = PlayerActivity.volumeFinePercent;
+        if (percent < 0 || (int) Math.ceil(percent * max / 100f) != device) {
+            percent = Math.round(device * 100f / max);
+            PlayerActivity.boostLevel = 0;
+        }
+
+        // Above full volume the boost takes over, exactly as it did before.
+        if (raise && percent >= 100 && canBoost && PlayerActivity.canBoostVolume()) {
+            if (PlayerActivity.boostLevel < BOOST_STEPS) {
+                PlayerActivity.boostLevel++;
+            }
+            PlayerActivity.applyBoostLevel(true);
+            playerView.setCustomErrorMessage(" " + boostedPercent());
+            playerView.setIconVolume(true);
+            playerView.setHighlight(true);
+            return;
+        }
+        if (!raise && PlayerActivity.boostLevel > 0) {
+            PlayerActivity.boostLevel--;
+            PlayerActivity.applyBoostLevel(PlayerActivity.boostLevel > 0);
+            playerView.setCustomErrorMessage(" " + boostedPercent());
+            playerView.setIconVolume(true);
+            playerView.setHighlight(PlayerActivity.boostLevel > 0);
+            return;
+        }
+
+        percent = Math.max(0, Math.min(100,
+                percent + (raise ? VOLUME_FINE_STEP : -VOLUME_FINE_STEP)));
+        PlayerActivity.volumeFinePercent = percent;
+
+        final int step = (int) Math.ceil(percent * max / 100f);
+        if (step != device) {
+            try {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, step,
+                        AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
+            } catch (SecurityException e) {
+                // A locked-down profile can refuse. The engine gain below still
+                // moves the sound, so the swipe is not left doing nothing.
+                Log.w(TAG, e);
+            }
+        }
+        PlayerActivity.fineVolume = step == 0 ? 0f
+                : Math.min(1f, (percent / 100f) / (step / (float) max));
+        PlayerActivity.applyEngineVolume();
+
+        playerView.setCustomErrorMessage(percent > 0 ? " " + percent : "");
+        playerView.setIconVolume(percent > 0);
+        playerView.setHighlight(false);
+    }
+
     public static void adjustVolume(final Context context, final AudioManager audioManager, final CustomPlayerView playerView, final boolean raise, boolean canBoost, boolean clear) {
         playerView.removeCallbacks(playerView.textClearRunnable);
+
+        /*
+         * The keys move the device's own volume, so let go of the fine part.
+         *
+         * Left in place, a swipe that had turned the engine down inside a step
+         * would go on quietening everything the keys did afterwards -- press
+         * volume up to the top and the film would still be playing at a
+         * fraction of it.
+         */
+        if (PlayerActivity.fineVolume != 1f) {
+            PlayerActivity.fineVolume = 1f;
+            PlayerActivity.applyEngineVolume();
+        }
+        PlayerActivity.volumeFinePercent = -1;
 
         final int volume = getVolume(context,false, audioManager);
         final int volumeMax = getVolume(context,true, audioManager);

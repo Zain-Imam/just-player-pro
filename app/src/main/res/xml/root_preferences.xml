@@ -19,6 +19,11 @@
             app:selectable="false"
             app:summary="@string/pref_accent_note" />
 
+        <Preference
+            app:key="controlsOrder"
+            app:summary="@string/pref_controls_order_summary"
+            app:title="@string/pref_controls_order" />
+
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/pref_home_header">
@@ -34,6 +39,11 @@
         <Preference
             app:selectable="false"
             app:summary="@string/pref_start_on_note" />
+
+        <Preference
+            app:key="showIntroAgain"
+            app:summary="@string/pref_intro_again_summary"
+            app:title="@string/pref_intro_again" />
 
     </PreferenceCategory>
 
@@ -169,12 +179,29 @@
         <SeekBarPreference
             app:key="doubleTapSeekSeconds"
             app:defaultValue="10"
-            android:max="60"
-            app:min="5"
-            app:seekBarIncrement="5"
+            android:max="30"
+            app:min="3"
+            app:seekBarIncrement="1"
             app:showSeekBarValue="true"
             app:summary="@string/pref_double_tap_seconds_summary"
             app:title="@string/pref_double_tap_seconds" />
+
+        <SwitchPreferenceCompat
+            app:key="lockedTimeline"
+            app:defaultValue="false"
+            app:summaryOn="@string/pref_locked_timeline_on"
+            app:summaryOff="@string/pref_locked_timeline_off"
+            app:title="@string/pref_locked_timeline" />
+
+        <SeekBarPreference
+            app:key="controlsTimeoutSeconds"
+            app:defaultValue="6"
+            android:max="30"
+            app:min="3"
+            app:seekBarIncrement="1"
+            app:showSeekBarValue="true"
+            app:summary="@string/pref_controls_timeout_summary"
+            app:title="@string/pref_controls_timeout" />
 
         <Preference
             app:selectable="false"
@@ -299,7 +326,7 @@
         <SeekBarPreference
             app:key="overlayDelaySeconds"
             app:defaultValue="3"
-            android:max="15"
+            android:max="60"
             app:min="0"
             app:seekBarIncrement="1"
             app:showSeekBarValue="true"
@@ -445,6 +472,11 @@
             app:key="aboutProject"
             app:title="@string/pref_about_title"
             app:widgetLayout="@layout/preference_widget_github" />
+
+        <Preference
+            app:key="licenses"
+            app:summary="@string/pref_licenses_summary"
+            app:title="@string/pref_licenses" />
 
     </PreferenceCategory>
 

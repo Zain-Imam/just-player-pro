@@ -274,6 +274,17 @@ public class HomeActivity extends AppCompatActivity {
             recreate();
             return;
         }
+        /*
+         * The introduction first, the resume offer after.
+         *
+         * Both want the screen the moment it appears, and two dialogs at once
+         * is one dialog nobody reads. The introduction is shown once ever, so
+         * on every other visit this costs a preference read.
+         */
+        if (!picking && !permissionPending && hasStoragePermission() && Intro.pending(this)) {
+            Intro.show(this);
+            return;
+        }
         maybeOfferLastVideo();
     }
 
@@ -370,6 +381,16 @@ public class HomeActivity extends AppCompatActivity {
      */
     static final String EXTRA_FOLDER = "com.brouken.player.FOLDER";
 
+    /**
+     * Marks a player launch this screen made on purpose.
+     *
+     * <p>The player sends a bare launch back here when the setting says the app
+     * opens on the folder list. Without something to tell the two apart, the
+     * launch this screen makes when the setting says the opposite would be sent
+     * straight back to it, and the two would bounce off each other forever.
+     */
+    static final String EXTRA_FROM_HOME = "com.brouken.player.FROM_HOME";
+
     void startPlayer(@Nullable final Uri uri, @Nullable final String type) {
         /*
          * Handed back rather than played, when somebody else asked the question.
@@ -395,6 +416,7 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         final Intent intent = new Intent(this, PlayerActivity.class);
+        intent.putExtra(EXTRA_FROM_HOME, true);
         if (uri != null) {
             intent.setAction(Intent.ACTION_VIEW);
             if (type == null || type.isEmpty()) {

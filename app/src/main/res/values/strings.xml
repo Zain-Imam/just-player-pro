@@ -188,9 +188,54 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="pref_subtitle_sources_header">Subtitle sources — all optional</string>
     <string name="pref_double_tap_seconds">Double-tap seek</string>
     <string name="pref_double_tap_seconds_summary">Seconds per double tap</string>
+    <string name="pref_locked_timeline">Timeline while locked</string>
+    <string name="pref_locked_timeline_on">Tapping a locked screen shows how far through you are</string>
+    <string name="pref_locked_timeline_off">A locked screen shows only the padlock</string>
+    <!-- Played, left, and the whole length. -->
+    <string name="locked_timeline_times">%1$s  ·  −%2$s left  ·  %3$s</string>
+    <string name="pref_controls_order">Reorder the buttons</string>
+    <string name="pref_controls_order_summary">The order of the buttons along the bottom of the player, and which of them appear</string>
+    <string name="controls_order_hint">Top of this list is the button furthest left in the player. Use the arrows to move one, and the tick to show or hide it.</string>
+    <string name="controls_order_reset">Put back the usual order</string>
+    <string name="controls_order_up">Move left</string>
+    <string name="controls_order_down">Move right</string>
+    <string name="controls_order_shown">Show this button</string>
+    <string name="controls_unavailable_tv">Not on a television — the screen does not turn</string>
+    <string name="controls_unavailable_device">This device does not offer picture-in-picture</string>
+    <string name="controls_unavailable_off">Switched off in settings</string>
+    <string name="controls_name_open">Open</string>
+    <string name="controls_name_subtitle">Subtitles</string>
+    <string name="controls_name_audio">Audio track</string>
+    <string name="controls_name_aspect">Resize</string>
+    <string name="controls_name_settings">Settings</string>
+    <string name="controls_name_lock">Lock</string>
+    <string name="controls_name_rotate">Rotate</string>
+    <string name="controls_name_pip">Picture-in-picture</string>
+    <string name="controls_name_repeat">Loop</string>
+    <string name="pref_licenses">Licences</string>
+    <string name="pref_licenses_summary">The full text of every licence this app is built under</string>
+    <string name="licenses_unavailable">This licence text could not be read.</string>
+    <string name="intro_next">Next</string>
+    <string name="intro_back">Back</string>
+    <string name="intro_done">Done</string>
+    <string name="intro_skip">Skip</string>
+    <string name="intro_open_settings">Open settings</string>
+    <string name="intro_folders_title">Your folders, at a glance</string>
+    <string name="intro_folders_body">This list is every folder on the device that holds video, with how many and how large. There is no library to build and nothing to wait for.\n\nStar a folder to keep it at the top. The bar above searches every file on the device by name, and sorts folders and files four ways.</string>
+    <string name="intro_key_title">A free key turns the rest on</string>
+    <string name="intro_key_body">Playback needs nothing. Posters, titles, subtitle search and intro skipping need a TMDB key, which is free and takes a minute.\n\nUntil you add one the player never touches the network. Typing a key with a remote is miserable, so settings can serve a page to your phone instead.</string>
+    <string name="intro_gestures_title">The picture is the control</string>
+    <string name="intro_gestures_body">Double-tap the left or right third to jump back or forward, and the middle to play or pause.\n\nHold anywhere for double speed, and let go to drop back. Drag up and down the left half for brightness, the right half for volume, and across for scrubbing.</string>
+    <string name="intro_holds_title">Hold a button for more</string>
+    <string name="intro_holds_body">The gear opens the quick panel; hold it for every setting there is.\n\nHold the subtitle button for size, colour and position. Hold the frame button to zoom the picture. The padlock locks the screen against a pocket, and lets it go again.</string>
+    <string name="pref_intro_again">Show the introduction again</string>
+    <string name="pref_intro_again_summary">The four cards shown when the app was new</string>
+    <string name="pref_intro_again_done">It will be shown next time the folder list opens</string>
+    <string name="pref_controls_timeout">Controls stay for</string>
+    <string name="pref_controls_timeout_summary">Seconds before the controls hide themselves again</string>
     <string name="unlocked">Unlocked</string>
-    <string name="locked_hint">Locked — hold OK, or hold two fingers on the picture, to unlock</string>
-    <string name="pref_lock_hint">Lock the screen against accidental touches with the padlock in the controls, or by holding two fingers on the picture. To unlock, hold again — with one finger or two — or hold OK on a remote. A single press does nothing, so the lock cannot be lifted by accident. The volume keys keep working while locked.</string>
+    <string name="locked_hint">Locked — press the padlock, or hold the picture, to unlock</string>
+    <string name="pref_lock_hint">Lock the screen against accidental touches with the padlock in the controls. To unlock, press the padlock again, or hold your finger anywhere on the picture, or hold OK on a remote. A stray tap on the picture does nothing, so the lock cannot be lifted by accident. The volume keys keep working while locked.</string>
     <string name="pref_overlay_delay">Card appears after</string>
     <string name="pref_overlay_delay_summary">Seconds of being paused before the card appears. 0 shows it at once. It then stays until something else needs the screen.</string>
     <string name="pref_prefill">Fill search from file name</string>
@@ -364,7 +409,15 @@ URLs you open over the network are remembered so you can return to them without 
     <string name="osd_subtitle_delay_full">Subtitle delay</string>
     <string name="osd_audio_title">@string/audio_title</string>
     <string name="audio_title">Audio</string>
-    <string name="osd_subtitle_title">@string/pref_subtitle_header</string>
+    <!--
+        Named for what it opens, not for what it is about.
+        It read "Subtitle", which said nothing: every row beside it in the quick
+        settings is named for what it does - Audio track, Copy link, Show info
+        card, All settings - and this one leads to size, position, delay and
+        style. Its own text rather than the settings category's, so renaming it
+        here does not rename the heading on the settings screen.
+    -->
+    <string name="osd_subtitle_title">Customise subtitles…</string>
     <string name="osd_subtitle_position_title">Position</string>
     <string name="osd_subtitle_delay_title">Delay</string>
     <string name="osd_subtitle_size_title">Size</string>
@@ -456,7 +509,7 @@ Addon 1 comes set to the official OpenSubtitles addon, which works as-is. The ot
     <string name="home_section_results">Results</string>
     <string name="home_grant">Allow access</string>
     <string name="home_empty_permission">Just Player Pro needs permission to list the videos on this device.\n\nNothing is uploaded anywhere, and files can still be opened one at a time without it.</string>
-    <string name="home_empty_none">No videos on this device yet.\n\nThe link button above plays a network address, and anything sent here from another app opens as usual.</string>
+    <string name="home_empty_none">No videos on this device yet.\n\nThe link button above plays a network address, and anything sent here from another app opens as usual.\n\nExpecting a folder that is not here? This list comes from Android\'s own index of media, and a folder missing from that index will not appear. Settings → File access offers two other ways of reading the device.</string>
     <string name="home_empty_folder">This folder is empty.</string>
     <string name="home_empty_results">No videos match that name.</string>
     <string name="home_videos_one">1 video</string>

@@ -234,7 +234,19 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
 
     public boolean tap() {
         if (PlayerActivity.locked) {
-            Utils.showText(this, "", MESSAGE_TIMEOUT_LONG);
+            /*
+             * The padlock alone is a glance; a timeline is something to read.
+             *
+             * So where the timeline has been asked for, both stay for as long
+             * as the controls would -- which is a setting, and long enough to
+             * take in three times. Without it the padlock keeps its own brief
+             * appearance, exactly as before.
+             */
+            final PlayerActivity activity = getContext() instanceof PlayerActivity
+                    ? (PlayerActivity) getContext() : null;
+            final boolean timeline = activity != null && activity.showLockedTimeline(0);
+            Utils.showText(this, "",
+                    timeline ? PlayerActivity.CONTROLLER_TIMEOUT : MESSAGE_TIMEOUT_LONG);
             setIconLock(true);
             return true;
         }
@@ -352,7 +364,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                 if (motionEvent.getX() < (float)(getWidth() / 2)) {
                     brightnessControl.changeBrightness(this, gestureScrollY > 0, canSetAutoBrightness);
                 } else {
-                    Utils.adjustVolume(getContext(), mAudioManager, this, gestureScrollY > 0, canBoostVolume, false);
+                    Utils.adjustVolumeFine(getContext(), mAudioManager, this, gestureScrollY > 0, canBoostVolume);
                 }
 
                 gestureScrollY = 0.0001f;
@@ -525,6 +537,12 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         // button and the long-press gesture are two ways into the same state.
         if (getContext() instanceof PlayerActivity) {
             ((PlayerActivity) getContext()).updateButtonLock();
+            // Every way out of the lock comes through here, so this is the one
+            // place the locked timeline has to be taken away again -- the
+            // padlock, the held gesture and the remote alike.
+            if (!locked) {
+                ((PlayerActivity) getContext()).hideLockedTimeline();
+            }
         }
         exoErrorMessage.setCompoundDrawablesWithIntrinsicBounds(locked ? R.drawable.ic_lock_24dp : R.drawable.ic_lock_open_24dp, 0, 0, 0);
     }

@@ -668,6 +668,34 @@ public class SettingsActivity extends AppCompatActivity {
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
             useFullWidth(getPreferenceScreen());
 
+            final Preference controlsOrder = findPreference("controlsOrder");
+            if (controlsOrder != null) {
+                controlsOrder.setOnPreferenceClickListener(clicked -> {
+                    startActivity(new Intent(requireContext(), ControlOrderActivity.class));
+                    return true;
+                });
+            }
+
+            final Preference licenses = findPreference("licenses");
+            if (licenses != null) {
+                licenses.setOnPreferenceClickListener(clicked -> {
+                    startActivity(new Intent(requireContext(), LicensesActivity.class));
+                    return true;
+                });
+            }
+
+            final Preference intro = findPreference("showIntroAgain");
+            if (intro != null) {
+                intro.setOnPreferenceClickListener(clicked -> {
+                    // Armed rather than shown: it belongs to the folder list,
+                    // and putting it over settings is how it went wrong before.
+                    Intro.markSeen(requireContext(), false);
+                    Toast.makeText(requireContext(),
+                            R.string.pref_intro_again_done, Toast.LENGTH_LONG).show();
+                    return true;
+                });
+            }
+
             final Preference update = findPreference("checkUpdate");
             if (update != null) {
                 update.setOnPreferenceClickListener(clicked -> {

@@ -755,6 +755,18 @@
             android:configChanges="orientation"
             android:theme="@style/Transparent" />
         <activity
+            android:name=".ControlOrderActivity"
+            android:exported="false"
+            android:label="@string/pref_controls_order"
+            android:parentActivityName=".SettingsActivity"
+            android:theme="@style/Theme.Player.Settings" />
+        <activity
+            android:name=".LicensesActivity"
+            android:exported="false"
+            android:label="@string/pref_licenses"
+            android:parentActivityName=".SettingsActivity"
+            android:theme="@style/Theme.Player.Settings" />
+        <activity
             android:name=".SettingsActivity"
             android:exported="true"
             android:label="@string/pref_title"
