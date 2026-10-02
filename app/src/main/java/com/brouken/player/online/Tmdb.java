@@ -78,18 +78,7 @@ public final class Tmdb {
         return search(context, query, null);
     }
 
-    /*
-     * Ask more than once, in decreasing order of confidence.
-     *
-     * A name out of a file is a guess, and one guess is not enough: the year
-     * may be wrong, the title may carry a subtitle the database does not use,
-     * an anime may be listed under its other name. Asking once and giving up is
-     * how "The Runner 2026" came back with nothing while "The Runner" was there
-     * all along.
-     *
-     * Each rung asks for less than the one above it. The first that answers
-     * wins, and if none do the caller is told so rather than left waiting.
-     */
+    // tries looser and looser queries; the first one with results wins
     @NonNull
     public static List<Candidate> searchHard(final Context context,
                                              final String title,
@@ -111,8 +100,7 @@ public final class Tmdb {
         // 2. The title on its own.
         tried.add(clean);
 
-        // 3. Without whatever follows a colon or a dash, which is usually a
-        //    subtitle the database files under the main name.
+        // 3. Without a subtitle after a colon or a dash.
         final String[] cuts = {":", " - ", " – "};
         for (final String cut : cuts) {
             final int at = clean.indexOf(cut);
@@ -150,14 +138,7 @@ public final class Tmdb {
         return new ArrayList<>();
     }
 
-    /*
-     * The year goes beside the query, never inside it.
-     *
-     * Searching for "The Runner 2026" asks TMDB for a title containing those
-     * words and finds nothing; searching for "The Runner" with 2026 as the year
-     * finds the film. The year was being glued on to the end of the query,
-     * which is why taking it off by hand was what made the search work.
-     */
+    // TMDB matches nothing if the year is in the query; it goes in its own parameter
     @NonNull
     public static List<Candidate> search(final Context context, final String query,
                                          @Nullable final String year) {
@@ -312,15 +293,7 @@ public final class Tmdb {
         return new Identity(true, candidate.id, episodeImdb, parentImdb, showTitle, episodeTitle,
                 season, episode, showYear,
                 episodeOverview != null ? episodeOverview : nullIfEmpty(show.optString("overview", "")),
-                // The show poster, not the still from this episode.
-                //
-                // A still is a frame out of the middle of the episode: on a
-                // card that sits over the paused film it reads as a second
-                // screenshot rather than as the thing being watched, and for
-                // half the episodes ever made it is a dark corridor. The
-                // poster is the picture a series is recognised by, and it is
-                // the same picture a film gets, so the card looks the same
-                // whichever is playing.
+                // the show poster is used for episodes too
                 nullIfEmpty(show.optString("poster_path", "")),
                 airDate != null ? airDate : nullIfEmpty(firstAir),
                 rating);

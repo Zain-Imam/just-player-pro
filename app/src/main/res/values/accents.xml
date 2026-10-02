@@ -1,19 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    The eleven accent colours, taken from torbox-android's Accent.kt so the
-    player, the phone app and the website are recognisably the same product.
-
-    These are the `base` tones. torbox uses a lighter `dark` tone on dark
-    backgrounds, but this player's default accent IS the base orange — it is the
-    colour of the launcher icon — and an accent that did not match the icon
-    would read as a different app. The base tones are saturated enough to carry
-    over video, which is what they sit on here.
-
-    The launcher icon does NOT follow this: it keeps its own
-    @color/ic_launcher_background, because an icon that changed colour under
-    the user would stop being recognisable on a launcher, and that is the one
-    place a colour has to stay put.
--->
+<!-- base tones from torbox-android's Accent.kt -->
 <resources>
     <color name="accent_red">#DC2626</color>
     <color name="accent_orange">#F2761E</color>

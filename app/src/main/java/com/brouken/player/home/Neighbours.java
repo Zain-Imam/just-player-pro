@@ -10,22 +10,10 @@ import androidx.preference.PreferenceManager;
 
 import java.util.List;
 
-/**
- * What sits either side of the film that is playing.
- *
- * <p>Answered from the folder it was opened from, in the order that folder was
- * being shown in — the same sort, the same direction. Somebody who sorted a
- * folder oldest-first and pressed play on the top one means the second-oldest
- * by "next", and alphabetical order would be a different film entirely.
- *
- * <p>Read fresh rather than carried in the intent. A folder of five hundred
- * clips is several hundred kilobytes of addresses, which an intent will not
- * take, and a list carried across would go stale the moment a file was deleted.
- * One media store query answers it and cannot be wrong.
- */
+// Previous and next file in the folder a video was opened from, in the order
+// the home screen shows it. Queried fresh: a file list is too big for an intent.
 public final class Neighbours {
 
-    /** What is before and after, either of which may be nothing. */
     public static final class Either {
         @Nullable
         public final Uri previous;
@@ -47,16 +35,11 @@ public final class Neighbours {
     private Neighbours() {
     }
 
-    /** Nothing either side, for a film that belongs to no list. */
     public static Either none() {
         return NOTHING;
     }
 
-    /**
-     * The films either side of this one in this folder.
-     *
-     * <p>Runs a media store query, so never on the main thread.
-     */
+    // runs a media store query: not on the main thread
     @NonNull
     public static Either of(@NonNull final Context context, @Nullable final String folderId,
                             @Nullable final Uri current) {
@@ -80,9 +63,7 @@ public final class Neighbours {
             }
         }
         if (at < 0) {
-            // The film is not in the folder it claimed to come from: deleted
-            // while playing, or handed over by something else with a folder
-            // attached. Offering a guess would be worse than offering nothing.
+            // not in that folder, e.g. deleted while playing
             return NOTHING;
         }
         return new Either(

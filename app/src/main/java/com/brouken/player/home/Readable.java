@@ -2,14 +2,7 @@ package com.brouken.player.home;
 
 import java.util.Locale;
 
-/**
- * Numbers as a person would say them.
- *
- * <p>Its own class, away from the screen that shows it, because this is the one
- * part of the home screen that can be checked without a device — and a folder
- * that says "1.0 GB" where it means "1,024 MB" is exactly the kind of thing
- * nobody notices in a screenshot.
- */
+// Kept apart from the home screen so it can be unit tested.
 public final class Readable {
 
     private static final String[] UNITS = {"KB", "MB", "GB", "TB"};
@@ -17,13 +10,7 @@ public final class Readable {
     private Readable() {
     }
 
-    /**
-     * A size, to one decimal place below ten and to none above it.
-     *
-     * <p>1.4 GB rather than 1.43 GB, and 870 MB rather than 870.2 MB: the
-     * second digit never changed a decision anybody made about a video file,
-     * and it makes a column of sizes harder to scan.
-     */
+    /** A size in binary units, one decimal place below 10 and none above. */
     public static String size(final long bytes) {
         if (bytes < 0) {
             return "";

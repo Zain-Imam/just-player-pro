@@ -25,21 +25,13 @@
         android:textColor="@color/osd_settings_item_title_text"
         android:textSize="@dimen/osd_settings_item_title_text_size" />
 
-    <!--
-         Pushes anything after it to the far end. The title keeps wrap_content
-         so it is still measured by its own text, which is what sets the panel
-         width; giving the title the weight instead would stretch it and change
-         how wide every panel opens.
-    -->
+    <!-- the weight sits here so the title's own width still sets the panel width -->
     <Space
         android:layout_width="0dp"
         android:layout_height="1dp"
         android:layout_weight="1" />
 
-    <!--
-         The second verb, where a row has one. Its own target, focusable in its
-         own right so a remote can reach it, and gone entirely when unused.
-    -->
+    <!-- optional second action, focusable so a remote can reach it -->
     <ImageView
         android:id="@+id/osd_trailing_action"
         android:layout_width="48dp"

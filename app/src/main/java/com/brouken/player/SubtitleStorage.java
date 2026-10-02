@@ -69,10 +69,8 @@ public final class SubtitleStorage {
         if (stem.isEmpty()) {
             stem = "subtitle";
         }
-        // Anything a file system is entitled to object to.
         stem = stem.replaceAll("[\\\\/:*?\"<>|]", "_");
-        // And a length it will accept: some providers name a subtitle after
-        // every release it matches, which runs to hundreds of characters.
+        // some providers put every matching release in the name
         if (stem.length() > 120) {
             stem = stem.substring(0, 120).trim();
         }
@@ -93,8 +91,7 @@ public final class SubtitleStorage {
             if (result.saved()) {
                 return result;
             }
-            // A chosen folder can stop being writable — the card came out, the
-            // grant was revoked. Falling through beats refusing to save at all.
+            // a chosen folder can stop being writable; fall back instead of failing
             Utils.log("Chosen subtitle folder rejected the write; falling back");
         }
 
@@ -119,8 +116,7 @@ public final class SubtitleStorage {
                 return new Result(null, null);
             }
 
-            // Replaced rather than duplicated: saving the same subtitle twice
-            // should not leave "name (1)" behind.
+            // replace, so saving twice does not leave "name (1)"
             final DocumentFile existing = folder.findFile(name);
             if (existing != null) {
                 existing.delete();
@@ -177,7 +173,7 @@ public final class SubtitleStorage {
     }
 
     private static Result saveToDir(@Nullable final File dir, final String name, final byte[] bytes) {
-        // Null is the case that started all this: a box with no external volume.
+        // null on a box with no external volume
         if (dir == null) {
             return new Result(null, null);
         }

@@ -5,9 +5,6 @@ import android.os.Looper;
 
 import androidx.media3.common.Player;
 
-// Stops the film after a while, for falling asleep to. The last half minute
-// fades the sound down rather than cutting it, so drifting off is not
-// interrupted by silence arriving all at once.
 public final class SleepTimer {
 
     public interface Host {
@@ -37,7 +34,6 @@ public final class SleepTimer {
         return atEndOfFile;
     }
 
-    /** Minutes from now, or zero to stop the timer. */
     public void setMinutes(final int minutes, final Player player) {
         cancel(player);
         if (minutes <= 0) {
@@ -50,7 +46,6 @@ public final class SleepTimer {
         handler.postDelayed(this.tick, TICK_MS);
     }
 
-    /** Stop when the file that is playing now finishes. */
     public void setEndOfFile(final Player player) {
         cancel(player);
         running = true;
@@ -66,7 +61,6 @@ public final class SleepTimer {
         atEndOfFile = false;
     }
 
-    /** How long is left, in minutes, rounded up. Zero when not counting down. */
     public int minutesLeft() {
         if (!running || atEndOfFile) {
             return 0;
@@ -75,21 +69,11 @@ public final class SleepTimer {
         return left <= 0 ? 0 : (int) ((left + 59_999) / 60_000);
     }
 
-    /**
-     * Whether this timer is waiting for the film to end.
-     *
-     * <p>Asked before the ending is handed over, because handling it cancels
-     * the timer — and what wants to know is whether the film ending was the
-     * thing somebody asked to stop on. "Stop at the end of the film" and "play
-     * the next file automatically" are a direct contradiction, and the timer
-     * wins: it was set deliberately, for tonight, and the other is a standing
-     * preference.
-     */
+    // ask before onPlaybackEnded, which cancels the timer; it wins over autoplay
     public boolean willStopAtEndOfFile() {
         return running && atEndOfFile;
     }
 
-    /** Called when playback reaches the end, for the end-of-file setting. */
     public void onPlaybackEnded(final Player player) {
         if (running && atEndOfFile) {
             cancel(player);

@@ -2,10 +2,7 @@ plugins {
     id 'com.android.application'
 }
 
-// Release signing, kept out of the repository. Without keystore.properties the
-// release build falls back to the debug key so anyone can still build it, but
-// the published APKs must be signed with the real one: Android will not install
-// an update signed by a different key.
+// release signing; without keystore.properties the debug key is used
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file("keystore.properties")
 if (keystorePropertiesFile.exists()) {
@@ -39,8 +36,8 @@ android {
         applicationId "app.justplayerpro.android"
         minSdkVersion 25
         targetSdkVersion 36
-        versionCode 5
-        versionName "4.1.0"
+        versionCode 6
+        versionName "4.2.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         if (abiFilter) {
             def abiCodeMap = ["x86": 1, "x86_64": 2, "armeabi-v7a": 3, "arm64-v8a": 4]
@@ -111,25 +108,11 @@ android {
     buildFeatures {
         buildConfig = true
     }
-    /*
-     * One copy of the test data, read by both kinds of test.
-     *
-     * The same corpus has to run here and on the device, because the point of
-     * running it twice is that the two do not always agree.
-     */
+    // one corpus for unit and device tests, since the two runtimes can disagree
     sourceSets {
         test.java.srcDirs += 'src/sharedTest/java'
         androidTest.java.srcDirs += 'src/sharedTest/java'
-        /*
-         * The licence texts travel inside the APK.
-         *
-         * A licence attached to a GitHub release only reaches somebody who
-         * downloaded it from that page, and an APK passed around any other way
-         * carried no notices at all -- which MIT, ISC and Apache all require to
-         * accompany the binary. Generated rather than copied into the source
-         * tree, so there is one copy of each text in the repository and it
-         * cannot drift from the one that ships.
-         */
+        // licence notices ship inside the APK, generated from licenses/
         main.assets.srcDirs += "${buildDir}/generated/licenses"
     }
 
@@ -140,7 +123,7 @@ android {
 }
 
 dependencies {
-    // Must match the patched aars in libs/ - see the note below before raising it.
+    // must match the patched aars in libs/
     def media3_version = '1.10.0'
     def androidxCoreVersion = '1.8.0'
     implementation "androidx.media3:media3-session:$media3_version"
@@ -149,25 +132,8 @@ dependencies {
     implementation "androidx.media3:media3-common:$media3_version"
     implementation "androidx.media3:media3-container:$media3_version"
     implementation "androidx.media3:media3-extractor:$media3_version"
-    /*
-     * These four exclude media3-exoplayer because ExoPlayer itself comes from
-     * libs/lib-exoplayer-release.aar, a patched build. The player calls
-     * DefaultRenderersFactory.setMapDV7ToHevc(), PlayerView.showProgress() and
-     * PlayerView.hideControllerImmediately(), none of which exist upstream, so
-     * the aars cannot simply be dropped for the published modules.
-     *
-     * Which is why media3_version above cannot be raised on its own. These
-     * modules are compiled against ExoPlayer, so they have to be the version
-     * the aars were built from, and nothing warns you when they are not.
-     * Raised to 1.11.0 while the aars stayed at 1.10.0, HlsMediaSource called
-     * BaseMediaSource.getBandwidthMeter(), which 1.10.0 has not got, and every
-     * HLS stream killed the playback thread with NoSuchMethodError: the player
-     * opened, showed the title, and sat at 00:00 saying nothing at all. DASH,
-     * SmoothStreaming and RTSP all go through the same door.
-     *
-     * To move Media3 up, rebuild the aars in libs/ from the matching AndroidX
-     * Media tag with the patches applied, and change this with them.
-     */
+    // ExoPlayer itself is the patched aar in libs/. These modules must be the same
+    // version or HLS/DASH fail at runtime with NoSuchMethodError.
     implementation("androidx.media3:media3-exoplayer-dash:$media3_version") {
         exclude group: "androidx.media3", module: "media3-exoplayer"
     }
@@ -187,41 +153,15 @@ dependencies {
     implementation "androidx.core:core:$androidxCoreVersion"
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'androidx.preference:preference:1.2.1'
-    /*
-     * libmpv, for the alternative playback engine.
-     *
-     * MIT-licensed wrapper around an mpv build carrying FFmpeg, libass and
-     * libplacebo. Adds roughly 25 MB per ABI, which is why per-ABI release
-     * builds matter once this is in — see the README.
-     *
-     * Deliberately NOT Findroid's player class, which is GPL-3.0 and would
-     * relicense this app; only this library is used, and the Player
-     * implementation over it is written here.
-     */
+    // libmpv for the mpv engine; adds about 25 MB per ABI
     implementation 'dev.jdtech.mpv:libmpv:1.0.0'
     implementation 'com.squareup.okhttp3:okhttp:5.3.2'
     implementation 'com.sigpwned:chardet4j:78.1.0'
-    /*
-     * Only the encoder, and only for one screen.
-     *
-     * A television that cannot share, mail or message has no way to get an
-     * error report off itself and onto the phone in your hand. A square on
-     * screen is the way out, and writing a correct QR encoder - Reed-Solomon
-     * and all - is not a thing to do by hand for one dialog.
-     */
+    // QR encoder, to get error reports off a TV
     implementation 'com.google.zxing:core:3.5.3'
-    /*
-     * Tests, and why there are two kinds.
-     *
-     * The plain ones run on this machine and are fast enough for every build.
-     * The instrumented ones run on the device, which is the only place that
-     * catches what differs there: Android uses ICU for regular expressions and
-     * rejects patterns desktop Java accepts, which is how a pattern that passed
-     * here crashed the app on the phone.
-     */
+    // device tests catch ICU regex differences that desktop Java misses
     testImplementation 'junit:junit:4.13.2'
-    // Android's org.json is a stub in unit tests; the real one lets the backup
-    // format be tested on any machine rather than only on a device.
+    // real org.json; Android's is a stub in unit tests
     testImplementation 'org.json:json:20231013'
     androidTestImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
@@ -233,17 +173,7 @@ dependencies {
     implementation fileTree(dir: "libs", include: ["lib-*.aar"])
 }
 
-/*
- * Gather the licence texts into the APK's assets.
- *
- * The texts themselves live in licenses/ at the root of the repository, which
- * is also what the release zip is built from, so there is exactly one copy of
- * each and the screen in the app cannot fall out of step with it. The project's
- * own licence and the third-party notices go in beside them.
- *
- * An index file is written alongside so the screen does not have to guess at
- * filenames: one line per entry, the title and the file separated by a bar.
- */
+// copies licenses/ into assets, plus an index.txt of "title|file" lines
 def licenseAssets = tasks.register('licenseAssets', Copy) {
     def out = layout.buildDirectory.dir('generated/licenses/licenses')
     from(rootProject.file('licenses')) {
@@ -274,8 +204,6 @@ def licenseAssets = tasks.register('licenseAssets', Copy) {
                 lines << "${title}|${file}"
             }
         }
-        // Anything added to licenses/ later still appears, named after itself,
-        // so a new dependency cannot be shipped with its notice left out.
         dir.listFiles().sort { it.name }.each { f ->
             if (f.name != 'index.txt' && !titles.containsKey(f.name)) {
                 lines << "${f.name - ~/\.(txt|md)$/}|${f.name}"
@@ -285,17 +213,7 @@ def licenseAssets = tasks.register('licenseAssets', Copy) {
     }
 }
 
-/*
- * Everything that reads the asset directories waits for this to fill one.
- *
- * Named rather than matched precisely, because the set of tasks that look at
- * assets is larger than it appears: the asset merge, of course, but also every
- * lint task, which builds a model of the sources and fails the build outright
- * if a directory it is reading is written by a task it does not depend on. A
- * regex listing them one by one missed a new one each time, so this asks the
- * broad question instead -- does this task have anything to do with assets or
- * lint -- and the task itself is excluded so it cannot wait for itself.
- */
+// lint tasks read the asset dirs too and fail the build without this dependency
 tasks.configureEach { task ->
     if (task.name == 'licenseAssets') {
         return

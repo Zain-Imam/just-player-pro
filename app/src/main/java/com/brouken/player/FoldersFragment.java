@@ -18,20 +18,8 @@ import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
 
-/**
- * The folders the player is allowed to look in.
- *
- * There used to be one, granted from inside the player and silently replaced
- * the next time one was granted. That is fine for a library in a single place
- * and wrong for everything else: films on the card and films in internal
- * storage, or a downloads folder and an archive. Whichever you granted second
- * was the only one the player could search for the next episode, or for a
- * subtitle sitting beside the film.
- *
- * Nothing here grants anything by itself. Android's own folder picker does
- * that, and the grant it returns is what gets kept -- so what the player can
- * read is exactly what was handed to it, and removing a row hands it back.
- */
+// Folders granted through the system folder picker, where the player looks for
+// the next file and for subtitles.
 public class FoldersFragment extends PreferenceFragmentCompat {
 
     private Prefs prefs;
@@ -64,8 +52,7 @@ public class FoldersFragment extends PreferenceFragmentCompat {
     private void populate() {
         screen.removeAll();
 
-        // The settings screen has no action bar, so a category header is what
-        // tells you which screen you are on.
+        // no action bar in settings, so the category header names the screen
         final PreferenceCategory category = new PreferenceCategory(requireContext());
         category.setIconSpaceReserved(false);
         category.setTitle(R.string.pref_folders);
@@ -102,16 +89,10 @@ public class FoldersFragment extends PreferenceFragmentCompat {
         add.setIconSpaceReserved(false);
         add.setTitle(R.string.pref_folders_add);
         add.setOnPreferenceClickListener(clicked -> {
-            /*
-             * Opened at the films folder, which is where most people keep them,
-             * and the picker goes anywhere from there. That is the whole of the
-             * difference from before: the starting point is a suggestion rather
-             * than the only answer.
-             */
             try {
                 pickFolder.launch(Utils.getMoviesFolderUri());
             } catch (android.content.ActivityNotFoundException e) {
-                // A television often has no document picker at all.
+                // many TVs have no document picker
                 Toast.makeText(requireContext(), R.string.pref_folders_no_picker,
                         Toast.LENGTH_LONG).show();
             }
@@ -120,12 +101,7 @@ public class FoldersFragment extends PreferenceFragmentCompat {
         screen.addPreference(add);
     }
 
-    /**
-     * Hold on to the grant for good, then remember the folder.
-     *
-     * Without the persisted permission the grant dies with the process and the
-     * folder in the list would be one the player can no longer open.
-     */
+    // without a persisted permission the grant dies with the process
     private void keep(final Uri uri) {
         try {
             requireContext().getContentResolver().takePersistableUriPermission(uri,
@@ -147,20 +123,18 @@ public class FoldersFragment extends PreferenceFragmentCompat {
                 .setPositiveButton(R.string.pref_folders_remove_confirm_yes, (dialog, which) -> {
                     prefs.removeScope(uri);
                     try {
-                        // Hand the permission back, rather than keeping an
-                        // access nothing is going to use.
                         requireContext().getContentResolver().releasePersistableUriPermission(uri,
                                 Intent.FLAG_GRANT_READ_URI_PERMISSION
                                         | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                     } catch (SecurityException e) {
-                        // Already gone. Nothing to do.
+                        // already released
                     }
                     populate();
                 })
                 .show();
     }
 
-    /** A folder's name as a person would recognise it, not as a tree address. */
+    /** The folder's display name, or the last part of the tree URI. */
     private CharSequence describe(final Uri uri) {
         try {
             final DocumentFile folder = DocumentFile.fromTreeUri(requireContext(), uri);
@@ -171,7 +145,7 @@ public class FoldersFragment extends PreferenceFragmentCompat {
                 }
             }
         } catch (IllegalArgumentException | SecurityException e) {
-            // Fall through to the address.
+            // fall through to the uri
         }
         final String path = uri.getLastPathSegment();
         return path == null ? uri.toString() : path;

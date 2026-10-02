@@ -34,20 +34,14 @@ public class SubtitleOsdSettingsAdapter extends OsdSettingsAdapter {
     }
 
     public void setSubtitlePosition(int subtitlePosition) {
-        // Index 2: the online-search and change-title rows sit at 0 and 1.
+        // index 2: the search and change-title rows come first
         this.items[2] = createPositionItem(subtitlePosition);
         notifyItemChanged(2);
     }
 
-    /**
-     * The delay, when it was changed somewhere else.
-     *
-     * The same number now lives in the quick panel as well, and two panels
-     * showing one number must not disagree: this one is rebuilt whenever it
-     * opens, but it may be built already and simply not on screen.
-     */
+    // for when the quick panel changes the delay
     public void setSubtitleDelay(int subtitleDelay) {
-        // Index 3: position is at 2, and the delay sits under it.
+        // index 3: under the position row
         this.items[3] = createDelayItem(subtitleDelay);
         notifyItemChanged(3);
     }
@@ -70,12 +64,20 @@ public class SubtitleOsdSettingsAdapter extends OsdSettingsAdapter {
         return ResourcesCompat.getDrawable(context.getResources(), id, context.getTheme());
     }
 
+    // depends on the engine; set before setInitialValues
+    private int positionMin = com.brouken.player.Prefs.SUBTITLE_POSITION_MIN;
+
+    public void setPositionMin(int positionMin) {
+        this.positionMin = positionMin;
+    }
+
     private OsdSettingsItem createPositionItem(int subtitlePosition) {
         String title = context.getString(R.string.osd_subtitle_position_title);
         String labelDefault = context.getString(R.string.osd_item_integer_default);
 
         IntegerOsdSettingsItem.Listener itemListener = (position, newValue) -> listener.onSubtitlePositionChange(newValue);
-        return new IntegerOsdSettingsItem(title, labelDefault, true, subtitlePosition, itemListener, this);
+        return new IntegerOsdSettingsItem(title, labelDefault, true, subtitlePosition, itemListener, this)
+                .withRange(positionMin, com.brouken.player.Prefs.SUBTITLE_POSITION_MAX);
     }
 
     private OsdSettingsItem createDelayItem(int subtitleDelay) {
@@ -88,7 +90,9 @@ public class SubtitleOsdSettingsAdapter extends OsdSettingsAdapter {
         String labelDefault = context.getString(R.string.osd_item_integer_default);
 
         IntegerOsdSettingsItem.Listener itemListener = (position, newValue) -> listener.onSubtitleSizeChange(newValue);
-        return new IntegerOsdSettingsItem(title, labelDefault, true, size, itemListener, this);
+        return new IntegerOsdSettingsItem(title, labelDefault, true, size, itemListener, this)
+                .withRange(com.brouken.player.Prefs.SUBTITLE_SIZE_MIN,
+                        com.brouken.player.Prefs.SUBTITLE_SIZE_MAX);
     }
 
     private OsdSettingsItem createEdgeTypeItem(SubtitleEdgeType edgeType) {

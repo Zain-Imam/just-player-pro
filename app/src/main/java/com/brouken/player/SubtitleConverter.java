@@ -49,20 +49,7 @@ public class SubtitleConverter {
             return;
         }
 
-        /*
-         * A path an app hands over is not always a path this app may open.
-         *
-         * Some launchers pass a subtitle as file:///sdcard/… rather than as a
-         * content URI. Under scoped storage a .srt on shared storage is not a
-         * media file, so there is no permission for it: mpv, which opens the
-         * path itself, answers "Permission denied" and the subtitle silently
-         * never appears, while Media3 lists the track and then finds nothing in
-         * it. Neither says why.
-         *
-         * The content resolver honours whatever the intent granted, so it is
-         * asked first, and what it gives back is copied somewhere this app can
-         * certainly read. A few kilobytes, once, and both engines can open it.
-         */
+        // scoped storage can block a file:// path from another app; copy via the resolver
         if ("file".equals(scheme) && !canReadDirectly(sourceUri)) {
             final Uri copied = copyIntoCache(context, sourceUri);
             results[positionOnResults] = copied != null ? copied : sourceUri;
@@ -86,31 +73,11 @@ public class SubtitleConverter {
         }
     }
 
+    // copied under the file's own name, which the picker shows
     private Uri copyIntoCache(final Context context, final Uri sourceUri) {
         final String path = sourceUri.getPath();
-        final String name = path == null ? "handed-over.srt" : new File(path).getName();
-        try (java.io.InputStream in = context.getContentResolver().openInputStream(sourceUri)) {
-            if (in == null) {
-                return null;
-            }
-            final File dir = new File(context.getCacheDir(), "subtitles");
-            if (!dir.exists() && !dir.mkdirs()) {
-                return null;
-            }
-            final File out = new File(dir, System.currentTimeMillis() + "-" + name);
-            try (java.io.OutputStream sink = new java.io.FileOutputStream(out)) {
-                final byte[] chunk = new byte[8192];
-                int read;
-                while ((read = in.read(chunk)) > 0) {
-                    sink.write(chunk, 0, read);
-                }
-            }
-            return out.length() > 0 ? Uri.fromFile(out) : null;
-        } catch (Exception e) {
-            // No permission for it by either route; the engines will say so.
-            Log.w("SubtitleConverter", "Could not copy a handed-over subtitle: " + e);
-            return null;
-        }
+        return SubtitleFiles.copy(context, sourceUri,
+                path == null ? null : new File(path).getName());
     }
 
     private void convertSubtitleFromHttp(Context context, CountDownLatch countDownLatch, Uri[] results, int positionOnResults, Uri sourceUri) {
@@ -128,9 +95,8 @@ public class SubtitleConverter {
                     ResponseBody responseBody = response.body();
                     //noinspection DataFlowIssue
                     try (DecodedInputStreamReader reader = Chardet.decode(responseBody.byteStream(), StandardCharsets.UTF_8)) {
-                        File subtitleCacheDir = getSubtitleCacheDir(context);
-                        String fileName = Utils.getFileName(context, sourceUri, true);
-                        File subtitleFile = new File(subtitleCacheDir, fileName);
+                        // one folder per URI, so links ending in the same name do not collide
+                        File subtitleFile = SubtitleFiles.fileFor(context, sourceUri, null);
                         try (Writer writer = new FileWriter(subtitleFile)) {
                             char[] buffer = new char[4096];
                             int read;

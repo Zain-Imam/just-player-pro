@@ -21,7 +21,7 @@ public final class Posters {
             new LruCache<String, Bitmap>((int) (Runtime.getRuntime().maxMemory() / 8192)) {
                 @Override
                 protected int sizeOf(String key, Bitmap value) {
-                    // In KiB, matching the cache size above, which is in KiB too.
+                    // in KiB, like the cache size
                     return value.getByteCount() / 1024;
                 }
             };
@@ -39,6 +39,18 @@ public final class Posters {
         return path.startsWith("http") ? path : Tmdb.IMAGE_BASE + path;
     }
 
+    // clear the placeholder's tint and dimming
+    private static void show(final ImageView view, final Bitmap bitmap) {
+        view.setImageTintList(null);
+        view.setAlpha(1f);
+        view.setImageBitmap(bitmap);
+    }
+
+    // keeps a poster still loading from landing on a recycled view
+    public static void forget(final ImageView view) {
+        view.setTag(TAG_KEY, null);
+    }
+
     public static void load(final ImageView view, @Nullable final String url,
                             final int placeholder) {
         view.setTag(TAG_KEY, url);
@@ -50,7 +62,7 @@ public final class Posters {
 
         final Bitmap cached = CACHE.get(url);
         if (cached != null) {
-            view.setImageBitmap(cached);
+            show(view, cached);
             return;
         }
 
@@ -73,7 +85,7 @@ public final class Posters {
             MAIN.post(() -> {
                 // Still the row that asked for it?
                 if (url.equals(view.getTag(TAG_KEY))) {
-                    view.setImageBitmap(bitmap);
+                    show(view, bitmap);
                 }
             });
         });

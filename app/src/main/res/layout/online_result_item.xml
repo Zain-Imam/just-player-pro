@@ -1,9 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- One subtitle in the results list.
-
-     A release name is long and a plain dialog item crams it against the next
-     one. This gives each row real padding, a dim second line for where it came
-     from, and a separator so the eye can tell where one ends. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"

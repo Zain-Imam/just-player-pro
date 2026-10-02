@@ -17,6 +17,13 @@ public final class OverlayCard {
     private final Activity activity;
     private final ViewGroup attachTo;
     private final View bounds;
+    private final Picture picture;
+
+    // where the video sits in the followed view; mpv letterboxes inside its surface
+    public interface Picture {
+        // in the followed view's coordinates; false if unknown
+        boolean rect(android.graphics.Rect out);
+    }
 
     @Nullable
     private View root;
@@ -29,15 +36,17 @@ public final class OverlayCard {
     @Nullable
     private TextView overview;
 
-    public OverlayCard(final Activity activity, final ViewGroup attachTo, final View bounds) {
+    public OverlayCard(final Activity activity, final ViewGroup attachTo, final View bounds,
+                       final Picture picture) {
         this.activity = activity;
         this.attachTo = attachTo;
         this.bounds = bounds;
+        this.picture = picture;
     }
 
     private void inflateIfNeeded() {
         if (root != null) {
-            // Built already, but the slider may have moved since.
+            // the opacity setting may have changed
             applyBackground(root.findViewById(R.id.online_overlay));
             return;
         }
@@ -50,30 +59,16 @@ public final class OverlayCard {
         meta = root.findViewById(R.id.overlay_meta);
         overview = root.findViewById(R.id.overlay_overview);
 
-        // The margins below are left/top, so they must not be re-read as
-        // start/end on a right-to-left device.
+        // margins are left/top, so keep LTR on right-to-left devices
         root.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
         attachTo.addView(root);
 
-        // Rotation, an aspect-ratio change and a resize all reach us the same
-        // way: the frame we are copying gets laid out at a new size.
+        // rotation, aspect changes and resizes all relayout the followed view
         bounds.addOnLayoutChangeListener(
                 (v, l, t, r, b, ol, ot, or, ob) -> syncToVideo());
     }
 
-    /*
-     * How solid the card is, from the settings screen.
-     *
-     * Half transparent reads well over most films and badly over a few: a dark
-     * scene behind pale text, or a busy one behind the description. The picture
-     * matters more to some people than the card does and less to others, and
-     * there is no one answer -- so it is a slider, and the middle of it is what
-     * the card has always looked like.
-     *
-     * Set on the shape rather than through setAlpha, which scales what is
-     * already there: at the top of the slider that would still leave the card
-     * half transparent, because half is what the drawable starts at.
-     */
+    // opacity is set on the shape colour; setAlpha would scale the drawable's own alpha
     private static final int CARD_RED = 0x14;
     private static final int CARD_GREEN = 0x14;
     private static final int CARD_BLUE = 0x14;
@@ -100,8 +95,7 @@ public final class OverlayCard {
         final int percent = backgroundPercent(activity);
         final int fill = Math.round(percent * 255f / 100f);
         shape.setColor(android.graphics.Color.argb(fill, CARD_RED, CARD_GREEN, CARD_BLUE));
-        // The outline fades with it, so nothing is left drawn round an empty
-        // space when the slider is at the bottom.
+        // the outline fades with it
         final int stroke = Math.round(percent * 0x33 / 100f);
         final int width = Math.round(activity.getResources().getDisplayMetrics().density);
         shape.setStroke(width, android.graphics.Color.argb(stroke, 255, 255, 255));
@@ -123,13 +117,18 @@ public final class OverlayCard {
         bounds.getLocationInWindow(videoAt);
         attachTo.getLocationInWindow(parentAt);
 
-        final int rawLeft = videoAt[0] - parentAt[0];
-        final int rawTop = videoAt[1] - parentAt[1];
+        final android.graphics.Rect inside = new android.graphics.Rect();
+        if (picture == null || !picture.rect(inside)) {
+            inside.set(0, 0, bounds.getWidth(), bounds.getHeight());
+        }
+
+        final int rawLeft = videoAt[0] - parentAt[0] + inside.left;
+        final int rawTop = videoAt[1] - parentAt[1] + inside.top;
 
         final int left = Math.max(0, rawLeft);
         final int top = Math.max(0, rawTop);
-        final int right = Math.min(attachTo.getWidth(), rawLeft + bounds.getWidth());
-        final int bottom = Math.min(attachTo.getHeight(), rawTop + bounds.getHeight());
+        final int right = Math.min(attachTo.getWidth(), rawLeft + inside.width());
+        final int bottom = Math.min(attachTo.getHeight(), rawTop + inside.height());
 
         final int width = right - left;
         final int height = bottom - top;
@@ -166,18 +165,11 @@ public final class OverlayCard {
 
         syncToVideo();
         root.setVisibility(View.VISIBLE);
-        // The frame can still be mid-layout on the first pause after opening a
-        // file, in which case the measurements above were of nothing yet.
+        // the view may still be mid-layout on the first pause after opening
         root.post(this::syncToVideo);
     }
 
-    /*
-     * Measure again, because the picture just changed shape.
-     *
-     * A layout listener catches a rotation or a window resize, but stepping
-     * through the scaling modes can leave the frame the same size while the
-     * picture inside it is not, and then the card keeps the width it had.
-     */
+    // scaling modes can change the picture without resizing the view
     public void refresh() {
         if (root == null || root.getVisibility() != View.VISIBLE) {
             return;

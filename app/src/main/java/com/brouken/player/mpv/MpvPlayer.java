@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -60,8 +61,6 @@ public final class MpvPlayer extends BasePlayer
     private static final String PROP_TRACK_LIST_COUNT = "track-list/count";
     private static final String PROP_DEMUXER_CACHE_TIME = "demuxer-cache-time";
     private static final double SUB_POS_DEFAULT = 92;
-    private static final double SUB_SIZE_DEFAULT = 0.0533;
-    private static final double SUB_SIZE_STEP = 0.001;
 
     private static final String PROP_VID = "vid";
     private static final String PROP_AID = "aid";
@@ -99,11 +98,30 @@ public final class MpvPlayer extends BasePlayer
     @Nullable
     private PlaybackException error;
 
-    /** Whether mpv has actually opened the current file. See event(). */
     private boolean fileOpened;
 
     private boolean released;
+
+    // mpv events come on mpv's thread; drop any that reach main after release
+    private void onMain(final Runnable task) {
+        handler.post(() -> {
+            if (!released) {
+                task.run();
+            }
+        });
+    }
+
     private boolean renderedFirstFrame;
+
+    private final boolean network;
+
+    // until PLAYBACK_RESTART the position is the seek target, as in Media3;
+    // older time-pos reports must not overwrite it
+    private boolean seekPending;
+    private long seekTargetMs = C.TIME_UNSET;
+    private long seekIssuedAtNs;
+    private boolean seekTargetUncached;
+    private int seekRetries;
 
     public static boolean isSupported() {
         return android.os.Build.VERSION.SDK_INT >= 26;
@@ -113,10 +131,12 @@ public final class MpvPlayer extends BasePlayer
         this.context = context.getApplicationContext();
         this.listeners = new ListenerSet<>(Looper.getMainLooper(), Clock.DEFAULT,
                 (listener, flags) -> listener.onEvents(this, new Player.Events(flags)));
+        this.network = options.isNetwork();
 
         mpv = MPVLib.create(this.context);
         options.applyTo(mpv, this.context);
         mpv.init();
+        subtitleParity = measureSubtitleParity();
 
         observe(PROP_TIME_POS, MPVLib.MpvFormat.MPV_FORMAT_DOUBLE);
         observe(PROP_DURATION, MPVLib.MpvFormat.MPV_FORMAT_DOUBLE);
@@ -130,9 +150,13 @@ public final class MpvPlayer extends BasePlayer
         observe(PROP_VID, MPVLib.MpvFormat.MPV_FORMAT_STRING);
         observe(PROP_AID, MPVLib.MpvFormat.MPV_FORMAT_STRING);
         observe(PROP_SID, MPVLib.MpvFormat.MPV_FORMAT_STRING);
+        // picture position inside the surface, see pictureMargins()
+        for (final String edge : PICTURE_EDGES) {
+            observe("osd-dimensions/" + edge, MPVLib.MpvFormat.MPV_FORMAT_INT64);
+        }
 
         mpv.addObserver(this);
-        // mpv says why a file would not open; the event carries only an id.
+        // load errors only carry a code; the reason is in the log
         mpv.addLogObserver(this);
     }
 
@@ -142,7 +166,7 @@ public final class MpvPlayer extends BasePlayer
         }
     }
 
-    // ------------------------------------------------------------- playback
+    // playback
 
     @Override
     public void setMediaItems(@NonNull List<MediaItem> items, boolean resetPosition) {
@@ -151,15 +175,44 @@ public final class MpvPlayer extends BasePlayer
 
     @Override
     public void setMediaItems(@NonNull List<MediaItem> items, int startIndex, long startPositionMs) {
+        // same file with extra subtitles: add them to the open file, no reload
+        if (fileOpened && !items.isEmpty() && !mediaItems.isEmpty()
+                && sameSource(mediaItems.get(0), items.get(0))) {
+            mediaItems.clear();
+            mediaItems.addAll(items);
+            final MediaItem.LocalConfiguration local = items.get(0).localConfiguration;
+            if (local != null) {
+                for (final MediaItem.SubtitleConfiguration subtitle : local.subtitleConfigurations) {
+                    if (!addedSubtitles.contains(subtitle.uri.toString())) {
+                        addSubtitleConfiguration(subtitle);
+                    }
+                }
+            }
+            announceMediaMetadata();
+            return;
+        }
+
         mediaItems.clear();
         mediaItems.addAll(items);
 
-        // A single-item timeline: mpv plays one file, and so does this app.
         pendingStartPositionMs = startPositionMs;
+        openingAtMs = startPositionMs != C.TIME_UNSET && startPositionMs > 0
+                ? startPositionMs : C.TIME_UNSET;
         updateTimeline();
+        announceMediaMetadata();
     }
 
+    private static boolean sameSource(final MediaItem a, final MediaItem b) {
+        return a.localConfiguration != null && b.localConfiguration != null
+                && a.localConfiguration.uri.equals(b.localConfiguration.uri);
+    }
+
+    private final java.util.Set<String> addedSubtitles = new java.util.HashSet<>();
+
     private long pendingStartPositionMs = C.TIME_UNSET;
+
+    // reported as the position until mpv reports a time, as Media3 does
+    private long openingAtMs = C.TIME_UNSET;
 
     @Override
     public void prepare() {
@@ -171,10 +224,7 @@ public final class MpvPlayer extends BasePlayer
         renderedFirstFrame = false;
         setPlaybackState(Player.STATE_BUFFERING);
 
-        // mpv decides once, as the file opens, whether it has a video output at
-        // all: told to load before the surface exists it reports "Missing
-        // surface pointer", gives up on the video and plays the file as audio
-        // over a black screen. The load waits for the surface instead.
+        // loading before the surface exists makes mpv play audio only
         if (surface == null) {
             loadWhenSurfaceReady = true;
             return;
@@ -182,17 +232,7 @@ public final class MpvPlayer extends BasePlayer
         load();
     }
 
-    /*
-     * Sidecar subtitles are added once the file is open, not before.
-     *
-     * "loadfile" only asks; the file is opened some time afterwards and the
-     * track list is built then. A sub-add issued in between is applied to
-     * nothing, and the subtitle another app handed over simply never appeared in
-     * the picker on this engine — which is most of the reason for accepting one
-     * in the first place.
-     *
-     * They are held here and added when mpv says the file is loaded.
-     */
+    // sub-add before FILE_LOADED is lost, so sidecar subtitles wait here
     private final List<MediaItem.SubtitleConfiguration> pendingSubtitles = new ArrayList<>();
 
     private void addPendingSubtitles() {
@@ -200,18 +240,16 @@ public final class MpvPlayer extends BasePlayer
             return;
         }
         for (final MediaItem.SubtitleConfiguration subtitle : pendingSubtitles) {
-            final String flag =
-                    (subtitle.selectionFlags & C.SELECTION_FLAG_DEFAULT) != 0 ? "select" : "auto";
-            subAdd(subtitle.uri, subtitle.label, flag);
-            if (subtitle.language != null && !subtitle.language.isEmpty()) {
-                final Integer count = mpv.getPropertyInt("track-list/count");
-                if (count != null && count > 0) {
-                    mpv.setPropertyString("track-list/" + (count - 1) + "/lang",
-                            subtitle.language);
-                }
-            }
+            addSubtitleConfiguration(subtitle);
         }
         pendingSubtitles.clear();
+    }
+
+    // language must go with sub-add; track-list is read-only afterwards
+    private void addSubtitleConfiguration(final MediaItem.SubtitleConfiguration subtitle) {
+        final String flag =
+                (subtitle.selectionFlags & C.SELECTION_FLAG_DEFAULT) != 0 ? "select" : "auto";
+        subAdd(subtitle.uri, subtitle.label, subtitle.language, flag);
     }
 
     private void load() {
@@ -225,33 +263,25 @@ public final class MpvPlayer extends BasePlayer
         }
 
         final String uri = item.localConfiguration.uri.toString();
-        // Nothing has opened yet. If the end of the file arrives before the
-        // file does, it never opened at all — see event().
         fileOpened = false;
+        addedSubtitles.clear();
+        clearSeek();
         synchronized (complaints) {
             complaints.setLength(0);
         }
-        mpv.command(new String[]{"loadfile", uri});
 
-        /*
-         * Subtitles handed over as sidecar files, the way the rest of the app
-         * already supplies them.
-         *
-         * The one the launching app asked to have on is added with "select"
-         * rather than "auto", which is what the other engine does with the same
-         * flag: a subtitle sent by Stremio or Nuvio was appearing in the list on
-         * both engines and switched on only on one of them. The name and the
-         * language go with it, or the picker shows a row called Track 2.
-         */
+        // per-file start option; the global `start` property would stick
+        final long startMs = pendingStartPositionMs;
+        pendingStartPositionMs = C.TIME_UNSET;
+        if (startMs != C.TIME_UNSET && startMs > 0) {
+            mpv.command(new String[]{"loadfile", uri, "replace", "-1",
+                    "start=" + (startMs / 1000.0)});
+        } else {
+            mpv.command(new String[]{"loadfile", uri});
+        }
+
         pendingSubtitles.clear();
         pendingSubtitles.addAll(item.localConfiguration.subtitleConfigurations);
-
-        if (pendingStartPositionMs != C.TIME_UNSET && pendingStartPositionMs > 0) {
-            // `start` is a relative-time option, not a number, so it is written
-            // as text — a typed write of the wrong type is simply rejected.
-            set("start", String.valueOf(pendingStartPositionMs / 1000.0));
-            pendingStartPositionMs = C.TIME_UNSET;
-        }
 
         mpv.setPropertyBoolean(PROP_PAUSE, !playWhenReady);
     }
@@ -262,7 +292,8 @@ public final class MpvPlayer extends BasePlayer
             return;
         }
         this.playWhenReady = playWhenReady;
-        if (mpv != null) {
+        // while holding, the pause state is applied on landing (see hold)
+        if (mpv != null && !holding) {
             mpv.setPropertyBoolean(PROP_PAUSE, !playWhenReady);
         }
         listeners.queueEvent(Player.EVENT_PLAY_WHEN_READY_CHANGED, listener ->
@@ -291,6 +322,9 @@ public final class MpvPlayer extends BasePlayer
             return;
         }
         released = true;
+        handler.removeCallbacksAndMessages(null);
+        seekAfterOpenMs = C.TIME_UNSET;
+        pictureListener = null;
         setHandleAudioBecomingNoisy(false);
         if (mpv != null) {
             mpv.removeObserver(this);
@@ -304,14 +338,27 @@ public final class MpvPlayer extends BasePlayer
     @Override
     protected void seekTo(int mediaItemIndex, long positionMs, int seekCommand,
                           boolean isRepeatingCurrentItem) {
-        if (mpv == null || positionMs == C.TIME_UNSET) {
+        if (mpv == null) {
             return;
         }
-        final long target = Math.max(0, positionMs);
+        // C.TIME_UNSET means the default position, the start
+        final long target = positionMs == C.TIME_UNSET ? 0 : Math.max(0, positionMs);
         final long from = this.positionMs;
-        this.positionMs = target;
-        mpv.command(new String[]{"seek", String.valueOf(target / 1000.0),
-                keyframeSeeking ? "absolute+keyframes" : "absolute"});
+
+        // during an uncached seek, a failed reconnect can append the first target's
+        // data to the cached range; drop the cache unless this target is held
+        final boolean held = network && isCached(target);
+        if (network && seekPending && seekTargetUncached && !held
+                && Math.abs(target - seekTargetMs) > 1_000) {
+            Log.i(TAG, "seek during an uncached seek: dropping the cache first");
+            mpv.command(new String[]{"drop-buffers"});
+        }
+        if (target != seekTargetMs) {
+            seekRetries = 0;
+        }
+        endHold();
+        seekTargetUncached = network && !held;
+        sendSeek(target, keyframeSeeking ? "absolute+keyframes" : "absolute");
 
         final Player.PositionInfo oldPosition = positionInfo(from);
         final Player.PositionInfo newPosition = positionInfo(target);
@@ -320,16 +367,226 @@ public final class MpvPlayer extends BasePlayer
                         Player.DISCONTINUITY_REASON_SEEK));
     }
 
-    /*
-     * Land where the other engine lands.
-     *
-     * Media3 is told to snap to the nearest keyframe while the bar is being
-     * dragged and while the arrows are seeking, because landing exactly costs a
-     * decode of everything since the last keyframe and the drag stops feeling
-     * attached to the finger. mpv, asked for an absolute seek, is exact — so the
-     * same drag on the same file finished in two different places depending on
-     * which engine was playing. It is told the same thing at the same moments.
-     */
+    // buffering until mpv lands, as Media3 does; the timeline drag relies on it
+    private void sendSeek(final long targetMs, final String mode) {
+        if (mpv == null) {
+            return;
+        }
+        positionMs = targetMs;
+        // a keyframe seek may land either side of the target
+        guard.anchor(targetMs, LANDING_TOLERANCE_MS);
+        if (!fileOpened) {
+            // mpv refuses seeks before the file is open; sent on FILE_LOADED
+            seekAfterOpenMs = targetMs;
+            openingAtMs = targetMs;
+            return;
+        }
+        seekPending = true;
+        seekTargetMs = targetMs;
+        seekIssuedAtNs = System.nanoTime();
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, "seek " + targetMs + " " + mode);
+        }
+        mpv.command(new String[]{"seek", String.valueOf(targetMs / 1000.0), mode});
+        if (playbackState == Player.STATE_READY || playbackState == Player.STATE_ENDED) {
+            setPlaybackState(Player.STATE_BUFFERING);
+        }
+        handler.removeCallbacks(seekWatchdog);
+        handler.postDelayed(seekWatchdog, SEEK_WATCHDOG_MS);
+    }
+
+    private long seekAfterOpenMs = C.TIME_UNSET;
+
+    // commands return nothing, so a refused seek never restarts playback;
+    // poll mpv's "seeking" instead
+    private static final long SEEK_WATCHDOG_MS = 1_000;
+    private final Runnable seekWatchdog = new Runnable() {
+        @Override
+        public void run() {
+            if (!seekPending || mpv == null) {
+                return;
+            }
+            final Boolean seeking = mpv.getPropertyBoolean("seeking");
+            if (seeking != null && !seeking && !isBuffering) {
+                if (landedWrong()) {
+                    return;
+                }
+                seekPending = false;
+                final Double now = mpv.getPropertyDouble(PROP_TIME_POS);
+                if (now != null) {
+                    positionMs = (long) (now * 1000);
+                }
+                landed();
+                if (playbackState == Player.STATE_BUFFERING) {
+                    setPlaybackState(Player.STATE_READY);
+                }
+                return;
+            }
+            handler.postDelayed(this, SEEK_WATCHDOG_MS);
+        }
+    };
+
+    private void clearSeek() {
+        seekPending = false;
+        seekTargetMs = C.TIME_UNSET;
+        seekTargetUncached = false;
+        seekRetries = 0;
+        seekAfterOpenMs = C.TIME_UNSET;
+        handler.removeCallbacks(seekWatchdog);
+        endHold();
+        guard.reset();
+    }
+
+    // from demuxer-cache-state seekable-ranges; unreadable counts as not cached
+    private boolean isCached(final long positionMs) {
+        if (mpv == null) {
+            return false;
+        }
+        try {
+            final String state = mpv.getPropertyString("demuxer-cache-state");
+            if (state == null || state.isEmpty()) {
+                return false;
+            }
+            final org.json.JSONArray ranges =
+                    new org.json.JSONObject(state).optJSONArray("seekable-ranges");
+            if (ranges == null) {
+                return false;
+            }
+            final double seconds = positionMs / 1000.0;
+            for (int i = 0; i < ranges.length(); i++) {
+                final org.json.JSONObject range = ranges.optJSONObject(i);
+                if (range != null && seconds >= range.optDouble("start", Double.NaN)
+                        && seconds <= range.optDouble("end", Double.NaN)) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "could not read the cache state: " + e);
+        }
+        return false;
+    }
+
+    // a failed reconnect lands the seek elsewhere; generous for keyframe seeks
+    private static final long LANDING_TOLERANCE_MS = 15_000;
+
+    private boolean landedWrong() {
+        if (!network || mpv == null || seekTargetMs == C.TIME_UNSET) {
+            return false;
+        }
+        final Double landed = mpv.getPropertyDouble(PROP_TIME_POS);
+        if (landed == null) {
+            return false;
+        }
+        final long landedMs = (long) (landed * 1000);
+        if (Math.abs(landedMs - seekTargetMs) <= LANDING_TOLERANCE_MS) {
+            return false;
+        }
+        seekRetries++;
+        final long delay = seekRetries == 1 ? 0
+                : Math.min(MAX_RETRY_DELAY_MS, 1_000L << Math.min(seekRetries - 2, 3));
+        Log.w(TAG, "seek to " + seekTargetMs + " landed at " + landedMs + " (try "
+                + seekRetries + "): held there, asking again in " + delay + "ms");
+        hold();
+        positionMs = seekTargetMs;
+        if (playbackState == Player.STATE_READY || playbackState == Player.STATE_ENDED) {
+            setPlaybackState(Player.STATE_BUFFERING);
+        }
+        handler.removeCallbacks(landingRetry);
+        handler.postDelayed(landingRetry, delay);
+        return true;
+    }
+
+    // after a wrong landing, stay paused and retry with backoff until it lands
+    private static final long MAX_RETRY_DELAY_MS = 8_000;
+    private boolean holding;
+    private final Runnable landingRetry = () -> {
+        if (!holding || mpv == null || seekTargetMs == C.TIME_UNSET) {
+            return;
+        }
+        mpv.command(new String[]{"drop-buffers"});
+        seekTargetUncached = true;
+        sendSeek(seekTargetMs, "absolute+exact");
+    };
+
+    // pauses mpv without changing playWhenReady
+    private void hold() {
+        if (!holding && mpv != null) {
+            holding = true;
+            mpv.setPropertyBoolean(PROP_PAUSE, true);
+        }
+    }
+
+    private void endHold() {
+        handler.removeCallbacks(landingRetry);
+        if (holding) {
+            holding = false;
+            if (mpv != null) {
+                mpv.setPropertyBoolean(PROP_PAUSE, !playWhenReady);
+            }
+        }
+    }
+
+    private void landed() {
+        seekRetries = 0;
+        endHold();
+        guard.anchor(positionMs, SeamGuard.JUMP_MS);
+    }
+
+    // Detects an unrequested forward jump (a badly joined cache), drops the cache and
+    // refetches. A repeat jump from the same place is in the file itself and allowed.
+    private final SeamGuard guard = new SeamGuard();
+
+    private final class SeamGuard {
+        static final long JUMP_MS = 8_000;
+        private long lastPositionMs = -1;
+        private long lastAtMs;
+        private long slackMs = JUMP_MS;
+        private long lastSeamFromMs = -1;
+
+        void reset() {
+            lastPositionMs = -1;
+        }
+
+        void anchor(final long positionMs, final long slack) {
+            lastPositionMs = positionMs;
+            lastAtMs = android.os.SystemClock.elapsedRealtime();
+            slackMs = slack;
+        }
+
+        // true when a jump was handled and the new position should be ignored
+        boolean check(final long newPositionMs) {
+            final long now = android.os.SystemClock.elapsedRealtime();
+            final long previous = lastPositionMs;
+            final long previousAt = lastAtMs;
+            final long slack = slackMs;
+            lastPositionMs = newPositionMs;
+            lastAtMs = now;
+            slackMs = JUMP_MS;
+            if (!network || previous < 0) {
+                return false;
+            }
+            final long elapsed = now - previousAt;
+            final long expected = previous
+                    + (long) (elapsed * Math.max(1f, playbackParameters.speed));
+            if (newPositionMs - expected < slack) {
+                return false;
+            }
+            if (lastSeamFromMs >= 0 && Math.abs(previous - lastSeamFromMs) < 3_000) {
+                Log.w(TAG, "the file itself jumps from " + previous + " to " + newPositionMs);
+                return false;
+            }
+            lastSeamFromMs = previous;
+            Log.w(TAG, "unrequested jump from " + previous + " to " + newPositionMs
+                    + ": the cache was joined wrong; refetching from " + previous);
+            mpv.command(new String[]{"drop-buffers"});
+            seekRetries = 0;
+            seekTargetUncached = true;
+            sendSeek(previous, "absolute+exact");
+            return true;
+        }
+    }
+
+    // set by SeekPrecision, mirrors Media3's SeekParameters
     private boolean keyframeSeeking;
 
     public void setKeyframeSeeking(final boolean keyframes) {
@@ -349,7 +606,7 @@ public final class MpvPlayer extends BasePlayer
                 /* adIndexInAdGroup= */ C.INDEX_UNSET);
     }
 
-    // --------------------------------------------------------------- events
+    // events
 
     @Override
     public void eventProperty(@NonNull String property) {
@@ -357,7 +614,7 @@ public final class MpvPlayer extends BasePlayer
 
     @Override
     public void eventProperty(@NonNull String property, long value) {
-        handler.post(() -> {
+        onMain(() -> {
             switch (property) {
                 case PROP_WIDTH:
                 case PROP_HEIGHT:
@@ -367,6 +624,12 @@ public final class MpvPlayer extends BasePlayer
                     updateTracks();
                     break;
                 default:
+                    if (property.startsWith("osd-dimensions/")) {
+                        final Runnable listener = pictureListener;
+                        if (listener != null) {
+                            listener.run();
+                        }
+                    }
                     break;
             }
         });
@@ -374,10 +637,20 @@ public final class MpvPlayer extends BasePlayer
 
     @Override
     public void eventProperty(@NonNull String property, double value) {
-        handler.post(() -> {
+        onMain(() -> {
             switch (property) {
                 case PROP_TIME_POS:
-                    positionMs = (long) (value * 1000);
+                    if (seekPending) {
+                        break;
+                    }
+                    final long reported = (long) (value * 1000);
+                    if (guard.check(reported)) {
+                        break;
+                    }
+                    positionMs = reported;
+                    if (fileOpened) {
+                        openingAtMs = C.TIME_UNSET;
+                    }
                     break;
                 case PROP_DURATION:
                     final long newDuration = value > 0 ? (long) (value * 1000) : C.TIME_UNSET;
@@ -397,11 +670,13 @@ public final class MpvPlayer extends BasePlayer
 
     @Override
     public void eventProperty(@NonNull String property, boolean value) {
-        handler.post(() -> {
+        onMain(() -> {
             switch (property) {
                 case PROP_PAUSE:
-                    // mpv is the authority on whether it is paused; a pause from
-                    // its own end (end of file, audio focus) has to reach the UI.
+                    // mpv can pause itself (end of file, audio focus); ignore our own hold
+                    if (holding) {
+                        break;
+                    }
                     if (playWhenReady == value) {
                         playWhenReady = !value;
                         listeners.sendEvent(Player.EVENT_PLAY_WHEN_READY_CHANGED, listener ->
@@ -417,7 +692,8 @@ public final class MpvPlayer extends BasePlayer
                     break;
                 case PROP_CACHE_BUFFERING:
                     isBuffering = value;
-                    setPlaybackState(value ? Player.STATE_BUFFERING : Player.STATE_READY);
+                    setPlaybackState(value || seekPending
+                            ? Player.STATE_BUFFERING : Player.STATE_READY);
                     break;
                 default:
                     break;
@@ -427,7 +703,7 @@ public final class MpvPlayer extends BasePlayer
 
     @Override
     public void eventProperty(@NonNull String property, @NonNull String value) {
-        handler.post(() -> {
+        onMain(() -> {
             switch (property) {
                 case PROP_VID:
                 case PROP_AID:
@@ -442,31 +718,35 @@ public final class MpvPlayer extends BasePlayer
 
     @Override
     public void event(int eventId) {
-        handler.post(() -> {
+        // taken before posting: a restart from before the latest seek is an older seek's
+        final long arrivedAtNs = System.nanoTime();
+        onMain(() -> {
+            if (eventId == MPVLib.MpvEvent.MPV_EVENT_PLAYBACK_RESTART
+                    && seekPending && arrivedAtNs >= seekIssuedAtNs) {
+                if (landedWrong()) {
+                    return;
+                }
+                seekPending = false;
+                final Double landedAt = mpv == null ? null : mpv.getPropertyDouble(PROP_TIME_POS);
+                if (landedAt != null) {
+                    positionMs = (long) (landedAt * 1000);
+                    openingAtMs = C.TIME_UNSET;
+                }
+                landed();
+            }
             if (eventId == MPVLib.MpvEvent.MPV_EVENT_FILE_LOADED) {
                 fileOpened = true;
                 addPendingSubtitles();
                 updateTracks();
                 updateVideoSize();
                 setPlaybackState(Player.STATE_READY);
+                if (seekAfterOpenMs != C.TIME_UNSET) {
+                    final long target = seekAfterOpenMs;
+                    seekAfterOpenMs = C.TIME_UNSET;
+                    sendSeek(target, keyframeSeeking ? "absolute+keyframes" : "absolute");
+                }
             } else if (eventId == MPVLib.MpvEvent.MPV_EVENT_END_FILE) {
-                /*
-                 * The end of a file that never began is a failure, not an end.
-                 *
-                 * This used to report STATE_ENDED whatever had happened, and
-                 * nothing ever set the error, so getPlayerError() could only
-                 * ever return null. A file mpv could not open — an expired
-                 * debrid link, a dead host, a 403, a path with no permission —
-                 * produced no error, no dialog and no message of any kind. The
-                 * player opened, named the file, and sat at 00:00 for as long
-                 * as you left it. Every unopenable file on this engine behaved
-                 * that way.
-                 *
-                 * mpv says why in its log, but the binding hands over only the
-                 * event id, so the distinction is drawn from order instead: an
-                 * end-file before any file-loaded means the file never opened.
-                 * That is exactly the case that had nothing to show for it.
-                 */
+                // END_FILE before FILE_LOADED: the file failed to open
                 if (!fileOpened) {
                     reportFailedToOpen();
                 } else if (playbackState != Player.STATE_IDLE) {
@@ -474,7 +754,7 @@ public final class MpvPlayer extends BasePlayer
                 }
             }
             if (eventId == MPVLib.MpvEvent.MPV_EVENT_PLAYBACK_RESTART) {
-                if (!isBuffering) {
+                if (!isBuffering && !seekPending) {
                     setPlaybackState(Player.STATE_READY);
                 }
                 notifyFirstFrame();
@@ -485,25 +765,8 @@ public final class MpvPlayer extends BasePlayer
         });
     }
 
-    /**
-     * Everything mpv has complained about since the file was asked for.
-     *
-     * The event callback carries an id and nothing else, so on its own all this
-     * engine could ever report is "something went wrong". mpv does say what
-     * went wrong — "HTTP error 403 Forbidden", "Permission denied", "Failed to
-     * open" — it says it in its log, so the log is where it is read from.
-     *
-     * All of them are kept, not one. Taking the last turned a refused link into
-     * a connection problem, because mpv says "HTTP error 403 Forbidden" and
-     * then "Failed to open" and the summary arrives last. Taking the first was
-     * no better: mpv warns "client removed during hook handling" before it has
-     * even tried, so the first complaint is often about nothing at all. What
-     * matters is whether a reason appears anywhere among them, so they are read
-     * together and the most specific one wins.
-     *
-     * Written from mpv's thread, read from the main one. Capped, because a
-     * stream that fails slowly can complain for a long time.
-     */
+    // Warnings and errors from mpv's log since loadfile; all are kept because the
+    // specific reason is often neither first nor last. Written on mpv's thread.
     private static final int COMPLAINTS_LIMIT = 4000;
     private final StringBuilder complaints = new StringBuilder();
 
@@ -525,14 +788,7 @@ public final class MpvPlayer extends BasePlayer
         }
     }
 
-    /**
-     * Say that the file would not open, in the terms the rest of the app uses.
-     *
-     * The code chosen here is what decides which sentence the person watching
-     * reads, so mpv's own words are matched to one. A refused request and a
-     * link that has expired are the same thing to a debrid service, and that is
-     * worth saying rather than "something went wrong".
-     */
+    // maps mpv's log text to a PlaybackException code for the error message
     private void reportFailedToOpen() {
         if (error != null) {
             return;
@@ -613,15 +869,13 @@ public final class MpvPlayer extends BasePlayer
             return;
         }
         videoSize = size;
-        // The decoded video is only described once it is decoding, so the track
-        // list is worth re-reading now that it is.
+        // video params are only known once decoding starts
         updateTracks();
         listeners.sendEvent(Player.EVENT_VIDEO_SIZE_CHANGED, listener ->
                 listener.onVideoSizeChanged(size));
     }
 
-    // PlayerView covers the video while it believes no video track is selected,
-    // so a wrong answer here plays the film as sound over a black screen
+    // PlayerView hides the video when it thinks no video track is selected
     private void updateTracks() {
         if (mpv == null) {
             return;
@@ -631,10 +885,7 @@ public final class MpvPlayer extends BasePlayer
             return;
         }
 
-        // Whether what is on screen is HDR, which is a property of the
-        // decoded video rather than of the track list. Media3 reports it in the
-        // format and the header line reads it from there, so it goes in the
-        // same place here.
+        // HDR comes from the decoded video, reported in the Format as Media3 does
         final String gamma = mpv.getPropertyString("video-params/gamma");
 
         final Integer currentVideo = currentTrackId("video", "vid");
@@ -655,9 +906,6 @@ public final class MpvPlayer extends BasePlayer
             info.language = mpv.getPropertyString("track-list/" + i + "/lang");
             info.id = mpv.getPropertyInt("track-list/" + i + "/id");
 
-            // Everything the track list knows about the stream, so a track
-            // reads the same in the picker on this engine as on the other:
-            // "English - 5.1, E-AC-3, 640 kb/s" rather than just "English".
             info.codec = mpv.getPropertyString("track-list/" + i + "/codec");
             info.channels = mpv.getPropertyInt("track-list/" + i + "/demux-channel-count");
             info.sampleRate = mpv.getPropertyInt("track-list/" + i + "/demux-samplerate");
@@ -688,8 +936,6 @@ public final class MpvPlayer extends BasePlayer
 
         final ImmutableList.Builder<Tracks.Group> groups = ImmutableList.builder();
         for (final TrackInfo info : found) {
-            // A real mime type where the codec name gives one away, so the
-            // picker can print "E-AC-3" rather than the raw ffmpeg spelling.
             String mime = MpvCodecs.mimeFor(info.type, info.codec);
             if (mime == null) {
                 switch (info.type) {
@@ -792,8 +1038,7 @@ public final class MpvPlayer extends BasePlayer
     }
 
     @Nullable
-    // current-tracks is the playback state; vid/aid/sid are only the setting,
-    // and read "auto" while a file is still opening
+    // vid/aid/sid read "auto" while the file is opening; current-tracks is what plays
     private Integer currentTrackId(final String type, final String property) {
         if (mpv == null) {
             return null;
@@ -805,8 +1050,7 @@ public final class MpvPlayer extends BasePlayer
         return mpv.getPropertyInt(property);
     }
 
-    // A file being played with a video track in it is being played with that
-    // video track, whatever mpv has got round to reporting yet
+    // mpv may not report the playing track as selected yet
     private void ensureOneSelected(final List<TrackInfo> found, final String type,
                                    final String property) {
         if (mpv == null) {
@@ -827,15 +1071,14 @@ public final class MpvPlayer extends BasePlayer
         if (first == null) {
             return;
         }
-        // "no" is a deliberate choice to play nothing of this kind, and is the
-        // one case where reporting nothing selected is the honest answer.
+        // "no" means the track type was turned off
         if ("no".equals(mpv.getPropertyString(property))) {
             return;
         }
         first.selected = true;
     }
 
-    // -------------------------------------------------------------- surface
+    // surface
 
     @Override
     public void setVideoSurface(@Nullable Surface surface) {
@@ -904,8 +1147,7 @@ public final class MpvPlayer extends BasePlayer
 
     @Override
     public void setVideoTextureView(@Nullable TextureView textureView) {
-        // Not supported: mpv renders into a Surface, and Just Player uses a
-        // SurfaceView by default for exactly the zero-copy reason mpv also wants.
+        // not supported, mpv needs a SurfaceView
         clearVideoSurface();
     }
 
@@ -937,7 +1179,7 @@ public final class MpvPlayer extends BasePlayer
         }
     }
 
-    // ----------------------------------------------------------- properties
+    // properties
 
     @NonNull
     @Override
@@ -989,7 +1231,7 @@ public final class MpvPlayer extends BasePlayer
 
     @Override
     public void setShuffleModeEnabled(boolean shuffleModeEnabled) {
-        // One item at a time; there is nothing to shuffle.
+        // single item, nothing to shuffle
     }
 
     @Override
@@ -1023,21 +1265,7 @@ public final class MpvPlayer extends BasePlayer
         playbackParameters = parameters;
         if (mpv != null) {
             set("speed", String.valueOf(parameters.speed));
-            /*
-             * And make mpv act on it now.
-             *
-             * The property takes the new value immediately -- read it back and
-             * it is there -- but the sound already filtered goes on being
-             * played at the speed it was filtered at, and mpv only rebuilds the
-             * chain when playback next restarts. Changed from the panel, which
-             * pauses the film to show itself, that restart may be a dozen
-             * seconds away: the viewer picks a speed, presses play, and watches
-             * the film carry on at the old one.
-             *
-             * A seek of zero seconds is a playback restart that does not move.
-             * The chain is rebuilt at the position it is already at, and the
-             * new speed is what comes out of it.
-             */
+            // mpv applies a new speed only after a playback restart; a 0s seek forces one
             if (fileOpened && Math.abs(previousSpeed - parameters.speed) > 0.001f) {
                 mpv.command(new String[]{"seek", "0", "relative+exact"});
             }
@@ -1085,22 +1313,7 @@ public final class MpvPlayer extends BasePlayer
             if (id == null) {
                 continue;
             }
-            /*
-             * Ask what type the mime is, rather than reading the front of it.
-             *
-             * This used to test mime.startsWith("text"), which is true of
-             * "text/x-ssa" and "text/vtt" and false of the one everybody
-             * actually has: SubRip's mime is "application/x-subrip". So
-             * choosing an .srt set nothing at all — sid was never written, the
-             * picker said "Playing now" against the track you had chosen, and
-             * the screen carried on showing whatever it had been showing.
-             * Off worked, because that goes through disabledTrackTypes rather
-             * than through an override, which is exactly the shape the bug
-             * report had: "only clicking off works".
-             *
-             * The same was true of tx3g and PGS. getTrackType knows all of
-             * them, and will know the next one too.
-             */
+            // not a "text" prefix check: SubRip, tx3g and PGS are application/*
             final String mime = format.sampleMimeType == null ? "" : format.sampleMimeType;
             final int trackType = androidx.media3.common.MimeTypes.getTrackType(mime);
             if (trackType == C.TRACK_TYPE_AUDIO) {
@@ -1114,8 +1327,7 @@ public final class MpvPlayer extends BasePlayer
             }
         }
 
-        // "No subtitles" arrives as text being disabled rather than as an
-        // override, and mpv's way of saying that is sid=no.
+        // "off" comes as a disabled track type, not an override
         if (!textChosen && parameters.disabledTrackTypes.contains(C.TRACK_TYPE_TEXT)) {
             mpv.setPropertyString("sid", "no");
         }
@@ -1124,62 +1336,36 @@ public final class MpvPlayer extends BasePlayer
         }
     }
 
-    /** The size the person chose, kept so the scale can be worked out again. */
     private int subtitleSizeStep;
 
-    /**
-     * Match the other engine's subtitle size, by arithmetic rather than taste.
-     *
-     * Both engines express size as a share of the window they draw into, and
-     * they do not agree on the share. Media3 uses SubtitleView's default text
-     * fraction, 0.0533 of the view height. mpv's default sub-font-size of 55 is
-     * expressed against a 720-tall window, which is 55/720 = 0.0764 of it. So
-     * the same film, the same screen and the same setting give mpv text about
-     * 43 per cent larger.
-     *
-     * That never showed while mpv was drawing into a surface cut to the shape
-     * of the film, because the two were measuring different windows. Now that
-     * mpv is given the whole screen — which is what lets subtitles sit on the
-     * black bars — they measure the same window, and the difference is plain.
-     *
-     * 0.0533 / 0.0764 brings them level. A constant, deliberately: sizing by
-     * how much of the screen the picture happens to occupy made the text change
-     * size when the aspect changed, so a crop was noticeably larger than a fit.
-     * Subtitles should not resize when you zoom the picture.
-     */
-    private static final double MEDIA3_PARITY = 0.0533 / (55.0 / 720.0);
+    // sub-scale matching Media3's text size, from mpv's actual sub-font-size;
+    // constant so subtitles don't resize with the picture's aspect or zoom
+    private final double subtitleParity;
+
+    private double measureSubtitleParity() {
+        Double fontSize = null;
+        try {
+            fontSize = mpv == null ? null : mpv.getPropertyDouble("sub-font-size");
+        } catch (Exception e) {
+            Log.w(TAG, "could not read sub-font-size: " + e);
+        }
+        final double size = fontSize == null || fontSize <= 0
+                ? MpvSubtitleScale.DEFAULT_FONT_SIZE : fontSize;
+        return MpvSubtitleScale.parity(size);
+    }
 
     private void applySubtitleScale() {
         if (mpv == null) {
             return;
         }
-        final double chosen = 1.0 + subtitleSizeStep * (SUB_SIZE_STEP / SUB_SIZE_DEFAULT);
-        set("sub-scale", String.valueOf(Math.max(0.2, chosen * MEDIA3_PARITY)));
+        set("sub-scale", String.valueOf(MpvSubtitleScale.scale(subtitleSizeStep, subtitleParity)));
     }
 
 
     /**
-     * Shape the picture, inside mpv, rather than by resizing its canvas.
-     *
-     * The Android side used to do all of this: an AspectRatioFrameLayout
-     * measured the video surface to the shape of the film, and mpv simply
-     * filled whatever it was given. Two things follow from that, and both were
-     * reported as bugs.
-     *
-     * The black bars were not mpv's — they were the empty part of the player
-     * around a surface that had been shrunk to fit — so mpv had nowhere to put
-     * a subtitle except on top of the picture, whatever sub-use-margins said.
-     * And changing shape resized the surface under a paused film, which mpv
-     * could not redraw into until the next frame arrived, so the picture sat
-     * there stretched or clipped until playback resumed.
-     *
-     * Now the surface covers the whole player and mpv letterboxes inside it.
-     * The bars belong to mpv, which can draw subtitles on them; the shape is a
-     * property it can change and redraw at once, paused or not.
-     *
-     * @param keepAspect   false stretches the picture to the window
-     * @param panscan      0 letterboxes, 1 crops to fill
-     * @param aspectOverride a forced ratio such as 1.777, or 0 for the film's own
+     * @param keepAspect     false stretches the picture to the window
+     * @param panscan        0 letterboxes, 1 crops to fill
+     * @param aspectOverride a forced ratio such as 1.777, or 0 for the video's own
      */
     public void setAspect(final boolean keepAspect, final double panscan,
                           final double aspectOverride) {
@@ -1193,21 +1379,7 @@ public final class MpvPlayer extends BasePlayer
         refreshPicture();
     }
 
-    /**
-     * Draw the picture again, in place, without moving.
-     *
-     * mpv renders frames as they arrive. Change the shape of the window while a
-     * film is paused and there is no next frame to arrive, so what stays on
-     * screen is the last one drawn at the old geometry — stretched, offset, or
-     * with the edges of the previous shape still showing — until you press play
-     * and a fresh frame corrects it. Every other player redraws immediately,
-     * and so should this.
-     *
-     * Restating the surface size makes the video output reconfigure, which
-     * covers the common case. A paused film additionally needs a frame to
-     * render: an exact relative seek of zero produces one at the position it is
-     * already at, which is the cheapest way to say "draw that again".
-     */
+    // mpv only redraws on a new frame; when paused, a 0s exact seek produces one
     public void refreshPicture() {
         if (mpv == null) {
             return;
@@ -1222,8 +1394,6 @@ public final class MpvPlayer extends BasePlayer
         if (playbackState == Player.STATE_READY && !playWhenReady) {
             mpv.command(new String[]{"seek", "0", "relative+exact"});
         }
-        // The margins have just moved, so the size that was measured against
-        // them has to be worked out again.
         applySubtitleScale();
     }
 
@@ -1234,30 +1404,10 @@ public final class MpvPlayer extends BasePlayer
             return;
         }
 
-        final double position = SUB_POS_DEFAULT - verticalPosition;
-        set("sub-pos", String.valueOf(Math.max(0, Math.min(150, position))));
+        subtitleVerticalPosition = verticalPosition;
+        applySubtitlePosition();
 
-        // Keep subtitles on the picture, never in the black bars.
-        //
-        // Letting them into the margins sounded right and was not: the surface
-        // this engine draws on is already sized to the picture, so anything
-        // pushed past its edge is simply clipped away and the text vanishes
-        // rather than moving. Media3 is now held to the same rule by measuring
-        // the picture and placing the line inside it, so the slider covers the
-        // same ground on both.
-        /*
-         * Subtitles may use the black bars.
-         *
-         * These were "no", which keeps every subtitle inside the picture. On a
-         * letterboxed film in a fit-to-screen shape that puts the text over the
-         * bottom of the image while a wide empty band sits unused beneath it —
-         * and at some positions pushes it far enough down to be hard to read
-         * against the picture at all.
-         *
-         * "yes" lets mpv lay subtitles out against the window instead of the
-         * video, which is the whole screen, bars included. It is what the other
-         * engine now does too, so the two agree.
-         */
+        // let subtitles use the black bars
         set("sub-use-margins", "yes");
         set("sub-ass-force-margins", "yes");
 
@@ -1300,8 +1450,61 @@ public final class MpvPlayer extends BasePlayer
 
 
 
-    // mpv types volume as a float; writing it as an integer was rejected outright,
-    // which is why the boost did nothing under this engine
+    private int subtitleVerticalPosition;
+    // percent of the screen height
+    private double subtitleLiftPercent;
+
+    private void applySubtitlePosition() {
+        final double position = SUB_POS_DEFAULT - subtitleVerticalPosition - subtitleLiftPercent;
+        set("sub-pos", String.valueOf(Math.max(0, Math.min(150, position))));
+    }
+
+    public void setSubtitleLift(final float fractionOfHeight) {
+        subtitleLiftPercent = Math.max(0, fractionOfHeight) * 100.0;
+        applySubtitlePosition();
+    }
+
+    // osd-dimensions: mpv letterboxes inside the full-screen surface
+    private static final String[] PICTURE_EDGES = {"w", "h", "ml", "mt", "mr", "mb"};
+
+    /** {w, h, left, top, right, bottom} in mpv's pixels, or null before a picture. */
+    @Nullable
+    public int[] pictureMargins() {
+        if (mpv == null) {
+            return null;
+        }
+        final int[] out = new int[PICTURE_EDGES.length];
+        for (int i = 0; i < PICTURE_EDGES.length; i++) {
+            final Integer value = mpv.getPropertyInt("osd-dimensions/" + PICTURE_EDGES[i]);
+            if (value == null) {
+                return null;
+            }
+            out[i] = value;
+        }
+        return out[0] > 0 && out[1] > 0 ? out : null;
+    }
+
+    @Nullable
+    private Runnable pictureListener;
+
+    // called when the picture moves inside the surface
+    public void setPictureListener(@Nullable final Runnable listener) {
+        this.pictureListener = listener;
+    }
+
+    // 1 is fit; mpv's video-zoom is log2 of the scale and leaves subtitles alone
+    private double videoZoom = 1.0;
+
+    public void setVideoZoom(final double scale) {
+        videoZoom = Math.max(1.0, scale);
+        set("video-zoom", String.valueOf(Math.log(videoZoom) / Math.log(2)));
+    }
+
+    public double getVideoZoom() {
+        return videoZoom;
+    }
+
+    // volume is a float property; integer writes are rejected
     public void setVolumePercent(final int percent) {
         if (mpv == null) {
             return;
@@ -1313,44 +1516,37 @@ public final class MpvPlayer extends BasePlayer
         addSubtitle(uri, null);
     }
 
-    /**
-     * Add a subtitle and select it, under the name it should be known by.
-     *
-     * mpv's sub-add takes a title after the flags, and given one it uses that
-     * instead of naming the track after the file. Which matters for a
-     * downloaded subtitle: the file it was saved to may be called
-     * 1321321 while the thing you picked had a release name.
-     */
+    // title replaces the track name mpv would take from the file name
     public void addSubtitle(final android.net.Uri uri, @Nullable final String title) {
+        addSubtitle(uri, title, null);
+    }
+
+    public void addSubtitle(final android.net.Uri uri, @Nullable final String title,
+                            @Nullable final String language) {
         if (mpv == null || uri == null) {
             return;
         }
-        subAdd(uri, title, "select");
+        subAdd(uri, title, language, "select");
     }
 
-    /**
-     * Hand a subtitle to mpv, and notice when it will not take it.
-     *
-     * sub-add reports nothing a caller can read: a file mpv cannot open -- no
-     * permission, a dead link, a format it will not parse -- leaves the track
-     * list exactly as it was and playback carrying on as though nothing had
-     * been asked. The other engine says "that subtitle would not load" in that
-     * situation, and someone who has just picked one is owed the same answer
-     * whichever engine happens to be playing.
-     *
-     * The track list is the only honest signal there is, so it is counted
-     * either side of the command.
-     */
+    // sub-add returns nothing; a failure shows as an unchanged track count
     private void subAdd(final android.net.Uri uri, @Nullable final String title,
-                        final String flag) {
+                        @Nullable final String language, final String flag) {
         if (mpv == null) {
             return;
         }
+        addedSubtitles.add(uri.toString());
         final Integer before = mpv.getPropertyInt("track-list/count");
-        if (title == null || title.trim().isEmpty()) {
+        final String name = title == null ? "" : title.trim();
+        final String lang = language == null ? "" : language.trim();
+        if (name.isEmpty() && lang.isEmpty()) {
             mpv.command(new String[]{"sub-add", uri.toString(), flag});
+        } else if (lang.isEmpty()) {
+            mpv.command(new String[]{"sub-add", uri.toString(), flag, name});
         } else {
-            mpv.command(new String[]{"sub-add", uri.toString(), flag, title.trim()});
+            // lang is positional after title, so a title is required
+            mpv.command(new String[]{"sub-add", uri.toString(), flag,
+                    name.isEmpty() ? lang : name, lang});
         }
         final Integer after = mpv.getPropertyInt("track-list/count");
         if (before != null && after != null && after <= before) {
@@ -1364,7 +1560,6 @@ public final class MpvPlayer extends BasePlayer
     @Nullable
     private Runnable subtitleFailureListener;
 
-    /** What to do when a subtitle mpv was given never arrived. */
     public void setSubtitleFailureListener(@Nullable final Runnable listener) {
         this.subtitleFailureListener = listener;
     }
@@ -1375,13 +1570,7 @@ public final class MpvPlayer extends BasePlayer
         set("sub-delay", String.valueOf(delayMs / 1000.0));
     }
 
-    /**
-     * How fast the stream is coming in, in bytes a second.
-     *
-     * mpv keeps this itself as the rate its cache is filling, which is the same
-     * question the other engine answers by counting the bytes its data sources
-     * report. Nothing is coming in on a local file, and -1 says so.
-     */
+    // mpv's cache-speed; -1 when nothing is coming in (local files)
     public long cacheSpeedBytesPerSecond() {
         if (mpv == null) {
             return -1;
@@ -1393,13 +1582,7 @@ public final class MpvPlayer extends BasePlayer
         return (long) (double) speed;
     }
 
-    /**
-     * Move the sound relative to the picture.
-     *
-     * mpv has the property outright: positive means the sound arrives later,
-     * which is the same sense as the delay on the other engine and the same
-     * sense as the number the viewer sees.
-     */
+    // positive delays the audio, same sign as Media3
     public void setAudioDelayMs(final int delayMs) {
         if (mpv == null) {
             return;
@@ -1428,7 +1611,7 @@ public final class MpvPlayer extends BasePlayer
         return chapters;
     }
 
-    // Pause when the headphones come out, which ExoPlayer does for itself
+    // pause on headphone unplug, which ExoPlayer does itself
     public void setHandleAudioBecomingNoisy(final boolean handle) {
         if (handle == (becomingNoisyReceiver != null)) {
             return;
@@ -1448,8 +1631,7 @@ public final class MpvPlayer extends BasePlayer
                 new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
     }
 
-    // Options are typed, and a write of the wrong type is rejected silently, so
-    // everything goes out as text and mpv parses it into whatever it really is
+    // typed writes of the wrong type fail silently; strings are parsed by mpv
     private void set(final String property, final String value) {
         if (mpv == null) {
             return;
@@ -1474,7 +1656,13 @@ public final class MpvPlayer extends BasePlayer
     @NonNull
     @Override
     public MediaMetadata getMediaMetadata() {
-        return MediaMetadata.EMPTY;
+        return mediaItems.isEmpty() ? MediaMetadata.EMPTY : mediaItems.get(0).mediaMetadata;
+    }
+
+    private void announceMediaMetadata() {
+        final MediaMetadata metadata = getMediaMetadata();
+        listeners.sendEvent(Player.EVENT_MEDIA_METADATA_CHANGED,
+                listener -> listener.onMediaMetadataChanged(metadata));
     }
 
     @NonNull
@@ -1514,7 +1702,7 @@ public final class MpvPlayer extends BasePlayer
 
     @Override
     public long getCurrentPosition() {
-        return positionMs;
+        return openingAtMs != C.TIME_UNSET ? openingAtMs : positionMs;
     }
 
     @Override
@@ -1665,6 +1853,7 @@ public final class MpvPlayer extends BasePlayer
                         Player.COMMAND_SEEK_FORWARD,
                         Player.COMMAND_SET_SPEED_AND_PITCH,
                         Player.COMMAND_GET_CURRENT_MEDIA_ITEM,
+                        Player.COMMAND_GET_METADATA,
                         Player.COMMAND_GET_TIMELINE,
                         Player.COMMAND_GET_TRACKS,
                         Player.COMMAND_SET_TRACK_SELECTION_PARAMETERS,
@@ -1677,7 +1866,7 @@ public final class MpvPlayer extends BasePlayer
                 .build();
     }
 
-    // ------------------------------------------------- unsupported playlist
+    // unsupported playlist
 
     @Override
     public void addMediaItems(int index, @NonNull List<MediaItem> mediaItems) {

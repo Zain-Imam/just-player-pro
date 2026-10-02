@@ -1,9 +1,7 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Ordered by how often someone actually changes a thing: what plays and
-         how it starts, then gestures, then subtitles, then the online features,
-         then history, and the things that can break playback last. -->
+    <!-- ordered by how often each setting is changed -->
 
     <PreferenceCategory app:title="@string/pref_appearance_header">
 
@@ -39,6 +37,12 @@
         <Preference
             app:selectable="false"
             app:summary="@string/pref_start_on_note" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="recentPosters"
+            app:summary="@string/pref_recent_posters_summary"
+            app:title="@string/pref_recent_posters" />
 
         <Preference
             app:key="showIntroAgain"

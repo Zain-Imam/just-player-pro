@@ -5,18 +5,7 @@ import androidx.media3.common.MimeTypes;
 
 import java.util.Locale;
 
-/*
- * FFmpeg's name for a codec, translated into the one Media3 uses.
- *
- * The track picker prints a friendly name for a codec by looking up its mime
- * type, which is fine for the engine that reports one. mpv reports "eac3" and
- * "hdmv_pgs_subtitle" instead, so the same track showed its codec on one engine
- * and nothing on the other. Mapping the names across means one picker, one set
- * of labels, either engine.
- *
- * Anything not listed falls back to the raw name, which is still more than the
- * nothing that was shown before.
- */
+// Maps FFmpeg codec names reported by mpv to Media3 mime types for track labels.
 final class MpvCodecs {
 
     private MpvCodecs() {
@@ -28,7 +17,7 @@ final class MpvCodecs {
             return null;
         }
         switch (codec.toLowerCase(Locale.US)) {
-            // -- audio ------------------------------------------------------
+            // audio
             case "aac":
             case "aac_latm":
                 return MimeTypes.AUDIO_AAC;
@@ -62,7 +51,7 @@ final class MpvCodecs {
             case "amrwb":
                 return MimeTypes.AUDIO_AMR_WB;
 
-            // -- video ------------------------------------------------------
+            // video
             case "h264":
                 return MimeTypes.VIDEO_H264;
             case "hevc":
@@ -80,7 +69,7 @@ final class MpvCodecs {
             case "vc1":
                 return MimeTypes.VIDEO_VC1;
 
-            // -- subtitles --------------------------------------------------
+            // subtitles
             case "subrip":
             case "srt":
                 return MimeTypes.APPLICATION_SUBRIP;

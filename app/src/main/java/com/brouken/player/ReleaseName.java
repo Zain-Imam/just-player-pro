@@ -9,20 +9,8 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/*
- * Getting a title out of whatever the file happened to be called.
- *
- * What arrives is rarely a title. It is a scene release, an anime group's
- * bracketed naming, or — when the player was started by another app — a URL
- * with the name buried in its last path segment, percent-encoded, behind a
- * query string full of tokens. Everything downstream, the search box included,
- * is only as good as what comes out of here.
- *
- * The approach is the usual one for this problem, and the one the mpv forks
- * take: find the season and episode markers first, because everything before
- * the earliest of them is the title, then scrub the known noise — resolutions,
- * codecs, sources, release groups, checksums — out of what is left.
- */
+// Parses a release name or URL. The title is whatever precedes the first
+// episode, year or quality marker, with known tags removed.
 public final class ReleaseName {
 
     private ReleaseName() {
@@ -110,7 +98,7 @@ public final class ReleaseName {
             if (!title.matches("(?s).*[A-Za-z]{2,}.*")) {
                 return false;
             }
-            // A hash or a UUID is all hex and separators, and reads as a word.
+            // hashes and UUIDs are hex only
             final String bare = title.replaceAll("[^A-Za-z0-9]", "");
             if (bare.length() >= 8 && bare.matches("(?i)[0-9a-f]+")) {
                 return false;
@@ -119,13 +107,7 @@ public final class ReleaseName {
             return !title.matches("(?i)[0-9\\s._-]*(p|part\\s*\\d+)?");
         }
 
-        /*
-         * What to ask a database for: the title, and nothing else.
-         *
-         * The year used to be glued on to the end, which asks for a title
-         * containing the digits 2026 and finds nothing. It goes beside the
-         * query as a year instead, which is what the year field is for.
-         */
+        // the year is sent as a separate search parameter
         public String searchQuery() {
             return cleanTitle;
         }
@@ -141,8 +123,7 @@ public final class ReleaseName {
         }
     }
 
-    // Ordered longest-first where prefixes overlap, so "2160p" is not caught by
-    // a looser rule first.
+    // first match wins, so the more specific rules come first
     private static final Rule[] RESOLUTION = {
             new Rule("\\b(2160p|4k|uhd)\\b", "4K"),
             new Rule("\\b1440p\\b", "1440p"),
@@ -187,13 +168,11 @@ public final class ReleaseName {
     private static final Pattern SEASON_ONLY =
             Pattern.compile("\\bs(\\d{1,2})\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern ALT_EPISODE = Pattern.compile("\\b(\\d{1,2})x(\\d{2,3})\\b");
-    // Four digits standing alone. The middle of a date stamp — VID-20230515 —
-    // is not a year, and a phone fills a gallery with those.
+    // four digits standing alone, so a date stamp like VID-20230515 is not a year
     private static final Pattern YEAR =
             Pattern.compile("(?<!\\d)(19\\d{2}|20\\d{2})(?!\\d)");
 
-    // "Season 3", "Episode 12", "EP05" — how a release names them when it is not
-    // using the scene form.
+    // "Season 3", "Episode 12", "EP05": the non-scene forms
     private static final Pattern SEASON_WORD =
             Pattern.compile("\\bseason\\s*(\\d{1,2})\\b", Pattern.CASE_INSENSITIVE);
     private static final Pattern EPISODE_WORD =
@@ -201,13 +180,7 @@ public final class ReleaseName {
     private static final Pattern EPISODE_MARKER =
             Pattern.compile("\\bep\\s*\\.?\\s*(\\d{1,4})\\b", Pattern.CASE_INSENSITIVE);
 
-    /*
-     * The anime form: "Frieren - 08" or "Frieren - 08 - Title".
-     *
-     * Deliberately narrow. A dash followed by a number is also how half the
-     * films with a subtitle in the name are written, so the number has to look
-     * like an episode: not a year, not a resolution, and not four digits.
-     */
+    // anime form "Frieren - 08"; kept narrow because film titles use " - " too
     private static final Pattern DASH_EPISODE =
             Pattern.compile("\\s-\\s*(\\d{1,3})(?:\\s|$|\\s*-\\s*|\\s*\\()");
 
@@ -217,28 +190,17 @@ public final class ReleaseName {
             "^\\s*(\\[[^]]{1,40}]|www\\.\\S{1,40}|[a-z0-9.-]{1,30}\\.(com|net|org|to|software|me|cc|tv))\\s*[-–—]?\\s*",
             Pattern.CASE_INSENSITIVE);
 
-    /*
-     * Anything in brackets, wherever it is.
-     *
-     * An anime release is "[SubsPlease] Frieren - 01 (1080p) [ABCD1234].mkv":
-     * the group in front, the quality in the middle and a checksum at the end,
-     * and none of the three is part of the title. Films use the same habit for
-     * "(2008)", so a year is pulled out before this runs.
-     */
+    // group, quality and checksum tags; the year is read before this runs
     private static final Pattern BRACKETS =
             Pattern.compile("\\[[^\\[\\]]{0,60}\\]"
                     + "|\\{[^\\{\\}]{0,60}\\}"
                     + "|【[^【】]{0,60}】"
                     + "|（[^（）]{0,60}）");
 
-    // A CRC32 left in the name by the muxer, which is eight hex digits and looks
-    // like a word to everything downstream.
-    // At least one of the letters in it, so that a date stamp — which is also
-    // eight characters that happen to be valid hex — keeps its digits.
+    // CRC32 tag; needs a letter so an eight-digit date stamp is kept
     private static final Pattern CHECKSUM =
             Pattern.compile("\\b(?=[0-9a-fA-F]{8}\\b)[0-9]*[a-fA-F][0-9a-fA-F]*\\b");
 
-    // Things that are plainly not part of a name.
     private static final Pattern NOISE = Pattern.compile(
             "\\b(10\\s?bit|8\\s?bit|hdr10\\+?|hdr|dolby\\s?vision|dovi|sdr|hlg|bt2020|bt709"
                     + "|multi|dual[\\s.-]?audio|dubbed|subbed|engsub|vostfr|hardsub|softsub"
@@ -250,12 +212,7 @@ public final class ReleaseName {
                     + "|v\\d)\\b",
             Pattern.CASE_INSENSITIVE);
 
-    /*
-     * Groups that sign their releases with a bare word rather than after a dash.
-     *
-     * The dash form is caught by GROUP; these are the ones that are not, and
-     * that turn up often enough in a personal collection to be worth naming.
-     */
+    // groups that sign with a bare word instead of a trailing "-GROUP"
     private static final Pattern KNOWN_GROUP = Pattern.compile(
             "\\b(yts(\\.[a-z]{2,3})?|yify|rarbg|galaxyrg|qxr|tigole|joy|shaanig|pahe|psa"
                     + "|evo|fgt|ntb|ntg|cakes|flux|mzabi|edith|ghosts|sparks|amiable|geckos"
@@ -263,21 +220,13 @@ public final class ReleaseName {
                     + "|horriblesubs|subsplease|erai-?raws|judas|asw|anime\\s?time|ohys-?raws)\\b",
             Pattern.CASE_INSENSITIVE);
 
-    /*
-     * The tags that only exist once the dots have become spaces.
-     *
-     * "DD5.1" and "H.264" are written with the same dot that separates every
-     * other word in a scene release, so by the time the name is readable they
-     * read as "DD5 1" and "H 264" and every pattern written against the dotted
-     * form misses them. These are matched after the normalisation instead.
-     */
+    // "DD5.1" and "H.264" after dots become spaces: "DD5 1", "H 264"
     private static final Pattern CHANNELS = Pattern.compile(
             "\\b(?:ddp?\\+?|dd\\+|aac|eac3|ac3|dts(?:\\s?hd)?(?:\\s?ma)?|truehd|atmos)?"
                     + "\\s?[1257]\\s[01]\\b",
             Pattern.CASE_INSENSITIVE);
     private static final Pattern SPACED_CODEC =
             Pattern.compile("\\bh\\s?26[45]\\b", Pattern.CASE_INSENSITIVE);
-    // What is left after a group name has been taken off the end.
     private static final Pattern TRAILING_GROUP =
             Pattern.compile("[-–—]\\s*[A-Za-z0-9]{2,15}\\s*$");
 
@@ -287,14 +236,7 @@ public final class ReleaseName {
             "\\.(mkv|mp4|avi|mov|m4v|ts|m2ts|webm|flv|wmv|mpg|mpeg|ogv|3gp|divx|m3u8)$",
             Pattern.CASE_INSENSITIVE);
 
-    /*
-     * Never throws.
-     *
-     * Everything downstream of this - the info card, the skip markers, the
-     * history list, the search box - runs on a background thread as a file
-     * opens, and a name this could not handle used to take the whole app with
-     * it. A name that cannot be parsed is a name that is not used.
-     */
+    // never throws: callers run on background threads as a file opens
     @NonNull
     public static Info parse(@Nullable final String rawName) {
         try {
@@ -314,7 +256,7 @@ public final class ReleaseName {
         final String withoutExtension = EXTENSION.matcher(raw).replaceAll("");
         final String withoutSite = SITE_PREFIX.matcher(withoutExtension).replaceAll("");
 
-        // Separators are normalised for MATCHING; the original is kept for display.
+        // separators normalised for matching; the original is kept for display
         String normalised = SEPARATORS.matcher(withoutSite).replaceAll(" ");
         normalised = WHITESPACE.matcher(normalised).replaceAll(" ").trim();
 
@@ -375,8 +317,7 @@ public final class ReleaseName {
         String year = null;
         final Matcher yearMatcher = YEAR.matcher(normalised);
         while (yearMatcher.find()) {
-            // A four-digit episode number is not a year, and neither is a year
-            // that turned out to be part of the season marker.
+            // skip a four-digit episode number or digits inside the marker
             if (markerEnd < 0 || yearMatcher.start() >= markerEnd
                     || yearMatcher.end() <= markerEnd - 6) {
                 year = yearMatcher.group(1);
@@ -384,8 +325,7 @@ public final class ReleaseName {
             }
         }
 
-        // The anime dash form, tried last: it is the loosest of the patterns and
-        // should never win over one that actually said "S01E02".
+        // loosest pattern, so tried last
         if (episode == null && year == null) {
             final Matcher dash = DASH_EPISODE.matcher(normalised);
             if (dash.find()) {
@@ -411,14 +351,7 @@ public final class ReleaseName {
                 episodeTitle(normalised, markerEnd, title), group);
     }
 
-    /*
-     * A link, reduced to the name inside it.
-     *
-     * Players are handed URLs more often than filenames these days, and the
-     * name in one is percent-encoded, behind a query string, and sometimes
-     * encoded twice by whatever proxied it. Anything that is already a plain
-     * name comes through this untouched.
-     */
+    // reduces a URL to the name in it; plain names pass through unchanged
     @NonNull
     static String fromLink(@Nullable final String rawName) {
         String value = rawName == null ? "" : rawName.trim();
@@ -428,14 +361,7 @@ public final class ReleaseName {
 
         final String lower = value.toLowerCase(Locale.US);
 
-        /*
-         * A content URI carries no name at all.
-         *
-         * Its last segment is a row number and the one above it is the word
-         * "media", which would be handed to the search box as the title of the
-         * film. The display name is asked for elsewhere; nothing is better than
-         * a wrong answer here.
-         */
+        // content uris end in a row id; the display name is resolved elsewhere
         if (lower.startsWith("content://")) {
             return "";
         }
@@ -453,8 +379,7 @@ public final class ReleaseName {
             if (fragment > 0) {
                 value = value.substring(0, fragment);
             }
-            // The last segment that has anything in it: a URL often ends in a
-            // slash, or in an id with the name one level up.
+            // URLs often end in a slash, or in an id with the name one level up
             final String[] segments = value.split("/");
             String best = "";
             for (int i = segments.length - 1; i >= 0; i--) {
@@ -463,8 +388,6 @@ public final class ReleaseName {
                     continue;
                 }
                 best = candidate;
-                // An id, a hash, or a bare number is not a name; keep looking up
-                // the path for something that is.
                 if (looksNamed(candidate)) {
                     break;
                 }
@@ -486,14 +409,14 @@ public final class ReleaseName {
             return false;
         }
         final String bare = candidate.replaceAll("[^A-Za-z0-9]", "");
-        // A hash reads as letters too, and there is no name in one.
+        // long hex strings are hashes
         return !(bare.length() >= 16 && bare.matches("(?i)[0-9a-f]+"));
     }
 
     private static String decode(final String value) {
         String decoded = value;
-        // Twice at most: a name that went through two services is encoded twice,
-        // and a third pass starts eating real percent signs.
+        // at most twice: proxied links can be double-encoded, but a third pass
+        // would decode real percent signs
         for (int i = 0; i < 2; i++) {
             if (decoded.indexOf('%') < 0 && decoded.indexOf('+') < 0) {
                 break;
@@ -530,13 +453,7 @@ public final class ReleaseName {
         }
     }
 
-    /*
-     * What sits between the episode marker and the first piece of noise.
-     *
-     * "Breaking Bad S05E16 Felina 720p" has "Felina" in it, which is worth
-     * having on the card. Most releases have nothing there at all, so anything
-     * that scrubs down to a couple of characters is dropped rather than shown.
-     */
+    // "Felina" in "Breaking Bad S05E16 Felina 720p"
     @Nullable
     private static String episodeTitle(final String normalised, final int markerEnd,
                                        final String title) {
@@ -572,8 +489,6 @@ public final class ReleaseName {
         }
         if (season != null || episode != null) {
             addStart(cuts, SEASON_EPISODE.matcher(work));
-            // The "3x07" form counts too, or a title keeps the marker it was
-            // matched on.
             addStart(cuts, ALT_EPISODE.matcher(work));
             addStart(cuts, SEASON_WORD.matcher(work));
             addStart(cuts, EPISODE_WORD.matcher(work));
@@ -606,13 +521,8 @@ public final class ReleaseName {
         return title;
     }
 
-    /*
-     * Everything that is definitely not part of a name, taken out.
-     *
-     * Order matters here: the brackets go first because a checksum and a group
-     * are usually inside one, and the trailing dash is cleaned last because
-     * removing a group is what leaves it behind.
-     */
+    // order matters: brackets first since they hold checksums and groups,
+    // the trailing dash last since removing a group leaves it behind
     private static String scrub(final String raw) {
         String text = BRACKETS.matcher(raw).replaceAll(" ");
         text = NOISE.matcher(text).replaceAll(" ");

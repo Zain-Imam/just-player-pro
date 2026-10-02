@@ -10,22 +10,8 @@ import java.text.Collator;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * What order the two lists come in, and which way round, remembered between
- * sessions.
- *
- * <p>Names are compared with a {@link Collator} rather than by character, so
- * "Ätherwelle" files beside "Atlas" instead of after "Zulu", and case never
- * decides anything. Every other order falls back to the name when two entries
- * tie, so a list never reshuffles itself between two equal items.
- *
- * <p>The direction is "reversed" rather than "ascending", because ascending
- * means nothing consistent here: sorting by name starts at A, and sorting by
- * size starts at the biggest, and both of those are what somebody asking for
- * that order wants first. Each order names its own two directions — "A to Z"
- * and "Z to A", "Largest first" and "Smallest first" — which is the only way
- * the words stay true whichever column is chosen.
- */
+// Saved sort orders for the folder and file lists. Names compare with a Collator
+// and break ties; unreversed puts A, the largest or the newest first.
 public final class Sort {
 
     private static final String PREF_KEY_FOLDERS = "homeFolderSort";
@@ -102,11 +88,7 @@ public final class Sort {
         preferences.edit().putString(PREF_KEY_VIDEOS, order.name()).apply();
     }
 
-    /*
-     * The direction is kept apart from the column, so changing one does not
-     * throw away the other: somebody who likes the biggest first and switches
-     * from size to length means the longest first, not the shortest.
-     */
+    // direction is stored apart from the column, so it survives a column change
     public static boolean foldersReversed(@NonNull final SharedPreferences preferences) {
         return preferences.getBoolean(PREF_KEY_FOLDERS_REVERSED, false);
     }
@@ -166,9 +148,7 @@ public final class Sort {
                     result = 0;
                     break;
             }
-            // The name breaks a tie in the direction asked for too, so a
-            // reversed list is the same list upside down and not a different
-            // one with the ties left where they were.
+            // ties reverse too, so a reversed list is this one upside down
             return way * (result != 0 ? result : COLLATOR.compare(left.name, right.name));
         });
     }

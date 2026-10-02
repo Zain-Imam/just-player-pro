@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  What goes in an exported file.
-
-  Its own layout rather than a dialog's multi-choice list, because the note
-  underneath has to be read at the same time as the boxes are ticked: an
-  AlertDialog takes a message or a list of choices and quietly drops the list
-  when given both.
--->
+<!-- own layout: AlertDialog drops a multi-choice list when given a message too -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">

@@ -63,7 +63,7 @@ public final class Accent {
         } finally {
             array.recycle();
         }
-        // A context with no theme of ours — fall back to the stored choice.
+        // context without the app theme; use the stored choice
         return context.getResources().getColor(colorResource(context));
     }
 
@@ -71,8 +71,7 @@ public final class Accent {
         return COLORS[indexOf(stored(context))];
     }
 
-    // Any accent by name, for showing all of them at once rather than whichever
-    // one is in use.
+    // any accent by key, not only the one in use
     @ColorInt
     public static int colorOf(@NonNull final Context context, @Nullable final String key) {
         return context.getResources().getColor(COLORS[indexOf(key)]);

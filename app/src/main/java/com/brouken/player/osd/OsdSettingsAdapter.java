@@ -94,18 +94,7 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
             View button1 = itemView.findViewById(android.R.id.button1);
             View button2 = itemView.findViewById(android.R.id.button2);
 
-            /*
-             * Held down, these repeat.
-             *
-             * A remote already repeats on its own -- Android sends a run of key
-             * events while an arrow is held -- but a finger on the screen got
-             * one step per tap and nothing else, so the two input methods were
-             * nowhere near each other. Holding either now does the same thing,
-             * and the step itself accelerates in IntegerOsdSettingsItem.
-             *
-             * The first repeat waits out the system's own long-press threshold
-             * so a normal tap is still exactly one step.
-             */
+            // repeat while held, like a remote's key repeat
             repeatWhileHeld(button1, this::notifySettingLeftPressed);
             repeatWhileHeld(button2, this::notifySettingRightPressed);
 
@@ -152,18 +141,11 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
             }
         }
 
-        /**
-         * One press on a tap, and a stream of them while a finger stays down.
-         *
-         * The click listener is left in place so that everything which is not a
-         * finger -- an accessibility service, a hardware Enter on the focused
-         * button -- goes on working exactly as before; the touch listener only
-         * adds the repeats, and cancels them the moment the finger lifts or
-         * leaves the button.
-         */
         private void repeatWhileHeld(final View button, final Runnable press) {
+            // kept for accessibility services and a hardware Enter
             button.setOnClickListener(v -> press.run());
 
+            // waits out the long-press timeout so a tap is still one step
             final long first = android.view.ViewConfiguration.getLongPressTimeout();
             final long gap = 60;
             final Runnable[] repeater = new Runnable[1];
@@ -184,21 +166,12 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
                     default:
                         break;
                 }
-                // Never consumed: the click listener, the ripple and the
-                // accessibility events all still need this event.
+                // not consumed: click, ripple and accessibility still need it
                 return false;
             });
         }
 
-        /*
-         * Both of these check the position first.
-         *
-         * They did not need to when the only way in was a click, which cannot
-         * arrive after the row has gone. A repeat can: it is posted to the view
-         * and could fire once more after the panel closed or the row was
-         * recycled, when the position is NO_POSITION and the lookup would be
-         * out of bounds.
-         */
+        // a posted repeat can fire after the row is gone (NO_POSITION)
         private void notifySettingLeftPressed() {
             final int position = getBindingAdapterPosition();
             if (position < 0 || position >= items.length) {
@@ -223,7 +196,6 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
 
         private final TextView titleTextView;
         private final ImageView iconView;
-        /** The second, optional target at the end of a row. */
         private final ImageView trailingView;
 
         private SimpleOsdSettingsViewHolder(View itemView) {
@@ -244,21 +216,8 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
                 item.listener.onSettingClicked(position);
             });
 
-            /*
-             * A remote has to be able to get to the button on the end of a row.
-             *
-             * Pressing right did nothing, and not because the button refused
-             * the focus: a direction search only offers views that lie beyond
-             * the rectangle of the one that has it, and this button lies inside
-             * that rectangle -- the whole row is focused, and the button is
-             * part of the row. There is nothing to the right of the row but the
-             * edge of the panel.
-             *
-             * So the way out is named rather than searched for. Both views are
-             * given ids of their own -- generated, because every recycled row
-             * carries the same id from the layout and the first match in the
-             * tree would win, which could be a row that has its button hidden.
-             */
+            // focus search can't reach a view inside the focused row, so name it;
+            // ids are generated because recycled rows share the layout id
             if (trailingView != null) {
                 if (itemView.getId() == View.NO_ID) {
                     itemView.setId(View.generateViewId());
@@ -293,13 +252,10 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
                 iconView.setVisibility(View.VISIBLE);
                 iconView.setImageDrawable(simpleItem.icon);
             }
-            // Rows are recycled, so a trailing button that this row does not
-            // use has to be put away again, not merely left unconfigured.
+            // rows are recycled, so hide a trailing button this row doesn't use
             if (trailingView != null) {
                 if (simpleItem.trailingIcon == null || simpleItem.trailingListener == null) {
                     trailingView.setVisibility(View.GONE);
-                    // Nothing to go right to, so right does nothing rather than
-                    // jumping to a hidden button this row is not using.
                     itemView.setNextFocusRightId(View.NO_ID);
                 } else {
                     itemView.setNextFocusRightId(trailingView.getId());

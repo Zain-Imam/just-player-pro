@@ -40,7 +40,6 @@ class SubtitleFetcher {
         new Thread(() -> {
 
             OkHttpClient client = new OkHttpClient.Builder()
-                    //.callTimeout(15, TimeUnit.SECONDS)
                     .build();
 
             Callback callback = new Callback() {
@@ -65,7 +64,6 @@ class SubtitleFetcher {
 
             for (Uri url : urls) {
                 // Total Commander 3.24 / LAN plugin 3.20 does not support HTTP HEAD
-                //Request request = new Request.Builder().url(url.toString()).head().build();
                 if (HttpUrl.parse(url.toString()) == null) {
                     countDownLatch.countDown();
                     continue;
@@ -96,36 +94,34 @@ class SubtitleFetcher {
             // ProtocolException when reusing client:
             // java.net.ProtocolException: Unexpected status line: 1
             client = new OkHttpClient.Builder()
-                    //.callTimeout(15, TimeUnit.SECONDS)
                     .build();
 
             Request request = new Request.Builder().url(subtitleUri.toString()).build();
             try (Response response = client.newCall(request).execute()) {
                 final ResponseBody responseBody = response.body();
 
-                if (responseBody == null || responseBody.contentLength() > 2_000_000) {
+                if (!response.isSuccessful() || responseBody == null
+                        || responseBody.contentLength() > 2_000_000) {
                     return;
                 }
 
                 InputStream inputStream = responseBody.byteStream();
-                Uri convertedSubtitleUri = Utils.convertInputStreamToUTF(activity, subtitleUri, inputStream);
+                // always keep a local copy; a URL handed on would just be fetched again
+                Uri convertedSubtitleUri = Utils.convertInputStreamToUTF(activity, subtitleUri, inputStream, true);
 
-                if (convertedSubtitleUri == null) {
+                if (convertedSubtitleUri == null || !"file".equals(convertedSubtitleUri.getScheme())) {
                     return;
                 }
 
+                // attached like any other subtitle so it works on both engines
                 activity.runOnUiThread(() -> {
-                    activity.mPrefs.updateSubtitle(convertedSubtitleUri);
                     if (PlayerActivity.player != null) {
-                        MediaItem mediaItem = PlayerActivity.player.getCurrentMediaItem();
-                        if (mediaItem != null) {
-                            MediaItem.SubtitleConfiguration subtitle = SubtitleUtils.buildSubtitle(activity, convertedSubtitleUri, null, true);
-                            mediaItem = mediaItem.buildUpon().setSubtitleConfigurations(Collections.singletonList(subtitle)).build();
-                            PlayerActivity.player.setMediaItem(mediaItem, false);
-                            if (BuildConfig.DEBUG) {
-                                Toast.makeText(activity, "Subtitle found", Toast.LENGTH_SHORT).show();
-                            }
+                        activity.attachFoundSubtitle(convertedSubtitleUri);
+                        if (BuildConfig.DEBUG) {
+                            Toast.makeText(activity, "Subtitle found", Toast.LENGTH_SHORT).show();
                         }
+                    } else {
+                        activity.mPrefs.updateSubtitle(convertedSubtitleUri);
                     }
                 });
             } catch (IOException e) {

@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-class SubtitleUtils {
+public class SubtitleUtils {
 
     public static String getSubtitleMime(Uri uri) {
         final String path = uri.getPath();
@@ -94,7 +94,6 @@ class SubtitleUtils {
                 if (ret != null)
                     return ret;
             } else {
-                //if (doc.length() == file.length() && doc.lastModified() == file.lastModified() && doc.getName().equals(file.getName())) {
                 // lastModified is zero when opened from Solid Explorer
                 final String docName = doc.getName();
                 final String fileName = file.getName();
@@ -247,13 +246,45 @@ class SubtitleUtils {
         return false;
     }
 
+    // deletes only unreferenced subtitle copies; the cache also holds mpv's CA bundle
     public static void clearCache(Context context) {
+        clearCache(context, java.util.Collections.emptyList());
+    }
+
+    public static void clearCache(Context context, java.util.Collection<Uri> extraInUse) {
         try {
-            for (File file : context.getCacheDir().listFiles()) {
-                if (file.isFile()) {
-                    file.delete();
+            // in use: the caller's list, the last film's subtitles, every remembered launch
+            final java.util.List<Uri> inUse = new java.util.ArrayList<>(extraInUse);
+            final android.content.SharedPreferences preferences =
+                    androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+            inUse.addAll(LaunchMemory.subtitleFiles(preferences));
+            try {
+                final String stored = preferences.getString("subtitleUris", null);
+                if (stored != null) {
+                    final org.json.JSONArray array = new org.json.JSONArray(stored);
+                    for (int i = 0; i < array.length(); i++) {
+                        inUse.add(Uri.parse(array.optString(i, "")));
+                    }
+                }
+            } catch (org.json.JSONException ignored) {
+                // unreadable list: the age rule in prune still applies
+            }
+            final java.util.Set<String> keep = new java.util.HashSet<>();
+            for (Uri uri : inUse) {
+                if (uri != null && uri.getPath() != null) {
+                    keep.add(new File(uri.getPath()).getAbsolutePath());
                 }
             }
+            final File[] loose = context.getCacheDir().listFiles();
+            if (loose != null) {
+                for (File file : loose) {
+                    if (file.isFile() && SubtitleFiles.hasSubtitleExtension(file.getName())
+                            && !keep.contains(file.getAbsolutePath())) {
+                        file.delete();
+                    }
+                }
+            }
+            SubtitleFiles.prune(context, inUse);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -263,16 +294,14 @@ class SubtitleUtils {
         return buildSubtitle(context, uri, subtitleName, null, selected);
     }
 
-    // The language the launching app said it was, where it said so at all. A
-    // subtitle downloaded to a cache file has a name that tells nobody
-    // anything, and the language was in the intent all along.
+    // language from the launching app when given; cache file names carry none
     public static MediaItem.SubtitleConfiguration buildSubtitle(Context context, Uri uri, String subtitleName, String language, boolean selected) {
         final String subtitleMime = SubtitleUtils.getSubtitleMime(uri);
         final String subtitleLanguage = language == null || language.trim().isEmpty()
                 ? SubtitleUtils.getSubtitleLanguage(uri)
                 : language.trim();
-        if (subtitleLanguage == null && subtitleName == null)
-            subtitleName = Utils.getFileName(context, uri, false);
+        // always labelled by the rule both engines share (see SubtitleNames)
+        subtitleName = SubtitleNames.label(context, uri, subtitleName, subtitleLanguage);
 
         MediaItem.SubtitleConfiguration.Builder subtitleConfigurationBuilder = new MediaItem.SubtitleConfiguration.Builder(uri)
                 .setMimeType(subtitleMime)
@@ -284,32 +313,6 @@ class SubtitleUtils {
         }
         return subtitleConfigurationBuilder.build();
     }
-
-    /*public static float normalizeFontScale(float fontScale, boolean small) {
-        // https://bbc.github.io/subtitle-guidelines/#Presentation-font-size
-        float newScale;
-        // ¯\_(ツ)_/¯
-        if (fontScale > 1.01f) {
-            if (fontScale >= 1.99f) {
-                // 2.0
-                newScale = (small ? 1.15f : 1.2f);
-            } else {
-                // 1.5
-                newScale = (small ? 1.0f : 1.1f);
-            }
-        } else if (fontScale < 0.99f) {
-            if (fontScale <= 0.26f) {
-                // 0.25
-                newScale = (small ? 0.65f : 0.8f);
-            } else {
-                // 0.5
-                newScale = (small ? 0.75f : 0.9f);
-            }
-        } else {
-            newScale = (small ? 0.85f : 1.0f);
-        }
-        return newScale;
-    }*/
 
     public static void updateFractionalTextSize(SubtitleView subtitleView, CaptioningManager captioningManager, Prefs prefs) {
         float fontScale = captioningManager.getFontScale();

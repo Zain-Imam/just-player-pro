@@ -12,25 +12,7 @@ public class IntegerOsdSettingsItem extends LeftOrRightOsdSettingsItem {
 
     private int currentValue;
 
-    /*
-     * The step grows while you keep going in one direction.
-     *
-     * Every press moved the value by one step, which for the subtitle delay is
-     * 100 ms: ten seconds of delay was a hundred presses on a touchscreen, and
-     * a held arrow on a remote was not much better. Nobody adjusts a delay that
-     * way -- they give up and watch it out of sync.
-     *
-     * So a run of presses in the same direction accelerates: the first half
-     * second moves at the step it always did, so a single press is still exactly
-     * 100 ms and small corrections are unchanged; keep going and it moves five
-     * times faster, then ten. Ten seconds is about a second and a half of
-     * holding.
-     *
-     * A run ends when the direction changes or when the presses stop for a
-     * moment, so the next deliberate press starts small again. That matters:
-     * arriving near the right value at ten times the step and then wanting one
-     * more notch is the common case.
-     */
+    // a run of presses one way speeds up; a pause or a change of direction resets it
     private static final long RUN_BREAK_MS = 400;
     private static final long FASTER_AFTER_MS = 500;
     private static final long FASTEST_AFTER_MS = 1500;
@@ -41,7 +23,24 @@ public class IntegerOsdSettingsItem extends LeftOrRightOsdSettingsItem {
     private long lastPressAt;
     private int runDirection;
 
+    // only the delay rows speed up
+    protected boolean accelerates() {
+        return false;
+    }
+
+    private int min = Integer.MIN_VALUE;
+    private int max = Integer.MAX_VALUE;
+
+    public IntegerOsdSettingsItem withRange(final int min, final int max) {
+        this.min = min;
+        this.max = max;
+        return this;
+    }
+
     private int stepFor(final int direction) {
+        if (!accelerates()) {
+            return step;
+        }
         final long now = android.os.SystemClock.uptimeMillis();
         if (direction != runDirection || now - lastPressAt > RUN_BREAK_MS) {
             runStartedAt = now;
@@ -87,15 +86,13 @@ public class IntegerOsdSettingsItem extends LeftOrRightOsdSettingsItem {
         }
     }
 
-    /** The range a row will accept, for the rows that have one. */
     protected int clamp(int value) {
-        return value;
+        return Math.max(min, Math.min(max, value));
     }
 
     private void updateCurrentValue(int position, int rawValue) {
         final int newValue = clamp(rawValue);
         if (newValue == currentValue) {
-            // At the end of the range: nothing to redraw and nothing to tell.
             return;
         }
         currentValue = newValue;

@@ -9,32 +9,15 @@ import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 
-/*
- * Subtitles handed over by whatever app started the player.
- *
- * There is one convention here and about five spellings of it. The keys are
- * agreed — "subs" for the files, "subs.enable" for the one to turn on,
- * "subs.name" for what to call them — but what goes in them is not: some apps
- * put an array of Uri in the bundle, some an ArrayList of Uri, some an array of
- * plain strings, some an ArrayList of strings. Reading only the first of those,
- * which is what this did, means a subtitle sent by one app arrives and a
- * subtitle sent by the next is silently dropped and the film plays without it.
- *
- * Every shape is read, and the alternative spellings of the name and language
- * keys with them, so that a subtitle offered is a subtitle used.
- */
+// subtitles in launch extras; apps send Uri or String, as arrays or ArrayLists
 public final class LaunchSubtitles {
 
-    /** Where the files themselves come in. */
     public static final String[] FILES = {"subs"};
 
-    /** Which of them to turn on. */
     public static final String[] ENABLE = {"subs.enable"};
 
-    /** What to call them in the picker. */
     public static final String[] NAMES = {"subs.name", "subs.titles", "subs.filename"};
 
-    /** Which language each one is. */
     public static final String[] LANGUAGES = {"subs.langs", "subs.languages"};
 
     private LaunchSubtitles() {
@@ -57,9 +40,24 @@ public final class LaunchSubtitles {
         return false;
     }
 
+    // keeps every position, null where unusable, so names and languages stay aligned
+    @NonNull
+    public static List<Uri> urisByPosition(final Bundle bundle, final String... keys) {
+        return collect(new ByPosition(), bundle, keys);
+    }
+
+    // marker type: add() keeps nulls and repeats in this list
+    private static final class ByPosition extends ArrayList<Uri> {
+    }
+
     @NonNull
     public static List<Uri> uris(final Bundle bundle, final String... keys) {
-        final List<Uri> found = new ArrayList<>();
+        return collect(new ArrayList<>(), bundle, keys);
+    }
+
+    @NonNull
+    private static List<Uri> collect(final List<Uri> found, final Bundle bundle,
+                                     final String... keys) {
         if (bundle == null) {
             return found;
         }
@@ -110,15 +108,12 @@ public final class LaunchSubtitles {
         return new String[0];
     }
 
-    // ---------------------------------------------------------------- shapes
-
     private static void addParcelableArray(final List<Uri> into, final Bundle bundle,
                                            final String key) {
         final Parcelable[] array;
         try {
             array = bundle.getParcelableArray(key);
         } catch (Exception e) {
-            // A bundle carrying something that is not Parcelable under this key.
             return;
         }
         if (array == null) {
@@ -135,7 +130,8 @@ public final class LaunchSubtitles {
 
     private static void addParcelableList(final List<Uri> into, final Bundle bundle,
                                           final String key) {
-        final ArrayList<Parcelable> list;
+        // unchecked list that may hold strings, so each item is type-checked
+        final ArrayList<?> list;
         try {
             list = bundle.getParcelableArrayList(key);
         } catch (Exception e) {
@@ -144,23 +140,17 @@ public final class LaunchSubtitles {
         if (list == null) {
             return;
         }
-        for (final Parcelable item : list) {
+        for (final Object item : list) {
             if (item instanceof Uri) {
                 add(into, (Uri) item);
-            } else if (item != null) {
+            } else if (item instanceof Parcelable) {
                 add(into, parse(item.toString()));
             }
+            // Strings are read once, by the string path.
         }
     }
 
-    /*
-     * Reading one value out of a bundle without trusting it.
-     *
-     * A bundle arrives as bytes and is only unpacked when something asks for a
-     * key. Asking for one whose class this app does not have throws, and a
-     * player that crashes because another app put something unexpected in an
-     * extra is worse than a player that ignores it.
-     */
+    // unpacking a key whose class this app lacks throws; treat it as absent
     private static Object value(final Bundle bundle, final String key) {
         try {
             return bundle.get(key);
@@ -170,11 +160,23 @@ public final class LaunchSubtitles {
     }
 
     private static ArrayList<String> stringList(final Bundle bundle, final String key) {
+        final ArrayList<?> raw;
         try {
-            return bundle.getStringArrayList(key);
+            raw = bundle.getStringArrayList(key);
         } catch (Exception e) {
             return null;
         }
+        if (raw == null) {
+            return null;
+        }
+        // item by item: a list of Uris can come back under this key too
+        final ArrayList<String> strings = new ArrayList<>();
+        for (final Object item : raw) {
+            if (item instanceof CharSequence) {
+                strings.add(item.toString());
+            }
+        }
+        return strings;
     }
 
     private static void addStrings(final List<Uri> into, final String[] values) {
@@ -200,6 +202,10 @@ public final class LaunchSubtitles {
     }
 
     private static void add(final List<Uri> into, final Uri uri) {
+        if (into instanceof ByPosition) {
+            into.add(uri);
+            return;
+        }
         if (uri != null && !into.contains(uri)) {
             into.add(uri);
         }

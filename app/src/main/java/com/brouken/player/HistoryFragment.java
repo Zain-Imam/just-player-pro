@@ -39,8 +39,7 @@ public class HistoryFragment extends PreferenceFragmentCompat {
     private void populate(final PreferenceScreen screen) {
         screen.removeAll();
 
-        // The settings screen has no action bar, so a category header is what
-        // tells you which screen you are on.
+        // no action bar in settings, so the category header names the screen
         final PreferenceCategory category = new PreferenceCategory(requireContext());
         category.setIconSpaceReserved(false);
         category.setTitle(R.string.pref_history);
@@ -49,14 +48,7 @@ public class HistoryFragment extends PreferenceFragmentCompat {
         final android.content.SharedPreferences preferences =
                 PreferenceManager.getDefaultSharedPreferences(requireContext());
 
-        /*
-         * Only what played, unless asked otherwise.
-         *
-         * An entry is written when a URL is opened, which is before anyone
-         * knows whether it works, so the list filled up with dead links and
-         * typos beside the things that actually played. The switch in settings
-         * brings them back for anybody debugging a source.
-         */
+        // entries are saved on open, so hide ones that never played unless asked
         final boolean keepFailed = preferences.getBoolean("historyKeepFailed", false);
         final List<History.Entry> entries = new java.util.ArrayList<>();
         for (final History.Entry entry : History.load(preferences)) {
@@ -79,7 +71,6 @@ public class HistoryFragment extends PreferenceFragmentCompat {
             preference.setIconSpaceReserved(false);
             preference.setTitle(entry.name);
             preference.setSummary(describe(entry));
-            // Titles are file names, which are routinely longer than one line.
             preference.setSingleLineTitle(false);
             preference.setOnPreferenceClickListener(clicked -> {
                 play(entry);
@@ -98,14 +89,7 @@ public class HistoryFragment extends PreferenceFragmentCompat {
         screen.addPreference(clear);
     }
 
-    /**
-     * A history row with its own copy button on the end.
-     *
-     * The button has to be separate from the row: pressing the row plays the
-     * thing, and somebody reaching for the address does not want that. A
-     * preference widget is the only part of a row that can hold its own click
-     * target, so that is where it goes.
-     */
+    // copy button in the widget slot: the only part of a row with its own click
     private static final class CopyablePreference extends Preference {
         private final android.net.Uri uri;
 
@@ -140,8 +124,7 @@ public class HistoryFragment extends PreferenceFragmentCompat {
 
     private void play(final History.Entry entry) {
         final Activity activity = requireActivity();
-        // The media type travels with it, exactly as the file chooser supplies
-        // one, so PlayerActivity need not care where the URL came from.
+        // with the media type, as the file chooser returns it
         activity.setResult(Activity.RESULT_OK, new Intent().setDataAndType(entry.uri, entry.type));
         activity.finish();
     }

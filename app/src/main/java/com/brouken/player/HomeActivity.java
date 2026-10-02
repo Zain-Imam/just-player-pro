@@ -44,34 +44,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-/**
- * Where the application opens: what is on the device, as folders and files.
- *
- * <p>This is a separate activity from the player rather than a screen inside
- * it, and that is the whole of the back behaviour. A file opened from here
- * puts the player on top of this screen, so Back comes back here; a file sent
- * by another application starts the player in that application's task, so Back
- * returns there. Neither case needs to be detected or remembered — the task
- * stack already knows, and anything this screen added on top of it would be a
- * second answer that could disagree with the first.
- *
- * <p>One list for three things: the folders, the files in one of them, and
- * what a search matched. A screen each would mean three sets of focus rules to
- * get wrong with a remote.
- */
+// Home screen: folders, the files in one, and search results share one list.
+// A separate activity, so Back follows the task stack.
 public class HomeActivity extends AppCompatActivity {
 
-    /** What {@code startOn} is set to when this screen is wanted. See settings. */
     public static final String START_ON_HOME = "home";
 
-    /**
-     * Started to choose a file for somebody else rather than to play one.
-     *
-     * <p>This is what the player's Open button reaches: the same folder list,
-     * handing an address back instead of starting a film. One browser rather
-     * than two that drift apart — and, unlike the system picker, one that a
-     * remote can already drive.
-     */
+    // started with ACTION_PICK to hand a file back to the player's Open button
     private boolean picking;
 
     private static final int REQUEST_PERMISSION = 1;
@@ -112,25 +91,18 @@ public class HomeActivity extends AppCompatActivity {
 
     private boolean scanned;
     private boolean askedForPermission;
-    /** True between asking for storage and being answered. See maybeOfferLastVideo. */
+    /** True while the storage permission dialog is up. */
     private boolean permissionPending;
     private boolean offeredLastVideo;
     /** The folder whose star should take focus once the list is rebuilt. */
     @Nullable
     private String focusPinFor;
-    /** The accent this screen was themed with, so a change to it can be noticed. */
+    /** The accent this screen was themed with. */
     private String appliedAccent;
 
     @Override
     protected void onCreate(@Nullable final Bundle savedInstanceState) {
-        /*
-         * A television is dark, whatever the box says it prefers.
-         *
-         * The player does this too. It matters more here: this screen follows
-         * the system between light and dark like the settings screen, and a
-         * white folder list is wrong on a television in a way it is not on a
-         * phone. Before super, which is where the theme is resolved.
-         */
+        // always dark on TV; before super, where the theme is resolved
         if (Utils.isTvBox(this)) {
             androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
                     androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
@@ -138,24 +110,14 @@ public class HomeActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
 
-        // After super, for the reason SettingsActivity gives: AppCompat
-        // re-applies the manifest theme in its own onCreate.
+        // after super: AppCompat re-applies the manifest theme in its onCreate
         Accent.apply(this);
         appliedAccent = Accent.stored(this);
 
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
         picking = Intent.ACTION_PICK.equals(getIntent().getAction());
 
-        /*
-         * Straight past this screen when that is what was asked for.
-         *
-         * Before setContentView, so nothing of the home screen is ever drawn on
-         * the way to the player -- the alternative is a flash of a folder list
-         * in front of somebody who has said they do not want one.
-         *
-         * Never while picking: that is somebody asking for this screen by name,
-         * whatever they have set as the place to start.
-         */
+        // before setContentView so the folder list never flashes on the way past
         if (!picking && !wantsHome() && savedInstanceState == null
                 && getIntent().getData() == null) {
             startPlayer(null, null);
@@ -190,12 +152,6 @@ public class HomeActivity extends AppCompatActivity {
         settings.setOnClickListener(view ->
                 startActivity(new Intent(this, SettingsActivity.class)));
         if (picking) {
-            /*
-             * Choosing a file on this device is the whole of the question being
-             * asked, so an address box and a settings screen are two ways to
-             * lose the thread. The list, a search and a sort are all that is
-             * left, and Back answers "none of these".
-             */
             network.setVisibility(View.GONE);
             settings.setVisibility(View.GONE);
         }
@@ -215,8 +171,7 @@ public class HomeActivity extends AppCompatActivity {
                 render();
             }
         });
-        // The remote's centre key on the field means "done typing", not "type a
-        // newline": put the keyboard away and leave the results up.
+        // the remote's centre key means done typing: hide the keyboard, keep results
         searchField.setOnEditorActionListener((view, actionId, event) -> {
             hideKeyboard();
             list.requestFocus();
@@ -244,9 +199,7 @@ public class HomeActivity extends AppCompatActivity {
         if (isFinishing()) {
             return;
         }
-        // Rescanned on every visit rather than once: coming back from the
-        // player is exactly when a file may have been deleted, and a list that
-        // offers something that is no longer there is worse than a short wait.
+        // rescan on every visit: a file may have been deleted while playing
         if (hasStoragePermission()) {
             scan();
         } else if (!askedForPermission) {
@@ -260,27 +213,12 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        /*
-         * A new accent needs this screen built again.
-         *
-         * The colour is a theme overlay applied as the screen is created, so
-         * views already inflated keep the old one -- the folder icons, the
-         * section headings and the search underline all stayed orange after
-         * the colour was changed, until the application was closed and opened
-         * again. The player and the settings screen already did this; the home
-         * screen was new and had not been told.
-         */
+        // the accent is a theme overlay set at creation; a change needs recreate()
         if (appliedAccent != null && !appliedAccent.equals(Accent.stored(this))) {
             recreate();
             return;
         }
-        /*
-         * The introduction first, the resume offer after.
-         *
-         * Both want the screen the moment it appears, and two dialogs at once
-         * is one dialog nobody reads. The introduction is shown once ever, so
-         * on every other visit this costs a preference read.
-         */
+        // intro before the resume offer: never two dialogs at once
         if (!picking && !permissionPending && hasStoragePermission() && Intro.pending(this)) {
             Intro.show(this);
             return;
@@ -290,8 +228,6 @@ public class HomeActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        // The scanning thread has nothing left to report to, and the frames
-        // are pictures for a list that is going away.
         worker.shutdownNow();
         frames.close();
         super.onDestroy();
@@ -299,29 +235,12 @@ public class HomeActivity extends AppCompatActivity {
 
     // -------------------------------------------------------------- opening
 
-    /**
-     * Where the application opens, as the setting has it.
-     *
-     * <p>The home screen unless someone has said otherwise, including on an
-     * upgrade from an earlier version — the release notes say so, and one
-     * setting puts it back.
-     */
     private boolean wantsHome() {
         return START_ON_HOME.equals(preferences.getString("startOn", START_ON_HOME));
     }
 
-    /**
-     * The offer to carry on with the last file, over this screen.
-     *
-     * <p>It survived the home screen arriving because it answers a different
-     * question: the folder list says what there is, and this says what you were
-     * in the middle of. Once per visit to this screen, never twice, and never
-     * at all with the setting off.
-     */
     private void maybeOfferLastVideo() {
-        // Never over the permission request: two dialogs deep is a poor way to
-        // meet an application, and the offer keeps until the system one has
-        // been answered.
+        // not over the permission dialog; offered again once it is answered
         if (offeredLastVideo || picking || permissionPending || !wantsHome()
                 || !preferences.getBoolean("askResume", true)) {
             return;
@@ -339,14 +258,7 @@ public class HomeActivity extends AppCompatActivity {
         if (name == null || name.isEmpty()) {
             name = Utils.getFileName(this, uri, true);
         }
-        /*
-         * Nothing is offered that cannot be named.
-         *
-         * A media store address whose file has been deleted resolves to nothing,
-         * and what is left to show is the last part of the address -- a row of
-         * digits. "Play last video? 1000161621" is not a question anybody can
-         * answer, and the answer would fail anyway.
-         */
+        // a deleted media store entry leaves only its numeric id as the name
         if (name == null || name.isEmpty() || name.matches("\\d+")) {
             return;
         }
@@ -359,47 +271,14 @@ public class HomeActivity extends AppCompatActivity {
                 .create(), AlertDialog.BUTTON_POSITIVE);
     }
 
-    /**
-     * Hand a file to the player.
-     *
-     * <p>A null address opens the player with nothing, which is what "start on
-     * the last video" means: the player has always worked out for itself what
-     * that was.
-     *
-     * <p>CLEAR_TOP with SINGLE_TOP so that a player already in this task — one
-     * left in a corner by picture-in-picture, say — is handed the new file
-     * rather than stacked under a second copy of itself.
-     */
-    /**
-     * The folder a film was opened from, so the player can offer the next one.
-     *
-     * <p>The folder rather than the list of files in it: a folder of five
-     * hundred holiday clips would be several hundred kilobytes of addresses,
-     * and an intent that large is refused by the system outright. The player
-     * asks the media store the same question this screen asked and sorts the
-     * answer the same way, which costs one query and cannot go stale.
-     */
+    // a folder id: a full file list could exceed the intent size limit
     static final String EXTRA_FOLDER = "com.brouken.player.FOLDER";
 
-    /**
-     * Marks a player launch this screen made on purpose.
-     *
-     * <p>The player sends a bare launch back here when the setting says the app
-     * opens on the folder list. Without something to tell the two apart, the
-     * launch this screen makes when the setting says the opposite would be sent
-     * straight back to it, and the two would bounce off each other forever.
-     */
+    // keeps the player from sending a launch made here straight back to home
     static final String EXTRA_FROM_HOME = "com.brouken.player.FROM_HOME";
 
+    // a null uri opens the player on the last video
     void startPlayer(@Nullable final Uri uri, @Nullable final String type) {
-        /*
-         * Handed back rather than played, when somebody else asked the question.
-         *
-         * The player's Open button starts this screen for an answer, and the
-         * answer is an address. Playing it here as well would open the film
-         * twice -- once on top of the player that asked, and once when the
-         * player got the result.
-         */
         if (picking) {
             if (uri == null) {
                 return;
@@ -424,17 +303,9 @@ public class HomeActivity extends AppCompatActivity {
             } else {
                 intent.setDataAndType(uri, type);
             }
+            // reuses a player already in this task, e.g. one in picture-in-picture
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            /*
-             * Which list this came out of, so next and previous mean the list
-             * you were looking at rather than whatever alphabetical order a
-             * scan of the folder happens to produce.
-             *
-             * Only where the film belongs to a folder. A row in the Recent
-             * section may be an address on the internet and a search result
-             * belongs to no one folder, so neither carries one and the player
-             * hides the buttons.
-             */
+            // gives the player next/previous; network rows have no folder
             final String folder = folderOf(uri);
             if (folder != null) {
                 intent.putExtra(EXTRA_FOLDER, folder);
@@ -508,8 +379,7 @@ public class HomeActivity extends AppCompatActivity {
         emptyView.setVisibility(View.VISIBLE);
         emptyView.setText(R.string.home_empty_permission);
         grantButton.setVisibility(View.VISIBLE);
-        // The only thing on screen that does anything, so a remote must land on
-        // it: with the list gone there is nothing else for focus to be in.
+        // the only focusable view left, so a remote must land on it
         grantButton.post(grantButton::requestFocus);
     }
 
@@ -532,13 +402,7 @@ public class HomeActivity extends AppCompatActivity {
                 scanned = true;
                 loadingView.setVisibility(View.GONE);
                 render();
-                /*
-                 * A remote needs something focused or every arrow press goes
-                 * nowhere — see Panels, where the same thing had to be learned
-                 * about the track pickers. Only on the first list, and never
-                 * while the search field is up, because taking focus off a
-                 * field somebody is typing into is worse than not having it.
-                 */
+                // a remote needs a focused row; never steal it from the search field
                 if (first && query == null) {
                     Panels.focusFirstRow(list);
                 }
@@ -551,13 +415,7 @@ public class HomeActivity extends AppCompatActivity {
     private void render() {
         rows.clear();
 
-        /*
-         * An open but empty search field is not a search for nothing.
-         *
-         * Pressing the search button before typing would otherwise blank the
-         * screen and say "nothing matched that", which is both alarming and
-         * untrue. The list underneath stays until there is something to match.
-         */
+        // an empty search field keeps the list underneath
         final boolean searching = query != null && !query.trim().isEmpty();
 
         if (searching) {
@@ -583,12 +441,13 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void renderRoot() {
-        // No history while picking: those are films, and several of them are
-        // addresses on the internet. The question was which file on this device.
+        // no history while picking: entries may be network addresses
         final List<History.Entry> recent = picking
                 ? java.util.Collections.<History.Entry>emptyList()
                 : History.load(preferences);
         int shown = 0;
+        // off by default: the identified film may not match the file name
+        final boolean posters = preferences.getBoolean("recentPosters", false);
         for (final History.Entry entry : recent) {
             if (!entry.played) {
                 continue;
@@ -596,7 +455,7 @@ public class HomeActivity extends AppCompatActivity {
             if (shown == 0) {
                 rows.add(Row.header(getString(R.string.home_section_recent)));
             }
-            rows.add(Row.video(entry.uri, entry.name, null, entry.type));
+            rows.add(Row.recent(entry, posters));
             if (++shown == 5) {
                 break;
             }
@@ -642,8 +501,7 @@ public class HomeActivity extends AppCompatActivity {
         Sort.apply(matches, Sort.videos(preferences), Sort.videosReversed(preferences));
         rows.add(Row.header(getString(R.string.home_section_results)));
         for (final Library.Video video : matches) {
-            // The folder as well as the length: two files of the same name in
-            // two folders are otherwise one row repeated.
+            // with the folder, so same-named files in different folders differ
             rows.add(Row.video(video.uri, video.name,
                     video.folderName + "  ·  " + metaOf(video), null));
         }
@@ -706,18 +564,7 @@ public class HomeActivity extends AppCompatActivity {
         finish();
     }
 
-    /**
-     * Back goes up a level before it leaves.
-     *
-     * <p>Registered rather than overridden. This application asks for
-     * {@code enableOnBackInvokedCallback}, and under that the platform stops
-     * calling {@code onBackPressed} at all from Android 13 on: the override
-     * compiled, read correctly, and was simply never run, so Back inside a
-     * folder closed the whole application instead of returning to the folder
-     * list. The player hit the same thing and answers it with a callback of its
-     * own — see createOnBackInvokedCallback there. This is the AndroidX form of
-     * the same fix, which works on every version this app supports.
-     */
+    // onBackPressed is never called on 13+ with enableOnBackInvokedCallback
     private void registerBackHandling() {
         getOnBackPressedDispatcher().addCallback(this,
                 new androidx.activity.OnBackPressedCallback(true) {
@@ -727,7 +574,7 @@ public class HomeActivity extends AppCompatActivity {
                             goUp();
                             return;
                         }
-                        // Nothing left to go up to: leave, the way Back does.
+                        // nothing left to go up to: leave
                         setEnabled(false);
                         getOnBackPressedDispatcher().onBackPressed();
                     }
@@ -738,27 +585,10 @@ public class HomeActivity extends AppCompatActivity {
         final boolean nowPinned = Pinned.toggle(preferences, folder.id);
         Toast.makeText(this, nowPinned ? R.string.home_pinned : R.string.home_unpinned,
                 Toast.LENGTH_SHORT).show();
-        /*
-         * Follow the folder to wherever it has just moved.
-         *
-         * Pinning rebuilds the list, which destroys the view the remote was on;
-         * the framework then hands focus to whatever is nearest, which turned
-         * out to be the search button at the top of the screen. Pinning three
-         * folders meant travelling back down the list three times.
-         */
+        // rebuilding the list drops focus; put it back on this folder's star
         focusPinFor = folder.id;
         render();
-        /*
-         * And bring it into view, because it has just moved.
-         *
-         * Favouriting sends a folder to the top of the list and un-favouriting
-         * sends it back down among the rest, which is frequently off the screen
-         * -- and a row that is not on screen has no view, so the focus above
-         * has nothing to land on. The remote was left in the toolbar, and the
-         * next press opened the search field instead of starring the next
-         * folder. Scrolling to it also happens to be the only way to see what
-         * the star just did.
-         */
+        // the folder has moved; an off-screen row has no view to take focus
         for (int index = 0; index < rows.size(); index++) {
             final Row row = rows.get(index);
             if (row.folder != null && folder.id.equals(row.folder.id)) {
@@ -768,18 +598,7 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * Put a folder row on screen, under its heading where both fit.
-     *
-     * <p>The heading is what says the star worked. Without it a folder that has
-     * just moved to the top of the list looks like a list that has merely
-     * scrolled, and there is nothing on screen to say which section it landed
-     * in. So the heading above it is scrolled to instead of the row itself,
-     * while there is room on the screen for everything between them -- and
-     * where there is not, the row wins: it is the one that has to be visible,
-     * because a row with no view on screen has nothing to take the focus and
-     * the remote would be left stranded in the toolbar.
-     */
+    // scroll to the section heading if it fits with the row, else to the row
     private void bringIntoView(final int index) {
         final androidx.recyclerview.widget.LinearLayoutManager layout =
                 (androidx.recyclerview.widget.LinearLayoutManager) list.getLayoutManager();
@@ -794,9 +613,7 @@ public class HomeActivity extends AppCompatActivity {
                 break;
             }
         }
-        // A row is about as tall as the tallest one on screen: headings are
-        // shorter than folders, and taking the smaller of the two would claim
-        // more rows fit than do.
+        // tallest row on screen, so the fit is never overestimated
         int tallest = 0;
         for (int child = 0; child < list.getChildCount(); child++) {
             tallest = Math.max(tallest, list.getChildAt(child).getHeight());
@@ -818,8 +635,7 @@ public class HomeActivity extends AppCompatActivity {
         searchField.setText("");
         searchField.requestFocus();
         query = "";
-        // Only on a device with a keyboard worth showing: on a television the
-        // remote drives the field and a keyboard over the list is in the way.
+        // no soft keyboard on TV: the remote drives the field
         if (!Utils.isTvBox(this)) {
             final InputMethodManager manager =
                     (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
@@ -830,19 +646,7 @@ public class HomeActivity extends AppCompatActivity {
         render();
     }
 
-    /**
-     * Put the search away.
-     *
-     * <p>The order of the last two lines is the whole of this method.
-     * Emptying the field runs the text watcher, and the watcher sets
-     * {@code query} to the empty string — so clearing it first and setting
-     * {@code query} to null afterwards is the only order that leaves it null.
-     *
-     * <p>The other way round, {@code query} was never null again after the
-     * first search, and since opening a folder closes the search, Back inside
-     * a folder took the "close the search" branch for ever and did nothing at
-     * all. Nothing about the screen looked wrong; Back simply stopped working.
-     */
+    // setText("") fires the watcher, which sets query to ""; so null it last
     private void closeSearch() {
         searchField.setText("");
         searchField.setVisibility(View.GONE);
@@ -861,29 +665,9 @@ public class HomeActivity extends AppCompatActivity {
 
     // --------------------------------------------------------------- sort
 
-    /**
-     * The orders that make sense for what is on screen.
-     *
-     * <p>A list of folders cannot be sorted by length, and a list of files
-     * cannot be sorted by how many files it holds, so the menu is built from
-     * whichever list is up rather than showing both and greying half of them.
-     */
-    /**
-     * One dialog, two questions: what to sort by, and which way round.
-     *
-     * <p>Built by hand rather than with {@code setSingleChoiceItems}, which
-     * offers exactly one list and no room for a second. Two radio groups under
-     * their own headings is what a person expects, and a remote walks straight
-     * down through both of them.
-     *
-     * <p>The orders offered are the ones that make sense for what is on screen:
-     * a list of folders cannot be sorted by length, and a list of files cannot
-     * be sorted by how many files it holds, so the menu is built from whichever
-     * list is up rather than showing both and greying half of them out.
-     */
+    // built by hand: setSingleChoiceItems allows only one list of choices
     private void showSortMenu() {
-        // What is on screen, by the same rule render() uses: an open but empty
-        // search field is still the folder list.
+        // same rule as render(): an empty search field still shows the folders
         final boolean foldersShowing = folderId == null
                 && (query == null || query.trim().isEmpty());
 
@@ -938,12 +722,7 @@ public class HomeActivity extends AppCompatActivity {
         orderGroup.addView(sortChoice(getString(reversedLabels[checkedBy]), 1, reversedNow));
         content.addView(orderGroup);
 
-        /*
-         * The two directions are named after the column, so they have to be
-         * renamed the moment the column changes -- "A to Z" is nonsense under
-         * Size, and leaving it there would be worse than not offering the
-         * choice at all.
-         */
+        // direction labels depend on the column, so rename them when it changes
         byGroup.setOnCheckedChangeListener((group, id) -> {
             final int which = id;
             if (which < 0 || which >= firstLabels.length) {
@@ -1008,10 +787,25 @@ public class HomeActivity extends AppCompatActivity {
         final Uri uri;
         @Nullable
         final String mediaType;
+        /** A row of the Recent section, which is laid out on its own. */
+        final boolean recent;
+        /** Poster URL for a Recent row, when posters are on. */
+        @Nullable
+        final String poster;
+        /** Whether Recent shows posters at all, so its rows all share a shape. */
+        final boolean postersShown;
 
         private Row(final int type, final String text, @Nullable final String meta,
                     @Nullable final Library.Folder folder, final boolean pinned,
                     @Nullable final Uri uri, @Nullable final String mediaType) {
+            this(type, text, meta, folder, pinned, uri, mediaType, false, null, false);
+        }
+
+        private Row(final int type, final String text, @Nullable final String meta,
+                    @Nullable final Library.Folder folder, final boolean pinned,
+                    @Nullable final Uri uri, @Nullable final String mediaType,
+                    final boolean recent, @Nullable final String poster,
+                    final boolean postersShown) {
             this.type = type;
             this.text = text;
             this.meta = meta;
@@ -1019,6 +813,9 @@ public class HomeActivity extends AppCompatActivity {
             this.pinned = pinned;
             this.uri = uri;
             this.mediaType = mediaType;
+            this.recent = recent;
+            this.poster = poster;
+            this.postersShown = postersShown;
         }
 
         static Row header(final String text) {
@@ -1032,6 +829,13 @@ public class HomeActivity extends AppCompatActivity {
         static Row video(final Uri uri, final String name, @Nullable final String meta,
                          @Nullable final String mediaType) {
             return new Row(TYPE_VIDEO, name, meta, null, false, uri, mediaType);
+        }
+
+        static Row recent(final History.Entry entry, final boolean postersShown) {
+            return new Row(TYPE_VIDEO, entry.name, null, null, false, entry.uri, entry.type,
+                    true, postersShown
+                            ? com.brouken.player.online.Posters.url(entry.poster) : null,
+                    postersShown);
         }
     }
 
@@ -1089,7 +893,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private final class FolderHolder extends RecyclerView.ViewHolder {
-        /** The part that opens the folder, beside the star rather than around it. */
+        /** Opens the folder; sits beside the star. */
         final View body;
         final TextView name;
         final TextView meta;
@@ -1113,16 +917,7 @@ public class HomeActivity extends AppCompatActivity {
             pin.setImageResource(row.pinned
                     ? R.drawable.ic_pin_filled_24dp : R.drawable.ic_pin_24dp);
             pin.setImageTintList(android.content.res.ColorStateList.valueOf(
-                    /*
-                     * Amber, not the accent.
-                     *
-                     * A star means the same thing as the star on a rating, and
-                     * it reads as one because it is that colour -- the info
-                     * card's rating is fixed amber for exactly this reason. On
-                     * the slate or violet accent an accent-coloured star stops
-                     * looking like a favourite and starts looking like a
-                     * selection.
-                     */
+                    // amber like the rating star, whatever the accent
                     row.pinned
                             ? androidx.core.content.ContextCompat.getColor(
                                     HomeActivity.this, R.color.rating_amber)
@@ -1133,12 +928,9 @@ public class HomeActivity extends AppCompatActivity {
             body.setOnClickListener(view -> openFolder(folder));
             if (folder.id.equals(focusPinFor)) {
                 focusPinFor = null;
-                // After layout: a view that is not yet placed cannot take focus,
-                // and asking here would quietly do nothing.
+                // after layout: a view not yet placed cannot take focus
                 pin.post(pin::requestFocus);
             }
-            // Said out loud, because a folder row is a name and two numbers and
-            // a screen reader would otherwise read the numbers as a sentence.
             body.setContentDescription(folder.name + ", " + folderMeta(folder));
         }
     }
@@ -1153,23 +945,72 @@ public class HomeActivity extends AppCompatActivity {
             name = view.findViewById(R.id.video_name);
             meta = view.findViewById(R.id.video_meta);
             icon = view.findViewById(R.id.video_icon);
+            if (icon != null) {
+                // rounded corners, clipped only while a poster shows
+                icon.setOutlineProvider(new android.view.ViewOutlineProvider() {
+                    @Override
+                    public void getOutline(final View view, final android.graphics.Outline outline) {
+                        outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), dp(4));
+                    }
+                });
+            }
+        }
+
+        // 28dp square like a folder's; 2:3 for every row when posters are on
+        private void bindRecentIcon(final Row row) {
+            icon.setTag(null);
+            icon.setClipToOutline(false);
+            if (!row.postersShown) {
+                shapeIcon(28, 28, 0, 0, 0, 0);
+                com.brouken.player.home.Frames.placeholder(
+                        HomeActivity.this, icon, R.drawable.ic_movie_24dp);
+                return;
+            }
+            if (row.poster == null) {
+                // The 24dp icon 2dp in from the left, as in a folder's 28dp square.
+                shapeIcon(40, 60, 2, 18, 14, 18);
+                com.brouken.player.home.Frames.placeholder(
+                        HomeActivity.this, icon, R.drawable.ic_movie_24dp);
+                return;
+            }
+            shapeIcon(40, 60, 0, 0, 0, 0);
+            icon.setClipToOutline(true);
+            // placeholder while loading, and if the poster fails
+            com.brouken.player.home.Frames.placeholder(
+                    HomeActivity.this, icon, R.drawable.ic_movie_24dp);
+            com.brouken.player.online.Posters.load(icon, row.poster, R.drawable.ic_movie_24dp);
+        }
+
+        private void shapeIcon(final int widthDp, final int heightDp, final int left,
+                               final int top, final int right, final int bottom) {
+            com.brouken.player.online.Posters.forget(icon);
+            icon.setClipToOutline(false);
+            final ViewGroup.LayoutParams params = icon.getLayoutParams();
+            final int width = dp(widthDp);
+            final int height = dp(heightDp);
+            if (params.width != width || params.height != height) {
+                params.width = width;
+                params.height = height;
+                icon.setLayoutParams(params);
+            }
+            icon.setPadding(dp(left), dp(top), dp(right), dp(bottom));
         }
 
         void bind(final Row row) {
             name.setText(row.text);
-            /*
-             * A frame for a file on this device, the plain icon for anything
-             * else. A row in the Recent section can be an address on the
-             * internet, and fetching a film over a connection to look at one
-             * picture of it is not a trade worth making.
-             */
+            // frames for local files only; a network one means fetching the video
             if (icon != null) {
-                if (row.uri != null && !History.isNetworkUri(row.uri)) {
-                    frames.into(HomeActivity.this, icon, row.uri, R.drawable.ic_movie_24dp);
+                if (row.recent) {
+                    bindRecentIcon(row);
                 } else {
-                    icon.setTag(null);
-                    com.brouken.player.home.Frames.placeholder(
-                            HomeActivity.this, icon, R.drawable.ic_movie_24dp);
+                    shapeIcon(64, 36, 0, 0, 0, 0);
+                    if (row.uri != null && !History.isNetworkUri(row.uri)) {
+                        frames.into(HomeActivity.this, icon, row.uri, R.drawable.ic_movie_24dp);
+                    } else {
+                        icon.setTag(null);
+                        com.brouken.player.home.Frames.placeholder(
+                                HomeActivity.this, icon, R.drawable.ic_movie_24dp);
+                    }
                 }
             }
             if (TextUtils.isEmpty(row.meta)) {
@@ -1179,12 +1020,16 @@ public class HomeActivity extends AppCompatActivity {
                 meta.setText(row.meta);
             }
             itemView.setOnClickListener(view -> startPlayer(row.uri, row.mediaType));
-            // The name and the numbers as one sentence, so a screen reader does
-            // not read "one minute three, one hundred and sixty six megabytes"
-            // as though it were part of the title.
+            itemView.setPadding(itemView.getPaddingLeft(),
+                    dp(row.recent && row.postersShown ? 6 : 0), itemView.getPaddingRight(),
+                    dp(row.recent && row.postersShown ? 6 : 0));
             itemView.setContentDescription(TextUtils.isEmpty(row.meta)
                     ? row.text : row.text + ", " + row.meta);
         }
+    }
+
+    private int dp(final int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     private int textSecondary() {

@@ -5,18 +5,7 @@ import android.content.Context;
 import com.brouken.player.R;
 import com.brouken.player.osd.OsdSettingsAdapter;
 
-/**
- * How far the sound is moved against the picture.
- *
- * Bounded, unlike the subtitle delay. A subtitle that is a minute out is a
- * subtitle for the wrong release and moving it that far is a fair thing to
- * want; sound a minute out is not a thing any file does. What the bound
- * actually protects is the picture: both engines pay for the offset by having
- * the two streams start a seek together and one of them catch up, so the
- * larger the number the longer that takes. Five seconds is past any real
- * fault -- a badly muxed track is out by tenths -- and short enough that
- * arriving at a seek is a blink.
- */
+// bounded: after a seek one stream has to catch up by the whole offset
 public final class AudioDelayOsdSettingsItem extends DelayOsdSettingsItem {
 
     private static final int LIMIT_MS = 5000;

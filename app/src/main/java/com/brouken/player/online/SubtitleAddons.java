@@ -185,8 +185,7 @@ public final class SubtitleAddons {
                 continue;
             }
             final String url = firstString(row, "url");
-            // No URL means nothing to download. Unlike a stream there is no
-            // hash to fall back on, so the row is worthless, not incomplete.
+            // without a URL there is nothing to download
             if (url == null || !url.matches("(?i)^https?://.+")) {
                 continue;
             }
@@ -367,8 +366,7 @@ public final class SubtitleAddons {
             return new Probe(Verdict.NOT_AN_ADDON, null, 0, 0, false);
         }
 
-        // `subtitles`, not `stream` — the structural difference from the stream
-        // addon gate, and the reason the two cannot share an implementation.
+        // must declare the "subtitles" resource
         if (!declaresSubtitles(manifest)) {
             return new Probe(Verdict.NO_SUBTITLE_RESOURCE, null, 0, 0, false);
         }
@@ -378,8 +376,7 @@ public final class SubtitleAddons {
                 ? null
                 : rawName.substring(0, Math.min(40, rawName.length()));
 
-        // Believe an addon that says it is unconfigured rather than waiting to
-        // be told the same thing by an empty list.
+        // trust an addon that reports itself unconfigured
         final JSONObject hints = manifest.optJSONObject("behaviorHints");
         if (hints != null && hints.optBoolean("configurationRequired", false)) {
             return new Probe(Verdict.NEEDS_CONFIGURATION, name, 0, 0, false);
@@ -393,8 +390,7 @@ public final class SubtitleAddons {
 
         final JSONArray rows = body.optJSONArray("subtitles");
         final int total = rows == null ? 0 : rows.length();
-        // Empty is a rejection: for a title this popular it can only mean the
-        // addon does not work.
+        // nothing for a title this popular means the addon does not work
         if (total == 0) {
             return new Probe(Verdict.NO_SUBTITLES, name, 0, 0, false);
         }
@@ -459,8 +455,7 @@ public final class SubtitleAddons {
         for (int i = 0; i < urls.size() && i < DOWNLOAD_ATTEMPTS; i++) {
             final byte[] bytes = Http.getBytes(urls.get(i), null);
             if (bytes == null) {
-                // Gone, blocked or throttled — indistinguishable from here, and
-                // none of them is evidence about the addon itself.
+                // gone, blocked or throttled: says nothing about the addon itself
                 sawMissing = true;
                 continue;
             }
@@ -468,8 +463,7 @@ public final class SubtitleAddons {
                 sawMissing = true;
                 continue;
             }
-            // A zip is legitimate — some addons serve archives — and proving it
-            // opens is the download path's job, not the gate's.
+            // some addons serve zips; unpacking is left to the download path
             if (bytes.length > 1 && bytes[0] == 0x50 && bytes[1] == 0x4B) {
                 return Download.VERIFIED;
             }

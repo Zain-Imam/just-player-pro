@@ -20,38 +20,21 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-/*
- * Checking GitHub for a newer build, since that is where this one came from.
- *
- * There is no store to do it, and an app distributed as a file is an app that
- * never gets updated unless somebody goes looking. This asks the releases page
- * what the newest tag is, and if it is newer than what is running, offers to
- * fetch it and hand it to the system installer.
- *
- * Never automatic. It checks when asked and downloads when told, because a
- * player that reaches the network on its own is not what was advertised.
- */
+// checks GitHub releases for a newer build and hands the APK to the installer
 public final class Updater {
 
     private static final String RELEASES =
             "https://api.github.com/repos/Zain-Imam/just-player-pro/releases/latest";
 
-    /** Where a person is sent, as opposed to where the answer is fetched from. */
     private static final String LATEST_PAGE =
             "https://github.com/Zain-Imam/just-player-pro/releases/latest";
 
-    /**
-     * Marks the copies kept under a name that never changes, so a television
-     * download code keeps working between releases. They are the same build as
-     * the versioned file beside them, and this is only here so the versioned
-     * one is the one offered when both would do.
-     */
+    // marks the fixed-name copies for TV download codes; the versioned file wins
     private static final String DOWNLOADER_COPY = "downloader";
 
     private final Activity activity;
     private final Handler main = new Handler(Looper.getMainLooper());
 
-    /** The page answered, and said there is nothing released at all. */
     private volatile boolean nothingPublished;
 
     public Updater(final Activity activity) {
@@ -65,17 +48,6 @@ public final class Updater {
                 if (activity.isFinishing()) {
                     return;
                 }
-                /*
-                 * Say which of the three things happened, not one word for all
-                 * of them.
-                 *
-                 * "You have the newest" is the answer to a question that was
-                 * asked and answered. It is not the answer when the page could
-                 * not be reached, and it is not the answer when there is
-                 * nothing published to compare against — and reading it in
-                 * either of those cases is how you learn not to trust it. The
-                 * version it found is named, so the answer can be checked.
-                 */
                 if (release == null) {
                     if (!quiet) {
                         toast(activity.getString(nothingPublished
@@ -85,19 +57,6 @@ public final class Updater {
                     return;
                 }
                 if (!isNewer(release.version, BuildConfig.VERSION_NAME)) {
-                    /*
-                     * Said in a box, not a toast.
-                     *
-                     * Somebody who presses "check for updates" has asked a
-                     * question and is waiting for the answer. A toast slides
-                     * away after two seconds, frequently behind the finger that
-                     * pressed the row, and leaves them none the wiser about
-                     * whether anything happened at all.
-                     *
-                     * Only when asked out loud: the quiet check runs on its own
-                     * and has no business putting a box in front of anyone to
-                     * say that nothing has changed.
-                     */
                     if (!quiet) {
                         Utils.showFocused(new AlertDialog.Builder(activity)
                                 .setTitle(R.string.update_none_title)
@@ -120,20 +79,7 @@ public final class Updater {
                         ? activity.getString(R.string.update_ready)
                         : trim(release.notes))
                 .setNegativeButton(android.R.string.cancel, null)
-                /*
-                 * The canonical address rather than the one this release
-                 * happens to sit at.
-                 *
-                 * /releases/latest always points at whatever is newest and
-                 * opens with the download list already on screen, where the tag
-                 * URL is one release frozen in time -- and if a newer one lands
-                 * between the check and the tap, the tag URL sends somebody to
-                 * the old one.
-                 *
-                 * The button beside it does better still: it fetches the right
-                 * build for this device straight into the installer, with no
-                 * page to read and nothing to scroll past.
-                 */
+                // /releases/latest always points at the newest release
                 .setNeutralButton(R.string.update_open, (dialog, which) ->
                         open(Uri.parse(LATEST_PAGE)))
                 .setPositiveButton(R.string.update_install, (dialog, which) -> download(release))
@@ -151,7 +97,6 @@ public final class Updater {
 
     private void download(final Release release) {
         if (release.apk == null) {
-            // Nothing to fetch, so hand over the page that lists everything.
             open(Uri.parse(release.page == null ? LATEST_PAGE : release.page));
             return;
         }
@@ -200,7 +145,7 @@ public final class Updater {
                     | Intent.FLAG_ACTIVITY_NEW_TASK);
             activity.startActivity(intent);
         } catch (Exception e) {
-            // A television with the installer locked down, most likely.
+            // installer locked down, as on some TVs
             toast(activity.getString(R.string.update_failed));
         }
     }
@@ -216,8 +161,6 @@ public final class Updater {
     private void toast(final String text) {
         android.widget.Toast.makeText(activity, text, android.widget.Toast.LENGTH_LONG).show();
     }
-
-    // ------------------------------------------------------------------ data
 
     private static final class Release {
         String version;
@@ -236,8 +179,7 @@ public final class Updater {
             connection.setConnectTimeout(15_000);
             connection.setReadTimeout(15_000);
 
-            // A repository with no releases answers 404 here, which is a real
-            // answer and not a failure to get one.
+            // a repository with no releases answers 404
             if (connection.getResponseCode() == 404) {
                 nothingPublished = true;
                 return null;
@@ -258,22 +200,7 @@ public final class Updater {
             release.page = json.optString("html_url", null);
             release.notes = json.optString("body", "");
 
-            /*
-             * The best build for this device, not the last one that matches.
-             *
-             * SUPPORTED_ABIS lists every architecture the device can run, best
-             * first -- a 64-bit phone reports arm64-v8a AND armeabi-v7a. This
-             * used to assign on every match as it walked the assets, so the
-             * winner was whichever matching file happened to come last in the
-             * release, and every device ended up on the 32-bit ARM build: it
-             * runs, but with 32-bit mpv and FFmpeg and less room on big files.
-             *
-             * So the architectures are walked in the order the device prefers
-             * them, and the first one with a matching asset wins. The versioned
-             * filename is taken over the fixed-name copy kept for television
-             * download links -- they are the same build, but the versioned one
-             * is the file this release is actually named for.
-             */
+            // SUPPORTED_ABIS is in preference order; the first ABI with an asset wins
             final JSONArray assets = json.optJSONArray("assets");
             final List<String> names = new ArrayList<>();
             final List<String> urls = new ArrayList<>();
@@ -296,10 +223,7 @@ public final class Updater {
                 }
             }
             for (final String abi : android.os.Build.SUPPORTED_ABIS) {
-                // The whole of the name's tail, not a substring of it: "x86" is
-                // inside "x86_64", so a 32-bit x86 device asking for "x86"
-                // matched the 64-bit file and installed something that cannot
-                // run. Every asset ends in -<abi>.apk, which is exact.
+                // match the whole -<abi>.apk tail: "x86" is a substring of "x86_64"
                 final String tail = "-" + abi + ".apk";
                 for (int i = 0; i < names.size(); i++) {
                     if (!names.get(i).endsWith(tail)) {
@@ -331,7 +255,7 @@ public final class Updater {
         }
     }
 
-    /** Compares dotted versions, so 1.10.0 is newer than 1.9.0 rather than older. */
+    // numeric per part, so 1.10.0 is newer than 1.9.0
     static boolean isNewer(final String candidate, final String running) {
         final String[] a = candidate.split("[^0-9]+");
         final String[] b = running.split("[^0-9]+");

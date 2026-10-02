@@ -134,6 +134,8 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="pref_overlay_on">Looks the film up as it opens, and shows its poster, rating and synopsis whenever you pause</string>
     <string name="pref_overlay_off">No card on pause. You can still ask for it from the quick panel while watching.</string>
     <string name="pref_skip">Skip intros and credits · experimental</string>
+    <!-- "experimental" is left to the settings screen -->
+    <string name="quick_skip">Skip intros and credits</string>
     <string name="pref_skip_on">Button over intros, recaps and credits. Chapter marks in the file are used where it has them; otherwise the timings come from a community database, which is a guess about your particular release and is sometimes out.</string>
     <string name="pref_skip_off">Never looked up</string>
 
@@ -176,6 +178,8 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="online_episode">Episode</string>
     <string name="online_downloading">Downloading…</string>
     <string name="online_download_failed">That subtitle could not be downloaded</string>
+    <string name="online_download_limit">%1$s limit reached for today</string>
+    <string name="online_download_limit_until">%1$s limit reached. More in %2$s</string>
     <string name="online_saved_to">Loaded, and saved to %1$s</string>
     <string name="online_loaded">Subtitle loaded</string>
     <string name="skip_undo">Undo skip</string>
@@ -253,6 +257,10 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="engine_failed_message">%1$s could not play this. %2$s very likely can — that is why there are two.</string>
     <string name="engine_failed_try">Try %1$s</string>
     <string name="engine_failed_auto">Always use Auto</string>
+    <string name="engine_no_picture_title">No picture</string>
+    <string name="engine_no_picture_message">%1$s is playing the sound but not the picture — usually Dolby Vision on a device without a Dolby Vision decoder. %2$s may show it.</string>
+    <string name="engine_no_picture_switched">No picture on Media3 — switched to mpv</string>
+    <string name="engine_no_picture_either">No picture on either engine — this device cannot show this video</string>
     <string name="pref_engine_note">Media3 uses the decoders built into the device and is the smoother choice; tunneling, frame-rate matching and skip-silence belong to it alone. mpv carries its own decoders and plays what Media3 cannot: 10-bit H.264, interlaced video, older codecs, styled ASS.
 
 Auto starts on Media3 and switches only for a file Media3 fails on.</string>
@@ -409,14 +417,7 @@ URLs you open over the network are remembered so you can return to them without 
     <string name="osd_subtitle_delay_full">Subtitle delay</string>
     <string name="osd_audio_title">@string/audio_title</string>
     <string name="audio_title">Audio</string>
-    <!--
-        Named for what it opens, not for what it is about.
-        It read "Subtitle", which said nothing: every row beside it in the quick
-        settings is named for what it does - Audio track, Copy link, Show info
-        card, All settings - and this one leads to size, position, delay and
-        style. Its own text rather than the settings category's, so renaming it
-        here does not rename the heading on the settings screen.
-    -->
+    <!-- own text, so renaming it does not rename the settings category -->
     <string name="osd_subtitle_title">Customise subtitles…</string>
     <string name="osd_subtitle_position_title">Position</string>
     <string name="osd_subtitle_delay_title">Delay</string>
@@ -518,6 +519,8 @@ Addon 1 comes set to the official OpenSubtitles addon, which works as-is. The ot
     <!-- Where the application opens -->
     <string name="pref_home_header">Home screen</string>
     <string name="pref_start_on">Start on</string>
+    <string name="pref_recent_posters">Film posters in Recent</string>
+    <string name="pref_recent_posters_summary">Shows the poster of the film the info card identified, once you have watched it with the card showing. The row keeps the file\'s own name.</string>
     <string name="start_on_home">Home screen</string>
     <string name="start_on_last">Last video</string>
     <string name="pref_start_on_note">The home screen lists the folders on this device. Choosing the last video instead opens the player straight away, as earlier versions did.</string>

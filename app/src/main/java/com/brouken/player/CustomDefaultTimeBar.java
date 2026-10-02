@@ -12,8 +12,7 @@ import androidx.media3.ui.DefaultTimeBar;
 
 import java.lang.reflect.Field;
 
-// Only answers to touches on the painted line: the stock bar accepts a press
-// anywhere in its 48dp target, which is the height of the whole bottom bar
+// only touches near the line count; the stock 48dp target is the whole bottom bar
 class CustomDefaultTimeBar extends DefaultTimeBar {
 
     private static final int TAP_SLOP_DP = 6;
@@ -31,25 +30,16 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
     private float startX;
     private long startTime;
 
-    /** The running time and the playhead, which the stock bar keeps to itself. */
+    // the stock bar keeps these private
     private long durationMs;
     private long positionMs;
 
-    /** How long a run of presses stays one gesture. */
+    // presses closer together than this are one gesture
     private static final long KEY_SESSION_MS = 2_000;
     private long keyTargetMs = -1;
     private long keyLastAt;
 
-    /**
-     * Whether the whole film is already here, so the bar can say so.
-     *
-     * <p>A file on the device is not being fetched from anywhere, but the
-     * player still reports a buffered position that creeps along a little way
-     * ahead of the picture, because that is how much of it has been read into
-     * memory. Drawn on the bar that reads as a download in progress, on a file
-     * that finished downloading before it was ever opened. For anything local
-     * the band is simply the whole bar.
-     */
+    // local files draw fully buffered; the player only reports its read-ahead
     private boolean wholeFileHere;
 
     void setWholeFileHere(final boolean here) {
@@ -74,20 +64,11 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
         super.setPosition(position);
     }
 
-    /** Whether a remote is currently dragging the scrubber. */
     private boolean keyScrubbing;
     private int keyRepeats;
     private float keyX;
 
-    /*
-     * Scrubbing with a remote, in seconds rather than in leaps.
-     *
-     * The stock bar moves by a fraction of the running time per press, which on
-     * a long film is nearly three minutes a step and makes it impossible to
-     * stop anywhere in particular. Holding a direction now drags the scrubber:
-     * a single press is a second, and the step grows the longer it is held, so
-     * a whole film is still crossable without letting go.
-     */
+    // remote: 1s steps that grow while the key is held
     private static final long[] KEY_STEP_MS = {1_000, 5_000, 15_000};
     private static final int[] KEY_STEP_AFTER = {10, 30};
 
@@ -97,14 +78,7 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
         final boolean forward = keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
 
         if (!back && !forward) {
-            /*
-             * OK on the bar plays and pauses.
-             *
-             * The bar used to swallow it and do nothing, and handing it back
-             * did not help either: the activity only acts on OK while the
-             * controls are hidden, and they are plainly not hidden if the bar
-             * has focus. So it is answered here.
-             */
+            // the activity ignores OK while the controls are up, so play/pause here
             if (!keyScrubbing && isConfirmKey(keyCode)) {
                 final androidx.media3.common.Player player = PlayerActivity.player;
                 if (player == null) {
@@ -128,10 +102,7 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
         if (!keyScrubbing) {
             keyScrubbing = true;
             keyRepeats = 0;
-            // Carried on from where the last run of presses left off, unless
-            // that was long enough ago to be a new gesture. Re-reading the
-            // scrubber every time threw presses away, because the player has
-            // not moved yet when the next one arrives.
+            // continue from the last target; the player lags behind quick presses
             if (keyTargetMs < 0 || now - keyLastAt > KEY_SESSION_MS) {
                 keyTargetMs = positionMs;
             }
@@ -157,14 +128,7 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
         return progressBar.left + (float) ms / durationMs * progressBar.width();
     }
 
-    /*
-     * The seek is committed a moment after the last press, not on every one.
-     *
-     * Committing each press separately meant the next one re-read the scrubber
-     * before the player had moved, so half of a run of taps was thrown away:
-     * five presses moved two and a half seconds rather than five. Holding the
-     * key still scrubs continuously, and a run of taps now adds up exactly.
-     */
+    // commit after the last press so a run of taps adds up
     private static final long KEY_COMMIT_DELAY_MS = 350;
 
     private final Runnable commitKeyScrub = () -> {
@@ -277,8 +241,7 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
         }
     }
 
-    // Media3 drops its buffer on a seek outside what it holds, so the buffered
-    // band vanished for the length of a drag; mpv keeps its cache and did not
+    // keeps the buffered band during a drag; Media3 drops it on seeks outside it
     void holdBufferedPosition(final long seed) {
         holdingBuffered = true;
         heldBufferedPosition = seed;
@@ -305,8 +268,7 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
 
     private boolean isOnBar(final float y) {
         if (progressBar == null || progressBar.height() <= 0) {
-            // Before the first layout there is nothing to measure against; fall
-            // back to the stock behaviour rather than ignoring the touch.
+            // not laid out yet: accept the touch like the stock bar
             return true;
         }
         final float distance = Math.abs(y - progressBar.centerY());
@@ -322,8 +284,7 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
         final float y = seekBounds != null && seekBounds.height() > 0
                 ? seekBounds.centerY()
                 : getHeight() / 2f;
-        // Clamped into the bar so a tap right at either end still reaches the
-        // stock code, which ignores a press outside its own rectangle.
+        // the stock code ignores presses outside seekBounds
         final float clampedX = seekBounds != null && seekBounds.width() > 0
                 ? Math.max(seekBounds.left, Math.min(seekBounds.right, x))
                 : x;

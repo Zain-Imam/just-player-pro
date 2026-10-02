@@ -9,18 +9,7 @@ import androidx.media3.common.MimeTypes;
 
 import java.util.Locale;
 
-/*
- * One way of naming a track, wherever it is shown.
- *
- * The track pickers had been printing whatever was easy to reach: a language on
- * its own for subtitles, a language and a channel count for audio. On a file
- * with two English audio tracks — one stereo, one 5.1 — that is two identical
- * rows and a guess. Everything the container knows goes in the second line
- * instead, in a fixed order, so two tracks that differ always look different.
- *
- * It is shared so that the two engines cannot drift apart: whatever either of
- * them reports about a track is described here by the same code.
- */
+// shared by both engines so they name tracks the same way
 public final class TrackNames {
 
     private TrackNames() {
@@ -50,11 +39,15 @@ public final class TrackNames {
             append(line, context.getString(R.string.subtitle_menu_current));
         }
 
-        // The language, when the title was a name rather than the language.
+        // the language as well, when the title is a label
         if (format.label != null && !format.label.isEmpty()
                 && format.language != null && !format.language.isEmpty()
                 && !C.LANGUAGE_UNDETERMINED.equals(format.language)) {
-            append(line, new Locale(format.language).getDisplayLanguage());
+            final String languageName = new Locale(format.language).getDisplayLanguage();
+            // skip it when the label already is the language
+            if (!languageName.equalsIgnoreCase(format.label)) {
+                append(line, languageName);
+            }
         }
 
         if (format.width > 0 && format.height > 0) {
@@ -94,10 +87,6 @@ public final class TrackNames {
         line.append(part);
     }
 
-    /*
-     * A channel count people recognise. Nobody calls a soundtrack six channel,
-     * and 5.1 and 7.1 are what is written on the box.
-     */
     private static String channels(final Context context, final int count) {
         switch (count) {
             case 1:
@@ -122,8 +111,7 @@ public final class TrackNames {
         if (name != null) {
             return name;
         }
-        // Neither spelling was one this knows. The raw codec name is still more
-        // use than an audio/unknown placeholder, which is no use at all.
+        // unknown: the raw codec string, but never an audio/unknown placeholder
         if (format.codecs != null && !format.codecs.isEmpty()) {
             return format.codecs.toUpperCase(Locale.US);
         }

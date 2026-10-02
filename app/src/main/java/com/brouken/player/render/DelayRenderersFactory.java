@@ -16,13 +16,6 @@ import androidx.media3.exoplayer.text.TextOutput;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * The two delays the viewer can set, applied to the Media3 renderers.
- *
- * Both are the same problem — something is out by a fraction of a second and
- * the viewer wants to say by how much — and both are fixed here rather than in
- * the file, so nothing has to be re-parsed or re-opened when the number moves.
- */
 public final class DelayRenderersFactory extends DefaultRenderersFactory {
 
     private final AtomicInteger subtitleDelayMs;
@@ -35,13 +28,8 @@ public final class DelayRenderersFactory extends DefaultRenderersFactory {
         this.audioDelayMs = audioDelayMs;
     }
 
-    /**
-     * Applies the user subtitle delay at render time by shifting the playback position seen by the
-     * text renderers. Shifting cue timestamps at parse time cannot move embedded subtitles earlier:
-     * their parsed timestamps are relative to the container sample (start == 0), so a negative
-     * shift gets clamped and only shortens the cue duration. Render-time shifting works in both
-     * directions, for embedded, external and image-based subtitles alike.
-     */
+    // shifts the position the text renderers see; a parse-time shift can't move
+    // embedded cues earlier because their timestamps start at 0
     @Override
     protected void buildTextRenderers(@NonNull Context context, @NonNull TextOutput output, @NonNull Looper outputLooper, int extensionRendererMode, @NonNull ArrayList<Renderer> out) {
         ArrayList<Renderer> textRenderers = new ArrayList<>();
@@ -55,28 +43,8 @@ public final class DelayRenderersFactory extends DefaultRenderersFactory {
         }
     }
 
-    /**
-     * The audio delay, by way of the clock rather than the sound.
-     *
-     * Media3 has no audio delay of its own, and the sound itself must not be
-     * touched: relabelling buffers on their way to the track is how you get
-     * clicks, dropped samples and a sink that spends the film recovering from a
-     * discontinuity it was never told about.
-     *
-     * What moves instead is the position the audio renderer reports. That
-     * number is the master clock — the video renderer shows the frame the clock
-     * asks for — so reporting a moment later than the sound actually is puts
-     * the picture ahead of the sound by exactly that much, which is what
-     * "delay the audio" means. Reporting earlier holds the picture back.
-     * Nothing else in the audio path changes, so the worst a wrong number can
-     * do is shift the picture; the sound itself cannot break.
-     *
-     * The cost is honest and unavoidable in either direction: the picture and
-     * the sound start a seek together, so after a seek one of them has to catch
-     * up — a few frames dropped, or a held frame, for as long as the delay.
-     * mpv avoids it by seeking the two streams to different places, which a
-     * Media3 media source cannot do.
-     */
+    // shifts the audio clock that drives the video; retiming the buffers causes
+    // clicks and discontinuities
     @Override
     protected AudioSink buildAudioSink(@NonNull Context context, boolean enableFloatOutput,
                                        boolean enableAudioTrackPlaybackParams) {
@@ -100,8 +68,7 @@ public final class DelayRenderersFactory extends DefaultRenderersFactory {
 
         @Override
         public void render(long positionUs, long elapsedRealtimeUs) throws ExoPlaybackException {
-            // Cues show when position >= cue start: presenting an earlier position delays
-            // subtitles, a later one advances them.
+            // an earlier position delays the cues, a later one advances them
             super.render(positionUs - delayUs(), elapsedRealtimeUs);
         }
 
@@ -125,7 +92,7 @@ public final class DelayRenderersFactory extends DefaultRenderersFactory {
         public long getCurrentPositionUs(boolean sourceEnded) {
             final long positionUs = super.getCurrentPositionUs(sourceEnded);
             if (positionUs == AudioSink.CURRENT_POSITION_NOT_SET) {
-                // No clock yet. Adding to it would make one up.
+                // no clock yet
                 return positionUs;
             }
             return Math.max(0, positionUs + delayMs.get() * 1000L);

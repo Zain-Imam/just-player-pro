@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    One slide of the introduction.
-
-    The dialog's own three buttons are Back, Skip and Next, which leaves nowhere
-    for "Open settings" to live - so it sits in the content instead, where it
-    belongs anyway: it is part of what that one slide is saying rather than a
-    way out of the dialog.
--->
+<!-- "Open settings" sits in the content: the dialog's three buttons are taken -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"

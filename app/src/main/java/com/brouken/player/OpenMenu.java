@@ -22,14 +22,6 @@ final class OpenMenu {
     private OpenMenu() {
     }
 
-    /**
-     * Whoever is going to play what the box returns.
-     *
-     * <p>The address box is the same box wherever it is opened from, and the
-     * only thing that differs is where the answer goes: the player plays it
-     * itself, the home screen hands it to the player. Passing that in keeps one
-     * dialog rather than two that drift apart.
-     */
     interface OnPlay {
         void play(Uri uri, @Nullable String type);
     }
@@ -79,8 +71,6 @@ final class OpenMenu {
         labels.add(activity.getString(R.string.open_source_url));
         actions.add(() -> showUrlInput(activity, activity::playMedia));
 
-        // Offered only when there is something in it, so the menu does not grow a
-        // dead end on a fresh install.
         if (!recent.isEmpty()) {
             labels.add(activity.getString(R.string.open_source_recent));
             actions.add(() -> showRecent(activity, recent));
@@ -92,7 +82,6 @@ final class OpenMenu {
                 .show();
     }
 
-    /** The address box, from the home screen. */
     static void showUrl(final android.app.Activity activity, final OnPlay onPlay) {
         showUrlInput(activity, onPlay);
     }
@@ -104,20 +93,6 @@ final class OpenMenu {
         input.setHint(R.string.open_url_hint);
         input.setSingleLine(true);
 
-        /*
-         * The box starts empty.
-         *
-         * It used to fill itself from the clipboard, which is helpful exactly
-         * once and a nuisance every other time: whatever you last copied — a
-         * message, a password, a link to something else entirely — was sitting
-         * in the field, and typing an address meant clearing it out first.
-         * It also meant reading the clipboard on opening, unasked, which is
-         * not a thing an application should do.
-         *
-         * There is a Paste button instead, which does the same work at the
-         * moment somebody actually wants it done.
-         */
-
         // AlertDialog gives a custom view no margins of its own.
         final int margin = (int) TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, 20, activity.getResources().getDisplayMetrics());
@@ -128,15 +103,7 @@ final class OpenMenu {
         params.rightMargin = margin;
         container.addView(input, params);
 
-        /*
-         * Cancel, Paste, Play.
-         *
-         * Paste is the neutral button, which is the slot between the other two,
-         * and it must not dismiss: pasting is a step on the way to playing, not
-         * an answer in itself. AlertDialog closes on any button press, so its
-         * listener is attached after show() — the only point the framework
-         * allows a button to decline to close.
-         */
+        // Paste must not dismiss, so its listener is set after show()
         final AlertDialog dialog = new AlertDialog.Builder(activity)
                 .setTitle(R.string.open_url_title)
                 .setView(container)
@@ -145,8 +112,6 @@ final class OpenMenu {
                 .setPositiveButton(R.string.open_url_play, (d, which) -> play(activity, onPlay, input.getText().toString()))
                 .create();
 
-        // Enter on a keyboard, or the remote's centre key, plays without having
-        // to travel to the button.
         input.setOnEditorActionListener((view, actionId, event) -> {
             dialog.dismiss();
             play(activity, onPlay, input.getText().toString());
@@ -197,19 +162,10 @@ final class OpenMenu {
             return;
         }
 
-        // Type is left to be worked out from the response, as it is for a URL
-        // arriving by intent.
+        // type is worked out from the response
         onPlay.play(uri, null);
     }
 
-    /**
-     * Whatever is on the clipboard, as text, when Paste is pressed.
-     *
-     * This does not insist the content looks like an address. Somebody
-     * pressing Paste knows what they copied, and refusing on the grounds that
-     * it fails a guess about its shape is not help — what was pasted is
-     * checked when Play is pressed, which is where checking belongs.
-     */
     private static String clipboardText(final Context context) {
         try {
             final ClipboardManager clipboard =
@@ -247,7 +203,6 @@ final class OpenMenu {
             final String candidate = text.toString().trim();
             return History.isNetworkUri(Uri.parse(candidate)) ? candidate : null;
         } catch (Exception e) {
-            // Reading the clipboard is a convenience, never a requirement.
             Utils.log("Could not read clipboard: " + e);
             return null;
         }

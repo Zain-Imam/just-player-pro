@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A section name. Never focusable: a remote travelling down a list should
-     not have to step through the labels between the things it can act on. -->
+<!-- not focusable, so the D-pad skips over section labels -->
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/header_text"
     android:layout_width="match_parent"

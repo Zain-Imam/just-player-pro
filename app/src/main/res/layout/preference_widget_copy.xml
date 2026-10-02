@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-     A copy button at the end of a history row. It is its own target rather
-     than part of the row, because tapping the row plays the thing and tapping
-     this one only takes the address.
--->
+<!-- its own target: tapping the row plays, this only copies the address -->
 <ImageView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/copy_link"
     android:layout_width="48dp"

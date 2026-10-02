@@ -49,16 +49,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     static RecyclerView recyclerView;
 
-    /**
-     * Up goes back to whoever opened this, rather than to the player.
-     *
-     * <p>The manifest names the player as this screen's parent, which was the
-     * only possible answer while the player was the only other screen. It is
-     * now reachable from the home screen as well, and the default behaviour
-     * would have started a player nobody asked for. Finishing returns to
-     * whichever of the two it was — the same thing Back already does, so the
-     * arrow and the key stop disagreeing.
-     */
+    // finish rather than go to the manifest parent, which is the player
     @Override
     public boolean onSupportNavigateUp() {
         finish();
@@ -85,13 +76,12 @@ public class SettingsActivity extends AppCompatActivity {
             }
         }
 
-        // Also here, not only in the player: someone can reach settings first.
+        // settings can be opened before the player
         com.brouken.player.online.SubtitleAddons.seedDefault(this);
 
         super.onCreate(savedInstanceState);
 
-        // After super: AppCompat re-applies the manifest theme in its own
-        // onCreate, which discards an overlay set before it.
+        // after super: AppCompat re-applies the manifest theme in its onCreate
         Accent.apply(this);
 
         setContentView(R.layout.settings_activity);
@@ -171,18 +161,8 @@ public class SettingsActivity extends AppCompatActivity {
             );
         }
 
-        /*
-         * What goes in the file is asked; what comes out of one is not.
-         *
-         * Exporting is a thing someone does deliberately and may not want their
-         * keys in -- a file shared with somebody else, say -- so the parts are
-         * offered. Importing is the opposite: the file holds what it holds, and
-         * asking which half of it to take is a question nobody can answer
-         * without having read the file first.
-         */
         @SuppressLint("InflateParams")
         private void askWhatToExport() {
-            // Everything ticked to begin with: the common case is a new phone.
             final View body = getLayoutInflater().inflate(R.layout.dialog_backup, null);
             final android.widget.CheckBox settings = body.findViewById(R.id.backup_settings);
             final android.widget.CheckBox keys = body.findViewById(R.id.backup_keys);
@@ -264,8 +244,7 @@ public class SettingsActivity extends AppCompatActivity {
                 while ((read = in.read(chunk)) > 0) {
                     buffer.write(chunk, 0, read);
                     if (buffer.size() > 4 * 1024 * 1024) {
-                        // A backup is a few kilobytes. Anything of this size is
-                        // not one, and is not going to be read into memory.
+                        // a backup is a few kilobytes
                         throw new java.io.IOException("far too big to be a backup");
                     }
                 }
@@ -286,27 +265,10 @@ public class SettingsActivity extends AppCompatActivity {
             Toast.makeText(requireContext(),
                     getString(R.string.pref_backup_imported, result.applied),
                     Toast.LENGTH_LONG).show();
-            // The screen is showing the old values, so it is rebuilt from the
-            // new ones rather than left lying.
             requireActivity().recreate();
         }
 
-        /*
-         * A key is asked about before it is kept.
-         *
-         * A mistyped key used to sit there looking fine until the first search
-         * came back with nothing, which reads as the service being down rather
-         * than as a typo. The service is asked first, and the key is only
-         * written if it answers. Clearing is always allowed.
-         */
-        /*
-         * Nothing here has an icon, so nothing should be indented for one.
-         *
-         * The preference list leaves a gap at the start of every row for an
-         * icon whether or not there is one, which pushed all the text inwards
-         * and wasted the width — most visible on a wide screen, where the
-         * settings ended up as a narrow column with an empty margin beside it.
-         */
+        // no row has an icon, so drop the reserved icon space
         private void useFullWidth(final androidx.preference.PreferenceGroup group) {
             group.setIconSpaceReserved(false);
             for (int i = 0; i < group.getPreferenceCount(); i++) {
@@ -318,40 +280,9 @@ public class SettingsActivity extends AppCompatActivity {
             }
         }
 
-        /*
-         * Hand the typing to a phone.
-         *
-         * A key is thirty-odd characters and an addon URL is longer, which on a
-         * television means a D-pad and an on-screen keyboard. The page only
-         * exists while this screen does, and it asks for a PIN shown here
-         * before it accepts anything. Everything can still be typed in by hand,
-         * which is what happens anyway if the page cannot be opened.
-         */
         private com.brouken.player.online.SetupServer setupServer;
 
-        /*
-         * Show the colours, not only their names.
-         *
-         * A list reading Red, Orange, Yellow tells you nothing about what any
-         * of them actually looks like, and two of the eleven are close enough
-         * that the name is no help at all. Each row carries a disc of its own
-         * colour, and the list is our own dialog because a ListPreference will
-         * not put a drawable beside an entry.
-         */
-        /*
-         * A preference that opens its own dialog opens it whether or not
-         * anybody asked.
-         *
-         * A click listener on a ListPreference is not a replacement for its
-         * dialog, it is an addition to one: the library calls onClick before it
-         * consults the listener, so the plain list of names was already on its
-         * way when the list of colours was built. The plain one arrived second,
-         * because it goes through a fragment transaction, and landed on top —
-         * which looked like the colours only appearing after a press of back.
-         *
-         * This is the hook meant for the job: answer for the preference, and
-         * the library does not open anything of its own.
-         */
+        // a ListPreference opens its own dialog before any click listener runs
         @Override
         public void onDisplayPreferenceDialog(@NonNull Preference preference) {
             if (preference instanceof ListPreference && "accentColor".equals(preference.getKey())) {
@@ -406,14 +337,6 @@ public class SettingsActivity extends AppCompatActivity {
             }
         }
 
-        /*
-         * Ask everything whether it still works, without changing anything.
-         *
-         * A key and an addon were only ever checked as they were typed in, so a
-         * service that stopped answering last week still looked fine here and
-         * the first sign of it was an empty subtitle search in the evening.
-         * This asks all of them and says which answered.
-         */
         private void attachCheckEverything() {
             final Preference preference = findPreference("checkEverything");
             if (preference == null) {
@@ -493,7 +416,7 @@ public class SettingsActivity extends AppCompatActivity {
                     startActivity(new Intent(Intent.ACTION_VIEW,
                             Uri.parse("https://github.com/Zain-Imam")));
                 } catch (Exception ignored) {
-                    // A television with no browser to open it in.
+                    // no browser, as on some TVs
                 }
                 return true;
             });
@@ -528,14 +451,12 @@ public class SettingsActivity extends AppCompatActivity {
                                 .setCancelable(false)
                                 .setPositiveButton(R.string.pref_setup_phone_stop, (d, which) -> {
                                     stopSetupServer();
-                                    // Whatever the page wrote is read back in.
+                                    // reload whatever the page wrote
                                     setPreferenceScreen(null);
                                     onCreatePreferences(null, null);
                                 })
                                 .create();
                 dialog.show();
-                // Red, because it is the button that takes the page away: the
-                // phone loses it the moment this is pressed.
                 final android.widget.Button stop =
                         dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE);
                 if (stop != null) {
@@ -559,18 +480,6 @@ public class SettingsActivity extends AppCompatActivity {
             super.onDestroyView();
         }
 
-        /*
-         * A green tick against anything that is already set.
-         *
-         * A key row shows its title and nothing else, and a key is not shown
-         * back to you once it is in -- rightly -- so the screen looked exactly
-         * the same whether a key had been entered or never had. The only way to
-         * find out was to open the row, see an empty box, and wonder whether
-         * that was the box being empty or the app refusing to show it.
-         *
-         * The tick is in the summary, where a row already has somewhere to put
-         * a line of text, and it is green because that is what a tick is.
-         */
         private static final int TICK_GREEN = 0xFF4CAF50;
 
         private void markWhatIsSet() {
@@ -610,8 +519,6 @@ public class SettingsActivity extends AppCompatActivity {
             }
             final String text = "✓  " + whenSet;
             final android.text.SpannableString ticked = new android.text.SpannableString(text);
-            // The tick alone, not the words: a whole green line reads as a
-            // warning of some sort rather than as "this one is done".
             ticked.setSpan(new android.text.style.ForegroundColorSpan(TICK_GREEN), 0, 1,
                     android.text.Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
             preference.setSummary(ticked);
@@ -626,14 +533,13 @@ public class SettingsActivity extends AppCompatActivity {
                 preference.setOnPreferenceChangeListener((changed, newValue) -> {
                     final String value = newValue == null ? "" : newValue.toString().trim();
                     if (value.isEmpty()) {
-                        // Cleared. The tick has to go with it, and the write
-                        // happens after this returns, so the refresh waits a turn.
+                        // the write happens after this returns, so refresh a turn later
                         new android.os.Handler(android.os.Looper.getMainLooper())
                                 .post(this::markWhatIsSet);
                         return true;
                     }
                     checkThenSave((EditTextPreference) changed, key, value);
-                    // Not yet: written by checkThenSave once the service agrees.
+                    // checkThenSave writes it once the service accepts the key
                     return false;
                 });
             }
@@ -687,8 +593,7 @@ public class SettingsActivity extends AppCompatActivity {
             final Preference intro = findPreference("showIntroAgain");
             if (intro != null) {
                 intro.setOnPreferenceClickListener(clicked -> {
-                    // Armed rather than shown: it belongs to the folder list,
-                    // and putting it over settings is how it went wrong before.
+                    // shown next time on the folder list, not over settings
                     Intro.markSeen(requireContext(), false);
                     Toast.makeText(requireContext(),
                             R.string.pref_intro_again_done, Toast.LENGTH_LONG).show();
@@ -713,12 +618,7 @@ public class SettingsActivity extends AppCompatActivity {
                     com.brouken.player.online.ApiKeys.PREF_SUBDL,
                     com.brouken.player.online.ApiKeys.PREF_WYZIE);
 
-            /*
-             * The login pair has no key check of its own -- there is no service
-             * call that says whether a username and password go together
-             * without using up a sign-in -- so they only need the tick kept up
-             * to date when they change.
-             */
+            // the login pair cannot be checked without using up a sign-in; just refresh
             for (final String key : new String[]{
                     com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES_USER,
                     com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES_PASSWORD}) {
@@ -732,7 +632,6 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             }
 
-            // And say which of them are already in.
             markWhatIsSet();
 
             subtitleFolderChoose = findPreference("subtitleFolderChoose");
@@ -740,8 +639,6 @@ public class SettingsActivity extends AppCompatActivity {
                 updateSubtitleFolderSummary();
                 subtitleFolderChoose.setOnPreferenceClickListener(preference -> {
                     if (SubtitleStorage.getFolder(requireContext()) != null) {
-                        // Already set: offer to go back to the default rather than
-                        // making "undo" mean finding the old folder again.
                         new androidx.appcompat.app.AlertDialog.Builder(requireContext())
                                 .setTitle(R.string.pref_subtitle_folder)
                                 .setItems(new CharSequence[]{
@@ -777,15 +674,7 @@ public class SettingsActivity extends AppCompatActivity {
                 });
             }
 
-            /*
-             * The few that cannot be applied to a player already running.
-             *
-             * Coming back from here no longer reopens the file -- the picture
-             * is where it was, at the frame it was on -- except for these,
-             * which are decided when the player is built: which engine, how it
-             * buffers, which decoders. Their rows say so, so that the one
-             * moment of buffering left is one somebody chose.
-             */
+            // these only take effect when the player is rebuilt
             for (final String key : new String[]{"playbackEngine", "decoderPriority"}) {
                 final ListPreference list = findPreference(key);
                 if (list == null || !list.isEnabled()) {
@@ -825,16 +714,7 @@ public class SettingsActivity extends AppCompatActivity {
             final Preference preferenceImport = findPreference("backupImport");
             if (preferenceImport != null) {
                 preferenceImport.setOnPreferenceClickListener(preference -> {
-                    /*
-                     * Any type, not application/json.
-                     *
-                     * A file that came off another device, through a chat app
-                     * or a cloud folder, often arrives typed as something else
-                     * or as nothing at all -- and a picker that will not show
-                     * the file you are looking straight at is the sort of thing
-                     * people give up on. What it holds is checked when it is
-                     * read, which is the only reliable check anyway.
-                     */
+                    // any type: shared files often arrive mistyped; the content is checked on read
                     try {
                         backupImportPicker.launch(new String[]{"*/*"});
                     } catch (android.content.ActivityNotFoundException e) {
@@ -864,8 +744,6 @@ public class SettingsActivity extends AppCompatActivity {
             ListPreference preferenceAccent = findPreference(Accent.PREF_KEY);
             if (preferenceAccent != null) {
                 preferenceAccent.setOnPreferenceChangeListener((preference, newValue) -> {
-                    // Rebuild the screen so the new colour is visible on the
-                    // switch you just touched, rather than next time.
                     preference.getSharedPreferences().edit()
                             .putString(Accent.PREF_KEY, String.valueOf(newValue)).apply();
                     requireActivity().recreate();
@@ -961,8 +839,6 @@ public class SettingsActivity extends AppCompatActivity {
         @Override
         public void onResume() {
             super.onResume();
-            // A key cleared, an addon added, a backup imported: whatever
-            // happened while this screen was away, the ticks follow it.
             markWhatIsSet();
             if (pendingCustomFontFallbackPermission) {
                 pendingCustomFontFallbackPermission = false;

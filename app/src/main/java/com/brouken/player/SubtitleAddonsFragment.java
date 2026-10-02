@@ -110,7 +110,6 @@ public class SubtitleAddonsFragment extends PreferenceFragmentCompat {
                 : probe.name;
         final String message = getString(R.string.pref_addon_ok, name,
                 probe.subtitles, probe.languages);
-        // Say so when the download could not be proved, rather than implying it was.
         return probe.downloadVerified
                 ? message
                 : message + " " + getString(R.string.pref_addon_ok_unverified);

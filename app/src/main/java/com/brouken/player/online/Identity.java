@@ -84,7 +84,7 @@ public final class Identity {
         return imdbId != null ? imdbId : parentImdbId;
     }
 
-    // -- persistence, so a file identified once stays identified -------------
+    // -- persistence ---------------------------------------------------------
 
     @NonNull
     public JSONObject toJson() {

@@ -20,19 +20,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * The licences the application ships under, in full.
- *
- * <p>The full text, not a list of names. A list of names is what an earlier
- * version had and it satisfies nobody: MIT, ISC and Apache each require the
- * notice itself to accompany the binary, and the whole reason for putting them
- * in the APK is that an APK handed around outside the releases page carries no
- * attachment with it.
- *
- * <p>The texts are assets gathered at build time from {@code licenses/} at the
- * root of the repository, so this screen and the zip attached to a release are
- * always the same words.
- */
+// full licence texts, which MIT, ISC and Apache require to ship with the binary
+// gathered at build time from licenses/ at the repository root
 public class LicensesActivity extends AppCompatActivity {
 
     private static final String DIR = "licenses";
@@ -59,15 +48,7 @@ public class LicensesActivity extends AppCompatActivity {
             getSupportActionBar().setTitle(R.string.pref_licenses);
         }
 
-        /*
-         * Back steps out of a licence to the list before leaving the screen.
-         *
-         * Through the dispatcher rather than onBackPressed, which this
-         * application never sees: it sets enableOnBackInvokedCallback, and with
-         * that on, Android 13 and later route Back past the old override
-         * entirely -- so a licence was closed and the screen with it in one
-         * press, losing the reader's place in the list.
-         */
+        // uses the dispatcher: enableOnBackInvokedCallback bypasses onBackPressed
         getOnBackPressedDispatcher().addCallback(this,
                 new androidx.activity.OnBackPressedCallback(true) {
                     @Override
@@ -133,7 +114,6 @@ public class LicensesActivity extends AppCompatActivity {
         return out.toString();
     }
 
-    /** Back steps out of a licence to the list before leaving the screen. */
     private boolean showingText() {
         return textHolder != null && textHolder.getVisibility() == View.VISIBLE;
     }

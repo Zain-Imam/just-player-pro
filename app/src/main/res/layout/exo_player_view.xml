@@ -68,21 +68,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <!--
-         The spinner, with a word under it, after the controller and therefore
-         drawn over it.
-
-         A circle on its own says "something is happening" and leaves you to
-         guess whether that is loading, seeking, or nothing at all, so it has a
-         label; the two appear and disappear together.
-
-         Outside the controller on purpose. It used to be a child of the centre
-         controls row, which meant hiding the controls hid it as well — and the
-         moment you most want to know the film is still loading is exactly the
-         moment you have pressed Back to get the furniture out of the way.
-         Nothing here is tied to the controls: only the playback state shows or
-         hides it.
-    -->
+    <!-- outside the controller so hiding the controls does not hide the spinner -->
     <LinearLayout android:id="@+id/loading"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -110,17 +96,7 @@
 
     </LinearLayout>
 
-    <!--
-         The frame you are dragging towards.
-
-         Above the bar rather than beside the thumb: on a phone the thumb is
-         under a finger, and on a television there is no thumb to be beside.
-         Centred, so it never runs off either end.
-
-         Out here with the spinner and for the same reason — it is drawn over
-         the controller instead of inside it, so nothing about the controls'
-         own showing and hiding can take it away mid-drag.
-    -->
+    <!-- seek preview, outside the controller like the spinner above -->
     <ImageView android:id="@+id/thumbnail_preview"
         android:layout_width="180dp"
         android:layout_height="101dp"

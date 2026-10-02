@@ -128,24 +128,37 @@ import kotlin.Unit;
 
 public class PlayerActivity extends Activity {
 
-    /**
-     * The player that is up, so a second one can close it. See onCreate.
-     *
-     * <p>Weak, because this outlives the activity by definition and a strong
-     * reference here would hold a whole player -- surfaces, decoders, the lot
-     * -- alive for as long as the process.
-     */
+    // lets a newer player screen close this one; weak so it cannot leak the player
     private static java.lang.ref.WeakReference<PlayerActivity> currentInstance;
 
     private PlayerListener playerListener;
     private BroadcastReceiver mReceiver;
     private AudioManager mAudioManager;
     private MediaSession mediaSession;
+    // one session per id per app: a screen replacing the player must release this
+    @Nullable
+    private static MediaSession sharedSession;
     private DefaultTrackSelector trackSelector;
     public static LoudnessEnhancer loudnessEnhancer;
 
     public CustomPlayerView playerView;
     public static Player player;
+
+    // the player this screen built; a newer screen may already own the shared one
+    @Nullable
+    private Player ownPlayer;
+
+    private boolean ownsPlayer() {
+        return player != null && player == ownPlayer;
+    }
+
+    @Nullable
+    private com.brouken.player.engine.EngineUi engineUi;
+
+    @Nullable
+    public com.brouken.player.engine.EngineUi engineUi() {
+        return ownsPlayer() ? engineUi : null;
+    }
     private YouTubeOverlay youTubeOverlay;
     private OsdSettingsController osdSettingsController;
     private com.brouken.player.online.OnlineController onlineController;
@@ -166,30 +179,10 @@ public class PlayerActivity extends Activity {
     private ExoPlaybackException errorToShow;
     public static int boostLevel = 0;
 
-    /**
-     * The volume the swipe works in, 0 to 100, or -1 before it has been read.
-     *
-     * <p>A device offers a fixed number of volume steps and it is often fifteen,
-     * so a swipe shown as a percentage of those could only ever read 0, 7, 13,
-     * 20 and so on -- jumping in sevens while brightness beside it moved one at
-     * a time. This is the finer scale the swipe actually moves along; the
-     * device is set to the nearest step it has, and {@link #fineVolume} makes up
-     * the difference inside that step.
-     *
-     * <p>Static, like the rest of the volume state here, because it has to
-     * survive the player being rebuilt.
-     */
+    // swipe volume 0-100, finer than the device's steps; -1 until read
     public static int volumeFinePercent = -1;
 
-    /**
-     * Gain applied inside one of the device's steps, 0 to 1.
-     *
-     * <p>Always at or below 1: the device is set to the step at or above what
-     * was asked for, and this brings it back down to the exact figure. On
-     * Media3 it is the player's own volume; on mpv it is folded into the same
-     * volume property the boost uses, which is why both go through
-     * {@link #applyEngineVolume(boolean)}.
-     */
+    // gain 0-1 within the device step at or above the target; see applyEngineVolume
     public static float fineVolume = 1f;
     private boolean isScaling = false;
     private boolean isScaleStarting = false;
@@ -202,36 +195,13 @@ public class PlayerActivity extends Activity {
     private static final int REQUEST_CHOOSER_SUBTITLE_MEDIASTORE = 21;
     private static final int REQUEST_SETTINGS = 100;
     public static final int REQUEST_SYSTEM_CAPTIONS = 200;
-    /**
-     * How long the controls stay on screen, in milliseconds.
-     *
-     * <p>This was a constant at 3500. It is a setting now, because three and a
-     * half seconds is short for anyone reading the controls rather than
-     * reaching straight for one, and shorter still with a remote. No longer
-     * final for that reason; {@link #loadControllerTimeout} keeps it in step
-     * with the preference and is called before anything reads it.
-     */
+    // ms; set from the preference by loadControllerTimeout
     public static int CONTROLLER_TIMEOUT = 3500;
 
-    /** Seconds, as the preference stores it. */
+    // seconds, as the preference stores it
     private static final int CONTROLLER_TIMEOUT_DEFAULT = 6;
 
-    /**
-     * What Media3 spends hiding the controls after the timer has run out.
-     *
-     * <p>Media3 does not simply take the controls away: it hides them in stages
-     * two seconds apart and then fades what is left, and none of that begins
-     * until the timeout has already elapsed. Measured on a device it is 2.27s
-     * for a three-second timeout and 2.28s for a fifteen-second one -- the same
-     * tail either way, which is what made a setting of fifteen last closer to
-     * eighteen.
-     *
-     * <p>So the tail is taken off the front. The number in settings is then how
-     * long the controls are actually on screen, which is the only reading of it
-     * anybody has. Media3 is pinned to one version here and
-     * {@code Media3LinkageTest} keeps it pinned, so this cannot drift without
-     * the build saying so.
-     */
+    // Media3's staged hide after the timeout, measured on device; taken off the front
     private static final int CONTROLS_FADE_MS = 2280;
 
     static void loadControllerTimeout(final android.content.Context context) {
@@ -269,44 +239,22 @@ public class PlayerActivity extends Activity {
     
     private String pendingSubtitleLabel;
 
-    /*
-     * What a subtitle should be called, where something told us.
-     *
-     * A downloaded subtitle knows its release name at the moment it is fetched.
-     * Everything after that point only has the address it was saved to, and an
-     * address is not always a name: through MediaStore it is
-     * content://media/external/downloads/1321321, and asking the resolver for a
-     * display name can come back with nothing -- leaving the file name to be
-     * guessed from the last part of the address, which is the row id. So the
-     * name is kept here, against the address, and preferred wherever the track
-     * is labelled. Anything not in here is named as it always was.
-     */
-    private final java.util.Map<String, String> subtitleLabels = new java.util.HashMap<>();
-
+    // saved release name for a downloaded subtitle, else the shared naming rule
     @Nullable
     private String subtitleLabelFor(final Uri uri) {
         if (uri == null) {
             return null;
         }
-        final String known = subtitleLabels.get(uri.toString());
+        final String known = mPrefs.subtitleLabel(uri);
         if (known != null && !known.trim().isEmpty()) {
             return known.trim();
         }
-        return Utils.getFileName(this, uri, false);
+        return SubtitleNames.label(this, uri, null, null);
     }
     private String appliedAccent;
-    /**
-     * Whether the loop button was wanted when these controls were built.
-     *
-     * <p>The button strip is assembled once, in onCreate, so a switch that adds
-     * or removes a button cannot be honoured by a running screen -- it used to
-     * say "needs a restart" and mean it. Noting what was built makes it
-     * possible to tell, on the way back from settings, that the strip is now
-     * wrong and rebuild the screen rather than leave somebody looking for a
-     * button they just asked for.
-     */
+    // the button strip is built once; a changed setting means rebuilding the screen
     private boolean appliedRepeatToggle;
-    /** The spinner and its label together: shown and hidden as one. */
+    // the spinner and its label together
     private View loadingProgressBar;
     private PlayerControlView controlView;
     private CustomDefaultTimeBar timeBar;
@@ -318,21 +266,8 @@ public class PlayerActivity extends Activity {
     private boolean restorePlayState;
     private boolean restorePlayStateAllowed;
     private boolean play;
-    /**
-     * Whether the film about to load should start rather than wait.
-     *
-     * <p>Set by everything that opens a film to watch it: a launch from another
-     * application, a row chosen in a list, the answer to "play the last
-     * video?", the next and previous buttons. Not set by the things that build
-     * the player again around the film already in it -- changing engine, or a
-     * setting that cannot be applied to a running player -- which is the whole
-     * point of having a flag rather than simply always playing.
-     *
-     * <p>Cleared as soon as it has been read, because it belongs to one
-     * loading and not to the player.
-     */
+    // start the next film loaded; not set when rebuilding around the same one
     private boolean playOnLoad;
-    // private float subtitlesScale;
     private boolean isScrubbing;
     private boolean scrubbingNoticeable;
     private long scrubbingStart;
@@ -340,7 +275,6 @@ public class PlayerActivity extends Activity {
     private boolean alive;
     private final AtomicInteger subtitleDelayMs = new AtomicInteger();
     private boolean keptPlayingInBackground;
-    /** Whether this film has already been measured against the device. */
     private boolean capabilityAsked;
     @Nullable
     private Thumbnails thumbnails;
@@ -351,16 +285,8 @@ public class PlayerActivity extends Activity {
     private final Runnable audioDelayApplyRunnable = this::applyAudioDelay;
     public static boolean focusPlay = false;
     private Uri nextUri;
-    /**
-     * The folder the film was opened from, when something said which.
-     *
-     * <p>The home screen puts it on the intent. A film handed over by another
-     * application carries none, and there is then nothing to step through --
-     * which is right: the next file in somebody else.s folder is not this
-     * player.s business to guess at.
-     */
+    // set by the home screen; null for a film handed over by another app
     private String folderOfCurrent;
-    /** What sits either side, recomputed whenever the film changes. */
     private com.brouken.player.home.Neighbours.Either neighbours =
             com.brouken.player.home.Neighbours.none();
     private Thread neighboursThread;
@@ -383,12 +309,11 @@ public class PlayerActivity extends Activity {
     static final String API_SUBS_NAME = "subs.name";
     static final String API_TITLE = "title";
     static final String API_END_BY = "end_by";
-    /* Extras a launching app can add, beyond the ones above. */
+    // further extras a launching app can add
     static final String API_HEADERS = "headers";
     static final String API_IMDB = "imdb_id";
     static final String API_TMDB = "tmdb_id";
 
-    /** Request headers the launching app asked to be sent with the stream. */
     private final HashMap<String, String> apiHeaders = new HashMap<>();
     boolean apiAccess;
     boolean apiAccessPartial;
@@ -414,30 +339,14 @@ public class PlayerActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         // Rotate ASAP, before super/inflating to avoid glitches with activity launch animation
         mPrefs = new Prefs(this);
-        // Before setContentView: the player view reads it while being inflated.
+        // before setContentView: the player view reads it while being inflated
         loadControllerTimeout(this);
         Utils.setOrientation(this, mPrefs.orientation);
-        // One addon ships configured, so subtitles work with no key at all.
         com.brouken.player.online.SubtitleAddons.seedDefault(this);
 
         super.onCreate(savedInstanceState);
 
-        /*
-         * The app opens where the setting says, whichever door was used.
-         *
-         * Only the home screen read "Start on", and only while being created --
-         * so every route that reaches the player without passing through it
-         * ignored the setting and carried straight on with the last film.
-         * Resuming a task the system had kept does exactly that, which is why
-         * the folder list appeared to be forgotten after the app had been away
-         * for a while, and why turning power saving on made it happen more
-         * often rather than causing it.
-         *
-         * Before setContentView, so no part of the player is drawn on the way
-         * out. A film handed over, shared, asked for by the launcher shortcut,
-         * or opened from the folder list itself each carry something saying so,
-         * and none of them come through here.
-         */
+        // honour "Start on" here too; before setContentView so nothing is drawn
         if (savedInstanceState == null && wantsHomeInstead(getIntent())) {
             startActivity(new Intent(this, HomeActivity.class)
                     .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
@@ -467,22 +376,7 @@ public class PlayerActivity extends Activity {
             }
         }
 
-        /*
-         * One player, however many ways in there are.
-         *
-         * The manifest used to say singleTask, which guaranteed this by hand:
-         * every launch was routed to the one instance. That had to go when the
-         * home screen arrived -- it also dragged launches from other
-         * applications into this app's task, so Back stopped returning to
-         * whoever sent the film. See the note in the manifest.
-         *
-         * singleTop does not guarantee it, and one case genuinely breaks
-         * without this: with "keep playing the sound" switched on, a film
-         * started from here goes on playing after its window is gone, and a
-         * second film arriving from another application would have played over
-         * the top of it. So the previous one is closed here, which is what
-         * singleTask did silently.
-         */
+        // singleTop allows a second instance; close the previous so two films never play
         final PlayerActivity previous = currentInstance == null ? null : currentInstance.get();
         if (previous != null && previous != this && !previous.isFinishing()) {
             previous.finish();
@@ -565,11 +459,7 @@ public class PlayerActivity extends Activity {
                 frameRendered = true;
                 playerView.setControllerShowTimeoutMs(-1);
                 scrubbingStart = player.getCurrentPosition();
-                // Keep the buffered band on screen for the length of the drag.
                 PlayerActivity.this.timeBar.holdBufferedPosition(player.getBufferedPosition());
-                // Both engines snap to the nearest keyframe while the bar is
-                // being dragged, so the same drag finishes in the same place
-                // whichever one is playing.
                 seekToKeyframes(SeekParameters.CLOSEST_SYNC);
                 startThumbnails();
                 reportScrubbing(position);
@@ -586,6 +476,8 @@ public class PlayerActivity extends Activity {
                 hideThumbnail();
                 isScrubbing = false;
                 PlayerActivity.this.timeBar.releaseBufferedPosition();
+                // the control view listens first, so the drag's seek is already sent
+                com.brouken.player.engine.SeekPrecision.exact(player);
                 if (restorePlayState) {
                     restorePlayState = false;
                     playerView.setControllerShowTimeoutMs(PlayerActivity.CONTROLLER_TIMEOUT);
@@ -605,7 +497,8 @@ public class PlayerActivity extends Activity {
             if (player.isPlaying()) {
                 player.pause();
             } else {
-                player.play();
+                // a bare play() at the end does nothing on Media3; this restarts it
+                androidx.media3.common.util.Util.handlePlayButtonAction(player);
             }
             updateButtonPlayPause();
             resetHideCallbacks();
@@ -624,7 +517,6 @@ public class PlayerActivity extends Activity {
 
         buttonOpen.setOnLongClickListener(view -> {
             final Runnable loadFile = this::openSubtitleFilePicker;
-            // Unconfigured, this behaves exactly as it always did.
             if (onlineController != null && onlineController.isConfigured()) {
                 OpenMenu.showSubtitleSources(this, loadFile, this::searchOnlineSubtitles,
                         this::reIdentifyOnline,
@@ -657,15 +549,16 @@ public class PlayerActivity extends Activity {
         buttonAspectRatio.setContentDescription(getString(R.string.button_crop));
         updatebuttonAspectRatioIcon();
         buttonAspectRatio.setOnClickListener(view -> {
-            playerView.setScale(1.f);
+            if (engineUi() != null) {
+                engineUi().setZoom(1f);
+            } else {
+                playerView.setScale(1.f);
+            }
             aspectStep = (aspectStep + 1) % (3 + FORCED_ASPECTS.length);
             applyAspectStep(true);
             updatebuttonAspectRatioIcon();
             resetHideCallbacks();
         });
-        // Holding the frame button starts free zoom. A touchscreen can also
-        // pinch, but there is no reason the other way in should exist only on a
-        // television: the same hold does the same thing on a phone.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             buttonAspectRatio.setOnLongClickListener(v -> {
                 scaleStart();
@@ -702,15 +595,6 @@ public class PlayerActivity extends Activity {
         final int titleViewPaddingHorizontal = Utils.dpToPx(14);
         final int titleViewPaddingVertical = getResources().getDimensionPixelOffset(R.dimen.exo_styled_bottom_bar_time_padding);
         FrameLayout centerView = playerView.findViewById(R.id.exo_controls_background);
-        /*
-         * The name, and under it what is actually playing.
-         *
-         * Knowing that a file is 4K HEVC with a 5.1 E-AC-3 track answers most
-         * of the questions that otherwise mean opening two pickers, and it is
-         * the fastest way to tell whether the engine fell back to something it
-         * could decode. The line comes from the same track information both
-         * engines now report, so it reads the same on either.
-         */
         titleBar = new LinearLayout(this);
         titleBar.setOrientation(LinearLayout.HORIZONTAL);
         titleBar.setGravity(Gravity.CENTER_VERTICAL);
@@ -719,18 +603,7 @@ public class PlayerActivity extends Activity {
         titleBar.setPadding(titleViewPaddingHorizontal, titleViewPaddingVertical, titleViewPaddingHorizontal, titleViewPaddingVertical);
         titleBar.setVisibility(View.GONE);
 
-        /*
-         * One way out, in the corner every other application puts it.
-         *
-         * It does not need to know where it came from. Back already returns to
-         * whoever started the player -- the home screen when the file was
-         * picked there, Stremio when Stremio handed it over -- so the arrow
-         * does what leaving does and the task stack decides the rest.
-         *
-         * Not the Back path itself: that hides the controls first, and this
-         * button only exists while they are up, so it would take two presses to
-         * do what it plainly says.
-         */
+        // leaves directly; the Back path would only hide the controls first
         buttonBack = new ImageButton(this, null, 0, R.style.ExoStyledControls_Button_Bottom);
         buttonBack.setImageResource(R.drawable.ic_arrow_back_24dp);
         buttonBack.setId(View.generateViewId());
@@ -738,10 +611,6 @@ public class PlayerActivity extends Activity {
         buttonBack.setOnClickListener(view -> leavePlayer());
         titleBar.addView(buttonBack);
 
-        /*
-         * The name and the meta line stack beside the arrow rather than under
-         * it, so the bar stays one row tall however long the file name is.
-         */
         final LinearLayout titleColumn = new LinearLayout(this);
         titleColumn.setOrientation(LinearLayout.VERTICAL);
         titleColumn.setLayoutParams(new LinearLayout.LayoutParams(
@@ -805,30 +674,7 @@ public class PlayerActivity extends Activity {
                     }
                 }
 
-                /*
-                 * One safe margin, the same at both ends.
-                 *
-                 * What has to be kept clear of differs by device and by which
-                 * way round the phone is held: a camera cut into one edge, a
-                 * navigation bar that moves to a side in landscape, the curve
-                 * of a waterfall screen. Insetting only the side that has
-                 * something on it is correct and looks broken -- on a Pixel the
-                 * seek bar started a camera's width in from the left and ran
-                 * clean off the right, which reads as a bug rather than as
-                 * room left for a camera.
-                 *
-                 * So both ends get the larger of the two. Nothing can sit under
-                 * an obstruction, both ends match whichever way the phone is
-                 * turned, and where there is nothing to avoid -- portrait, a
-                 * tablet, a television -- the number is zero and nothing moves.
-                 * The picture itself is not inset: it still fills the screen
-                 * and runs under the cutout, as it should.
-                 *
-                 * Padding rather than margins, on all three rows. Mixing the
-                 * two is what let them disagree with each other: the bars were
-                 * margined for a navigation bar and padded for a cutout, while
-                 * the seek bar was only ever padded.
-                 */
+                // both ends get the larger side inset so the rows stay symmetric
                 final int cutoutLeft;
                 final int cutoutRight;
                 if (Build.VERSION.SDK_INT >= 28 && windowInsets.getDisplayCutout() != null) {
@@ -848,15 +694,6 @@ public class PlayerActivity extends Activity {
                 int progressBarMarginBottom = 0;
 
                 if (Build.VERSION.SDK_INT >= 35) {
-                    /*
-                     * The band behind the status bar covers the whole width.
-                     *
-                     * It used to stop short of a navigation bar at one side,
-                     * which left the clock and the battery sitting on bare
-                     * picture at one corner and on the band everywhere else.
-                     * It is a scrim, not a control: nothing in it can be under
-                     * anything, so it has nothing to keep clear of.
-                     */
                     final View exoTop = findViewById(R.id.exo_top);
                     exoTop.getLayoutParams().height = windowInsets.getSystemWindowInsetTop();
                     Utils.setViewMargins(exoTop, 0, 0, 0, 0);
@@ -866,17 +703,7 @@ public class PlayerActivity extends Activity {
                     params.height = getResources().getDimensionPixelSize(R.dimen.exo_styled_bottom_bar_height) + windowInsets.getSystemWindowInsetBottom();
                     exoBottomBar.setLayoutParams(params);
 
-                    /*
-                     * The controls use the whole width the screen has.
-                     *
-                     * These two spacers reserved the navigation bar's width at
-                     * the sides, which in landscape left a band of nothing at
-                     * one end of the bottom bar while the seek bar above it ran
-                     * edge to edge -- so the row looked misaligned and short of
-                     * the screen. The seek bar was never inset, so matching it
-                     * is what makes the two agree. The bar's height still
-                     * accounts for the navigation bar underneath it.
-                     */
+                    // no side spacers, so the bottom bar lines up with the seek bar
                     findViewById(R.id.exo_left).getLayoutParams().width = 0;
                     findViewById(R.id.exo_right).getLayoutParams().width = 0;
 
@@ -912,16 +739,7 @@ public class PlayerActivity extends Activity {
 
                     @Override
                     public String mediaName() {
-                        /*
-                         * What the launching app called it, first.
-                         *
-                         * Stremio, Nuvio and the rest hand over a title along
-                         * with the link, and it is a better answer than
-                         * anything that can be dug out of a URL whose last
-                         * segment is a hash behind a signed query string. The
-                         * name is still parsed afterwards, since what arrives
-                         * is as often a release name as a title.
-                         */
+                        // the launching app's title beats a name taken from the URL
                         if (apiTitle != null && !apiTitle.trim().isEmpty()) {
                             return apiTitle.trim();
                         }
@@ -951,14 +769,6 @@ public class PlayerActivity extends Activity {
         findViewById(R.id.delete).setOnClickListener(view -> askDeleteMedia());
 
         findViewById(R.id.next).setOnClickListener(view -> {
-            /*
-             * The folder the film came from decides, where there is one.
-             *
-             * The older route below reads the folder through the Storage Access
-             * Framework, which is why it has to ask for a grant first. A film
-             * opened from the home screen needs none of that: the list it came
-             * out of is already known, in the order it was being shown in.
-             */
             if (neighbours.next != null) {
                 playInFolder(neighbours.next);
             } else if (!isTvBox && mPrefs.askScope) {
@@ -981,7 +791,6 @@ public class PlayerActivity extends Activity {
 
         // Prevent double tap actions in controller
         findViewById(R.id.exo_bottom_bar).setOnTouchListener((v, event) -> true);
-        //titleView.setOnTouchListener((v, event) -> true);
 
         playerListener = new PlayerListener();
 
@@ -996,9 +805,6 @@ public class PlayerActivity extends Activity {
         final ImageButton exoSubtitle = exoBasicControls.findViewById(R.id.exo_subtitle);
         exoBasicControls.removeView(exoSubtitle);
 
-        // Audio tracks sit beside subtitles in the controls rather than being
-        // buried in the settings panel: on a dual-language file it is reached
-        // as often as the subtitle button next to it.
         buttonAudioTrack = exoBasicControls.findViewById(R.id.audio_track);
         exoBasicControls.removeView(buttonAudioTrack);
         buttonAudioTrack.setOnClickListener(view -> showAudioMenu());
@@ -1007,12 +813,10 @@ public class PlayerActivity extends Activity {
         exoBasicControls.removeView(exoSettings);
         final ImageButton exoRepeat = exoBasicControls.findViewById(R.id.exo_repeat_toggle);
         exoBasicControls.removeView(exoRepeat);
-        //exoBasicControls.setVisibility(View.GONE);
 
         exoSettings.setOnClickListener(view -> osdSettingsController.showPlayerSettings());
 
         exoSettings.setOnLongClickListener(view -> {
-            //askForScope(false, false);
             openSettingsScreen();
             return true;
         });
@@ -1060,15 +864,6 @@ public class PlayerActivity extends Activity {
                 resetHideCallbacks();
             });
         }
-        /*
-         * The strip is built from the order somebody chose, not a fixed one.
-         *
-         * Each button still appears only where it makes sense -- no rotate on a
-         * television, no picture-in-picture where the device has none, no loop
-         * unless it is switched on -- and anything hidden is simply not added.
-         * ControlOrder decides the sequence; the conditions stay here, because
-         * this is where the views are.
-         */
         for (final String key : ControlOrder.order(this)) {
             if (ControlOrder.hidden(this).contains(key)) {
                 continue;
@@ -1100,12 +895,8 @@ public class PlayerActivity extends Activity {
             }
         }
 
-        // A fading edge is the only hint that there is more of the strip; with
-        // a hard edge it looks like the buttons simply end at the screen.
         horizontalScrollView.setHorizontalFadingEdgeEnabled(true);
         horizontalScrollView.setFadingEdgeLength(Utils.dpToPx(24));
-        // So the row stretches to the bar when the buttons fit, and scrolls only
-        // when they do not.
         horizontalScrollView.setFillViewport(true);
 
         exoBasicControls.addView(horizontalScrollView, new LinearLayout.LayoutParams(
@@ -1122,8 +913,6 @@ public class PlayerActivity extends Activity {
             public void onVisibilityChanged(int visibility) {
                 controllerVisible = visibility == View.VISIBLE;
                 if (BuildConfig.DEBUG) {
-                    // Timestamped, so how long the controls actually stayed can
-                    // be measured rather than counted by hand.
                     Utils.log("Controls " + (controllerVisible ? "shown" : "hidden")
                             + " (timeout " + CONTROLLER_TIMEOUT + "ms)");
                 }
@@ -1136,13 +925,14 @@ public class PlayerActivity extends Activity {
                 keepSubtitleButtonEnabled();
                 if (controllerVisible) {
                     startDurationTicker();
-                    // The top line carries the speed of a stream, which is the
-                    // one part of it that changes while it is being looked at.
                     updateMetaLine();
                     startMetaTicking();
                 } else {
                     playerView.removeCallbacks(durationTicker);
                     stopMetaTicking();
+                    if (skipController != null) {
+                        skipController.reclaimFocus();
+                    }
                 }
 
 
@@ -1159,9 +949,7 @@ public class PlayerActivity extends Activity {
                 Utils.toggleSystemUi(PlayerActivity.this, playerView, visibility == View.VISIBLE);
                 if (visibility == View.VISIBLE) {
                     // Because when using dpad controls, focus resets to first item in bottom controls bar.
-                    // The one in the time row first: the centre button is hidden
-                    // unless the info card is up, and focusing something nobody
-                    // can see is what sent the remote to the middle of the row.
+                    // the centre button is hidden unless the info card is up
                     final View focusTarget =
                             buttonPlayPause != null && buttonPlayPause.getVisibility() == View.VISIBLE
                                     ? buttonPlayPause
@@ -1173,30 +961,15 @@ public class PlayerActivity extends Activity {
                 }
 
                 if (controllerVisible && playerView.isControllerFullyVisible()) {
-                    /*
-                     * The introduction belongs to the home screen now.
-                     *
-                     * The two spotlights that were here were written when the
-                     * player was the only screen. With a folder list in front
-                     * of it they fired over a film that was already playing and
-                     * drew themselves cut off, and the first pointed at the
-                     * Open button to explain how to choose a video -- which is
-                     * not how anybody starts any more. See Intro.
-                     */
                     if (errorToShow != null) {
                         showError(errorToShow);
                         errorToShow = null;
                     }
                 }
-
-                // Registration no longer follows the controls: the callback is
-                // what stops back leaving a locked player, and the controls are
-                // hidden exactly when it is locked.
             }
         });
 
         youTubeOverlay = findViewById(R.id.youtube_overlay);
-        // How far a double tap jumps, from settings.
         youTubeOverlay.seekSeconds(mPrefs.doubleTapSeekSeconds);
 
         youTubeOverlay.performListener(new YouTubeOverlay.PerformListener() {
@@ -1204,7 +977,6 @@ public class PlayerActivity extends Activity {
             public void onAnimationStart() {
                 youTubeOverlay.setAlpha(1.0f);
                 youTubeOverlay.setVisibility(View.VISIBLE);
-                // The info card is for settling in, not for seeking through.
                 hideOverlayCardForNow();
             }
 
@@ -1255,21 +1027,10 @@ public class PlayerActivity extends Activity {
             Utils.toggleSystemUi(this, playerView, true);
         }
         if (keptPlayingInBackground && player != null) {
-            // It never stopped, so it must not be built again: rebuilding would
-            // silence what is playing and start it over from the saved position.
-            // The window comes back, the surface with it, and the picture
-            // returns of its own accord.
+            // still playing; rebuilding would restart it from the saved position
             keptPlayingInBackground = false;
         } else if (keptPlayerForSettings && player != null) {
-            /*
-             * Nothing is decided here, and that is the point.
-             *
-             * What settings did is not known yet: this device runs onStart
-             * before it delivers the result of the trip, so anything decided
-             * here would be decided against the values from before it. The
-             * decision waits for onResume, which the platform runs after the
-             * result has arrived, whichever order the two before it come in.
-             */
+            // decided in onResume: the settings result may arrive after onStart
         } else {
             keptPlayingInBackground = false;
             keptPlayerForSettings = false;
@@ -1277,8 +1038,7 @@ public class PlayerActivity extends Activity {
         }
         updateButtonRotation();
 
-        // After the player exists, so the dialog sits over the idle player
-        // rather than a blank window. Once only, per launch.
+        // after the player exists, so the dialog is not over a blank window
         if (pendingResumeAsk) {
             pendingResumeAsk = false;
             askResumeLastVideo();
@@ -1315,19 +1075,10 @@ public class PlayerActivity extends Activity {
     public void onResume() {
         super.onResume();
         restorePlayStateAllowed = true;
-        // Again here, not only in onStart: on Android 12 and later a television
-        // restyles between the two, and doing it in both places costs nothing
-        // and removes a device test that had no business existing.
+        // again here: on Android 12+ a TV can restyle between onStart and onResume
         updateSubtitleStyle(this);
 
-        /*
-         * The settings trip is settled here, where what was changed is known.
-         *
-         * The platform hands over an activity result immediately before this,
-         * whichever side of onStart it arrives on -- so this is the first
-         * moment both facts are in: that the player was kept, and whether
-         * anything was changed that a kept player cannot take.
-         */
+        // the settings result is delivered just before onResume
         if (keptPlayerForSettings && player != null) {
             keptPlayerForSettings = false;
             if (settingsWantARebuild) {
@@ -1359,22 +1110,7 @@ public class PlayerActivity extends Activity {
         }
         playerView.setCustomErrorMessage(null);
 
-        /*
-         * The film goes on being heard, if that is what was asked for.
-         *
-         * The player normally dies here, which is right for a video player: the
-         * screen has gone and decoding a picture nobody can see is a waste of a
-         * battery. It is wrong for the other thing people do with this, which
-         * is put the phone in a pocket and keep listening -- a lecture, a
-         * podcast, a long interview, the last twenty minutes of a film on a
-         * bus.
-         *
-         * Only while it is actually playing, and never on the way out: a paused
-         * film has nothing to keep, and a film the viewer has left is finished
-         * with. The picture stops by itself once the window is gone -- Media3
-         * loses the surface, mpv drops to no video output -- so what carries on
-         * is the sound alone.
-         */
+        // background audio; the picture stops by itself once the window is gone
         if (keepPlayingInBackground()) {
             keptPlayingInBackground = true;
             savePlayer();
@@ -1382,15 +1118,7 @@ public class PlayerActivity extends Activity {
         }
         keptPlayingInBackground = false;
 
-        /*
-         * And the trip to this app's own settings keeps it too.
-         *
-         * Not for the sound -- the film is paused while you are in there -- but
-         * so that coming back is coming back, rather than the file being opened
-         * again from the beginning of a buffer. Only for our settings screen,
-         * only while a film is loaded, and the picture is let go of: the window
-         * is gone, so there is nothing to draw on until it returns.
-         */
+        // keep the player, paused, across a trip to our own settings
         if (keptPlayerForSettings && player != null) {
             resumeAfterSettings = player.isPlaying();
             if (resumeAfterSettings) {
@@ -1405,29 +1133,34 @@ public class PlayerActivity extends Activity {
 
     private boolean keepPlayingInBackground() {
         return mPrefs != null && mPrefs.backgroundAudio
-                && player != null && player.isPlaying()
+                && ownsPlayer() && player.isPlaying()
                 && haveMedia && !isFinishing();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Whatever was kept alive to be listened to ends here: the activity is
-        // going, and a player with nothing to belong to would go on holding the
-        // audio device.
-        if (player != null) {
+        // only this screen's own player; a newer screen may already have one playing
+        if (ownsPlayer()) {
             keptPlayingInBackground = false;
             releasePlayer(false);
+        } else if (mediaSession != null) {
+            // This screen's own session, never the newer screen's.
+            mediaSession.release();
+            if (sharedSession == mediaSession) {
+                sharedSession = null;
+            }
+            mediaSession = null;
         }
+        hideLockedTimeline();
+        stopPosterWatch();
         mPrefs.mSharedPreferences.unregisterOnSharedPreferenceChangeListener(preferenceListener);
     }
 
     @SuppressLint("GestureBackNavigation")
     @Override
     public void onBackPressed() {
-        // From Android 13 this is where Back arrives, gesture or button, rather
-        // than as a key event -- so it is the only place a pointer can be told
-        // about it there.
+        // from Android 13 Back arrives here rather than as a key event
         if (hintTookBack()) {
             return;
         }
@@ -1435,13 +1168,6 @@ public class PlayerActivity extends Activity {
         super.onBackPressed();
     }
 
-    /**
-     * Leaving, from the arrow in the title bar.
-     *
-     * The same ending as Back reaches once the controls are already down, so
-     * whoever started the player gets the film handed back to them the way they
-     * expect -- including the position an external application asked for.
-     */
     private void leavePlayer() {
         if (locked) {
             return;
@@ -1456,7 +1182,8 @@ public class PlayerActivity extends Activity {
             Intent intent = new Intent("com.mxtech.intent.result.VIEW");
             intent.putExtra(API_END_BY, playbackFinished ? "playback_completion" : "user");
             if (!playbackFinished) {
-                if (player != null) {
+                // This film's player, not a newer screen's.
+                if (ownsPlayer()) {
                     long duration = player.getDuration();
                     if (duration != C.TIME_UNSET) {
                         intent.putExtra(API_DURATION, (int) player.getDuration());
@@ -1493,6 +1220,7 @@ public class PlayerActivity extends Activity {
                 if (text != null) {
                     final Uri parsedUri = Uri.parse(text);
                     if (parsedUri.isAbsolute()) {
+                        resetApiAccess();
                         mPrefs.updateMedia(this, parsedUri, null);
                         focusPlay = true;
                         initializePlayer();
@@ -1511,24 +1239,18 @@ public class PlayerActivity extends Activity {
             case KeyEvent.KEYCODE_BUTTON_SELECT:
                 if (player == null)
                     break;
+                // Play from the end of a film starts it again, as the buttons do.
                 if (keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
                     player.pause();
                 } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
-                    player.play();
+                    androidx.media3.common.util.Util.handlePlayButtonAction(player);
                 } else if (player.isPlaying()) {
                     player.pause();
                 } else {
-                    player.play();
+                    androidx.media3.common.util.Util.handlePlayButtonAction(player);
                 }
                 return true;
-            /*
-             * The skip keys on a headset, a remote or a car stereo.
-             *
-             * They mean the same thing as the two buttons, and do nothing where
-             * those two are not on screen: a film with nothing either side of
-             * it has nowhere to send them, and swallowing the press would be
-             * worse than letting the system have it.
-             */
+            // with no neighbour the key is left to the system
             case KeyEvent.KEYCODE_MEDIA_NEXT:
                 if (neighbours.next != null) {
                     playInFolder(neighbours.next);
@@ -1560,7 +1282,7 @@ public class PlayerActivity extends Activity {
                     if (player.isPlaying()) {
                         player.pause();
                     } else {
-                        player.play();
+                        androidx.media3.common.util.Util.handlePlayButtonAction(player);
                     }
                     return true;
                 }
@@ -1576,8 +1298,6 @@ public class PlayerActivity extends Activity {
                     if (playerView.keySeekStart == -1) {
                         playerView.keySeekStart = pos;
                     }
-                    // The step the user set, not a fixed ten seconds: the same
-                    // setting the double tap uses, so both mean the same thing.
                     long seekTo = pos - mPrefs.doubleTapSeekSeconds * 1000L;
                     if (seekTo < 0)
                         seekTo = 0;
@@ -1658,21 +1378,10 @@ public class PlayerActivity extends Activity {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        /*
-         * A way out of the lock with a key.
-         *
-         * Unlocking was wired to a tap on the on-screen message, and that was
-         * only ever attached on a device with a touchscreen — so a remote could
-         * lock the player and then had no way back at all, which read as the
-         * lock button doing nothing. Back or OK lifts it; anything else shows
-         * the padlock, so it is clear why the film is ignoring what is being
-         * pressed. The tap still works too, on anything that can tap.
-         */
+        // locked: holding OK unlocks, any other key shows the padlock
         if (locked) {
             final int lockedKey = event.getKeyCode();
-            // The volume is not part of what a lock is for: it exists to stop a
-            // sleeve or a pocket changing the film, and a volume key is a
-            // deliberate press on a button nothing else reaches.
+            // volume keys still work while locked
             if (lockedKey == KeyEvent.KEYCODE_VOLUME_UP
                     || lockedKey == KeyEvent.KEYCODE_VOLUME_DOWN
                     || lockedKey == KeyEvent.KEYCODE_VOLUME_MUTE) {
@@ -1682,18 +1391,7 @@ public class PlayerActivity extends Activity {
                 return true;
             }
 
-            /*
-             * Held, not pressed.
-             *
-             * OK used to lift the lock on a single press, which is the first
-             * thing anybody does with a remote in their hand — so the lock
-             * lasted exactly one keystroke and then everything worked again,
-             * which reads as the lock not working at all. Holding it is the
-             * same deliberate act as the hold that locks the screen with a
-             * finger, and nothing else gets through.
-             */
-            // A quick press repeats not at all; holding one down repeats from the
-            // first tick onwards, and a synthetic long press carries the flag.
+            // a held key repeats from the first tick; a synthetic long press sets the flag
             final boolean held = event.isLongPress() || event.getRepeatCount() >= 1;
             final boolean confirm = lockedKey == KeyEvent.KEYCODE_DPAD_CENTER
                     || lockedKey == KeyEvent.KEYCODE_ENTER
@@ -1745,19 +1443,7 @@ public class PlayerActivity extends Activity {
         }
 
         if (!controllerVisibleFully) {
-            /*
-             * The skip offer is the one thing on screen while the controls are
-             * not.
-             *
-             * With the controls hidden every key is handled here and none of
-             * them is offered to the view that has the focus — which is right
-             * for a player with nothing on it, and wrong the moment something
-             * is. The skip button takes the focus for a remote and highlights
-             * itself, so it looks ready; pressing OK went to the line below
-             * instead and was read as play/pause, which paused the film and
-             * left the button sitting there. Confirm keys go to it when it has
-             * the focus. Everything else, and every other moment, is unchanged.
-             */
+            // with the controls hidden, OK still goes to a focused skip button
             if (isConfirmKey(event.getKeyCode())
                     && skipController != null && skipController.buttonHasFocus()) {
                 return super.dispatchKeyEvent(event);
@@ -1773,20 +1459,7 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    /*
-     * A pointer has to answer a remote.
-     *
-     * It is dismissed by tapping it or by tapping away from it, and a television
-     * can do neither. The library listens for Back, which was no help twice
-     * over: from Android 13 Back is not a key event, so it never arrived, and
-     * what did arrive at the activity closed the film instead -- pressing the
-     * one key a remote always has walked out of the player.
-     *
-     * OK presses the circle, which is what pressing it with a finger does. Back
-     * puts the pointer away without pressing it. Nothing else reaches the film
-     * while a pointer is up, except the volume, which belongs to the phone
-     * rather than to whatever is on screen.
-     */
+    // remote keys for a hint pointer: OK presses it, Back dismisses it
     private boolean hintTakesKey(final KeyEvent event) {
         if (currentHint == null || !currentHint.isVisible()) {
             return false;
@@ -1797,17 +1470,7 @@ public class PlayerActivity extends Activity {
                 || keyCode == KeyEvent.KEYCODE_VOLUME_MUTE) {
             return false;
         }
-        /*
-         * Acted on as the key goes down, not as it comes up.
-         *
-         * Back is the reason. With android:enableOnBackInvokedCallback the
-         * system turns a back press into a call to onBackPressed, but only if
-         * the window did not eat the key first -- and swallowing the down half
-         * while waiting for the up half is exactly eating it. Back then did
-         * nothing at all: no key came up, and no back was invoked either.
-         *
-         * A key held down repeats, so only the first press counts.
-         */
+        // act on key down: eating the down half stops the system invoking Back
         if (event.getAction() != KeyEvent.ACTION_DOWN) {
             return true;
         }
@@ -1827,7 +1490,6 @@ public class PlayerActivity extends Activity {
         return true;
     }
 
-    /** Whether a pointer was there to take the Back, wherever it came from. */
     private boolean hintTookBack() {
         if (currentHint == null || !currentHint.isVisible()) {
             return false;
@@ -1836,22 +1498,7 @@ public class PlayerActivity extends Activity {
         return true;
     }
 
-    /*
-     * Back, registered for the pointer and only while one is up.
-     *
-     * From Android 13 Back is not a key event: it is delivered to whichever
-     * OnBackInvokedCallback the system decides is in front, so nothing the
-     * player does with keys can see it. Overriding onBackPressed is not enough
-     * either -- proved on the phone, where a Back press reached neither the key
-     * handler nor the override, and simply closed the film while the pointer
-     * sat there.
-     *
-     * A pointer is an overlay, and the framework has a priority that means
-     * exactly that. Registered when a pointer appears and taken away when the
-     * last one goes, so Back does what it always did the rest of the time.
-     *
-     * Below 13 Back is still a key event and hintTakesKey has it.
-     */
+    // Android 13+: Back is not a key event; an overlay callback takes it for a pointer
     @Nullable
     private Object hintBackWatch;
 
@@ -1873,13 +1520,6 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    /**
-     * Whether this launch belonged to the home screen rather than the player.
-     *
-     * <p>True only for a bare launch -- no film, nothing handed over, not the
-     * launcher's shortcut, and not sent here by the home screen -- while the
-     * setting says that is where the app opens.
-     */
     private boolean wantsHomeInstead(final Intent intent) {
         if (intent == null || intent.getData() != null) {
             return false;
@@ -1897,7 +1537,6 @@ public class PlayerActivity extends Activity {
                         .getString("startOn", HomeActivity.START_ON_HOME));
     }
 
-    /** OK, on everything that has one. */
     private static boolean isConfirmKey(final int keyCode) {
         return keyCode == KeyEvent.KEYCODE_DPAD_CENTER
                 || keyCode == KeyEvent.KEYCODE_ENTER
@@ -1938,8 +1577,13 @@ public class PlayerActivity extends Activity {
         if (isInPictureInPictureMode) {
             // On Android TV it is required to hide controller in this PIP change callback
             playerView.hideController();
-            setSubtitleTextSizePiP();
-            playerView.setScale(1.f);
+            hideLockedTimeline();
+            if (!pipPrepared && engineUi() != null) {
+                // Entered without going through enterPiP(): the system did it.
+                engineUi().onEnterPip(videoFormat());
+            }
+            pipPrepared = false;
+            inPip = true;
             mReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
@@ -1949,7 +1593,7 @@ public class PlayerActivity extends Activity {
 
                     switch (intent.getIntExtra(EXTRA_CONTROL_TYPE, 0)) {
                         case CONTROL_TYPE_PLAY:
-                            player.play();
+                            androidx.media3.common.util.Util.handlePlayButtonAction(player);
                             break;
                         case CONTROL_TYPE_PAUSE:
                             player.pause();
@@ -1959,9 +1603,11 @@ public class PlayerActivity extends Activity {
             };
             ContextCompat.registerReceiver(this, mReceiver, new IntentFilter(ACTION_MEDIA_CONTROL), ContextCompat.RECEIVER_EXPORTED);
         } else {
-            setSubtitleTextSize();
-            if (mPrefs.resizeMode == AspectRatioFrameLayout.RESIZE_MODE_ZOOM) {
-                playerView.setScale(mPrefs.scale);
+            inPip = false;
+            if (engineUi() != null) {
+                engineUi().onExitPip();
+            } else {
+                releaseFixedSurfaceSize();
             }
             if (mReceiver != null) {
                 unregisterReceiver(mReceiver);
@@ -1977,12 +1623,40 @@ public class PlayerActivity extends Activity {
         }
     }
 
+    // set by enterPiP() until the system confirms the switch
+    private boolean pipPrepared;
+    private boolean inPip;
+
+    private void releaseFixedSurfaceSize() {
+        final View surface = playerView.getVideoSurfaceView();
+        if (surface instanceof SurfaceView) {
+            ((SurfaceView) surface).getHolder().setSizeFromLayout();
+        }
+    }
+
     void resetApiAccess() {
         apiAccess = false;
         apiAccessPartial = false;
         apiTitle = null;
         apiSubs.clear();
+        apiHeaders.clear();
+        apiImdbId = null;
+        apiTmdbId = null;
+        launchMemoryChecked = false;
+        launchStateFor = null;
         mPrefs.setPersistent(true);
+        mPrefs.setMediaTitle(null);
+    }
+
+    // the film the launch extras belong to; opening another film drops them
+    @Nullable
+    private Uri launchStateFor;
+
+    private void claimLaunchState() {
+        if (launchStateFor != null && !launchStateFor.equals(mPrefs.mediaUri)) {
+            resetApiAccess();
+        }
+        launchStateFor = mPrefs.mediaUri;
     }
 
     @Override
@@ -1996,7 +1670,12 @@ public class PlayerActivity extends Activity {
             e.printStackTrace();
         }
 
-        if (resultCode == RESULT_OK && alive) {
+        // a subtitle picked for a kept film is attached without reopening the film
+        final boolean subtitleForKeptPlayer = (requestCode == REQUEST_CHOOSER_SUBTITLE
+                || requestCode == REQUEST_CHOOSER_SUBTITLE_MEDIASTORE)
+                && keptPlayerForSettings && player != null;
+
+        if (resultCode == RESULT_OK && alive && !subtitleForKeptPlayer) {
             releasePlayer();
         }
 
@@ -2054,7 +1733,11 @@ public class PlayerActivity extends Activity {
                     }
                 }
 
-                handleSubtitles(uri);
+                if (subtitleForKeptPlayer) {
+                    attachSubtitle(uri);
+                } else {
+                    handleSubtitles(uri);
+                }
             }
         } else if (requestCode == REQUEST_CHOOSER_SCOPE_DIR) {
             if (resultCode == RESULT_OK) {
@@ -2075,9 +1758,7 @@ public class PlayerActivity extends Activity {
             Utils.log("Back from settings: kept=" + keptPlayerForSettings
                     + " rebuild=" + settingsWantARebuild);
 
-            // Two things the screen cannot be told about: the colour it was
-            // themed with and which buttons were put in the strip. Both are
-            // decided as the screen is built, so both mean building it again.
+            // accent and button strip are fixed when the screen is built
             if (!Accent.stored(this).equals(appliedAccent)
                     || mPrefs.repeatToggle != appliedRepeatToggle) {
                 recreate();
@@ -2087,8 +1768,7 @@ public class PlayerActivity extends Activity {
             // A URL picked from the history screen comes back as the result data.
             if (resultCode == RESULT_OK && data != null && data.getData() != null) {
                 setMedia(data.getData(), data.getType());
-                // A different film is the one case where the player kept for
-                // the trip is no use: it is holding the wrong file.
+                // the kept player holds the wrong file now
                 settingsWantARebuild = true;
             }
         } else {
@@ -2097,65 +1777,42 @@ public class PlayerActivity extends Activity {
 
         // Init here because onStart won't follow when app was only paused when file chooser was shown
         // (for example pop-up file chooser on tablets)
-        if (resultCode == RESULT_OK && alive) {
+        if (resultCode == RESULT_OK && alive && !subtitleForKeptPlayer) {
             initializePlayer();
         }
     }
 
-    void handleSubtitles(Uri uri) {
+    @Nullable
+    Uri handleSubtitles(Uri uri) {
+        // keep copies this film or a remembered one still uses
+        SubtitleUtils.clearCache(this, subtitleFilesInUse());
         // Convert subtitles to UTF-8 if necessary
-        SubtitleUtils.clearCache(this);
         uri = Utils.convertToUTF(this, uri);
-        mPrefs.updateSubtitle(uri);
+        // null while a remote subtitle downloads; it arrives later
+        if (uri != null) {
+            mPrefs.updateSubtitle(uri);
+        }
+        return uri;
     }
 
-    /*
-     * True once this engine has actually put a picture on screen.
-     *
-     * Which settles the question of whether it can play the file. The track
-     * list is reported more than once — adding a subtitle changes it, and so
-     * does a stream reconfiguring itself — and one of those reports arriving
-     * without a video group in it was being read as "this engine cannot manage
-     * the video", which is how a film playing perfectly well on Media3 was
-     * interrupted to be handed to mpv.
-     */
+    private List<Uri> subtitleFilesInUse() {
+        final List<Uri> inUse = new ArrayList<>(mPrefs.subtitleUris);
+        for (final MediaItem.SubtitleConfiguration subtitle : apiSubs) {
+            inUse.add(subtitle.uri);
+        }
+        inUse.addAll(LaunchMemory.subtitleFiles(mPrefs.mSharedPreferences));
+        return inUse;
+    }
+
+    // a drawn frame proves this engine can play the file
     private boolean pictureSeen;
 
-    /**
-     * The shape of the picture, as last reported by a player that had one.
-     *
-     * <p>Rebuilding the media item -- which is what attaching a subtitle does
-     * -- leaves the player reporting no size at all until the new source has
-     * been read. Asking it for the shape during that gap answers zero, and the
-     * aspect-ratio button wrote that zero into the frame: the picture then sat
-     * at whatever shape it happened to have, and every further press worked
-     * from zero again, so the button appeared to do nothing.
-     *
-     * <p>Keeping the last real answer means the frame is always given a shape
-     * that belongs to the film. It is cleared with the rest of what describes
-     * one film in {@link #forgetPreviousFilm()}.
-     */
+    // last real size: a rebuilt media item reports zero until the source is read
     private androidx.media3.common.VideoSize lastVideoSize;
 
-    /**
-     * The addresses of the subtitles handed over with this file.
-     *
-     * Needed because a failing sidecar does not announce itself as a subtitle.
-     * Three earlier attempts at this looked for the track becoming unselected,
-     * which never happens — when a subtitle fails, ExoPlayer disables the
-     * renderer internally and the track list goes on reporting
-     * "sel=true sup=true", which is why the picker says "Playing now" over a
-     * blank screen. The load error is the only place the truth appears, and it
-     * arrives with trackType -1 rather than TRACK_TYPE_TEXT, because a sidecar
-     * is loaded by a source that does not tag what it is for.
-     *
-     * What it does carry is the address it was trying to read, so that is what
-     * is matched. An embedded track still comes through as TRACK_TYPE_TEXT and
-     * is caught by the type instead.
-     */
+    // a failed sidecar's load error has trackType -1, so it is matched by URI
     private final java.util.Set<String> sidecarSubtitleUris = new java.util.HashSet<>();
 
-    /** Whether this file has already been reported as having a bad subtitle. */
     private boolean subtitleFailureReported;
 
 
@@ -2179,8 +1836,7 @@ public class PlayerActivity extends Activity {
         if (BuildConfig.DEBUG) Utils.log("Falling back to mpv for this file");
         Utils.showText(playerView, getString(R.string.engine_fallback_mpv), 2500);
 
-        // Rebuilt rather than patched: the engine is chosen when the player is
-        // constructed, so the whole player has to come back with the new one.
+        // the engine is chosen when the player is built
         captureTrackSelection();
         releasePlayer();
         initializePlayer();
@@ -2195,15 +1851,7 @@ public class PlayerActivity extends Activity {
                 || ("auto".equals(mPrefs.playbackEngine) && mpvFallbackActive);
     }
 
-    /*
-     * Carry the chosen tracks across a change of engine.
-     *
-     * The two engines number their tracks differently -- Media3 uses the id out
-     * of the container, mpv its own -- so the remembered id means something
-     * else on the other side and the film came back in another language. The
-     * language is carried instead, with the position among tracks of that kind
-     * as a fallback for files that label nothing.
-     */
+    // engines number tracks differently, so carry language and index instead
     private String carryAudioLanguage;
     private int carryAudioIndex = -1;
     private String carryTextLanguage;
@@ -2326,24 +1974,32 @@ public class PlayerActivity extends Activity {
     public void initializePlayer() {
         boolean isNetworkUri = Utils.isSupportedNetworkUri(mPrefs.mediaUri);
         haveMedia = mPrefs.mediaUri != null;
+        if (haveMedia) {
+            claimLaunchState();
+            restoreLaunchMemory();
+        }
 
-        // Said out loud in a debug build, because "did that reopen the file?"
-        // is otherwise a question only a stopwatch can answer.
         Utils.log("Building the player");
 
-        // A file on the device is not arriving from anywhere, so the bar shows
-        // the whole of it as held rather than creeping along behind the read
-        // ahead. See CustomDefaultTimeBar.
         if (timeBar != null) {
             timeBar.setWholeFileHere(haveMedia && !isNetworkUri);
         }
 
         if (player != null) {
+            if (sharedSession != null) {
+                sharedSession.release();
+                sharedSession = null;
+            }
             player.removeListener(playerListener);
             player.clearMediaItems();
             player.release();
             player = null;
         }
+        if (engineUi != null) {
+            engineUi.release();
+            engineUi = null;
+        }
+        ownPlayer = null;
 
         trackSelector = new DefaultTrackSelector(this);
         trackSelector.setParameters(trackSelector.buildUponParameters()
@@ -2353,9 +2009,6 @@ public class PlayerActivity extends Activity {
                     .setTunnelingEnabled(true)
             );
         }
-        // The same order of preference the other engine is given, from the same
-        // place: a file with three audio tracks should open on the same one
-        // whichever engine is playing it.
         final String[] audioLanguages = Languages.audio(this);
         if (audioLanguages.length > 0) {
             trackSelector.setParameters(trackSelector.buildUponParameters()
@@ -2398,11 +2051,7 @@ public class PlayerActivity extends Activity {
                 new DefaultMediaSourceFactory(this, extractorsFactory)
                         .setSubtitleParserFactory(subtitleParserFactory);
 
-        /*
-         * A meter of our own, so the top line can say how fast a stream is
-         * arriving. It is the library's own meter with a counter wrapped round
-         * it, so the player chooses renditions exactly as it did before.
-         */
+        // the default meter wrapped with a counter for the stream speed readout
         networkSpeed = new com.brouken.player.net.NetworkSpeed(
                 new androidx.media3.exoplayer.upstream.DefaultBandwidthMeter.Builder(this).build());
 
@@ -2418,12 +2067,15 @@ public class PlayerActivity extends Activity {
                 if (userInfo != null && userInfo.length() > 0 && userInfo.contains(":")) {
                     headers.put("Authorization", "Basic " + Base64.encodeToString(userInfo.getBytes(), Base64.NO_WRAP));
                 }
-                // Whatever the app that launched us asked to be sent. A stream
-                // behind a token or a referer check cannot be played without
-                // them, which is how most front-ends hand over a link.
                 headers.putAll(apiHeaders);
                 if (!headers.isEmpty()) {
                     DefaultHttpDataSource.Factory defaultHttpDataSourceFactory = new DefaultHttpDataSource.Factory();
+                    // the data source writes its own User-Agent over these, so set it directly
+                    for (final java.util.Map.Entry<String, String> header : headers.entrySet()) {
+                        if ("User-Agent".equalsIgnoreCase(header.getKey())) {
+                            defaultHttpDataSourceFactory.setUserAgent(header.getValue());
+                        }
+                    }
                     defaultHttpDataSourceFactory.setDefaultRequestProperties(headers);
                     DefaultMediaSourceFactory networkMediaSourceFactory =
                             new DefaultMediaSourceFactory(defaultHttpDataSourceFactory, extractorsFactory)
@@ -2438,22 +2090,14 @@ public class PlayerActivity extends Activity {
             playerBuilder.setLoadControl(BufferProfile.create(this, mPrefs.mediaUri));
         }
         final boolean mpv = useMpvEngine();
-        // Subtitle size and position are remembered per engine, so the settings
-        // have to follow whichever one is about to play.
+        // subtitle size and position are stored per engine
         mPrefs.setSubtitleEngine(mpv ? "mpv" : "media3");
         if (mpv) {
             final com.brouken.player.mpv.MpvPlayer mpvPlayer =
                     new com.brouken.player.mpv.MpvPlayer(this,
                             new com.brouken.player.mpv.MpvOptions(mPrefs.mediaUri)
                                     .withHeaders(apiHeaders));
-            /*
-             * The same sentence the other engine says, from this one.
-             *
-             * A subtitle that will not load is reported on Media3 through a
-             * load error; mpv has no such thing to report, so it notices that
-             * its track list did not grow and says so here. Once per film,
-             * like the other: a viewer needs telling, not nagging.
-             */
+            // mpv has no load error; it reports a track list that did not grow
             mpvPlayer.setSubtitleFailureListener(() -> {
                 if (subtitleFailureReported) {
                     return;
@@ -2463,31 +2107,27 @@ public class PlayerActivity extends Activity {
                 Utils.showText(playerView, getString(R.string.subtitle_would_not_load), 3500);
             });
             player = mpvPlayer;
+            engineUi = new com.brouken.player.engine.MpvEngineUi(playerView, mPrefs, mpvPlayer);
+            // overlays follow the picture as it moves inside mpv's surface
+            mpvPlayer.setPictureListener(this::remeasureOverPicture);
         } else {
             player = playerBuilder.build();
+            engineUi = new com.brouken.player.engine.Media3EngineUi(this, playerView, mPrefs, player);
+        }
+        ownPlayer = player;
+        // Media3 streams only; mpv watches its own seeks
+        if (seekStall != null) {
+            seekStall.stop();
+        }
+        seekStall = player instanceof ExoPlayer && isNetworkUri && networkSpeed != null
+                ? new com.brouken.player.engine.Media3SeekStall(player, networkSpeed,
+                        this::onMedia3SeekStalled)
+                : null;
+        if (osdSettingsController != null) {
+            osdSettingsController.refreshSubtitleValues();
         }
 
-        /*
-         * Say so when a subtitle will not load.
-         *
-         * This took three wrong attempts, each of which looked right in the
-         * code and did nothing on the device, so the reasoning is worth
-         * keeping.
-         *
-         * The obvious approach is to notice that no text track is selected any
-         * more. It does not work: when a subtitle fails, ExoPlayer disables the
-         * renderer internally and getCurrentTracks() goes on reporting the
-         * track as selected. The picker says "Playing now" because, as far as
-         * the track list is concerned, it is. There is no unselected state to
-         * find.
-         *
-         * Nor is it a player error — playback carries on perfectly well
-         * without the subtitle, so nothing is thrown.
-         *
-         * What does happen is a load failure, which the analytics listener
-         * reports along with the type of track it was for. That is the only
-         * place the fact appears, so that is where it is read.
-         */
+        // a failed subtitle still reports as selected; only the load error shows it
         final ExoPlayer errorSource = exo();
         if (errorSource != null) {
             errorSource.addAnalyticsListener(
@@ -2544,11 +2184,13 @@ public class PlayerActivity extends Activity {
 
         if (mediaSession != null) {
             mediaSession.release();
+            mediaSession = null;
         }
 
         if (player.canAdvertiseSession()) {
             try {
                 mediaSession = new MediaSession.Builder(this, player).build();
+                sharedSession = mediaSession;
             } catch (IllegalStateException e) {
                 e.printStackTrace();
             }
@@ -2560,18 +2202,7 @@ public class PlayerActivity extends Activity {
 
         if (haveMedia) {
 
-            aspectStep = savedAspectStepFor(mPrefs.mediaUri);
-            /*
-             * The shape comes from the step, and from nothing else.
-             *
-             * It used to come from the saved resize mode, which only describes
-             * the first three steps — so a file opened on a forced ratio, or
-             * came back from the settings screen, with a step saying 4:3 and a
-             * picture saying something else. Every press of the frame button
-             * then moved on from a position that was not the one on screen, and
-             * it stayed wrong until the player was restarted. One source now,
-             * applied here, so the two cannot disagree.
-             */
+            aspectStep = mPrefs.aspectStep(3 + FORCED_ASPECTS.length);
             applyAspectStep(false);
 
             if (playerView.getResizeMode() == AspectRatioFrameLayout.RESIZE_MODE_ZOOM) {
@@ -2597,15 +2228,10 @@ public class PlayerActivity extends Activity {
                         .build();
                 mediaItemBuilder.setMediaMetadata(mediaMetadata);
             }
-            if (apiAccess && apiSubs.size() > 0) {
-                mediaItemBuilder.setSubtitleConfigurations(apiSubs);
-                rememberSubtitleAddresses(apiSubs);
-            } else {
-                final List<MediaItem.SubtitleConfiguration> subtitles = subtitleConfigurations();
-                if (!subtitles.isEmpty()) {
-                    mediaItemBuilder.setSubtitleConfigurations(subtitles);
-                    rememberSubtitleAddresses(subtitles);
-                }
+            final List<MediaItem.SubtitleConfiguration> subtitles = allSubtitleConfigurations();
+            if (!subtitles.isEmpty()) {
+                mediaItemBuilder.setSubtitleConfigurations(subtitles);
+                rememberSubtitleAddresses(subtitles);
             }
             player.setMediaItem(mediaItemBuilder.build(), mPrefs.getPosition());
 
@@ -2622,6 +2248,7 @@ public class PlayerActivity extends Activity {
 
             videoLoading = true;
             pictureSeen = false;
+            stopNoPictureWatch();
 
             updateLoading(true);
 
@@ -2634,8 +2261,6 @@ public class PlayerActivity extends Activity {
                 titleView.setText(apiTitle);
             } else {
                 titleView.setText(Utils.getFileName(this, mPrefs.mediaUri, false));
-                // For a link this also resolves the real name first, and only
-                // then identifies; a local file already has its name.
                 resolveTitleFromServer(mPrefs.mediaUri);
             }
             autoIdentify(mPrefs.mediaUri);
@@ -2664,7 +2289,6 @@ public class PlayerActivity extends Activity {
             } else if (player instanceof com.brouken.player.mpv.MpvPlayer) {
                 ((com.brouken.player.mpv.MpvPlayer) player).setHandleAudioBecomingNoisy(!isTvBox);
             }
-//            mediaSession.setActive(true);
         } else {
             playerView.showController();
         }
@@ -2683,7 +2307,7 @@ public class PlayerActivity extends Activity {
     }
 
     private void savePlayer() {
-        if (player != null) {
+        if (ownsPlayer()) {
             mPrefs.updateBrightness(mBrightnessControl.currentBrightnessLevel);
             mPrefs.updateOrientation();
 
@@ -2707,8 +2331,7 @@ public class PlayerActivity extends Activity {
     }
 
     public void releasePlayer(boolean save) {
-        // The skip poller runs on a Handler; without this it keeps ticking
-        // against a player that no longer exists.
+        // the skip poller runs on a Handler and would outlive the player
         if (skipController != null) {
             skipController.stop();
         }
@@ -2717,12 +2340,27 @@ public class PlayerActivity extends Activity {
             savePlayer();
         }
 
-        if (player != null) {
-            notifyAudioSessionUpdate(false);
+        // also lowers Media3's raised cues again
+        hideLockedTimeline();
+        stopNoPictureWatch();
+        if (seekStall != null) {
+            seekStall.stop();
+            seekStall = null;
+        }
 
-//            mediaSession.setActive(false);
+        if (ownsPlayer()) {
+            notifyAudioSessionUpdate(false);
+            if (engineUi != null) {
+                engineUi.release();
+                engineUi = null;
+            }
+
             if (mediaSession != null) {
                 mediaSession.release();
+                if (sharedSession == mediaSession) {
+                    sharedSession = null;
+                }
+                mediaSession = null;
             }
 
             if (player.isPlaying() && restorePlayStateAllowed) {
@@ -2732,12 +2370,17 @@ public class PlayerActivity extends Activity {
             player.clearMediaItems();
             player.release();
             player = null;
+            ownPlayer = null;
+        } else if (mediaSession != null && ownPlayer != null) {
+            // a newer screen owns the player; release only this screen's session
+            mediaSession.release();
+            mediaSession = null;
+            ownPlayer = null;
         }
         titleBar.setVisibility(View.GONE);
         updateButtons(false);
     }
 
-    /** Note where each handed-over subtitle lives, so a failure can be recognised. */
     private void rememberSubtitleAddresses(
             final java.util.List<MediaItem.SubtitleConfiguration> subtitles) {
         if (subtitles == null) {
@@ -2772,6 +2415,7 @@ public class PlayerActivity extends Activity {
             updateOverlayCard(isPlaying);
             if (isPlaying) {
                 ensureSkipSegments();
+                watchForNoPicture();
             }
             applyKeepScreenOn(isPlaying);
 
@@ -2797,23 +2441,35 @@ public class PlayerActivity extends Activity {
                 }
             }
 
-            if (!isPlaying) {
+            // unlock on pause or end; isPlaying also drops briefly while buffering
+            if (!isPlaying && (player == null || !player.getPlayWhenReady()
+                    || player.getPlaybackState() == Player.STATE_ENDED
+                    || player.getPlaybackState() == Player.STATE_IDLE)) {
                 PlayerActivity.locked = false;
+            }
+        }
+
+        // if a seek fails to load, the position before it is the one to keep
+        @Override
+        public void onPositionDiscontinuity(@NonNull Player.PositionInfo oldPosition,
+                                            @NonNull Player.PositionInfo newPosition,
+                                            int reason) {
+            if (reason == Player.DISCONTINUITY_REASON_SEEK
+                    || reason == Player.DISCONTINUITY_REASON_SEEK_ADJUSTMENT) {
+                if (!seekUnconfirmed) {
+                    positionBeforeSeek = oldPosition.positionMs;
+                    seekUnconfirmed = true;
+                }
+                if (seekStall != null) {
+                    seekStall.onSeek();
+                }
             }
         }
 
         @SuppressLint("SourceLockedOrientationActivity")
         @Override
         public void onPlaybackStateChanged(int state) {
-            /*
-             * The spinner is for every wait, not only the first one.
-             *
-             * It was shown when a file was opened and hidden when playback
-             * became ready, and nothing brought it back -- so a stall halfway
-             * through a film was a still picture and no explanation. Shown
-             * after a short delay so that the momentary rebuffer after a seek
-             * does not flash it.
-             */
+            // delayed so the brief rebuffer after a seek does not flash the spinner
             coordinatorLayout.removeCallbacks(showLoading);
             if (state == Player.STATE_BUFFERING) {
                 coordinatorLayout.postDelayed(showLoading, 300);
@@ -2833,6 +2489,7 @@ public class PlayerActivity extends Activity {
 
             if (state == Player.STATE_READY) {
                 frameRendered = true;
+                seekUnconfirmed = false;
 
                 if (videoLoading) {
                     videoLoading = false;
@@ -2895,13 +2552,7 @@ public class PlayerActivity extends Activity {
 
                     updateLoading(false);
 
-                    /*
-                     * The speed this file was last watched at, if it has one.
-                     *
-                     * A file with a speed of its own is set even when that
-                     * speed is normal: the last film may have been watched at
-                     * one and a half, and this one asked not to be.
-                     */
+                    // a saved speed is set even at 1x, to undo the previous film's
                     final float speed = mPrefs.speedForUri(mPrefs.mediaUri);
                     if (speed <= 0.99f || speed >= 1.01f
                             || mPrefs.hasSpeedForUri(mPrefs.mediaUri)) {
@@ -2915,8 +2566,7 @@ public class PlayerActivity extends Activity {
                 }
             } else if (state == Player.STATE_ENDED) {
                 playbackFinished = true;
-                // Asked before the timer is told, because being told is what
-                // cancels it.
+                // read before onPlaybackEnded, which cancels it
                 final boolean sleepWantedThisEnding =
                         sleepTimer != null && sleepTimer.willStopAtEndOfFile();
                 if (sleepTimer != null) {
@@ -2926,15 +2576,6 @@ public class PlayerActivity extends Activity {
                     finish();
                     return;
                 }
-                /*
-                 * Straight on to the next one, where that was asked for.
-                 *
-                 * After the sleep timer has had the ending, so a timer set to
-                 * stop at the end of the film still stops at the end of the
-                 * film rather than at the end of the folder. And never for a
-                 * film another application sent: it belongs to that
-                 * application's list, not to a folder here.
-                 */
                 if (mPrefs.autoPlayNext && neighbours.next != null && !sleepWantedThisEnding) {
                     playInFolder(neighbours.next);
                 }
@@ -2944,10 +2585,11 @@ public class PlayerActivity extends Activity {
 
         @Override
         public void onRenderedFirstFrame() {
-            // The engine has drawn a frame, so it can plainly decode this file.
             pictureSeen = true;
-            // And a frame on screen is the only honest definition of "played",
-            // which is what keeps a dead link out of the history list.
+            stopNoPictureWatch();
+            Utils.log("First frame on "
+                    + (player instanceof com.brouken.player.mpv.MpvPlayer ? "mpv" : "media3"));
+            // only a drawn frame counts as played, keeping dead links out of history
             History.markPlayed(mPrefs.mSharedPreferences, mPrefs.mediaUri);
         }
 
@@ -3021,25 +2663,7 @@ public class PlayerActivity extends Activity {
             if (error instanceof ExoPlaybackException) {
                 final ExoPlaybackException exoPlaybackException = (ExoPlaybackException) error;
                 if (exoPlaybackException.type == ExoPlaybackException.TYPE_SOURCE) {
-                    /*
-                     * Keep the place, even though the source is what failed.
-                     *
-                     * This released without saving, so the next player began
-                     * from whatever had last been written down -- often minutes
-                     * behind. On a stream, where a segment failing to load is
-                     * ordinary, that showed as the film snapping back to an
-                     * earlier point over and over and refusing to stay where it
-                     * was dragged to.
-                     *
-                     * A source failure does not make the position wrong: the
-                     * player still reports where it had reached. Only a zero is
-                     * ignored, because that is also what a player reports when
-                     * it failed before it ever started.
-                     */
-                    if (player != null && player.getCurrentPosition() > 0) {
-                        savePlayer();
-                    }
-                    releasePlayer(false);
+                    recoverFromSourceError(exoPlaybackException);
                     return;
                 }
                 if (controllerVisible && controllerVisibleFully) {
@@ -3049,23 +2673,76 @@ public class PlayerActivity extends Activity {
                 }
                 return;
             }
-            // Anything that is not an ExoPlayer failure -- which is everything
-            // mpv raises -- used to fall through here and say nothing at all.
+            // everything mpv raises ends up here
             PlaybackError.show(PlayerActivity.this, error,
                     useMpvEngine() ? "mpv" : "media3",
                     mPrefs.mediaUri == null ? null : mPrefs.mediaUri.toString());
         }
     }
 
-    /*
-     * When one engine cannot play a file, offer the other one.
-     *
-     * On Auto this never comes up: the fallback has already tried the other
-     * engine by the time an error reaches the user. On a fixed engine it used
-     * to be a bare error message, with nothing to say that the other one would
-     * very likely play the file — which is the whole reason there are two.
-     */
+    private boolean seekUnconfirmed;
+    private long positionBeforeSeek;
+    @Nullable
+    private com.brouken.player.engine.Media3SeekStall seekStall;
+
+    // Media3 reports no error when a seek loads everything but its target
+    private void onMedia3SeekStalled() {
+        if (player == null || !ownsPlayer() || !(player instanceof ExoPlayer)) {
+            return;
+        }
+        Utils.log("Seek stalled: the stream is loading, but not the part asked for");
+        recoverFromSourceError(ExoPlaybackException.createForSource(
+                new java.io.IOException("The stream kept loading, but not the part asked for"),
+                PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED));
+    }
+
+    private long sourceRetryAtMs;
+    private static final long SOURCE_RETRY_INTERVAL_MS = 60_000;
+
+    // saves the last place actually played and rebuilds once;
+    // a second failure within a minute is shown
+    private void recoverFromSourceError(final ExoPlaybackException error) {
+        final boolean wasPlaying = player != null && player.getPlayWhenReady();
+        if (player != null && ownsPlayer()) {
+            final long safe = seekUnconfirmed ? positionBeforeSeek : player.getCurrentPosition();
+            if (safe > 0 && player.isCurrentMediaItemSeekable()) {
+                mPrefs.updatePosition(safe,
+                        player.getDuration() == C.TIME_UNSET ? 0L : player.getDuration());
+            }
+        }
+        seekUnconfirmed = false;
+        releasePlayer(false);
+
+        final long now = android.os.SystemClock.elapsedRealtime();
+        if (haveMedia && alive && now - sourceRetryAtMs > SOURCE_RETRY_INTERVAL_MS) {
+            sourceRetryAtMs = now;
+            Utils.log("Source error, rebuilding once: " + error.getMessage());
+            // posted, so it runs outside the failed player's listener dispatch
+            coordinatorLayout.post(() -> {
+                if (alive && player == null && haveMedia) {
+                    playOnLoad = wasPlaying;
+                    initializePlayer();
+                }
+            });
+            return;
+        }
+        if (controllerVisible && controllerVisibleFully) {
+            showError(error);
+        } else {
+            errorToShow = error;
+            playerView.showController();
+        }
+    }
+
     private boolean offerOtherEngine() {
+        return offerOtherEngine(R.string.engine_failed_title, R.string.engine_failed_message);
+    }
+
+    private boolean offerOtherEngine(final int title, final int message) {
+        // after a picture was shown, a failure is the stream's fault
+        if (pictureSeen) {
+            return false;
+        }
         if (!haveMedia || "auto".equals(mPrefs.playbackEngine)
                 || !com.brouken.player.mpv.MpvPlayer.isSupported()) {
             return false;
@@ -3074,8 +2751,8 @@ public class PlayerActivity extends Activity {
         final String other = onMpv ? "media3" : "mpv";
 
         Utils.showFocused(new AlertDialog.Builder(this)
-                .setTitle(R.string.engine_failed_title)
-                .setMessage(getString(R.string.engine_failed_message,
+                .setTitle(title)
+                .setMessage(getString(message,
                         getString(onMpv ? R.string.pref_engine_mpv : R.string.pref_engine_media3),
                         getString(onMpv ? R.string.pref_engine_media3 : R.string.pref_engine_mpv)))
                 .setNegativeButton(android.R.string.cancel, null)
@@ -3107,20 +2784,7 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    /**
-     * Whether Open leads to this application's own folder list.
-     *
-     * <p>What Auto now means, with one exception: a television box below
-     * Android 11. The folder list is built on the media store, and on those
-     * boxes the media store is frequently close to empty — films arrive on a
-     * stick or over a network and were never indexed. The vendored browser
-     * reads the disk directly, so it is still the only thing that works there,
-     * and Auto still chooses it.
-     *
-     * <p>Set explicitly to anything else and nothing here applies: the
-     * Storage Access Framework, the media store chooser and the legacy browser
-     * all remain exactly what they were.
-     */
+    // not on TV boxes below Android 11: their media store is often nearly empty
     boolean useHomeBrowser() {
         if ("home".equals(mPrefs.fileAccess)) {
             return true;
@@ -3136,18 +2800,7 @@ public class PlayerActivity extends Activity {
         return (isTvBox && Build.VERSION.SDK_INT >= 30 && targetSdkVersion >= 30 && mPrefs.fileAccess.equals("auto")) || mPrefs.fileAccess.equals("mediastore");
     }
 
-    /**
-     * Open a film, and play it.
-     *
-     * <p>Everything that reaches here is somebody choosing a film: a row in a
-     * folder, the answer to "play the last video?", the next or previous
-     * button, an address typed into the Open box. All of them mean watch it,
-     * including when there is a place remembered in it -- and the two engines
-     * disagreed about that until it was said here. Media3 starts a player
-     * paused and mpv starts one playing, so a half-watched film opened from a
-     * list came up on its last frame under one engine and carried on under the
-     * other, from the same row, on the same device.
-     */
+    // always plays, including from a saved position: the engines' defaults differ
     void playMedia(final Uri uri, final String type) {
         if (uri == null) {
             return;
@@ -3169,11 +2822,14 @@ public class PlayerActivity extends Activity {
                     + " alreadyLoaded=" + mPrefs.mediaUri.equals(skipLoadedFor));
         }
         if (mPrefs.mediaUri.equals(skipLoadedFor)) {
+            // releasing the player stopped the skip timer; restart it
+            if (skipController != null) {
+                skipController.start();
+            }
             return;
         }
 
-        // Null is allowed: a file with its own chapter marks needs no lookup,
-        // and waiting for one meant it never offered to skip anything.
+        // may be null: a file with its own chapter marks needs no lookup
         final com.brouken.player.online.Identity identity =
                 onlineController.remembered(mPrefs.mediaUri);
 
@@ -3203,6 +2859,7 @@ public class PlayerActivity extends Activity {
                         @Override
                         public void seekToSeconds(double seconds) {
                             if (player != null) {
+                                com.brouken.player.engine.SeekPrecision.exact(player);
                                 player.seekTo((long) (seconds * 1000));
                             }
                         }
@@ -3226,30 +2883,20 @@ public class PlayerActivity extends Activity {
                                     marks.add(new com.brouken.player.online.SkipSegments.ChapterMark(
                                             row[0], Double.parseDouble(row[1])));
                                 } catch (NumberFormatException e) {
-                                    // A chapter without a usable time is no chapter.
+                                    // skip a chapter without a usable time
                                 }
                             }
                             return marks;
                         }
                     });
         }
-        // The button dodges the info card when both are up; the card is built
-        // lazily, so this asks for it rather than holding a reference.
+        // the card is built lazily, so it is looked up each time
         skipController.avoid(() -> overlayCard == null ? null : overlayCard.box());
         skipController.load(identity);
     }
 
 
-    /*
-     * How long the card waits before coming back after it has been pushed
-     * aside — by the quick panel, a seek, a picker, anything that means you
-     * are looking at the picture rather than reading about it.
-     *
-     * Fixed, and deliberately not a setting. The setting says how long a pause
-     * has to last before the card appears at all, which is a question of taste.
-     * This is just long enough not to flicker back the instant a panel closes,
-     * and there is nothing for anybody to tune about that.
-     */
+    // before a pushed-aside card returns; long enough not to flicker back
     private static final long CARD_RETURN_MS = 3_000L;
 
     private final Runnable overlayShower = () -> {
@@ -3259,68 +2906,32 @@ public class PlayerActivity extends Activity {
         if (player == null || player.isPlaying()) {
             return;
         }
-        /*
-         * Not over a film that has not started.
-         *
-         * Opening a file leaves the player paused and buffering for a moment
-         * before the first frame arrives, which looked exactly like a pause to
-         * the old code — so the card appeared over the opening seconds of
-         * everything, before you had seen a single frame of it. It waits for a
-         * picture now, and stays away while the player is refilling.
-         */
+        // a file being opened looks paused until its first frame
         if (!pictureSeen || player.getPlaybackState() == Player.STATE_BUFFERING) {
             return;
         }
-        /*
-         * The card's title, which is not always the film's title.
-         *
-         * With the two kept together, which is the default, this is the same
-         * answer as everywhere else. Kept apart, the card shows whatever was
-         * last chosen for it and the subtitle search goes on using its own.
-         */
         final com.brouken.player.online.Identity identity =
                 onlineController.rememberedForCard(mPrefs.mediaUri);
         if (identity == null) {
             return;
         }
         if (overlayCard == null) {
+            final android.view.View bounds = overlayBounds();
             overlayCard = new com.brouken.player.online.OverlayCard(
-                    this, coordinatorLayout, overlayBounds());
+                    this, coordinatorLayout, bounds,
+                    // on mpv the surface is the whole player, so ask the engine
+                    rect -> bounds == playerView.getVideoSurfaceView()
+                            && engineUi() != null && engineUi().pictureRect(rect));
         }
         overlayCard.show(identity);
+        watchForPoster(identity);
         if (skipController != null) {
             skipController.reposition();
         }
 
-        // The centre controls step aside; the card owns the middle.
         setCardControlsVisible(true);
-
-        /*
-         * And then it stays.
-         *
-         * It used to take itself away after eight seconds, on the reasoning
-         * that it should go the way the controls go. That was wrong: the
-         * controls disappear so they stop covering a film that is playing, and
-         * this film is not playing. Pausing to find out what you are watching
-         * and having the answer removed from under you — while still paused,
-         * with nothing else happening — is not a timeout anybody asked for.
-         *
-         * It goes when there is a reason for it to go: playback resumes, or you
-         * open something over it, or you seek. Each of those puts it back three
-         * seconds after you are done. Otherwise a paused film keeps its card
-         * for as long as it stays paused.
-         */
     };
 
-    /*
-     * Show the card because it was asked for, not because the film was paused.
-     *
-     * The card had one way in: pause a film, with the setting on, and wait. So
-     * there was no way to simply ask what you are watching, and no way to find
-     * out what the setting did without turning it on and pausing. This is the
-     * plain verb — it looks the film up if that has not happened yet, and puts
-     * the card on screen either way.
-     */
     public void showOverlayCardNow() {
         if (onlineController == null || mPrefs.mediaUri == null) {
             return;
@@ -3341,9 +2952,7 @@ public class PlayerActivity extends Activity {
             coordinatorLayout.removeCallbacks(overlayShower);
             overlayShower.run();
         }, () -> {
-            // Nothing matched. Rather than leaving "Identifying" on screen for
-            // ever, hand over the search box, which is what somebody would
-            // reach for next anyway.
+            // nothing matched: offer the search box
             if (uri.equals(mPrefs.mediaUri)) {
                 reIdentifyOnline();
             }
@@ -3370,14 +2979,7 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    /*
-     * What the card is measured against: the picture, not the frame around it.
-     *
-     * The frame keeps the size the layout gave it in some of the scaling modes
-     * while the picture inside it does not, so a card copying the frame took
-     * the whole width the moment the shape changed. The surface is the picture,
-     * and the card is clamped to the player either way.
-     */
+    // the surface, since the frame keeps its layout size in some scaling modes
     private android.view.View overlayBounds() {
         final android.view.View surface = playerView.getVideoSurfaceView();
         if (surface != null) {
@@ -3388,28 +2990,11 @@ public class PlayerActivity extends Activity {
         return frame != null ? frame : coordinatorLayout;
     }
 
-    /**
-     * Put the card away because something else wants the screen, and bring it
-     * back when that something is done.
-     *
-     * The difference from {@link #hideOverlayCard()} is only what happens next:
-     * this one expects to return. Opening the quick panel, dragging the
-     * timeline, picking a track — none of those mean you have finished with the
-     * card, they mean you are busy. Three seconds after you stop being busy, if
-     * the film is still paused, it comes back on its own.
-     */
     public void hideOverlayCardForNow() {
         hideOverlayCard();
         scheduleOverlayReturn();
     }
 
-    /**
-     * A picker that, on closing, lets the info card come back.
-     *
-     * The track lists cover the middle of the screen, which is where the card
-     * sits, so the card steps aside while one is open. Closing it is the end of
-     * that, and without this the card would stay away until the next pause.
-     */
     @Nullable
     private android.app.AlertDialog cardReturnsWhenClosed(
             @Nullable final android.app.AlertDialog dialog) {
@@ -3419,7 +3004,6 @@ public class PlayerActivity extends Activity {
         return dialog;
     }
 
-    /** Bring the card back shortly, if there is still a reason to. */
     private void scheduleOverlayReturn() {
         coordinatorLayout.removeCallbacks(overlayShower);
         if (onlineController == null || !onlineController.overlayEnabled()) {
@@ -3437,22 +3021,12 @@ public class PlayerActivity extends Activity {
             overlayCard.hide();
         }
         if (skipController != null) {
-            // The button can come back up to where it normally sits.
             skipController.reposition();
         }
         setCardControlsVisible(false);
     }
 
 
-    /**
-     * Ask again what this is, starting from the name it guessed.
-     *
-     * Identification reads the file name, which is a guess, and when it guesses
-     * wrong the card is wrong with it and there was no way to say so — the only
-     * route back was the subtitle search, which is a different question
-     * entirely. This forgets what it decided, offers the name for correcting,
-     * and shows the posters it finds for whatever you type.
-     */
     public void identifyAgain() {
         if (onlineController == null) {
             return;
@@ -3460,15 +3034,7 @@ public class PlayerActivity extends Activity {
         hideOverlayCard();
         final Uri uri = mPrefs.mediaUri;
         onlineController.forgetCardTitle(uri);
-        /*
-         * Kept apart, this leaves the film alone.
-         *
-         * Forgetting the shared answer is right when the two titles are one
-         * thing, because the guess it holds is the wrong guess. It is not right
-         * when they have been separated: the subtitle search and the skip
-         * markers are still about the film that is playing, and only the card
-         * is being told to show something else.
-         */
+        // with separate titles, subtitles and skip markers keep the film's own
         if (onlineController.titlesAreLinked()) {
             onlineController.forget(uri);
             skipLoadedFor = null;
@@ -3477,23 +3043,16 @@ public class PlayerActivity extends Activity {
             if (uri == null || !uri.equals(mPrefs.mediaUri)) {
                 return;
             }
-            /*
-             * Written down, so the next automatic guess does not undo it.
-             *
-             * Typing a title here is a decision, and it used to last until the
-             * file was identified again — which happens on its own, from the
-             * file name, and would put the guess back. What is chosen by hand
-             * wins from now on, for as long as the file is open and every time
-             * it is opened again, until it is changed by hand once more.
-             */
+            // saved so the next automatic guess does not undo it
             onlineController.rememberForCard(uri, identity);
+            History.setPoster(androidx.preference.PreferenceManager
+                    .getDefaultSharedPreferences(this), uri, identity.posterPath);
             ensureSkipSegments();
             updateMetaLine();
             showOverlayCardNow();
         });
     }
 
-    /** The address of what is playing, on the clipboard. */
     public void copyCurrentLink() {
         Clipboard.copy(this, mPrefs.mediaUri, getTitleForCopy());
     }
@@ -3519,26 +3078,13 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    /*
-     * Open whatever a launcher handed over, and forget the film before it.
-     *
-     * Shared with onNewIntent, which is how a second film arrives when the
-     * player is still in memory. That used to do a small part of this -- set
-     * the address, search for subtitles -- and none of the rest, so everything
-     * belonging to the film before it stayed: its title across the top, its
-     * poster and synopsis on the card, its intro markers, the subtitles its
-     * launcher had handed over. A different address on screen and the previous
-     * film described underneath it.
-     */
+    // also used by onNewIntent, so it must forget everything about the previous film
     private void openFromLaunch(final Intent intent) {
-        // A film that has been handed over is a film to watch. playMedia says
-        // the same for every other way one is opened.
         playOnLoad = true;
 
         forgetPreviousFilm();
 
-        // Which list this came out of, where the sender knew. Read before the
-        // media is set, because setting it clears whatever was there before.
+        // read before the media is set, which clears it
         final String folder = intent.getStringExtra(HomeActivity.EXTRA_FOLDER);
 
         resetApiAccess();
@@ -3560,35 +3106,21 @@ public class PlayerActivity extends Activity {
             }
 
             mPrefs.updateMedia(this, uri, intent.getType());
-            /*
-             * The name across the top of the player is the name to remember it
-             * by.
-             *
-             * A film handed over by Stremio or Nuvio arrives as a link ending
-             * in an identifier -- 713424c6-f0b8-4baf-a82a-804b21916c8b -- and
-             * the launcher sends the real name along beside it, which is what
-             * the title bar shows. Nothing wrote that down, so "play the last
-             * video?" offered the identifier instead, and the recent list was a
-             * column of them. Written straight after updateMedia, which is what
-             * creates the entry this renames.
-             */
+            mPrefs.setMediaTitle(apiTitle);
+            // after updateMedia, which creates the history entry this renames
             if (apiTitle != null && !apiTitle.trim().isEmpty()) {
+                // a stand-in until the file's own name is known; see History
                 History.rename(androidx.preference.PreferenceManager
-                        .getDefaultSharedPreferences(this), uri, apiTitle);
+                        .getDefaultSharedPreferences(this), uri, apiTitle, History.NAME_LAUNCHER);
+                rememberFileName(uri);
             }
-            // After updateMedia, which is where a film changing hands clears
-            // whatever list the last one belonged to.
+            // after updateMedia, which clears the previous film's folder
             useFolder(folder);
 
             if (bundle != null) {
-                /*
-                 * Whatever the launcher sent, in whatever shape it sent it.
-                 *
-                 * The names and the languages are matched to the files by
-                 * position, so the conversion has to keep the order it was
-                 * given even where a file fails to convert.
-                 */
-                final List<Uri> given = LaunchSubtitles.uris(bundle, LaunchSubtitles.FILES);
+                // names and languages match the files by position, so keep the order
+                final List<Uri> given =
+                        LaunchSubtitles.urisByPosition(bundle, LaunchSubtitles.FILES);
                 final List<Uri> toEnable =
                         LaunchSubtitles.uris(bundle, LaunchSubtitles.ENABLE);
                 final String[] subsName =
@@ -3596,27 +3128,48 @@ public class PlayerActivity extends Activity {
                 final String[] subsLanguage =
                         LaunchSubtitles.strings(bundle, LaunchSubtitles.LANGUAGES);
 
-                final List<Uri> subs = new SubtitleConverter().convertSubtitles(this, given);
+                // unreadable or repeated entries are skipped along with their name and language
+                final List<Integer> positions = new ArrayList<>();
+                final List<Uri> wanted = new ArrayList<>();
+                for (int i = 0; i < given.size(); i++) {
+                    final Uri candidate = given.get(i);
+                    if (candidate != null && !wanted.contains(candidate)) {
+                        positions.add(i);
+                        wanted.add(candidate);
+                    }
+                }
+                final List<Uri> subs = new SubtitleConverter().convertSubtitles(this, wanted);
 
-                for (int i = 0; i < subs.size(); i++) {
-                    final Uri sub = subs.get(i);
+                for (int k = 0; k < subs.size(); k++) {
+                    Uri sub = subs.get(k);
                     if (sub == null) {
                         continue;
                     }
-                    String name = subsName.length > i ? subsName[i] : null;
+                    final int i = positions.get(k);
+                    final Uri original = wanted.get(k);
+                    final String name = subsName.length > i ? subsName[i] : null;
                     final String language = subsLanguage.length > i ? subsLanguage[i] : null;
-                    // The converted file is a copy, so what the launcher
-                    // asked for is matched against what it handed over.
-                    final Uri original = given.size() > i ? given.get(i) : sub;
                     final boolean selected = toEnable.contains(original)
                             || toEnable.contains(sub)
-                            || (toEnable.isEmpty() && subs.size() == 1);
+                            || (toEnable.isEmpty() && wanted.size() == 1);
+                    // keep our own copy: the sender's read grant ends with this screen
+                    final String scheme = sub.getScheme() == null ? "" : sub.getScheme();
+                    if (!scheme.startsWith("http")) {
+                        final Uri copy = SubtitleFiles.copy(this, sub, null);
+                        if (copy != null) {
+                            sub = copy;
+                        }
+                    }
                     apiSubs.add(SubtitleUtils.buildSubtitle(this, sub, name, language, selected));
                 }
             }
 
             if (apiSubs.isEmpty()) {
                 searchSubtitles();
+            }
+
+            if (apiTitle != null || !apiHeaders.isEmpty() || !apiSubs.isEmpty()) {
+                saveLaunchMemory();
             }
 
             if (bundle != null) {
@@ -3630,14 +3183,10 @@ public class PlayerActivity extends Activity {
         focusPlay = true;
     }
 
-    /*
-     * Everything that belonged to the film that was playing.
-     *
-     * Not the settings, and not the position -- those are the player's. This is
-     * the things that describe one particular film, each of which is wrong the
-     * moment a different one starts.
-     */
     private void forgetPreviousFilm() {
+        stopPosterWatch();
+        stopNoPictureWatch();
+        noPictureHits = 0;
         skipLoadedFor = null;
         capabilityAsked = false;
         mpvFallbackActive = false;
@@ -3655,8 +3204,6 @@ public class PlayerActivity extends Activity {
     }
 
     private void setMedia(final Uri uri, final String type) {
-        // A different file needs its own segments, its own card, and its own
-        // chance at Media3 before Auto gives up on it.
         skipLoadedFor = null;
         capabilityAsked = false;
         mpvFallbackActive = false;
@@ -3667,8 +3214,6 @@ public class PlayerActivity extends Activity {
         if (overlayCard != null) {
             overlayCard.hide();
         }
-        // And its own subtitles: the list held for the last file is not a list
-        // of subtitles for this one.
         if (onlineController != null) {
             onlineController.forgetResults();
         }
@@ -3676,8 +3221,7 @@ public class PlayerActivity extends Activity {
         restorePlayState = false;
         mPrefs.setPersistent(true);
         mPrefs.updateMedia(this, uri, type);
-        // A different film belongs to a different list until something says
-        // otherwise, so the buttons go until the answer comes back.
+        // no neighbours until the new film's folder is known
         folderOfCurrent = null;
         setNeighbours(com.brouken.player.home.Neighbours.none());
         searchSubtitles();
@@ -3685,15 +3229,7 @@ public class PlayerActivity extends Activity {
 
     void openFile(Uri pickerInitialUri) {
         if (useHomeBrowser()) {
-            /*
-             * This application's own folder list, which is the same screen it
-             * opens on. The system picker is fine on a phone and poor with a
-             * remote, and it has never known which folders hold films.
-             *
-             * It comes back through the media store path because that is what
-             * it hands over: a content address that needs no persisted
-             * permission, exactly like the chooser next door.
-             */
+            // returns a content URI with no persisted grant, like the media store chooser
             final Intent intent = new Intent(this, HomeActivity.class);
             intent.setAction(Intent.ACTION_PICK);
             startActivityForResult(intent, REQUEST_CHOOSER_VIDEO_MEDIASTORE);
@@ -3731,8 +3267,10 @@ public class PlayerActivity extends Activity {
         if ((isTvBox && Build.VERSION.SDK_INT >= 30 && targetSdkVersion >= 30 && mPrefs.fileAccess.equals("auto")) || mPrefs.fileAccess.equals("mediastore")) {
             Intent intent = new Intent(this, MediaStoreChooserActivity.class);
             intent.putExtra(MediaStoreChooserActivity.SUBTITLES, true);
+            keepPlayerForSubtitlePicker();
             startActivityForResult(intent, REQUEST_CHOOSER_SUBTITLE_MEDIASTORE);
         } else if ((isTvBox && mPrefs.fileAccess.equals("auto")) || mPrefs.fileAccess.equals("legacy")) {
+            // A dialog over this screen, which never stops: nothing to keep.
             Utils.alternativeChooser(this, pickerInitialUri, false);
         } else {
             enableRotation();
@@ -3758,8 +3296,21 @@ public class PlayerActivity extends Activity {
                 }
             }
 
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                keepPlayerForSubtitlePicker();
+            }
             safelyStartActivityForResult(intent, REQUEST_CHOOSER_SUBTITLE);
         }
+    }
+
+    // keep the player paused across the picker, as for the settings trip
+    private void keepPlayerForSubtitlePicker() {
+        keptPlayerForSettings = player != null && haveMedia;
+        settingsWantARebuild = false;
+    }
+
+    void attachPickedSubtitle(final Uri uri) {
+        attachSubtitle(uri, null);
     }
 
     private void requestDirectoryAccess() {
@@ -3811,15 +3362,7 @@ public class PlayerActivity extends Activity {
             }
             trackSelector.setParameters(trackSelector.buildUponParameters().setDisabledTextTrackSelectionFlags(C.SELECTION_FLAG_DEFAULT | C.SELECTION_FLAG_FORCED));
         } else if (trackSelector != null) {
-            /*
-             * Choosing a subtitle undoes choosing none.
-             *
-             * The flags above are what "None" is made of, and nothing ever took
-             * them off again -- so once anyone had turned subtitles off, every
-             * subtitle attached for the rest of that player was marked as the
-             * default one and refused on those grounds. Picking a subtitle is
-             * the plainest possible statement that they are wanted back.
-             */
+            // clear the flags that "None" set, or later subtitles stay refused
             trackSelector.setParameters(trackSelector.buildUponParameters()
                     .setDisabledTextTrackSelectionFlags(0));
         }
@@ -3887,33 +3430,12 @@ public class PlayerActivity extends Activity {
     }
 
     void setSubtitleTextSize() {
-        // setSubtitleTextSize(getResources().getConfiguration().orientation);
-
         final SubtitleView subtitleView = playerView.getSubtitleView();
         if (subtitleView != null) {
             final CaptioningManager captioningManager = (CaptioningManager) getSystemService(Context.CAPTIONING_SERVICE);
             SubtitleUtils.updateFractionalTextSize(subtitleView, captioningManager, mPrefs);
         }
     }
-
-    /*void setSubtitleTextSize(final int orientation) {
-        // Tweak text size as fraction size doesn't work well in portrait
-        final SubtitleView subtitleView = playerView.getSubtitleView();
-        if (subtitleView != null) {
-            final float size;
-            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                size = SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * subtitlesScale;
-            } else {
-                DisplayMetrics metrics = getResources().getDisplayMetrics();
-                float ratio = ((float)metrics.heightPixels / (float)metrics.widthPixels);
-                if (ratio < 1)
-                    ratio = 1 / ratio;
-                size = SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * subtitlesScale / ratio;
-            }
-
-            subtitleView.setFractionalTextSize(size);
-        }
-    }*/
 
     void updateSubtitleViewMargin() {
         if (player == null) {
@@ -3953,12 +3475,6 @@ public class PlayerActivity extends Activity {
 
         Utils.setViewParams(playerView.getSubtitleView(), 0, 0, 0, 0,
                 marginHorizontal, marginVertical, marginHorizontal, marginVertical);
-    }
-
-    void setSubtitleTextSizePiP() {
-        final SubtitleView subtitleView = playerView.getSubtitleView();
-        if (subtitleView != null)
-            subtitleView.setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * 2);
     }
 
     @TargetApi(26)
@@ -4040,13 +3556,7 @@ public class PlayerActivity extends Activity {
         snackbar.show();
     }
 
-    /*
-     * The preview, opened when a drag begins and closed when it ends.
-     *
-     * Opened then rather than with the film: it costs a second decoder on the
-     * same file, and most viewings never touch the bar at all. Closed again at
-     * the end of the drag so nothing holds a file open that nobody is reading.
-     */
+    // opened per drag: it costs a second decoder on the same file
     private void startThumbnails() {
         if (thumbnails != null || !Thumbnails.available(this, mPrefs.mediaUri)) {
             return;
@@ -4059,8 +3569,7 @@ public class PlayerActivity extends Activity {
             return;
         }
         thumbnails.request(positionMs, (at, bitmap) -> {
-            // The drag may have ended, or moved on, between asking and being
-            // answered; a picture of somewhere else is worse than none.
+            // the drag may have ended before the frame arrived
             if (!isScrubbing || bitmap == null || thumbnailView == null) {
                 return;
             }
@@ -4098,13 +3607,6 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    /*
-     * The picture changed shape, so everything measured against it is stale.
-     *
-     * The card over it and the subtitles on it both work from where the picture
-     * actually is, and stepping through the scaling modes moves it without
-     * necessarily moving the frame around it.
-     */
     private void remeasureOverPicture() {
         playerView.post(() -> {
             if (overlayCard != null) {
@@ -4114,14 +3616,6 @@ public class PlayerActivity extends Activity {
         });
     }
 
-    /**
-     * The shape of the picture, preferring what the player says now.
-     *
-     * <p>Falls back to the last size a player reported for this film, so a
-     * caller asking during a rebuild -- when the engine has let go of the old
-     * source and not yet read the new one -- is given the film's real shape
-     * rather than nothing. Null only before any picture has ever arrived.
-     */
     @Nullable
     private androidx.media3.common.VideoSize knownVideoSize() {
         final androidx.media3.common.VideoSize now =
@@ -4139,22 +3633,9 @@ public class PlayerActivity extends Activity {
         if (format == null) {
             return;
         }
-        // Nothing here turns the screen any more. It used to match the phone to
-        // the file, for the mode called "video orientation"; the three that
-        // replaced it all say what they want outright, so a file arriving with a
-        // different shape is no longer a reason to move the screen under
-        // somebody.
 
-        /*
-         * The shape is re-applied whenever a size arrives, because the player
-         * sets the frame from the file and would otherwise undo it.
-         *
-         * Always on mpv, not only for a forced ratio. mpv needs the surface to
-         * cover the whole player so that the black bars are its own and it can
-         * draw subtitles on them — and that arrangement has to be in place from
-         * the moment the film opens, not only once somebody presses the aspect
-         * button. Media3 only needs this for a forced ratio, as before.
-         */
+        // the player resets the frame from the file; mpv's surface must always
+        // cover the player so it can draw subtitles on the bars
         if (aspectStep >= 3 || player instanceof com.brouken.player.mpv.MpvPlayer) {
             applyAspectStep(false);
         }
@@ -4169,77 +3650,12 @@ public class PlayerActivity extends Activity {
     }
 
     public void updateSubtitleStyle(final Context context) {
-        if (player instanceof com.brouken.player.mpv.MpvPlayer) {
-            ((com.brouken.player.mpv.MpvPlayer) player).setSubtitleStyle(
-                    mPrefs.subtitleVerticalPosition,
-                    mPrefs.subtitleSize,
-                    mPrefs.subtitleEdgeType == null ? null : mPrefs.subtitleEdgeType.name(),
-                    mPrefs.subtitleTypeface == null ? null : mPrefs.subtitleTypeface.name(),
-                    mPrefs.subtitleStyleEmbedded);
-            return;
+        if (engineUi() != null) {
+            engineUi().applySubtitleStyle();
         }
-
-        final CaptioningManager captioningManager = (CaptioningManager) getSystemService(Context.CAPTIONING_SERVICE);
-        final SubtitleView subtitleView = playerView.getSubtitleView();
-        // final boolean isTablet = Utils.isTablet(context);
-        // subtitlesScale = SubtitleUtils.normalizeFontScale(captioningManager.getFontScale(), isTvBox || isTablet);
-        if (subtitleView != null) {
-            final CaptioningManager.CaptionStyle userStyle = captioningManager.getUserStyle();
-            final CaptionStyleCompat userStyleCompat = CaptionStyleCompat.createFromCaptionStyle(userStyle);
-            final int edgeColor = userStyle.hasEdgeColor() ? userStyleCompat.edgeColor : Color.BLACK;
-            final Typeface customTypeface = SubtitleUtils.loadCustomSubtitleTypeface(context, mPrefs);
-            final Typeface typeface = SubtitleUtils.getSubtitleTypeface(mPrefs.subtitleTypeface, userStyleCompat, customTypeface);
-            final CaptionStyleCompat captionStyle = new CaptionStyleCompat(
-                    userStyle.hasForegroundColor() ? userStyleCompat.foregroundColor : Color.WHITE,
-                    userStyle.hasBackgroundColor() ? userStyleCompat.backgroundColor : Color.TRANSPARENT,
-                    userStyle.hasWindowColor() ? userStyleCompat.windowColor : Color.TRANSPARENT,
-                    SubtitleUtils.getSubtitleEdgeType(mPrefs.subtitleEdgeType, userStyle),
-                    edgeColor,
-                    typeface);
-
-            subtitleView.setStyle(captionStyle);
-            subtitleView.setApplyEmbeddedStyles(mPrefs.subtitleStyleEmbedded);
-            updateSubtitleBottomPaddingFraction(mPrefs.subtitleVerticalPosition);
-            SubtitleUtils.updateFractionalTextSize(subtitleView, captioningManager, mPrefs);
-
-            CueModifier cueModifier = playerView.cueModifier;
-            cueModifier.setSubtitleTypeface(mPrefs.subtitleTypeface, typeface);
-            cueModifier.setSubtitleEdgeType(mPrefs.subtitleEdgeType);
-            cueModifier.setShadowColor(edgeColor);
-            cueModifier.setVerticalPosition(mPrefs.subtitleVerticalPosition);
-            updateSubtitlePictureArea();
-            final Player player = PlayerActivity.player;
-            if (player != null && player.isCommandAvailable(Player.COMMAND_GET_TEXT)) {
-                subtitleView.setCues(cueModifier.modifyCues(player.getCurrentCues().cues));
-            }
-        }
-        // setSubtitleTextSize();
     }
 
-    private void updateSubtitleBottomPaddingFraction(int subtitleVerticalPosition) {
-        float bottomPaddingFraction = SubtitleView.DEFAULT_BOTTOM_PADDING_FRACTION + (subtitleVerticalPosition * 0.01f);
-        playerView.getSubtitleView().setBottomPaddingFraction(bottomPaddingFraction);
-    }
-
-    /*
-     * Subtitles are placed against the screen, not against the picture.
-     *
-     * This used to measure where the picture sat inside the player and clamp
-     * every cue into it, so that nothing was ever drawn on the black bars.
-     * That is the wrong trade: on a letterboxed film the text then sits over
-     * the bottom of the image, covering it, while a wide empty band goes spare
-     * directly underneath — and the further down you move it, the more of the
-     * picture it covers rather than moving clear of it.
-     *
-     * The whole of the subtitle view is the area now, which is the whole
-     * player, so the bars are available and the text lands below the image
-     * where there is nothing to obscure. mpv is told the same thing through
-     * sub-use-margins, so both engines place subtitles alike.
-     *
-     * The method stays — the shape of the player still changes with rotation,
-     * a forced aspect or a zoom, and the cues have to be laid out again each
-     * time that happens.
-     */
+    // cues may use the black bars, matching mpv's sub-use-margins
     void updateSubtitlePictureArea() {
         final SubtitleView subtitleView = playerView.getSubtitleView();
         if (subtitleView == null) {
@@ -4254,17 +3670,6 @@ public class PlayerActivity extends Activity {
         });
     }
 
-    /*
-     * Applied as the number moves, and nothing is rebuilt to do it.
-     *
-     * This used to wait half a second and then reopen the file, which on a
-     * stream means a re-buffer: a hundred milliseconds of subtitle delay cost a
-     * spinner and a stall. The reopen was left over from when the delay was
-     * baked into the subtitles at parse time. It has not been since the delay
-     * renderer went in -- the text renderer reads the number on every frame,
-     * and mpv takes a property change in its stride -- so there is nothing to
-     * rebuild and no reason to wait before doing it.
-     */
     public void updateSubtitleDelay(int delayMs) {
         mPrefs.updateSubtitleDelay(delayMs);
         applySubtitleDelay();
@@ -4279,14 +3684,7 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    /**
-     * The sound, moved against the picture.
-     *
-     * Written down straight away so the number on screen is the number that is
-     * kept, and applied half a second after the last press: a run of presses is
-     * one adjustment, not thirty, and on this engine each one costs the picture
-     * a moment of catching up.
-     */
+    // saved at once, applied 500 ms after the last press
     public void updateAudioDelay(int delayMs) {
         mPrefs.updateAudioDelay(delayMs);
         playerView.removeCallbacks(audioDelayApplyRunnable);
@@ -4307,32 +3705,16 @@ public class PlayerActivity extends Activity {
             return;
         }
 
-        /*
-         * Media3 reports the position through the delay, and a seek is how the
-         * two streams are put back together -- but only when they have to be.
-         *
-         * Raising the delay moves the reported position forward, which the
-         * player accepts as it stands: the picture catches up by itself and
-         * nothing is reopened. Lowering it asks the position to go backwards,
-         * which the renderer refuses -- it never lets the clock run back -- so
-         * without a seek the picture would simply hold until the sound caught
-         * up. That is the only case worth a seek, and on a stream it is the
-         * only case worth a moment of buffering.
-         */
+        // Media3's clock never runs back, so only a lower delay needs a seek
         final long soundPositionMs = Math.max(0, player.getCurrentPosition() - oldDelayMs);
         audioDelayMs.set(newDelayMs);
         if (newDelayMs < oldDelayMs) {
+            com.brouken.player.engine.SeekPrecision.exact(player);
             player.seekTo(soundPositionMs);
         }
     }
 
-    /**
-     * The delays this file was left with, put back once the engine is up.
-     *
-     * On Media3 the numbers are read when the renderers are built; on mpv the
-     * properties do not exist until the file is open, which is why this is
-     * where it is. Without it, a remembered delay was a Media3-only promise.
-     */
+    // mpv's delay properties exist only once the file is open
     private void restoreDelays() {
         final int subtitleDelay = mPrefs.getSubtitleDelayForUri(mPrefs.mediaUri);
         final int audioDelay = mPrefs.getAudioDelayForUri(mPrefs.mediaUri);
@@ -4365,7 +3747,7 @@ public class PlayerActivity extends Activity {
             return;
 
         if (Utils.isSupportedNetworkUri(mPrefs.mediaUri) && Utils.isProgressiveContainerUri(mPrefs.mediaUri)) {
-            SubtitleUtils.clearCache(this);
+            SubtitleUtils.clearCache(this, subtitleFilesInUse());
             if (SubtitleFinder.isUriCompatible(mPrefs.mediaUri)) {
                 subtitleFinder = new SubtitleFinder(PlayerActivity.this, mPrefs.mediaUri);
                 subtitleFinder.start();
@@ -4402,18 +3784,7 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    /*
-     * Find a file inside whichever granted folder actually holds it.
-     *
-     * Both callers used to do this against the one folder there was. With a
-     * list they ask each in turn and take the first that answers -- newest
-     * grant first, which is nearly always the right one, and the cost of a miss
-     * is one failed lookup in a folder the file is not in.
-     *
-     * The two ways of looking are unchanged: a provider that puts the path in
-     * the address can be matched on the path, and anything else has to be
-     * matched on the document's own details, which is slower.
-     */
+    // tries each granted folder in turn, newest first
     @Nullable
     private DocumentFile findInScopes(final Uri media) {
         if (media == null) {
@@ -4429,26 +3800,14 @@ public class PlayerActivity extends Activity {
                 if (pathInUri) {
                     found = SubtitleUtils.findUriInScope(this, scope, media);
                 }
-                /*
-                 * The slow way is a fallback, not an alternative.
-                 *
-                 * The two callers disagreed about which providers put a usable
-                 * path in the address -- one counted Nova, the other did not --
-                 * and sharing this code had to pick one. Picking either would
-                 * have quietly changed what the other found. So the fast match
-                 * is tried where the address looks like it carries a path, and
-                 * anything it does not turn up is looked for the slow way
-                 * regardless, which is what the more careful of the two callers
-                 * did all along.
-                 */
+                // slow match whenever the path match finds nothing
                 if (found == null) {
                     final DocumentFile fileScope = DocumentFile.fromTreeUri(this, scope);
                     final DocumentFile fileMedia = DocumentFile.fromSingleUri(this, media);
                     found = SubtitleUtils.findDocInScope(fileScope, fileMedia);
                 }
             } catch (SecurityException | IllegalArgumentException e) {
-                // A folder whose grant has gone, or a card that has been
-                // removed. Not a reason to stop looking in the others.
+                // revoked grant or removed card; keep looking in the others
                 Utils.log("A granted folder could not be read: " + e);
             }
             if (found != null) {
@@ -4522,19 +3881,10 @@ public class PlayerActivity extends Activity {
         if (enableLoading) {
             exoPlayPause.setVisibility(View.GONE);
             loadingProgressBar.setVisibility(View.VISIBLE);
-            /*
-             * The card gets out of the way of the spinner.
-             *
-             * They both want the middle of the screen, and of the two the one
-             * that matters while a film is still loading is the one saying so.
-             * The card comes back on its own when the buffering ends, below.
-             */
             hideOverlayCard();
         } else {
             loadingProgressBar.setVisibility(View.GONE);
             exoPlayPause.setVisibility(View.VISIBLE);
-            // Buffering is over. On a paused film that is the moment the card
-            // is allowed back; on a playing one this correctly does nothing.
             if (player != null && !player.isPlaying()) {
                 updateOverlayCard(false);
             }
@@ -4556,7 +3906,6 @@ public class PlayerActivity extends Activity {
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void enterPiP() {
-        // The card is for a paused film on a full screen, not for a thumbnail.
         hideOverlayCard();
         final AppOpsManager appOpsManager = (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
         if (AppOpsManager.MODE_ALLOWED != appOpsManager.checkOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, android.os.Process.myUid(), getPackageName())) {
@@ -4576,14 +3925,13 @@ public class PlayerActivity extends Activity {
 
         final Format format = videoFormat();
 
-        if (format != null) {
-            // https://github.com/google/ExoPlayer/issues/8611
-            // TODO: Test/disable on Android 11+
-            final View videoSurfaceView = playerView.getVideoSurfaceView();
-            if (videoSurfaceView instanceof SurfaceView) {
-                ((SurfaceView) videoSurfaceView).getHolder().setFixedSize(format.width, format.height);
-            }
+        // Media3: https://github.com/google/ExoPlayer/issues/8611; mpv's surface follows the window
+        if (engineUi() != null) {
+            engineUi().onEnterPip(format);
+            pipPrepared = true;
+        }
 
+        if (format != null) {
             Rational rational = Utils.getRational(format);
             if (Build.VERSION.SDK_INT >= 33 &&
                     getPackageManager().hasSystemFeature(FEATURE_EXPANDED_PICTURE_IN_PICTURE) &&
@@ -4597,31 +3945,25 @@ public class PlayerActivity extends Activity {
 
             ((PictureInPictureParams.Builder) mPictureInPictureParamsBuilder).setAspectRatio(rational);
         }
-        enterPictureInPictureMode(((PictureInPictureParams.Builder) mPictureInPictureParamsBuilder).build());
+        boolean entered;
+        try {
+            entered = enterPictureInPictureMode(
+                    ((PictureInPictureParams.Builder) mPictureInPictureParamsBuilder).build());
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            entered = false;
+        }
+        if (!entered && pipPrepared) {
+            // refused: undo the surface preparation
+            pipPrepared = false;
+            if (engineUi() != null) {
+                engineUi().onExitPip();
+            }
+        }
     }
 
-    /**
-     * Delete and Next, which belong to the end of a film.
-     *
-     * <p>Both are GONE rather than INVISIBLE when they are not wanted. They
-     * used to hold their places so that nothing moved when they arrived, which
-     * worked while they were one on each side and balanced each other. They are
-     * not balanced any more -- previous joined the left -- and a held place on
-     * one side only pushes the whole row off the middle of the screen. The row
-     * keeps the play button centred by itself now, so a button that is not
-     * there can cost nothing.
-     */
     void setEndControlsVisible(boolean visible) {
         final int deleteVisible = (visible && haveMedia && Utils.isDeletable(this, mPrefs.mediaUri)) ? View.VISIBLE : View.GONE;
-        /*
-         * Next is two things wearing one button.
-         *
-         * It was the end-of-file offer beside Delete, shown in the last few
-         * seconds of a film and hidden the rest of the time. It is also, now,
-         * half of an ordinary pair of skip controls -- and where the film came
-         * out of a folder that pair is available throughout, not only at the
-         * end. So a known neighbour keeps it on screen whatever this is doing.
-         */
+        // a known neighbour keeps Next on screen for the whole film
         final boolean endOffer = visible && haveMedia
                 && (nextUri != null || (mPrefs.askScope && !isTvBox));
         final int nextVisible = (endOffer || neighbours.next != null)
@@ -4647,8 +3989,7 @@ public class PlayerActivity extends Activity {
         builder.setNegativeButton(android.R.string.cancel, (dialog, which) -> {
         });
         final AlertDialog dialog = builder.create();
-        // Cancel under the remote, not Delete: on a television an accidental
-        // press of OK on an unfocused dialog would remove the file.
+        // focus Cancel so a stray OK on a remote cannot delete the file
         Utils.showFocused(dialog, AlertDialog.BUTTON_NEGATIVE);
     }
 
@@ -4680,29 +4021,14 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    /**
-     * Play a neighbour, staying in the list it came from.
-     *
-     * <p>Opening a film normally forgets whatever list the last one belonged
-     * to, which is right -- a film chosen some other way is not in this folder.
-     * Stepping along the folder is the one case where it is the same list, so
-     * it is handed back afterwards.
-     */
+    // playMedia forgets the folder, so it is handed back afterwards
     private void playInFolder(final Uri uri) {
         final String folder = folderOfCurrent;
         playMedia(uri, null);
         useFolder(folder);
     }
 
-    /**
-     * Remember which list the film belongs to, and work out what is either
-     * side of it.
-     *
-     * <p>On a thread of its own: it is a media store query, and a folder of
-     * several hundred files is not something to ask about while a film is
-     * starting. The buttons appear when the answer arrives, which is a fraction
-     * of a second later and long before anybody reaches the end of anything.
-     */
+    // neighbours come from a media store query, so off the main thread
     private void useFolder(@Nullable final String folder) {
         folderOfCurrent = folder;
         setNeighbours(com.brouken.player.home.Neighbours.none());
@@ -4717,8 +4043,7 @@ public class PlayerActivity extends Activity {
             final com.brouken.player.home.Neighbours.Either found =
                     com.brouken.player.home.Neighbours.of(this, folder, asked);
             runOnUiThread(() -> {
-                // Only if it is still the film that was asked about: a second
-                // one can be opened while the first is still being counted.
+                // another film may have been opened meanwhile
                 if (asked.equals(mPrefs.mediaUri)) {
                     setNeighbours(found);
                 }
@@ -4732,14 +4057,6 @@ public class PlayerActivity extends Activity {
         updateSkipButtons();
     }
 
-    /**
-     * Show a skip button only where there is somewhere to skip to.
-     *
-     * <p>A button that is there is a button that does something, which is how
-     * the rest of these controls behave. It also means the pair take
-     * themselves out of the row that the info card mirrors, so nothing dead is
-     * copied into the time line either.
-     */
     private void updateSkipButtons() {
         final View previous = findViewById(R.id.prev);
         if (previous != null) {
@@ -4747,17 +4064,15 @@ public class PlayerActivity extends Activity {
         }
         final View next = findViewById(R.id.next);
         if (next != null && neighbours.next != null) {
-            // The end-of-file logic below also shows this one; where there is a
-            // folder to step through it is simply always available.
             next.setVisibility(View.VISIBLE);
         }
     }
 
     void skipToNext() {
         if (nextUri != null) {
-            // The launcher asking for the next file means play it.
             playOnLoad = true;
             releasePlayer();
+            resetApiAccess();
             mPrefs.updateMedia(this, nextUri, null);
             searchSubtitles();
             initializePlayer();
@@ -4784,23 +4099,32 @@ public class PlayerActivity extends Activity {
             Utils.setButtonEnabled(this, buttonPiP, enable);
         }
         Utils.setButtonEnabled(this, buttonAspectRatio, enable);
-        // Always reachable: the panel it opens carries the engine, the buffering
-        // and the way through to the full settings, all of which are worth
-        // getting at before a file is open rather than only after.
+        // always enabled: the panel is useful before a file is open
         Utils.setButtonEnabled(this, exoSettings, true);
     }
 
+    // Media3 scales the view; mpv zooms inside its surface, so subtitles stay put
     private void scaleStart() {
         isScaling = true;
-        if (playerView.getResizeMode() != AspectRatioFrameLayout.RESIZE_MODE_ZOOM) {
-            playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
+        final com.brouken.player.engine.EngineUi ui = engineUi();
+        if (ui != null && ui.zoomsInEngine()) {
+            scaleFactor = ui.zoom();
+        } else {
+            if (playerView.getResizeMode() != AspectRatioFrameLayout.RESIZE_MODE_ZOOM) {
+                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
+            }
+            scaleFactor = playerView.getVideoSurfaceView().getScaleX();
         }
-        scaleFactor = playerView.getVideoSurfaceView().getScaleX();
         playerView.removeCallbacks(playerView.textClearRunnable);
         playerView.clearIcon();
         playerView.setCustomErrorMessage((int) (scaleFactor * 100) + "%");
         playerView.hideController();
         isScaleStarting = true;
+    }
+
+    private float zoomFit() {
+        final com.brouken.player.engine.EngineUi ui = engineUi();
+        return ui != null ? ui.zoomFit() : playerView.getScaleFit();
     }
 
     private void scale(boolean up) {
@@ -4809,8 +4133,13 @@ public class PlayerActivity extends Activity {
         } else {
             scaleFactor -= 0.01;
         }
-        scaleFactor = Utils.normalizeScaleFactor(scaleFactor, playerView.getScaleFit());
-        playerView.setScale(scaleFactor);
+        scaleFactor = Utils.normalizeScaleFactor(scaleFactor, zoomFit());
+        final com.brouken.player.engine.EngineUi ui = engineUi();
+        if (ui != null) {
+            ui.setZoom(scaleFactor);
+        } else {
+            playerView.setScale(scaleFactor);
+        }
         playerView.setCustomErrorMessage((int) (scaleFactor * 100) + "%");
     }
 
@@ -4820,17 +4149,29 @@ public class PlayerActivity extends Activity {
         if (player != null && !player.isPlaying()) {
             playerView.showController();
         }
-        if (Math.abs(playerView.getScaleFit() - scaleFactor) < 0.01 / 2) {
-            playerView.setScale(1.f);
-            playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
+        if (Math.abs(zoomFit() - scaleFactor) < 0.01 / 2) {
+            final com.brouken.player.engine.EngineUi ui = engineUi();
+            if (ui != null && ui.zoomsInEngine()) {
+                ui.setZoom(1f);
+            } else {
+                playerView.setScale(1.f);
+                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
+            }
         }
         updatebuttonAspectRatioIcon();
     }
 
+    private boolean zoomedByHand() {
+        final com.brouken.player.engine.EngineUi ui = engineUi();
+        if (ui != null && ui.zoomsInEngine()) {
+            return ui.zoom() > 1.001f;
+        }
+        return playerView.getResizeMode() == AspectRatioFrameLayout.RESIZE_MODE_ZOOM;
+    }
+
     private void updatebuttonAspectRatioIcon() {
         // A pinch has put the picture somewhere none of the steps describes.
-        if (aspectStep == 0
-                && playerView.getResizeMode() == AspectRatioFrameLayout.RESIZE_MODE_ZOOM) {
+        if (aspectStep == 0 && zoomedByHand()) {
             buttonAspectRatio.setImageResource(R.drawable.ic_fit_screen_24dp);
             return;
         }
@@ -4843,14 +4184,7 @@ public class PlayerActivity extends Activity {
         if (youTubeOverlay != null) {
             youTubeOverlay.seekSeconds(mPrefs.doubleTapSeekSeconds);
         }
-        /*
-         * The language order, applied to the player that is already running.
-         *
-         * It used to arrive by accident: the player was rebuilt on the way out
-         * of settings and read the new order as it was built. Now that the file
-         * is not reopened for it, the track selector is told directly -- which
-         * is better anyway, because it re-picks the tracks without a reopen.
-         */
+        // the running player is not rebuilt after settings, so tell it directly
         if (trackSelector != null) {
             final String[] audioLanguages = Languages.audio(this);
             final String[] textLanguages = Languages.subtitle(this);
@@ -4862,15 +4196,7 @@ public class PlayerActivity extends Activity {
         applyVolumeBoost();
         applyKeepScreenOn(player != null && player.isPlaying());
         updateClock();
-        /*
-         * Both ways, not just on.
-         *
-         * Where the player is built this is set only when the setting is on,
-         * which is correct there and leaves nothing to turn it off again: a
-         * film opened with it on kept skipping silence for the rest of its
-         * length however many times the switch was flicked. Media3's alone --
-         * mpv has no equivalent, and the settings screen says so.
-         */
+        // set both ways here; Media3 only, mpv has no equivalent
         if (exo() != null) {
             exo().setSkipSilenceEnabled(mPrefs.skipSilence);
         }
@@ -4882,8 +4208,7 @@ public class PlayerActivity extends Activity {
 
     private static final int VOLUME_BOOST_GAIN_MB = Utils.BOOST_STEPS * Utils.BOOST_STEP_MB;
 
-    // mpv mixes its own audio and exposes no session for the platform effect, so
-    // its boost is the volume property instead — same scale, same on-screen number
+    // mpv exposes no audio session for the effect, so its boost is the volume property
     static boolean canBoostVolume() {
         if (player instanceof com.brouken.player.mpv.MpvPlayer) {
             return true;
@@ -4895,15 +4220,8 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    /**
-     * Hand the engine the volume asked for, boost included.
-     *
-     * <p>mpv has one volume property and both the fine volume and the boost
-     * want it, so they are multiplied together here rather than each writing
-     * over the other. Media3 keeps them apart -- the player's own volume for
-     * the fine part, a LoudnessEnhancer for the boost -- so only the fine part
-     * is set here and the boost is left to the caller.
-     */
+    // mpv has one volume property, so fine volume and boost are multiplied here;
+    // on Media3 the boost is a LoudnessEnhancer left to the caller
     static void applyEngineVolume(final boolean boostEnabled) {
         if (player == null) {
             return;
@@ -4939,8 +4257,7 @@ public class PlayerActivity extends Activity {
     }
 
     private void applyVolumeBoost() {
-        // A rebuilt player starts at full volume, so whatever the swipe had it
-        // set to has to be put back or the film returns louder than it was.
+        // a rebuilt player starts at full volume
         applyEngineVolume();
         if (player instanceof com.brouken.player.mpv.MpvPlayer) {
             boostLevel = mPrefs.volumeBoost ? Utils.BOOST_STEPS : 0;
@@ -4961,25 +4278,17 @@ public class PlayerActivity extends Activity {
                             + " control=" + loudnessEnhancer.hasControl());
                 }
             } else if (boostLevel == Utils.BOOST_STEPS) {
-                // Only undo OUR boost; a level the user dialled in by gesture is
-                // theirs and stays where they put it.
+                // only undo our boost; a level set by gesture stays
                 boostLevel = 0;
                 loudnessEnhancer.setEnabled(false);
             }
         } catch (Exception e) {
-            // A device that refuses the effect simply plays at normal volume.
+            // a device that refuses the effect plays at normal volume
             Utils.log("Volume boost unavailable: " + e);
         }
     }
 
-    /*
-     * What is playing, in one line: 3840×2160 · HEVC · HDR · E-AC-3 5.1.
-     *
-     * Built from the selected tracks rather than from the file, so it says what
-     * the player settled on and not what was asked for — which is the whole use
-     * of it when a device quietly fell back to a lower profile. Hidden when
-     * there is nothing worth saying.
-     */
+    // e.g. 3840×2160 · HEVC · HDR · E-AC-3 5.1, from the selected tracks
     void updateMetaLine() {
         if (metaView == null) {
             return;
@@ -5006,8 +4315,7 @@ public class PlayerActivity extends Activity {
             }
         }
 
-        // The size the surface is actually being handed, which is the one the
-        // engine reports even when the track carried no dimensions.
+        // the engine reports a size even when the track carried none
         final androidx.media3.common.VideoSize size = player.getVideoSize();
         if (size.width > 0 && size.height > 0) {
             appendMeta(line, size.width + "\u00d7" + size.height);
@@ -5043,36 +4351,16 @@ public class PlayerActivity extends Activity {
             appendMeta(line, sound.toString());
         }
 
-        // Which engine, always. On Auto there is otherwise no way to know which
-        // one a file ended up on, and that is the first thing worth knowing
-        // when something looks wrong.
         appendMeta(line, player instanceof com.brouken.player.mpv.MpvPlayer ? "mpv" : "Media3");
 
-        // And, for something coming over a connection, how fast it is coming.
-        // A file on the device arrives as fast as the disk allows, which is not
-        // a thing anybody needs told.
         appendMeta(line, streamSpeed());
 
         metaView.setText(line.toString());
         metaView.setVisibility(line.length() == 0 ? View.GONE : View.VISIBLE);
     }
 
-    /**
-     * Say so when the file is beyond this device, and let the viewer decide.
-     *
-     * A television was handed a 50GB 4K film: the sound played, the picture
-     * never came, and the app had to be killed from the recents list. Nothing
-     * crashed and nothing reported an error -- a decoder that cannot keep up
-     * simply stops producing frames, and every layer above it goes on waiting.
-     *
-     * So the device is measured before that happens, and the viewer is told:
-     * play it anyway, try the other engine where the other engine has a real
-     * chance, or close it. Asked once per file that warrants it, and never
-     * again after "do not warn me again".
-     *
-     * The film is held while the question is on screen. If it is going to lock
-     * up, it is better that it does so after an answer than during one.
-     */
+    // a decoder that cannot keep up stops producing frames without any error,
+    // so warn first; the film is paused while the dialog is up
     private void maybeWarnAboutCapability() {
         if (capabilityAsked || !haveMedia || player == null) {
             return;
@@ -5149,11 +4437,7 @@ public class PlayerActivity extends Activity {
                                 .getDefaultSharedPreferences(PlayerActivity.this)
                                 .edit().putString("playbackEngine", "mpv").apply();
                         mPrefs.loadUserPreferences();
-                        // Asked again on the way out of the other engine: if it
-                        // cannot manage the file either, that is worth saying
-                        // rather than leaving the viewer to find out. There is
-                        // no third engine, so the second time the choice is
-                        // play it anyway or close it.
+                        // ask again on the other engine
                         capabilityAsked = false;
                         rebuildPlayer();
                     });
@@ -5162,7 +4446,6 @@ public class PlayerActivity extends Activity {
         Utils.showFocused(builder.create(), AlertDialog.BUTTON_POSITIVE);
     }
 
-    /** The video track actually playing, which is what the device has to manage. */
     @Nullable
     private Format selectedVideoFormat() {
         if (player != null) {
@@ -5180,13 +4463,7 @@ public class PlayerActivity extends Activity {
         return videoFormat();
     }
 
-    /**
-     * How fast what is playing is arriving, when it is arriving from anywhere.
-     *
-     * Each engine has its own count: Media3's is the bytes the data sources
-     * report, mpv's is the rate its own cache is filling. Neither is asked
-     * about a local file.
-     */
+    // Media3 counts data source bytes; mpv reports its cache fill rate
     @Nullable
     private String streamSpeed() {
         if (player == null || !Utils.isSupportedNetworkUri(mPrefs.mediaUri)) {
@@ -5200,13 +4477,6 @@ public class PlayerActivity extends Activity {
                 : com.brouken.player.net.NetworkSpeed.format(networkSpeed.bytesPerSecond());
     }
 
-    /*
-     * The line is rebuilt while it is on screen, once a second.
-     *
-     * Only while it is on screen: the speed is the only part that moves, and
-     * counting it against a hidden view is work done for nobody. The tick stops
-     * itself as soon as the bar goes.
-     */
     private final Runnable metaTick = new Runnable() {
         @Override
         public void run() {
@@ -5244,35 +4514,16 @@ public class PlayerActivity extends Activity {
         line.append(part);
     }
 
-    /*
-     * Seek to a keyframe rather than to the exact moment asked for.
-     *
-     * Landing exactly means decoding everything since the last keyframe, which
-     * on a long GOP is most of a second and makes a drag feel detached from the
-     * finger. Media3 has had this since the beginning; mpv, asked for an
-     * absolute seek, was exact, so the same drag on the same file finished in
-     * two different places depending on the engine.
-     */
+    // an exact seek decodes from the last keyframe, which lags behind a drag
     private static void seekToKeyframes(final SeekParameters parameters) {
-        if (exo() != null) {
-            exo().setSeekParameters(parameters);
-        } else if (player instanceof com.brouken.player.mpv.MpvPlayer) {
-            ((com.brouken.player.mpv.MpvPlayer) player).setKeyframeSeeking(true);
-        }
+        com.brouken.player.engine.SeekPrecision.apply(player, parameters);
     }
 
     private void applyKeepScreenOn(final boolean isPlaying) {
         playerView.setKeepScreenOn(isPlaying || mPrefs.keepScreenOn);
     }
 
-    /*
-     * Open a subtitle file the person already has.
-     *
-     * Asks for a folder first where that has not been settled, because without
-     * one the system hands back a single file and the player can neither find
-     * the subtitle beside the next episode nor look for one automatically.
-     * A television has no document picker, so it never asks.
-     */
+    // asks for a folder first so subtitles can be found automatically; never on a TV
     void openSubtitleFilePicker() {
         if (!isTvBox && mPrefs.askScope) {
             askForScope(true, false);
@@ -5300,15 +4551,6 @@ public class PlayerActivity extends Activity {
         }
 
         choices.add(SubtitleChoice.off(this, !anySelected));
-        /*
-         * A subtitle you already have, from where you keep it.
-         *
-         * This was only ever on a long press of the folder button, which is
-         * both undiscoverable and a poor thing to ask of a remote -- so the
-         * picker offered to search the internet for a subtitle while refusing
-         * to open the one sitting on the drive. It is the same code path as the
-         * long press, so the two cannot drift apart.
-         */
         choices.add(SubtitleChoice.action(getString(R.string.subtitle_source_file),
                 getString(R.string.subtitle_menu_file_detail), this::openSubtitleFilePicker));
         choices.add(SubtitleChoice.action(getString(R.string.online_search_subtitles),
@@ -5323,7 +4565,6 @@ public class PlayerActivity extends Activity {
     }
 
     private static final class SubtitleChoice implements com.brouken.player.online.ListPicker.Row {
-        /** Whether this row is the track actually playing. See Row.current(). */
         private boolean current;
 
         @Override
@@ -5359,7 +4600,6 @@ public class PlayerActivity extends Activity {
                     () -> activity.selectTextTrack(group, index)));
         }
 
-        /** Tag a row as the one playing, so the list can colour it. */
         private static SubtitleChoice marked(final boolean current, final SubtitleChoice choice) {
             choice.current = current;
             return choice;
@@ -5383,16 +4623,6 @@ public class PlayerActivity extends Activity {
     }
 
 
-    /*
-     * Which video track, where a file has more than one.
-     *
-     * Two things end up here. A stream served as a ladder of bitrates shows one
-     * entry per rung, and a file that genuinely carries several video tracks —
-     * a commentary angle, a different cut — shows one per track. Auto is the
-     * first row and is what the player does when nothing is chosen: on a ladder
-     * it follows the connection, and forcing a rung is what someone does when
-     * it keeps guessing wrong.
-     */
     public void showVideoMenu() {
         hideOverlayCardForNow();
         final List<VideoChoice> choices = new ArrayList<>();
@@ -5437,7 +4667,6 @@ public class PlayerActivity extends Activity {
         private final String title;
         private final String detail;
         private final Runnable action;
-        /** Whether this rung is the one in use. See Row.current(). */
         private boolean current;
 
         @Override
@@ -5465,7 +4694,6 @@ public class PlayerActivity extends Activity {
                     }));
         }
 
-        /** Tag a rung as the one in use, so the list can colour it. */
         private static VideoChoice marked(final boolean current, final VideoChoice choice) {
             choice.current = current;
             return choice;
@@ -5473,8 +4701,7 @@ public class PlayerActivity extends Activity {
 
         static VideoChoice track(final PlayerActivity activity, final Tracks.Group group,
                                  final int index, final Format format, final boolean selected) {
-            // A rung on a ladder is recognised by its height, not by a name it
-            // does not have, so the resolution leads and the rest follows it.
+            // a bitrate ladder rung has no name, only a height
             final String name = format.height > 0
                     ? format.height + "p"
                     : TrackNames.title(activity, format, index, C.TRACK_TYPE_VIDEO);
@@ -5526,17 +4753,7 @@ public class PlayerActivity extends Activity {
             }
         }
 
-        /*
-         * The delay belongs here as much as in the quick panel.
-         *
-         * Subtitles have always ended their list with everything else about
-         * subtitles, delay included. The sound had a list of tracks and nothing
-         * else, so the one setting that belongs to a soundtrack was only in a
-         * panel about the player as a whole — which is not where someone whose
-         * lips do not match is going to look for it.
-         *
-         * A row rather than the control itself: a list picker has no arrows.
-         */
+        // the delay as a row that opens its control: a list picker has no arrows
         final List<Runnable> actions = new ArrayList<>();
         for (final AudioChoice choice : choices) {
             actions.add(choice::select);
@@ -5549,7 +4766,6 @@ public class PlayerActivity extends Activity {
         }
 
         if (choices.isEmpty()) {
-            // No soundtrack at all: nothing to pick, and nothing to delay.
             Utils.showText(playerView, getString(R.string.audio_menu_none));
             return;
         }
@@ -5559,7 +4775,6 @@ public class PlayerActivity extends Activity {
                 rows, index -> actions.get(index).run()));
     }
 
-    /** A row in the audio list that does something rather than picking a track. */
     private static final class AudioAction implements com.brouken.player.online.ListPicker.Row {
 
         private final String title;
@@ -5686,7 +4901,7 @@ public class PlayerActivity extends Activity {
         if (player == null) {
             return;
         }
-        // A new choice gets a fresh hearing: if this one also fails, say so.
+        // report a failure of the new choice too
         subtitleFailureReported = false;
         final TrackSelectionParameters.Builder builder =
                 player.getTrackSelectionParameters().buildUpon();
@@ -5723,11 +4938,7 @@ public class PlayerActivity extends Activity {
     }
 
 
-    /**
-     * The subtitles actually attached to the file, in the order they are given
-     * to the engine. Anything whose file has since gone is left out, which is
-     * what makes this differ from {@code mPrefs.subtitleUris}.
-     */
+    // mPrefs.subtitleUris minus files that have gone, in engine order
     private List<Uri> sideloadedSubtitleUris() {
         final List<Uri> uris = new ArrayList<>();
         for (final Uri uri : mPrefs.subtitleUris) {
@@ -5747,43 +4958,59 @@ public class PlayerActivity extends Activity {
         return subtitles;
     }
 
+    // launcher subtitles, then ones attached here; the latter go last because
+    // selectPendingSubtitle counts them from the end
+    private List<MediaItem.SubtitleConfiguration> allSubtitleConfigurations() {
+        final List<MediaItem.SubtitleConfiguration> attachedHere = subtitleConfigurations();
+        final java.util.Set<Uri> here = new java.util.HashSet<>();
+        for (final MediaItem.SubtitleConfiguration subtitle : attachedHere) {
+            here.add(subtitle.uri);
+        }
+        final List<MediaItem.SubtitleConfiguration> all = new ArrayList<>();
+        for (final MediaItem.SubtitleConfiguration subtitle : apiSubs) {
+            if (!here.contains(subtitle.uri)) {
+                all.add(subtitle);
+            }
+        }
+        all.addAll(attachedHere);
+        return all;
+    }
+
     private void attachSubtitle(final Uri uri) {
+        attachSubtitle(uri, null);
+    }
+
+    void attachFoundSubtitle(final Uri uri) {
         attachSubtitle(uri, null);
     }
 
     private void attachSubtitle(final Uri uri, @Nullable final String label) {
         final String named = label == null ? null : label.trim();
         if (uri != null && named != null && !named.isEmpty()) {
-            subtitleLabels.put(uri.toString(), named);
+            mPrefs.putSubtitleLabel(uri, named);
         }
-        handleSubtitles(uri);
-        /*
-         * The name has to follow the file to its new address.
-         *
-         * A subtitle is converted to UTF-8 on the way in, and the converted
-         * copy has an address of its own -- so the name filed under the
-         * address it arrived at was never found again, and the picker fell back
-         * to the last part of the new one. Which for something saved through
-         * MediaStore is a row of digits: exactly the thing this name exists to
-         * avoid, and exactly what was still on screen after a download.
-         */
-        if (mPrefs.subtitleUri != null && named != null && !named.isEmpty()) {
-            subtitleLabels.put(mPrefs.subtitleUri.toString(), named);
+        final Uri attached = handleSubtitles(uri);
+        if (attached == null) {
+            // still downloading; SubtitleFetcher attaches it when it arrives
+            return;
         }
-        pendingSubtitleLabel = subtitleLabelFor(mPrefs.subtitleUri);
+        // the UTF-8 copy has its own address, so the label is filed under it too
+        if (named != null && !named.isEmpty()) {
+            mPrefs.putSubtitleLabel(attached, named);
+        }
+        pendingSubtitleLabel = subtitleLabelFor(attached);
+        rememberAttachedSubtitle(attached, pendingSubtitleLabel);
 
         if (player instanceof com.brouken.player.mpv.MpvPlayer) {
-            // mpv is told the title as well, so the name is the same on both
-            // engines rather than depending on which one happens to be playing.
-            ((com.brouken.player.mpv.MpvPlayer) player)
-                    .addSubtitle(mPrefs.subtitleUri, pendingSubtitleLabel);
+            ((com.brouken.player.mpv.MpvPlayer) player).addSubtitle(attached,
+                    pendingSubtitleLabel, SubtitleUtils.getSubtitleLanguage(attached));
             return;
         }
 
         final ExoPlayer exo = exo();
         final MediaItem current = player == null ? null : player.getCurrentMediaItem();
         if (exo == null || current == null) {
-            // No player to patch — the normal path will pick the list up.
+            // no player to patch; the rebuild picks the list up
             releasePlayer();
             initializePlayer();
             return;
@@ -5792,33 +5019,12 @@ public class PlayerActivity extends Activity {
         final long position = exo.getCurrentPosition();
         final boolean wasPlaying = exo.getPlayWhenReady();
 
-        /*
-         * Write the position down before the file is rebuilt.
-         *
-         * A sideloaded subtitle is part of the media item, so attaching one
-         * means building the item again and re-reading the source. If that read
-         * fails -- which a stream does often enough -- the error path releases
-         * the player, and whatever position was last written is where the next
-         * one starts. Without this that write could be minutes old, so a seek
-         * made shortly before the subtitle arrived was thrown away and the film
-         * jumped back to where it had been. Saving here makes the worst case
-         * starting again from exactly where the viewer was.
-         */
+        // saved first: if re-reading the source fails, the restart begins here
         mPrefs.updatePosition(position,
                 exo.getDuration() == C.TIME_UNSET ? 0L : exo.getDuration());
 
-        /*
-         * Forget which text track was chosen for the item being replaced.
-         *
-         * An override names a track group, and those groups belong to the old
-         * item. Left in place it goes on selecting the subtitle that was
-         * already showing, so the new one appears in the list and does nothing
-         * -- which is what "the old subtitles are still on screen" was.
-         *
-         * The disabled-flags are cleared for a related reason: choosing "None"
-         * sets them for the life of the player, and a subtitle attached
-         * afterwards is marked as the default one, so it was never picked up.
-         */
+        // the override names the old item's track groups, and "None" flags
+        // would refuse the new subtitle as a default track
         exo.setTrackSelectionParameters(exo.getTrackSelectionParameters()
                 .buildUpon()
                 .clearOverridesOfType(C.TRACK_TYPE_TEXT)
@@ -5830,7 +5036,7 @@ public class PlayerActivity extends Activity {
         }
 
         exo.setMediaItem(current.buildUpon()
-                .setSubtitleConfigurations(subtitleConfigurations())
+                .setSubtitleConfigurations(allSubtitleConfigurations())
                 .build(), position);
         exo.setPlayWhenReady(wasPlaying);
         exo.prepare();
@@ -5848,56 +5054,47 @@ public class PlayerActivity extends Activity {
             }
         }
         if (text.isEmpty()) {
-            // Mid-rebuild: the tracks for the new item have not arrived. The
-            // choice is kept and made when they do.
+            // mid-rebuild; chosen when the new tracks arrive
             return;
         }
 
+        // the last match is the newest; a report with fewer matches than are
+        // attached still describes the old item
+        int expected = 0;
+        for (final MediaItem.SubtitleConfiguration subtitle : allSubtitleConfigurations()) {
+            if (subtitle.label != null && subtitle.label.equalsIgnoreCase(pendingSubtitleLabel)) {
+                expected++;
+            }
+        }
+        Tracks.Group newest = null;
+        int newestIndex = 0;
+        int matches = 0;
         for (final Tracks.Group group : text) {
             for (int i = 0; i < group.length; i++) {
                 final Format format = group.getTrackFormat(i);
                 if (format.label != null
                         && format.label.equalsIgnoreCase(pendingSubtitleLabel)) {
-                    chooseTextTrack(group, i);
-                    return;
+                    newest = group;
+                    newestIndex = i;
+                    matches++;
                 }
             }
         }
+        if (newest != null) {
+            if (matches >= expected) {
+                chooseTextTrack(newest, newestIndex);
+            }
+            return;
+        }
 
-        /*
-         * No name matched, so go by position instead.
-         *
-         * A track is not obliged to carry the name it was given. A subtitle
-         * saved through MediaStore arrives under a new address, a downloaded
-         * one can be renamed on the way in, and a container can overwrite the
-         * label with its own -- and when the name did not match, this gave up
-         * silently and left whatever had been showing on screen. That is what
-         * "the new subtitles did nothing" was.
-         *
-         * Media3 appends each sideloaded subtitle after the file's own tracks,
-         * in the order it was handed them, so the trailing groups line up one
-         * for one with the attached list. That is enough to find the right one
-         * without a name to go on.
-         */
+        // no label matched: Media3 appends sideloaded subtitles last, in order
         final List<Uri> attached = sideloadedSubtitleUris();
         final int index = attached.indexOf(mPrefs.subtitleUri);
         if (index < 0 || text.size() < attached.size()) {
             return;
         }
 
-        /*
-         * Only where names are plainly not being kept at all.
-         *
-         * Tracks are reported more than once while an item is rebuilt, and one
-         * of those reports still describes the file as it was. Choosing by
-         * position against that one would select whatever happened to sit in
-         * the same place -- an embedded track, or the subtitle being replaced.
-         *
-         * So if any attached subtitle's name is found among the tracks, names
-         * are being honoured and this report is simply not the one worth
-         * acting on; the next will be. Position is used only when not one of
-         * them appears, which is the case this exists for.
-         */
+        // if any attached label is present, labels are kept and this report is stale
         for (final Tracks.Group group : text) {
             for (int i = 0; i < group.length; i++) {
                 final String label = group.getTrackFormat(i).label;
@@ -5914,7 +5111,6 @@ public class PlayerActivity extends Activity {
         chooseTextTrack(text.get(text.size() - attached.size() + index), 0);
     }
 
-    /** Select one text track outright, whatever the file would have chosen. */
     private void chooseTextTrack(final Tracks.Group group, final int index) {
         final List<Integer> tracksToSelect = new ArrayList<>();
         tracksToSelect.add(index);
@@ -5935,14 +5131,16 @@ public class PlayerActivity extends Activity {
             return;
         }
         onlineController.resolveNameAsync(name -> {
-            // Ignore an answer that arrived after the file changed.
+            // ignore an answer that arrived after the file changed
             if (name == null || name.isEmpty() || !uri.equals(mPrefs.mediaUri)) {
                 return;
             }
             titleView.setText(name);
-            // The history list shows UUIDs otherwise, one per episode.
-            History.rename(androidx.preference.PreferenceManager
-                    .getDefaultSharedPreferences(this), uri, name);
+            // a server that says nothing returns the identifier, which is no name
+            if (History.isFileName(name)) {
+                History.rename(androidx.preference.PreferenceManager
+                        .getDefaultSharedPreferences(this), uri, name, History.NAME_FILE);
+            }
 
             ensureSkipSegments();
             updateOverlayCard(player != null && player.isPlaying());
@@ -5950,14 +5148,201 @@ public class PlayerActivity extends Activity {
         });
     }
 
-    /*
-     * Look the file up as it starts, unless asked not to.
-     *
-     * The card, the skip markers and the titles in history all need to know
-     * what the film is. That used to happen only inside the subtitle search,
-     * which meant the card could not appear without searching for subtitles
-     * first. This asks the same question quietly and on its own.
-     */
+    // ------------------------------------------------------------ no picture
+
+    // sound with no picture (e.g. Dolby Vision 5 with no DV decoder) raises no error;
+    // counted in played time, so buffering and pauses never count
+    private static final long NO_PICTURE_AFTER_MS = 5_000;
+    private static final long NO_PICTURE_CHECK_MS = 1_000;
+    private long noPicturePlayedMs;
+    private long noPictureLastPositionMs = -1;
+    private boolean noPictureWatching;
+    // for this film, across engines
+    private int noPictureHits;
+
+    private void watchForNoPicture() {
+        if (pictureSeen || noPictureWatching || player == null || !haveMedia
+                || coordinatorLayout == null) {
+            return;
+        }
+        noPictureWatching = true;
+        noPictureLastPositionMs = -1;
+        coordinatorLayout.postDelayed(noPictureCheck, NO_PICTURE_CHECK_MS);
+    }
+
+    private void stopNoPictureWatch() {
+        if (coordinatorLayout != null) {
+            coordinatorLayout.removeCallbacks(noPictureCheck);
+        }
+        noPictureWatching = false;
+        noPicturePlayedMs = 0;
+        noPictureLastPositionMs = -1;
+    }
+
+    private boolean hasVideoTrack() {
+        if (player == null || !player.isCommandAvailable(Player.COMMAND_GET_TRACKS)) {
+            return false;
+        }
+        // video turned off on purpose is not a missing picture
+        if (player.getTrackSelectionParameters().disabledTrackTypes.contains(C.TRACK_TYPE_VIDEO)) {
+            return false;
+        }
+        for (final Tracks.Group group : player.getCurrentTracks().getGroups()) {
+            if (group.getType() == C.TRACK_TYPE_VIDEO) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private final Runnable noPictureCheck = new Runnable() {
+        @Override
+        public void run() {
+            if (!noPictureWatching || pictureSeen || player == null || !haveMedia) {
+                stopNoPictureWatch();
+                return;
+            }
+            // in the background there is nothing to draw on
+            if (player.isPlaying() && !keptPlayingInBackground) {
+                final long position = player.getCurrentPosition();
+                if (noPictureLastPositionMs >= 0 && position > noPictureLastPositionMs) {
+                    noPicturePlayedMs += Math.min(position - noPictureLastPositionMs,
+                            2 * NO_PICTURE_CHECK_MS);
+                }
+                noPictureLastPositionMs = position;
+            } else {
+                noPictureLastPositionMs = -1;
+            }
+            if (noPicturePlayedMs >= NO_PICTURE_AFTER_MS) {
+                final boolean video = hasVideoTrack();
+                stopNoPictureWatch();
+                if (video) {
+                    onNoPicture();
+                }
+                return;
+            }
+            coordinatorLayout.postDelayed(this, NO_PICTURE_CHECK_MS);
+        }
+    };
+
+    private void onNoPicture() {
+        if (player == null || !haveMedia) {
+            return;
+        }
+        noPictureHits++;
+        final boolean onMpv = player instanceof com.brouken.player.mpv.MpvPlayer;
+        Utils.log("No picture after " + NO_PICTURE_AFTER_MS + "ms of playback on "
+                + (onMpv ? "mpv" : "media3") + " (time " + noPictureHits + ")");
+        if (noPictureHits > 1 || !com.brouken.player.mpv.MpvPlayer.isSupported()) {
+            Utils.showText(playerView, getString(R.string.engine_no_picture_either), 5000);
+            return;
+        }
+        if ("auto".equals(mPrefs.playbackEngine)) {
+            if (onMpv) {
+                Utils.showText(playerView, getString(R.string.engine_no_picture_either), 5000);
+                return;
+            }
+            // as Auto does for a file Media3 cannot open
+            mpvFallbackActive = true;
+            Utils.showText(playerView, getString(R.string.engine_no_picture_switched), 3000);
+            captureTrackSelection();
+            releasePlayer();
+            initializePlayer();
+            return;
+        }
+        offerOtherEngine(R.string.engine_no_picture_title, R.string.engine_no_picture_message);
+    }
+
+    // --------------------------------------------------------- recent posters
+
+    // saved after 30s played under an uncorrected card, or when picked by hand
+    private static final long POSTER_WATCH_MS = 30_000;
+    private static final long POSTER_CHECK_MS = 10_000;
+    @Nullable
+    private Uri posterWatchUri;
+    private int posterWatchTmdbId;
+    @Nullable
+    private String posterWatchPath;
+    private long posterWatchedMs;
+    private long posterLastPositionMs = -1;
+
+    private void watchForPoster(@NonNull final com.brouken.player.online.Identity identity) {
+        if (identity.posterPath == null || mPrefs.mediaUri == null || coordinatorLayout == null) {
+            return;
+        }
+        if (mPrefs.mediaUri.equals(posterWatchUri) && posterWatchTmdbId == identity.tmdbId) {
+            return;
+        }
+        stopPosterWatch();
+        posterWatchUri = mPrefs.mediaUri;
+        posterWatchTmdbId = identity.tmdbId;
+        posterWatchPath = identity.posterPath;
+        posterWatchedMs = 0;
+        posterLastPositionMs = -1;
+        coordinatorLayout.postDelayed(posterCheck, POSTER_CHECK_MS);
+    }
+
+    private final Runnable posterCheck = new Runnable() {
+        @Override
+        public void run() {
+            if (posterWatchUri == null || !posterWatchUri.equals(mPrefs.mediaUri)
+                    || onlineController == null) {
+                stopPosterWatch();
+                return;
+            }
+            // corrected since; the new film is watched once its card shows
+            final com.brouken.player.online.Identity shown =
+                    onlineController.rememberedForCard(posterWatchUri);
+            if (shown == null || shown.tmdbId != posterWatchTmdbId) {
+                stopPosterWatch();
+                return;
+            }
+            // played time, not wall time
+            if (player != null && player.isPlaying()) {
+                final long position = player.getCurrentPosition();
+                if (posterLastPositionMs >= 0 && position > posterLastPositionMs) {
+                    posterWatchedMs += Math.min(position - posterLastPositionMs, 2 * POSTER_CHECK_MS);
+                }
+                posterLastPositionMs = position;
+            } else {
+                posterLastPositionMs = -1;
+            }
+            if (posterWatchedMs >= POSTER_WATCH_MS) {
+                History.setPoster(mPrefs.mSharedPreferences, posterWatchUri, posterWatchPath);
+                stopPosterWatch();
+                return;
+            }
+            coordinatorLayout.postDelayed(this, POSTER_CHECK_MS);
+        }
+    };
+
+    private void stopPosterWatch() {
+        if (coordinatorLayout != null) {
+            coordinatorLayout.removeCallbacks(posterCheck);
+        }
+        posterWatchUri = null;
+        posterWatchPath = null;
+    }
+
+    // the history entry gets the server's file name; the title bar keeps the launcher's
+    private void rememberFileName(final Uri uri) {
+        final String scheme = uri == null ? null : uri.getScheme();
+        if (!"http".equals(scheme) && !"https".equals(scheme)) {
+            return;
+        }
+        final android.content.SharedPreferences preferences =
+                androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
+        if (History.nameKindFor(preferences, uri) >= History.NAME_FILE) {
+            return;
+        }
+        new Thread(Background.safely(() -> {
+            final String name = com.brouken.player.online.Http.serverFileName(uri.toString());
+            if (History.isFileName(name)) {
+                runOnUiThread(() -> History.rename(preferences, uri, name, History.NAME_FILE));
+            }
+        })).start();
+    }
+
     private void autoIdentify(final Uri uri) {
         if (onlineController == null || uri == null
                 || !onlineController.identifiesAutomatically()
@@ -5967,10 +5352,6 @@ public class PlayerActivity extends Activity {
         onlineController.identifySilently(uri, identity -> {
             if (!uri.equals(mPrefs.mediaUri)) {
                 return;
-            }
-            if (identity.title != null && !identity.title.isEmpty()) {
-                History.fillInName(androidx.preference.PreferenceManager
-                        .getDefaultSharedPreferences(this), uri, identity.title);
             }
             skipLoadedFor = null;
             ensureSkipSegments();
@@ -5983,7 +5364,6 @@ public class PlayerActivity extends Activity {
 
     public void setSpeed(final float speed) {
         mPrefs.speed = speed;
-        // And against this file, so returning to it returns to its speed.
         mPrefs.updateSpeedForUri(speed);
         if (player != null) {
             player.setPlaybackSpeed(speed);
@@ -6005,13 +5385,7 @@ public class PlayerActivity extends Activity {
         initializePlayer();
     }
 
-    /*
-     * The sleep timer, driven from the quick panel.
-     *
-     * Minutes counts down and fades the sound over the last half minute;
-     * minus one waits for the file to finish instead. Either way it pauses
-     * rather than closing, so the film is still there in the morning.
-     */
+    // minutes, -1 for end of file, 0 to cancel; it pauses the film
     private SleepTimer sleepTimer;
 
     public void setSleepTimer(final int minutes) {
@@ -6043,16 +5417,7 @@ public class PlayerActivity extends Activity {
         return sleepTimer != null && sleepTimer.isAtEndOfFile();
     }
 
-    /*
-     * Ten ways to fit the picture to the screen.
-     *
-     * The first three are the library's own -- fit inside, crop to fill, and
-     * stretch. The rest force a shape regardless of what the file claims, which
-     * is what rescues a film encoded with the wrong ratio, or one with the black
-     * bars baked into the picture. A forced shape has to be re-applied whenever
-     * the video size arrives, because the player sets the frame from the file
-     * and would otherwise overwrite it.
-     */
+    // steps 0-2 are the library's fit, crop and stretch; these follow
     private static final float[] FORCED_ASPECTS =
             {16f / 9f, 4f / 3f, 16f / 10f, 2f, 2.35f, 2.39f, 5f / 4f};
     private static final int[] FORCED_ASPECT_NAMES = {
@@ -6060,17 +5425,7 @@ public class PlayerActivity extends Activity {
             R.string.video_resize_16_10, R.string.video_resize_2_1,
             R.string.video_resize_235, R.string.video_resize_239,
             R.string.video_resize_5_4};
-    private static final String PREF_ASPECT_STEP = "aspectStep";
-    private static final String PREF_ASPECT_STEP_URI = "aspectStepUri";
 
-    /*
-     * One icon for each step, so the button says which one you are on.
-     *
-     * It used to have three, chosen from the resize mode, which meant all seven
-     * forced ratios showed the same picture — the button told you it was doing
-     * something to the shape but never which. The ratios are drawn as a screen
-     * of that shape, so they read as a set.
-     */
     private static final int[] ASPECT_ICONS = {
             R.drawable.ic_aspect_ratio_24dp,    // Default: the film's own shape
             R.drawable.ic_fit_screen_24dp,      // Crop
@@ -6086,92 +5441,23 @@ public class PlayerActivity extends Activity {
 
     private int aspectStep;
 
-    /*
-     * A forced ratio belongs to the film it was forced on.
-     *
-     * The step was kept for the app as a whole, so squeezing one badly authored
-     * file into 2.35 left every film afterwards squeezed into 2.35 as well —
-     * and the way back was to press the button round the whole cycle. It is
-     * remembered against the file now: the same film reopens the way you left
-     * it, and a different one opens at its own shape.
-     */
-    private int savedAspectStepFor(@Nullable final Uri uri) {
-        if (uri == null) {
-            return 0;
-        }
-        final SharedPreferences preferences =
-                androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
-        if (!uri.toString().equals(preferences.getString(PREF_ASPECT_STEP_URI, null))) {
-            return 0;
-        }
-        final int saved = preferences.getInt(PREF_ASPECT_STEP, 0);
-        return saved >= 0 && saved < 3 + FORCED_ASPECTS.length ? saved : 0;
-    }
-
+    // saved per film only when chosen, since this also runs whenever a film opens
     private void applyAspectStep(final boolean announce) {
-        final AspectRatioFrameLayout frame =
-                playerView.findViewById(androidx.media3.ui.R.id.exo_content_frame);
         final int forced = aspectStep - 3;
+        final boolean isForced = forced >= 0 && forced < FORCED_ASPECTS.length;
+        final int mode = aspectStep == 1 ? AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+                : aspectStep == 2 ? AspectRatioFrameLayout.RESIZE_MODE_FILL
+                : AspectRatioFrameLayout.RESIZE_MODE_FIT;
 
-        /*
-         * On mpv the shape is mpv's business, not the layout's.
-         *
-         * The surface is given the whole player and mpv letterboxes inside it,
-         * so the bars belong to mpv — which is what lets it put subtitles on
-         * them, and what lets it redraw a new shape while paused. Media3 keeps
-         * the old arrangement, where the frame is measured to the film and the
-         * subtitle view sits over the lot.
-         */
-        final com.brouken.player.mpv.MpvPlayer mpv =
-                player instanceof com.brouken.player.mpv.MpvPlayer
-                        ? (com.brouken.player.mpv.MpvPlayer) player : null;
+        if (engineUi() != null) {
+            engineUi().applyShape(mode, isForced ? FORCED_ASPECTS[forced] : 0f, knownVideoSize());
+        }
 
-        if (forced >= 0 && forced < FORCED_ASPECTS.length) {
-            if (mpv != null) {
-                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
-                if (frame != null) {
-                    frame.setAspectRatio(0);
-                }
-                mpv.setAspect(true, 0, FORCED_ASPECTS[forced]);
-            } else {
-                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
-                if (frame != null) {
-                    frame.setAspectRatio(FORCED_ASPECTS[forced]);
-                }
-            }
+        if (isForced) {
             if (announce) {
                 Utils.showText(playerView, getString(FORCED_ASPECT_NAMES[forced]));
             }
         } else {
-            final int mode = aspectStep == 1 ? AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-                    : aspectStep == 2 ? AspectRatioFrameLayout.RESIZE_MODE_FILL
-                    : AspectRatioFrameLayout.RESIZE_MODE_FIT;
-            if (mpv != null) {
-                playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
-                if (frame != null) {
-                    frame.setAspectRatio(0);
-                }
-                // crop fills by cutting the edges; stretch abandons the shape.
-                mpv.setAspect(aspectStep != 2, aspectStep == 1 ? 1.0 : 0.0, 0);
-            } else {
-                /*
-                 * Put the frame back to the shape of the film.
-                 *
-                 * A forced ratio works by telling the frame what shape to be,
-                 * and nothing here ever told it to stop -- so coming back round
-                 * the cycle to Default, Crop or Stretch left the frame still
-                 * holding the last ratio forced on it. The picture stayed 5:4
-                 * while the button said Default, every further press moved on
-                 * from a shape that was not the one on screen, and only
-                 * reopening the player cleared it.
-                 */
-                if (frame != null) {
-                    final androidx.media3.common.VideoSize size = knownVideoSize();
-                    frame.setAspectRatio(size == null || size.height == 0 ? 0
-                            : size.width * size.pixelWidthHeightRatio / size.height);
-                }
-                playerView.setResizeMode(mode);
-            }
             mPrefs.resizeMode = mode;
             if (announce) {
                 Utils.showText(playerView, getString(aspectStep == 1
@@ -6180,183 +5466,95 @@ public class PlayerActivity extends Activity {
                         : R.string.video_resize_default));
             }
         }
-        androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
-                .edit()
-                .putInt(PREF_ASPECT_STEP, aspectStep)
-                .putString(PREF_ASPECT_STEP_URI,
-                        mPrefs.mediaUri == null ? null : mPrefs.mediaUri.toString())
-                .apply();
+        if (announce) {
+            mPrefs.updateAspectStep(aspectStep);
+        }
+        if (BuildConfig.DEBUG) {
+            Utils.log("Aspect step " + aspectStep + (announce ? " chosen" : " applied"));
+        }
         remeasureOverPicture();
         refreshPictureAfterShapeChange();
     }
 
-    /*
-     * After the shape changes, make the picture and the subtitles agree with it.
-     *
-     * Posted rather than called straight away: the frame has only just been
-     * told its new size and has not laid out yet, so asking now would measure
-     * the shape we are leaving. One pass later everything is where it will be.
-     */
+    // posted: the frame has not laid out its new size yet
     private void refreshPictureAfterShapeChange() {
         playerView.post(() -> {
             if (player instanceof com.brouken.player.mpv.MpvPlayer) {
                 ((com.brouken.player.mpv.MpvPlayer) player).refreshPicture();
             }
-            // The subtitles are laid out against the player, and the player has
-            // just changed shape, so they are laid out again — on both engines.
             updateSubtitlePictureArea();
         });
     }
 
-    /*
-     * A clock in the corner, for watching in bed.
-     *
-     * Sits above the title so it does not collide with it, hides itself with
-     * the rest of the furniture in picture-in-picture, and ticks on the minute
-     * rather than every second.
-     */
-    /*
-     * Where you are in the film, while the screen is locked.
-     *
-     * A locked screen showed a padlock and nothing else, so the one thing
-     * people actually wanted to know behind a lock -- how much is left -- meant
-     * unlocking to find out. With the setting on, a tap brings up a bar and the
-     * three times beside the padlock.
-     *
-     * Deliberately not the real controls. This is a plain progress bar that
-     * cannot be dragged and carries no buttons, because a lock that can be
-     * scrubbed by a pocket is not a lock. Unlocking is still the padlock.
-     */
-    private View lockedTimeline;
-    private android.widget.ProgressBar lockedBar;
-    private TextView lockedTimes;
+    // progress shown behind the lock; not draggable, so a pocket cannot scrub it
+    @Nullable
+    private LockedTimeline lockedTimelineView;
 
     private final Runnable lockedTimelineTick = new Runnable() {
         @Override
         public void run() {
-            if (lockedTimeline == null || lockedTimeline.getVisibility() != View.VISIBLE) {
+            if (lockedTimelineView == null || !lockedTimelineView.isShowing()) {
                 return;
             }
             updateLockedTimeline();
-            lockedTimeline.postDelayed(this, 500);
+            coordinatorLayout.postDelayed(this, 500);
         }
     };
 
-    private final Runnable lockedTimelineHide = () -> {
-        if (lockedTimeline != null) {
-            lockedTimeline.removeCallbacks(lockedTimelineTick);
-            lockedTimeline.setVisibility(View.GONE);
-        }
-    };
+    private final Runnable lockedTimelineHide = this::hideLockedTimeline;
 
-    /** True when the viewer has asked to see the timeline behind a lock. */
     private boolean wantsLockedTimeline() {
         return androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
                 .getBoolean("lockedTimeline", false);
     }
 
-    /**
-     * Show it for as long as the padlock is up, then take it away with it.
-     *
-     * <p>Called from the tap that shows the padlock, so the two appear and go
-     * together and a locked screen is never left with a bar on it.
-     */
+    // called from the tap that shows the padlock; both go together
     boolean showLockedTimeline(final long ignored) {
-        if (!locked || !haveMedia || player == null || !wantsLockedTimeline()) {
-            if (lockedTimeline != null) {
-                lockedTimelineHide.run();
-            }
+        if (!locked || !haveMedia || player == null || !wantsLockedTimeline() || inPip) {
+            hideLockedTimeline();
             return false;
         }
-        final long timeout = CONTROLLER_TIMEOUT;
-        if (lockedTimeline == null) {
-            final LinearLayout box = new LinearLayout(this);
-            box.setOrientation(LinearLayout.VERTICAL);
-            final int pad = Utils.dpToPx(16);
-            box.setPadding(pad, Utils.dpToPx(8), pad, Utils.dpToPx(10));
-            // A strip rather than floating text: subtitles sit low too, and
-            // white times over a pale frame with a line of dialogue behind
-            // them are unreadable. This also makes it plainly a thing the
-            // player has put there rather than part of the film.
-            box.setBackgroundColor(Color.argb(0xB0, 0, 0, 0));
-
-            lockedTimes = new TextView(this);
-            lockedTimes.setTextColor(Color.WHITE);
-            lockedTimes.setShadowLayer(4, 0, 0, Color.BLACK);
-            lockedTimes.setTextSize(13);
-            lockedTimes.setGravity(Gravity.CENTER_HORIZONTAL);
-            box.addView(lockedTimes, new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT));
-
-            lockedBar = new android.widget.ProgressBar(this, null,
-                    android.R.attr.progressBarStyleHorizontal);
-            lockedBar.setMax(1000);
-            final int accent = Accent.color(this);
-            lockedBar.setProgressTintList(android.content.res.ColorStateList.valueOf(accent));
-            final LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-            barParams.topMargin = Utils.dpToPx(6);
-            box.addView(lockedBar, barParams);
-
-            /*
-             * CoordinatorLayout's own params, not a FrameLayout's.
-             *
-             * The root here is a CoordinatorLayout, and handed a FrameLayout's
-             * params it copies the margins and throws the gravity away -- so a
-             * bar asked for at the bottom was drawn across the top of the film,
-             * over the title rather than where a timeline belongs.
-             */
-            final androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams params =
-                    new androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT);
-            params.gravity = Gravity.BOTTOM;
-            box.setLayoutParams(params);
-            // Nothing here takes a touch: the lock has to keep meaning what it
-            // means, and the padlock above is the only thing that answers.
-            box.setClickable(false);
-            box.setFocusable(false);
-            lockedTimeline = box;
-            coordinatorLayout.addView(box);
+        if (lockedTimelineView == null) {
+            lockedTimelineView = new LockedTimeline(this, coordinatorLayout);
         }
-        lockedTimeline.setVisibility(View.VISIBLE);
+        final boolean wasShowing = lockedTimelineView.isShowing();
+        lockedTimelineView.show(Accent.color(this));
         updateLockedTimeline();
-        lockedTimeline.removeCallbacks(lockedTimelineTick);
-        lockedTimeline.removeCallbacks(lockedTimelineHide);
-        lockedTimeline.postDelayed(lockedTimelineTick, 500);
-        lockedTimeline.postDelayed(lockedTimelineHide, timeout);
+        if (!wasShowing) {
+            // posted: its height is known only after layout
+            coordinatorLayout.post(() -> {
+                if (lockedTimelineView != null && lockedTimelineView.isShowing()
+                        && engineUi() != null) {
+                    engineUi().setSubtitleLift(lockedTimelineView.heightFraction());
+                }
+            });
+        }
+        coordinatorLayout.removeCallbacks(lockedTimelineTick);
+        coordinatorLayout.removeCallbacks(lockedTimelineHide);
+        coordinatorLayout.postDelayed(lockedTimelineTick, 500);
+        coordinatorLayout.postDelayed(lockedTimelineHide, CONTROLLER_TIMEOUT);
         return true;
     }
 
-    /** Hide it at once, whatever it was waiting for. */
     void hideLockedTimeline() {
-        if (lockedTimeline != null) {
-            lockedTimeline.removeCallbacks(lockedTimelineTick);
-            lockedTimeline.removeCallbacks(lockedTimelineHide);
-            lockedTimeline.setVisibility(View.GONE);
+        if (coordinatorLayout != null) {
+            coordinatorLayout.removeCallbacks(lockedTimelineTick);
+            coordinatorLayout.removeCallbacks(lockedTimelineHide);
+        }
+        if (lockedTimelineView != null && lockedTimelineView.isShowing()) {
+            lockedTimelineView.hide();
+            if (engineUi() != null) {
+                engineUi().setSubtitleLift(0f);
+            }
         }
     }
 
     private void updateLockedTimeline() {
-        if (player == null || lockedTimes == null) {
+        if (player == null || lockedTimelineView == null) {
             return;
         }
-        final long position = Math.max(0, player.getCurrentPosition());
         final long duration = player.getDuration() == C.TIME_UNSET ? 0 : player.getDuration();
-        if (duration > 0) {
-            lockedBar.setProgress((int) (position * 1000 / duration));
-            // Elapsed, what is left, and the whole thing -- the question behind
-            // a lock is "how much more", so the middle one is the point of it.
-            lockedTimes.setText(getString(R.string.locked_timeline_times,
-                    Utils.formatMilis(position),
-                    Utils.formatMilis(Math.max(0, duration - position)),
-                    Utils.formatMilis(duration)));
-        } else {
-            // A live stream has no end to count towards.
-            lockedBar.setProgress(0);
-            lockedTimes.setText(Utils.formatMilis(position));
-        }
+        lockedTimelineView.update(player.getCurrentPosition(), duration);
     }
 
     private TextView clockView;
@@ -6402,14 +5600,7 @@ public class PlayerActivity extends Activity {
         reserveRoomForClock();
     }
 
-    /*
-     * The clock sits in the corner the title bar also reaches into.
-     *
-     * The clock has to stay outside the controls — the whole point of it is
-     * that it is there when they are not — so instead the title and the line of
-     * detail under it stop short of it. Measured rather than guessed, because
-     * "18:42" and "6:42 PM" are not the same width.
-     */
+    // measured, since "18:42" and "6:42 PM" differ in width
     private void reserveRoomForClock() {
         if (clockView == null || titleView == null || metaView == null) {
             return;
@@ -6423,13 +5614,7 @@ public class PlayerActivity extends Activity {
         });
     }
 
-    /*
-     * Volume keys that quieten the film rather than the device.
-     *
-     * Off by default, because the keys belonging to the device is what everyone
-     * expects. On, it is the player's own volume that moves, which is the one
-     * thing that does not also turn down an alarm.
-     */
+    // optional: volume keys move the player's volume instead of the device's
     private boolean adjustPlayerVolume(final boolean up) {
         if (player == null || !androidx.preference.PreferenceManager
                 .getDefaultSharedPreferences(this)
@@ -6444,39 +5629,84 @@ public class PlayerActivity extends Activity {
         return true;
     }
 
-    /*
-     * Extras from the app that launched us.
-     *
-     * Headers arrive the way every player that takes them accepts: a flat array
-     * of name, value, name, value. A stream behind a token or a referer check
-     * cannot be played without them, and that is how a front-end usually hands
-     * a link over. A Bundle of strings is accepted too, since some send that.
-     *
-     * An IMDb or TMDB id saves asking a database what the file is, and is far
-     * more reliable than reading it off the file name.
-     */
     private void readApiHeaders(final Bundle bundle) {
         apiHeaders.clear();
         apiImdbId = bundle.getString(API_IMDB);
         apiTmdbId = bundle.getString(API_TMDB);
+        // a name/value array or a Bundle; see LaunchHeaders
+        apiHeaders.putAll(LaunchHeaders.read(bundle, API_HEADERS));
+    }
 
-        final Object raw = bundle.get(API_HEADERS);
-        if (raw instanceof String[]) {
-            final String[] pairs = (String[]) raw;
-            for (int i = 0; i + 1 < pairs.length; i += 2) {
-                if (pairs[i] != null && pairs[i + 1] != null) {
-                    apiHeaders.put(pairs[i], pairs[i + 1]);
-                }
-            }
-        } else if (raw instanceof Bundle) {
-            final Bundle headers = (Bundle) raw;
-            for (final String key : headers.keySet()) {
-                final String value = headers.getString(key);
-                if (value != null) {
-                    apiHeaders.put(key, value);
-                }
+    // -------------------------------------------------------- launch memory
+
+    private boolean launchMemoryChecked;
+
+    // title, headers and subtitles from the launcher, for when the film is reopened here
+    private void saveLaunchMemory() {
+        if (mPrefs.mediaUri == null) {
+            return;
+        }
+        final LaunchMemory.Record record = new LaunchMemory.Record();
+        record.title = apiTitle;
+        record.headers.putAll(apiHeaders);
+        for (final MediaItem.SubtitleConfiguration subtitle : apiSubs) {
+            record.subtitles.add(new LaunchMemory.Subtitle(subtitle.uri, subtitle.label,
+                    subtitle.language, (subtitle.selectionFlags & C.SELECTION_FLAG_DEFAULT) != 0));
+        }
+        LaunchMemory.save(mPrefs.mSharedPreferences, mPrefs.mediaUri, record);
+    }
+
+    // only when this launch brought no extras of its own
+    private void restoreLaunchMemory() {
+        if (launchMemoryChecked) {
+            return;
+        }
+        launchMemoryChecked = true;
+        if (apiAccess || apiAccessPartial || apiTitle != null || !apiHeaders.isEmpty()
+                || !apiSubs.isEmpty()) {
+            return;
+        }
+        final LaunchMemory.Record record =
+                LaunchMemory.load(mPrefs.mSharedPreferences, mPrefs.mediaUri);
+        if (record == null) {
+            return;
+        }
+        if (record.title != null && !record.title.trim().isEmpty()) {
+            apiTitle = record.title;
+            mPrefs.setMediaTitle(record.title);
+        }
+        apiHeaders.putAll(record.headers);
+        for (final LaunchMemory.Subtitle subtitle : record.subtitles) {
+            final String scheme = subtitle.uri.getScheme() == null ? "" : subtitle.uri.getScheme();
+            if (scheme.startsWith("http") || Utils.fileExists(this, subtitle.uri)) {
+                apiSubs.add(SubtitleUtils.buildSubtitle(this, subtitle.uri, subtitle.name,
+                        subtitle.language, subtitle.selected));
             }
         }
+    }
+
+    private void rememberAttachedSubtitle(@Nullable final Uri subtitle, @Nullable final String label) {
+        if (subtitle == null || mPrefs.mediaUri == null) {
+            return;
+        }
+        LaunchMemory.Record record = LaunchMemory.load(mPrefs.mSharedPreferences, mPrefs.mediaUri);
+        if (record == null) {
+            record = new LaunchMemory.Record();
+            record.title = apiTitle;
+            record.headers.putAll(apiHeaders);
+        }
+        final List<LaunchMemory.Subtitle> kept = new ArrayList<>();
+        for (final LaunchMemory.Subtitle existing : record.subtitles) {
+            if (!existing.uri.equals(subtitle)) {
+                kept.add(new LaunchMemory.Subtitle(existing.uri, existing.name,
+                        existing.language, false));
+            }
+        }
+        record.subtitles.clear();
+        record.subtitles.addAll(kept);
+        record.subtitles.add(new LaunchMemory.Subtitle(subtitle, label,
+                SubtitleUtils.getSubtitleLanguage(subtitle), true));
+        LaunchMemory.save(mPrefs.mSharedPreferences, mPrefs.mediaUri, record);
     }
 
     @Nullable
@@ -6494,19 +5724,7 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    /*
-     * Settings, without the film being thrown away to get there.
-     *
-     * The player used to die on the way in and be rebuilt on the way out,
-     * because that is what the activity lifecycle does -- so a trip to settings
-     * to change anything at all cost a reopen, which on a stream is a spinner
-     * and a stall. Almost nothing in there needs the file reopened; the few
-     * things that do are listed in REBUILD_ON_RETURN and say so in their own
-     * rows.
-     *
-     * What they looked like on the way in is written down here so the way out
-     * can tell whether any of them actually moved.
-     */
+    // the player is kept across settings; only these need the file reopened
     private static final String[] REBUILD_ON_RETURN = {
             "playbackEngine", "adaptiveBuffering", "tunneling",
             "decoderPriority", "mapDV7ToHevc",
@@ -6533,7 +5751,6 @@ public class PlayerActivity extends Activity {
         keptPlayerForSettings = player != null && haveMedia;
     }
 
-    /** Whether anything changed that the player cannot pick up without being rebuilt. */
     private boolean settingsNeedTheFileReopened() {
         final SharedPreferences preferences =
                 androidx.preference.PreferenceManager.getDefaultSharedPreferences(this);
@@ -6548,16 +5765,7 @@ public class PlayerActivity extends Activity {
     }
 
 
-    /**
-     * The buttons of the centre row, in the order they are drawn.
-     *
-     * <p>The row holds a half either side of the play button rather than one
-     * flat line of buttons, so that the play button sits on the middle of the
-     * screen whatever else is showing. This walks into those two halves, and
-     * only those two: everything else in the row is a button, and some of them
-     * -- the seek pair the library supplies -- are a frame around a button and
-     * a label, which must be mirrored whole rather than taken apart.
-     */
+    // opens only the two halves beside play; the library's seek buttons stay whole
     private java.util.List<View> centerControlChildren() {
         final java.util.List<View> found = new java.util.ArrayList<>();
         if (centerControls == null) {
@@ -6595,7 +5803,7 @@ public class PlayerActivity extends Activity {
 
         for (final View child : centerControlChildren()) {
             if (child == exoPlayPause) {
-                // Already permanently in the time row; two would be silly.
+                // already in the time row
                 continue;
             }
             if (child.getVisibility() != View.VISIBLE) {
@@ -6712,43 +5920,12 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    /*
-     * Two pointers on a first run: where the files are, then where the key goes.
-     *
-     * The first has always been there. The second exists because everything the
-     * player knows about a film -- its title, its poster, its subtitles, the
-     * marks it skips -- comes from one free key that somebody has to paste in,
-     * and nothing said so. An empty info card and a subtitle search that finds
-     * nothing look like a broken player rather than an unfinished setup.
-     *
-     * It is shown only while there is no key, so it is a piece of setup and not
-     * a standing advertisement, and it is dismissed exactly like the first one.
-     */
-    /*
-     * What the pointers were asked to do, once they have both been through.
-     *
-     * Pressing a pointer's circle used to do its thing there and then, and the
-     * first circle's thing is opening the file picker — which covers the screen,
-     * so the second pointer was put off until the controls came back. It never
-     * reliably did: that is a visibility callback which does not fire if the
-     * controls were already up, and the second pointer simply never appeared
-     * for anybody who pressed the first one rather than tapping it away. Which
-     * is what the circle invites you to do.
-     *
-     * So neither circle acts immediately. Both pointers run, one after the
-     * other, however each is dismissed — and whatever was asked for happens
-     * when the last one has gone.
-     */
+    // first-run pointers; a pressed circle acts only after the last pointer goes,
+    // since the file picker would cover the second one
     private boolean openFileAfterHints;
     private boolean openSettingsAfterHints;
 
-    /*
-     * The pointer on screen, if one is, and which of the two it is.
-     *
-     * Kept because a pointer has to answer a remote, and the library it comes
-     * from only listens for Back -- which on Android 13 and later is not a key
-     * event at all, so it heard nothing. See hintTakesKey below.
-     */
+    // kept so a remote can answer the pointer; see hintTakesKey
     @Nullable
     private TapTargetView currentHint;
     private boolean currentHintIsTheKeyOne;
@@ -6763,8 +5940,7 @@ public class PlayerActivity extends Activity {
                 new TapTargetView.Listener() {
                     @Override
                     public void onTargetClick(TapTargetView view) {
-                        // Before dismissing, because dismissing is what moves
-                        // this on to the next pointer.
+                        // before dismissing, which moves on to the next pointer
                         openFileAfterHints = true;
                         super.onTargetClick(view);
                     }
@@ -6780,7 +5956,6 @@ public class PlayerActivity extends Activity {
                 });
     }
 
-    /** The second pointer, or false when there is nothing to point at. */
     private boolean showKeyHint() {
         if (exoSettings == null || exoSettings.getVisibility() != View.VISIBLE
                 || ApiKeys.hasTmdb(this)) {
@@ -6810,8 +5985,7 @@ public class PlayerActivity extends Activity {
 
     private void finishHints() {
         watchBackForHint(false);
-        // Settings wins if both were pressed: it is the later of the two, so it
-        // is the one still being asked for.
+        // settings wins if both were pressed, being the later
         final boolean settings = openSettingsAfterHints;
         final boolean open = openFileAfterHints;
         openSettingsAfterHints = false;
@@ -6839,8 +6013,6 @@ public class PlayerActivity extends Activity {
                 buttonRotation.setImageResource(R.drawable.ic_screen_lock_portrait_24dp);
                 break;
             case SENSOR:
-                // Following the phone, regardless of what the phone's own
-                // rotation lock says, so the icon is the unambiguous one.
                 buttonRotation.setImageResource(R.drawable.ic_auto_rotate_24dp);
                 break;
             case LANDSCAPE:
@@ -6850,19 +6022,7 @@ public class PlayerActivity extends Activity {
         }
     }
 
-    /*
-     * Back, on a locked screen, must not be the way out.
-     *
-     * From Android 13 onwards back is not a key event at all, so the lock — which
-     * works by swallowing key events — never saw it, and the one button everybody
-     * presses first closed the film. Worse on a television, where back is how you
-     * leave everything.
-     *
-     * The callback is registered for as long as there is a player rather than
-     * only while the controls are up, and it decides: locked, it says so and
-     * stays; controls up, it puts them away; otherwise it leaves, which is what
-     * back is for.
-     */
+    // Android 13+: Back is not a key event, so the lock needs this callback
     private Object createOnBackInvokedCallback() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             return (OnBackInvokedCallback) () -> {

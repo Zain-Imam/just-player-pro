@@ -14,14 +14,7 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import java.util.EnumMap;
 import java.util.Map;
 
-/*
- * A square somebody can point a phone at.
- *
- * A television has no share sheet worth the name and often no mail or messaging
- * app at all, so an error report shown there is an error report that stays
- * there. The details are small — a version, a device, an error code — and they
- * fit in a code that can be read off the screen from the sofa.
- */
+// QR code for error details, since TVs often have no way to share text
 public final class QrCode {
 
     private QrCode() {
@@ -35,9 +28,7 @@ public final class QrCode {
         try {
             final Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
             hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
-            // A screen photographed across a room is a poor scan; the highest
-            // correction level survives it and the payload is small enough to
-            // afford the room.
+            // highest correction level: scanned off a screen across a room
             hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
             hints.put(EncodeHintType.MARGIN, 2);
 
@@ -50,8 +41,7 @@ public final class QrCode {
             for (int y = 0; y < height; y++) {
                 final int row = y * width;
                 for (int x = 0; x < width; x++) {
-                    // Dark on light whatever the app's theme is: a scanner
-                    // expects that way round and half of them will not invert.
+                    // always dark on light: many scanners do not handle inverted codes
                     pixels[row + x] = matrix.get(x, y) ? Color.BLACK : Color.WHITE;
                 }
             }
@@ -60,8 +50,7 @@ public final class QrCode {
             bitmap.setPixels(pixels, 0, width, 0, 0, width, height);
             return bitmap;
         } catch (Exception e) {
-            // A payload too big for a code, or a device that would not give the
-            // memory. The text is still on screen either way.
+            // payload too large or out of memory; the text is still shown
             return null;
         }
     }

@@ -80,7 +80,7 @@ public final class MatroskaChapters {
                 return;
             }
             if (id == ID_SEGMENT) {
-                // Descend rather than skip: everything interesting is inside.
+                // the chapters are inside the segment
                 readSegment(reader, out);
                 return;
             }
@@ -286,7 +286,7 @@ public final class MatroskaChapters {
             while (remaining > 0) {
                 final long skipped = in.skip(remaining);
                 if (skipped <= 0) {
-                    // skip() can refuse; a read keeps us moving.
+                    // skip() can return 0; a single read still advances
                     if (in.read() < 0) {
                         return;
                     }

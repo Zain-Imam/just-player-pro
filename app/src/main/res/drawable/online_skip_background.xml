@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Brand-filled when focused so a remote user can see it is selected; a dark
-     translucent pill otherwise, which stays legible over any frame. -->
+<!-- accent fill when focused so a remote can see it -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_focused="true">
         <shape android:shape="rectangle">

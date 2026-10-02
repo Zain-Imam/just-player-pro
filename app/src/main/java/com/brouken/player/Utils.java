@@ -210,39 +210,15 @@ public class Utils {
         return 100 + PlayerActivity.boostLevel * (50 / BOOST_STEPS);
     }
 
-    /** How much one step of the vertical swipe moves the volume, in percent. */
+    // percent per swipe step
     public static final int VOLUME_FINE_STEP = 1;
 
-    /**
-     * Volume in single percent, for the vertical swipe.
-     *
-     * <p>A device has a fixed number of volume steps -- fifteen on most -- so
-     * stepping the device itself and showing the result as a percentage could
-     * only ever read 0, 7, 13, 20 and upwards. Beside brightness, which moves
-     * one level at a time, that looked broken.
-     *
-     * <p>So the swipe moves along its own scale of a hundred, the device is set
-     * to the nearest step it actually has at or above that, and the engine's
-     * own volume is turned down inside that step to land on the exact figure.
-     * The hardware keys are deliberately left alone: those should agree with
-     * the panel the system puts on screen, which knows nothing of this.
-     *
-     * <p>The real stream range is used rather than {@link #getVolume}, whose
-     * Samsung path reports a virtual range that {@code setStreamVolume} would
-     * not understand.
-     */
+    // 1% steps: device volume goes to the step at or above, engine gain does the rest
+    // uses the stream range; getVolume's Samsung range means nothing to setStreamVolume
     public static void adjustVolumeFine(final Context context, final AudioManager audioManager,
                                         final CustomPlayerView playerView, final boolean raise,
                                         final boolean canBoost) {
-        /*
-         * Leave this alone where the player has a volume of its own.
-         *
-         * That setting hands the volume keys to the player rather than the
-         * device, so the two are deliberately independent. Fine steps work by
-         * turning the player down inside one of the device's own steps, which
-         * would write straight over whatever the keys had set -- so where it is
-         * on, the swipe stays on the device's volume exactly as it always was.
-         */
+        // fine steps would override the player-only volume keys, so skip them there
         if (androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
                 .getBoolean("volumeKeysPlayerOnly", false)) {
             adjustVolume(context, audioManager, playerView, raise, canBoost, false);
@@ -257,22 +233,14 @@ public class Utils {
         }
         final int device = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 
-        /*
-         * Take the device's word for it when it disagrees.
-         *
-         * Anything else on the phone can move the volume while a film is
-         * playing -- the hardware keys, a notification, another app. When the
-         * step no longer matches what this last set, the scale is read back
-         * from the device so the next swipe carries on from what is audible
-         * rather than from a figure that is no longer true.
-         */
+        // resync when something else moved the device volume
         int percent = PlayerActivity.volumeFinePercent;
         if (percent < 0 || (int) Math.ceil(percent * max / 100f) != device) {
             percent = Math.round(device * 100f / max);
             PlayerActivity.boostLevel = 0;
         }
 
-        // Above full volume the boost takes over, exactly as it did before.
+        // above full volume the boost takes over
         if (raise && percent >= 100 && canBoost && PlayerActivity.canBoostVolume()) {
             if (PlayerActivity.boostLevel < BOOST_STEPS) {
                 PlayerActivity.boostLevel++;
@@ -302,8 +270,7 @@ public class Utils {
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, step,
                         AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
             } catch (SecurityException e) {
-                // A locked-down profile can refuse. The engine gain below still
-                // moves the sound, so the swipe is not left doing nothing.
+                // a locked-down profile can refuse; the engine gain below still applies
                 Log.w(TAG, e);
             }
         }
@@ -319,14 +286,7 @@ public class Utils {
     public static void adjustVolume(final Context context, final AudioManager audioManager, final CustomPlayerView playerView, final boolean raise, boolean canBoost, boolean clear) {
         playerView.removeCallbacks(playerView.textClearRunnable);
 
-        /*
-         * The keys move the device's own volume, so let go of the fine part.
-         *
-         * Left in place, a swipe that had turned the engine down inside a step
-         * would go on quietening everything the keys did afterwards -- press
-         * volume up to the top and the film would still be playing at a
-         * fraction of it.
-         */
+        // the keys move the device volume, so drop any fine engine gain
         if (PlayerActivity.fineVolume != 1f) {
             PlayerActivity.fineVolume = 1f;
             PlayerActivity.applyEngineVolume();
@@ -432,27 +392,10 @@ public class Utils {
         showText(playerView, text, 1200);
     }
 
-    /*
-     * Landscape, portrait, or follow the phone.
-     *
-     * It used to offer "Video orientation" and "Device orientation", which say
-     * how the player decides rather than what you get, and neither is the thing
-     * anybody reaches for. What people want from this button is to hold the
-     * phone a particular way round, or to stop being asked about it at all.
-     */
     public enum Orientation {
         LANDSCAPE(0, R.string.video_orientation_landscape),
         PORTRAIT(4, R.string.video_orientation_portrait),
-        /*
-         * Follows the phone, whatever the phone has been told about rotating.
-         *
-         * Deliberately SCREEN_ORIENTATION_SENSOR rather than USER: a rotation
-         * lock is a decision about the launcher and your messages, not about a
-         * film. Somebody who turns the phone sideways while watching has said
-         * what they want plainly enough, and a control inside the player that
-         * does nothing because of a setting three screens away is not a
-         * control. This is what every other player does here.
-         */
+        // SENSOR ignores the system rotation lock on purpose
         SENSOR(3, R.string.video_orientation_sensor);
 
         public final int value;
@@ -463,20 +406,7 @@ public class Utils {
             this.description = description;
         }
 
-        /**
-         * The saved number back into a choice.
-         *
-         * By number and not by position in this list, which is what it used to
-         * be. The two stopped matching when a third mode was added in the
-         * middle, so choosing auto-rotate saved a 3 and read back as whatever
-         * happened to be fourth - the setting did not survive closing the app.
-         *
-         * The modes that no longer exist land on their nearest equivalent:
-         * video orientation was landscape for all but a phone-shot clip, and
-         * device orientation was the phone deciding, which is auto-rotate.
-         * Anything unrecognised, including the old "not chosen yet", opens
-         * landscape.
-         */
+        // by saved value, not ordinal; retired modes map to their nearest equivalent
         public static Orientation fromValue(final int value) {
             switch (value) {
                 case 4:
@@ -494,9 +424,7 @@ public class Utils {
     public static void setOrientation(Activity activity, Orientation orientation) {
         switch (orientation) {
             case PORTRAIT:
-                // SENSOR_PORTRAIT, not PORTRAIT, so the phone can still be held
-                // the other way up. Locking to one edge is not what was asked
-                // for; staying out of landscape is.
+                // SENSOR_PORTRAIT so the phone can still be held upside down
                 activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
                 break;
             case SENSOR:
@@ -509,7 +437,6 @@ public class Utils {
         }
     }
 
-    /** Landscape, then portrait, then follow the phone, then round again. */
     public static Orientation getNextOrientation(Orientation orientation) {
         switch (orientation) {
             case LANDSCAPE:
@@ -603,21 +530,7 @@ public class Utils {
         return false;
     }
 
-    /**
-     * How much to keep clear at each end of the controls.
-     *
-     * <p>One number for both ends, being the largest of everything that has to
-     * be avoided at either: a camera cut into an edge, a navigation bar that
-     * moves to the side in landscape, the curve of a waterfall screen.
-     *
-     * <p>The same at both ends on purpose. Insetting only the side that has
-     * something on it is what the platform asks for and what looks broken: on a
-     * phone whose camera lands on the left in landscape, the seek bar started a
-     * camera's width in and ran clean off the other edge, which reads as a bug
-     * rather than as room left for a camera. Where there is nothing to avoid at
-     * either end -- portrait, a tablet, a television -- this is zero and
-     * nothing is moved at all.
-     */
+    // the same inset at both ends keeps the controls centred
     public static int safeSideInset(final int systemLeft, final int systemRight,
                                     final int cutoutLeft, final int cutoutRight) {
         final int left = Math.max(systemLeft, cutoutLeft);
@@ -783,19 +696,15 @@ public class Utils {
                 .withChosenListener(new ChooserDialog.Result() {
                     @Override
                     public void onChoosePath(String path, File pathFile) {
-                        activity.releasePlayer();
                         Uri uri = DocumentFile.fromFile(pathFile).getUri();
-                        if (video) {
-                            activity.mPrefs.setPersistent(true);
-                            activity.mPrefs.updateMedia(activity, uri, null);
-                            activity.searchSubtitles();
-                        } else {
-                            // Convert subtitles to UTF-8 if necessary
-                            SubtitleUtils.clearCache(activity);
-                            uri = Utils.convertToUTF(activity, uri);
-
-                            activity.mPrefs.updateSubtitle(uri);
+                        if (!video) {
+                            activity.attachPickedSubtitle(uri);
+                            return;
                         }
+                        activity.releasePlayer();
+                        activity.mPrefs.setPersistent(true);
+                        activity.mPrefs.updateMedia(activity, uri, null);
+                        activity.searchSubtitles();
                         PlayerActivity.focusPlay = true;
                         activity.initializePlayer();
                     }
@@ -834,13 +743,18 @@ public class Utils {
     }
 
     public static Uri convertInputStreamToUTF(Context context, Uri subtitleUri, InputStream inputStream) {
+        return convertInputStreamToUTF(context, subtitleUri, inputStream, false);
+    }
+
+    // keepCopy: write a copy even if already UTF-8, and return null on failure
+    public static Uri convertInputStreamToUTF(Context context, Uri subtitleUri, InputStream inputStream,
+                                              boolean keepCopy) {
         try {
             DecodedInputStreamReader decodedInputStreamReader = Chardet.decode(inputStream, StandardCharsets.UTF_8);
             Charset charset = decodedInputStreamReader.charset();
-            if (!StandardCharsets.UTF_8.equals(charset)) {
-                String filename = subtitleUri.getPath();
-                filename = filename.substring(filename.lastIndexOf("/") + 1);
-                final File file = new File(context.getCacheDir(), filename);
+            if (keepCopy || !StandardCharsets.UTF_8.equals(charset)) {
+                // named after the subtitle; a content URI's last segment can be a row id
+                final File file = SubtitleFiles.fileFor(context, subtitleUri, null);
                 final BufferedReader bufferedReader = new BufferedReader(decodedInputStreamReader);
                 final BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file));
                 char[] buffer = new char[512];
@@ -865,6 +779,9 @@ public class Utils {
             }
         } catch (IOException e) {
             e.printStackTrace();
+            if (keepCopy) {
+                return null;
+            }
         }
         return subtitleUri;
     }
@@ -1042,9 +959,29 @@ public class Utils {
     public static void showFocused(final android.app.AlertDialog dialog, final int button) {
         dialog.show();
         final android.widget.Button target = dialog.getButton(button);
-        if (target != null) {
-            target.requestFocus();
+        if (target == null) {
+            return;
         }
+        target.requestFocus();
+        // request again once the window has focus, or it lands on the scroll panel
+        final android.view.Window window = dialog.getWindow();
+        if (window == null) {
+            return;
+        }
+        final android.view.ViewTreeObserver observer = window.getDecorView().getViewTreeObserver();
+        observer.addOnWindowFocusChangeListener(new android.view.ViewTreeObserver.OnWindowFocusChangeListener() {
+            @Override
+            public void onWindowFocusChanged(final boolean hasFocus) {
+                if (!hasFocus) {
+                    return;
+                }
+                target.requestFocus();
+                final android.view.ViewTreeObserver current = target.getViewTreeObserver();
+                if (current.isAlive()) {
+                    current.removeOnWindowFocusChangeListener(this);
+                }
+            }
+        });
     }
 
 }

@@ -12,18 +12,8 @@ import org.json.JSONArray;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/**
- * The folders kept at the top of the home screen.
- *
- * <p>Stored as one preference so it travels with an export like everything
- * else — {@code Backup} files an unrecognised key under settings, which is
- * where a list of favourite folders belongs.
- *
- * <p>A pin is held against the folder's path, so it survives a reboot, a
- * rescan and an upgrade. A pinned folder that is no longer there is not an
- * error: the card may simply be out. It stays pinned and reappears with the
- * card, rather than being quietly forgotten the one time it was unplugged.
- */
+// Folders pinned to the top of the home screen, kept by path in one preference
+// so Backup exports them. A missing folder stays pinned: its card may be out.
 public final class Pinned {
 
     private static final String PREF_KEY = "homePinnedFolders";
@@ -47,8 +37,6 @@ public final class Pinned {
                 }
             }
         } catch (Exception error) {
-            // A list of favourites is a convenience. Starting without it beats
-            // refusing to open the home screen.
             Utils.log("Discarding unreadable pins: " + error);
         }
         return pinned;
@@ -59,7 +47,7 @@ public final class Pinned {
         return folderId != null && load(preferences).contains(folderId);
     }
 
-    /** Pins or unpins, and answers with what the folder now is. */
+    /** Returns whether the folder is now pinned. */
     public static boolean toggle(@NonNull final SharedPreferences preferences,
                                  @NonNull final String folderId) {
         final Set<String> pinned = load(preferences);

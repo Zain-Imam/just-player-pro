@@ -25,12 +25,6 @@ import androidx.core.content.ContextCompat;
 
 import com.brouken.player.R;
 
-/**
- * View class
- *
- * Draws a arc shape and provides a circle scaling animation.
- * Used by [YouTubeOverlay][com.github.vkay94.dtpv.youtube.YouTubeOverlay].
- */
 public final class CircleClipTapView extends View {
 
     private Paint backgroundPaint;
@@ -39,12 +33,8 @@ public final class CircleClipTapView extends View {
     private int widthPx;
     private int heightPx;
 
-    // Background
-
     private Path shapePath;
     private boolean isLeft;
-
-    // Circle
 
     private float cX;
     private float cY;
@@ -52,8 +42,6 @@ public final class CircleClipTapView extends View {
     private float currentRadius;
     private int minRadius;
     private int maxRadius;
-
-    // Animation
 
     private ValueAnimator valueAnimator;
     private boolean forceReset;
@@ -70,8 +58,6 @@ public final class CircleClipTapView extends View {
 
         widthPx = 0;
         heightPx = 0;
-
-        // Background
 
         shapePath = new Path();
         isLeft = true;
@@ -94,7 +80,6 @@ public final class CircleClipTapView extends View {
         circlePaint.setAntiAlias(true);
         circlePaint.setColor(ContextCompat.getColor(context, R.color.dtpv_yt_tap_circle_color));
 
-        // Pre-configuations depending on device display metrics
         DisplayMetrics dm = context.getResources().getDisplayMetrics();
 
         widthPx = dm.widthPixels;
@@ -116,10 +101,6 @@ public final class CircleClipTapView extends View {
             }
         };
     }
-
-    /*
-        Getter and setter
-     */
 
     public final Runnable getPerformAtEnd() {
         return performAtEnd;
@@ -162,14 +143,6 @@ public final class CircleClipTapView extends View {
         getCircleAnimator().setDuration(value);
     }
 
-    /*
-       Methods
-    */
-
-    /*
-        Circle
-     */
-
     public final void updatePosition(float x, float y) {
         cX = x;
         cY = y;
@@ -185,10 +158,6 @@ public final class CircleClipTapView extends View {
         currentRadius = (float)minRadius + (float)(maxRadius - minRadius) * factor;
         invalidate();
     }
-
-    /*
-        Background
-     */
 
     private final void updatePathShape() {
         float halfWidth = (float)widthPx * 0.5f;
@@ -210,10 +179,6 @@ public final class CircleClipTapView extends View {
         shapePath.close();
         invalidate();
     }
-
-    /*
-        Animation
-     */
 
     private final ValueAnimator getCircleAnimator() {
         if (valueAnimator == null) {
@@ -266,10 +231,6 @@ public final class CircleClipTapView extends View {
         getCircleAnimator().end();
     }
 
-    /*
-        Others: Drawing and Measurements
-     */
-
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         widthPx = w;
@@ -280,7 +241,6 @@ public final class CircleClipTapView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        // Background
         if (canvas != null) {
             canvas.clipPath(this.shapePath);
         }
@@ -288,7 +248,6 @@ public final class CircleClipTapView extends View {
             canvas.drawPath(this.shapePath, this.backgroundPaint);
         }
 
-        // Circle
         if (canvas != null) {
             canvas.drawCircle(this.cX, this.cY, this.currentRadius, this.circlePaint);
         }

@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    One button in the strip: what it is, which way to move it, and whether it
-    appears at all.
-
-    Arrows rather than dragging, because dragging does not exist on a remote.
-    Everything here is a focusable control in a row, so a D-pad walks across it
-    the same way a finger taps it.
--->
+<!-- arrows instead of dragging, so a D-pad can reorder too -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"

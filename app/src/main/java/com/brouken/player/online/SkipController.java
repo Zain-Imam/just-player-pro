@@ -22,13 +22,6 @@ public final class SkipController {
     public interface Host {
         double positionSeconds();
 
-        /**
-         * Whether the film is actually running.
-         *
-         * The button is an offer to skip forward, which only makes sense while
-         * something is moving. On a paused film it is one more thing sitting
-         * over the picture you paused to look at.
-         */
         boolean isPlaying();
 
         double durationSeconds();
@@ -54,21 +47,10 @@ public final class SkipController {
     @Nullable
     private SkipSegments.Segment skipped;
 
-    /** Where the film was before the last skip, while undo is still offered. */
+    // position before the last skip while undo is offered, otherwise -1
     private double undoAt = -1;
 
-    /*
-     * How long the undo offer stays, measured by the clock rather than by the
-     * film.
-     *
-     * It used to be eight seconds of playback, which has two faults. Eight is
-     * long enough that the button is still sitting there well after you have
-     * stopped thinking about it. And counting in playback time means a paused
-     * film never counts at all: pause just after a skip and the offer stays on
-     * screen for as long as you leave it.
-     *
-     * Three seconds of real time, either way.
-     */
+    // wall-clock time, so the undo offer also expires while paused
     private static final long UNDO_WINDOW_MS = 3_000;
     private final Runnable undoExpired = () -> {
         undoAt = -1;
@@ -84,29 +66,33 @@ public final class SkipController {
         this.host = host;
     }
 
-    /*
-     * The file's own markers first, the internet second.
-     *
-     * A file that names its own chapters — "Intro", "Opening", "Credits" — has
-     * told you exactly where they are, at the right timings for the cut you
-     * actually have. A community database has guessed, for some other release,
-     * and has to be matched by identifying the film at all. When the file
-     * knows, the file wins.
-     *
-     * Which means chapters must not depend on identification. They used to:
-     * this returned immediately without an IMDb id, so a file full of perfectly
-     * good chapter marks offered nothing unless it had also been looked up
-     * online — and anything unidentifiable never offered skipping at all.
-     * Identity is optional now, and only the online half needs it.
-     */
+    // the file's own chapter marks win; only the online lookup needs an identity
     public void load(@Nullable final Identity identity) {
         stop();
         segments = null;
         showing = null;
         skipped = null;
         hideButton();
+        loadWhenLengthKnown(identity, ++generation, 0);
+    }
 
+    // only the latest load's answer is used; an earlier lookup can return late
+    private int generation;
+
+    // wait up to 20 s for the duration: segments that run to the end need it
+    private static final long LENGTH_WAIT_MS = 500;
+    private static final int LENGTH_WAIT_TRIES = 40;
+
+    private void loadWhenLengthKnown(@Nullable final Identity identity, final int mine,
+                                     final int tries) {
+        if (mine != generation) {
+            return;
+        }
         final double duration = host.durationSeconds();
+        if (duration <= 0 && tries < LENGTH_WAIT_TRIES) {
+            main.postDelayed(() -> loadWhenLengthKnown(identity, mine, tries + 1), LENGTH_WAIT_MS);
+            return;
+        }
 
         final List<SkipSegments.Segment> fromChapters =
                 SkipSegments.fromChapters(host.chapters(), duration);
@@ -120,7 +106,7 @@ public final class SkipController {
             return;
         }
         final String imdb = identity.isSeries ? identity.parentImdbId : identity.imdbId;
-        if (imdb == null) {
+        if (imdb == null || worker.isShutdown()) {
             return;
         }
 
@@ -128,6 +114,9 @@ public final class SkipController {
             final List<SkipSegments.Segment> found =
                     SkipSegments.lookup(imdb, identity.season, identity.episode, duration);
             main.post(() -> {
+                if (mine != generation) {
+                    return;
+                }
                 segments = found;
                 android.util.Log.d("JustPlayer", "Skip segments: " + describe(found));
                 if (!found.isEmpty()) {
@@ -158,13 +147,7 @@ public final class SkipController {
         main.post(tick);
     }
 
-    /**
-     * Whether the offer on screen is the thing holding the focus.
-     *
-     * Asked by the player before it swallows a key: with the controls hidden it
-     * handles every press itself, and this button is the one case where a press
-     * is meant for a view rather than for the film.
-     */
+    // checked before the player handles a key itself while the controls are hidden
     public boolean buttonHasFocus() {
         return button != null && button.getVisibility() == View.VISIBLE && button.hasFocus();
     }
@@ -186,27 +169,7 @@ public final class SkipController {
         }
     };
 
-    /*
-     * Where the button ought to be, worked out afresh every half second.
-     *
-     * This used to be written as a set of transitions — remember what was
-     * showing, act only when it changes — and it got two things wrong.
-     *
-     * A segment that had been skipped was struck off the list for good, so
-     * seeking back into the intro offered nothing: the one moment you are most
-     * likely to want the button is right after you have gone back to see what
-     * you skipped. There is no need for that exclusion at all, because after a
-     * skip the position is past the end of the segment anyway; all it has to do
-     * is stay quiet while the undo offer is still on screen.
-     *
-     * And because the decision was edge-triggered, anything that hid the button
-     * for another reason — a pause, a rebuild, the card — left "showing" still
-     * pointing at the segment, so nothing ever put it back.
-     *
-     * It is now a plain question asked repeatedly: should the button be up, and
-     * is it? Every path in and out of a segment, in either direction, produces
-     * the right answer without needing to be enumerated.
-     */
+    // recomputed every tick, so a button hidden for any other reason comes back
     private void update() {
         if (segments == null) {
             return;
@@ -216,9 +179,8 @@ public final class SkipController {
             return;
         }
 
-        // Its own timer takes the undo offer away; see UNDO_WINDOW_MS.
+        // the undo offer is removed by its own timer
         if (undoAt >= 0) {
-            // Undo is up; leave it alone.
             return;
         }
 
@@ -238,7 +200,6 @@ public final class SkipController {
             return;
         }
 
-        // Already offering this one, and still on screen: nothing to do.
         if (inside == showing && button != null && button.getVisibility() == View.VISIBLE) {
             return;
         }
@@ -304,10 +265,7 @@ public final class SkipController {
             parent.addView(button);
             button.setOnClickListener(v -> {
                 if (undoAt >= 0) {
-                    // The same button undoes the skip it just made, for a few
-                    // seconds afterwards -- a marker that was wrong, or cut a
-                    // scene short, otherwise leaves nowhere to go but the
-                    // scrubber.
+                    // for a few seconds after a skip the same button undoes it
                     final double back = undoAt;
                     undoAt = -1;
                     main.removeCallbacks(undoExpired);
@@ -329,15 +287,17 @@ public final class SkipController {
 
         button.setText(labelFor(segment.kind));
         button.setVisibility(View.VISIBLE);
-        // A remote reaches nothing it has not been pointed at, and this button
-        // comes and goes on its own while the controls are usually hidden -- so
-        // it takes focus for as long as it is up, and gives it back when it
-        // goes. A touchscreen is in touch mode and quietly refuses the request,
-        // which is the right answer there and needs no test for it.
+        // focus for remotes; ignored in touch mode
         button.post(button::requestFocus);
-        // After layout: the button has no height until it has been measured,
-        // and the card it is dodging may be mid-appearance.
+        // after layout: the button has no height until it is measured
         button.post(this::clearOfCard);
+    }
+
+    // called when the controls hide, since they take focus while shown
+    public void reclaimFocus() {
+        if (button != null && button.getVisibility() == View.VISIBLE && !button.isInTouchMode()) {
+            button.post(button::requestFocus);
+        }
     }
 
     private void showUndo() {
@@ -372,6 +332,9 @@ public final class SkipController {
 
     public void release() {
         stop();
+        // drop any lookup still in flight
+        generation++;
+        worker.shutdownNow();
         if (button != null) {
             parent.removeView(button);
             button = null;

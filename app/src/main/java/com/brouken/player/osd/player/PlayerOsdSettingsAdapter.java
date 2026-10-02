@@ -42,14 +42,7 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
                                  final int sleepMinutes, final boolean sleepAtEnd,
                                  final int videoTracks, final int audioDelayMs,
                                  final int subtitleDelayMs) {
-        /*
-         * The rows you change with the arrows first, the rows you press second.
-         *
-         * Not a tidiness: the two kinds do not look alike -- one carries a
-         * value between two arrows, the other a single icon and a title -- and
-         * a row of the first kind dropped among the second reads as a mistake
-         * and puts the arrows in a place the eye is not looking for them.
-         */
+        // rows with arrows first, plain button rows after
         final List<OsdSettingsItem> items = new ArrayList<>();
         items.add(createSpeedItem(speed));
         items.add(createAudioDelayItem(audioDelayMs));
@@ -60,8 +53,6 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
         items.add(createBufferingItem(adaptiveBuffering));
         items.add(createSleepItem(sleepMinutes, sleepAtEnd));
         if (videoTracks > 1) {
-            // Nothing to choose between on a file with one video track, and a row
-            // that opens a list of one is a row worth not having.
             items.add(createVideoTrackItem());
         }
         items.add(createInfoCardItem());
@@ -73,7 +64,7 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
     }
 
 
-    // Off, a set number of minutes, or when the file finishes.
+    // 0 is off, -1 is the end of the file
     static final int[] SLEEP_MINUTES = {0, 15, 30, 45, 60, 90, -1};
 
     private OsdSettingsItem createSleepItem(final int currentMinutes, final boolean endOfFile) {
@@ -156,7 +147,7 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
     private OsdSettingsItem createSkipItem(final boolean enabled) {
         final BooleanOsdSettingsItem.Listener itemListener =
                 (position, newValue) -> listener.onSkipChange(newValue);
-        return booleanItem(R.string.pref_skip, enabled, itemListener);
+        return booleanItem(R.string.quick_skip, enabled, itemListener);
     }
 
     private OsdSettingsItem createBufferingItem(final boolean enabled) {
@@ -179,17 +170,6 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
                 position -> listener.onOpenVideoTracks());
     }
 
-    /*
-     * Show the card, and — on the end of the same row — look it up again.
-     *
-     * Identification reads the file name and guesses, and when the guess is
-     * wrong the card is confidently wrong with it. The button on the end is
-     * the way to say so: it asks what this actually is, starting from the name
-     * it guessed, and then offers the posters it found.
-     *
-     * Deliberately not the subtitle search, which is a different question with
-     * a different answer and already has its own row.
-     */
     private OsdSettingsItem createInfoCardItem() {
         @SuppressLint("PrivateResource")
         final Drawable icon = getDrawable(R.drawable.ic_info_card_24dp);
@@ -200,13 +180,6 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
                 position -> listener.onSearchAgain());
     }
 
-    /*
-     * The address of what is playing, on the clipboard.
-     *
-     * A URL for a stream, a path for a file. Reaching it any other way means
-     * going back to whatever opened the player, which for a link handed over by
-     * another app is often nowhere at all.
-     */
     private OsdSettingsItem createCopyLinkItem() {
         final Drawable icon = getDrawable(R.drawable.ic_content_copy_24dp);
         return new SimpleOsdSettingsItem(context.getString(R.string.copy_link), icon,
@@ -215,32 +188,17 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
 
     private OsdSettingsItem createAudioTrackItem() {
         @SuppressLint("PrivateResource")
-        // Our own audio mark rather than the library play circle, which is a
-        // dark glyph and looked like a hole beside the white icons around it.
         final Drawable icon = getDrawable(R.drawable.ic_audio_track_24dp);
         return new SimpleOsdSettingsItem(context.getString(R.string.audio_menu_title), icon,
                 position -> listener.onOpenAudioTracks());
     }
 
-    /*
-     * Under the speed, with the other rows that carry a number between two
-     * arrows. Arrows rather than a list of set amounts: the right number is
-     * whatever makes the lips fit, and it is found by moving until they do.
-     */
     private OsdSettingsItem createAudioDelayItem(final int delayMs) {
         final IntegerOsdSettingsItem.Listener itemListener =
                 (position, newValue) -> listener.onAudioDelayChange(newValue);
         return new AudioDelayOsdSettingsItem(context, delayMs, itemListener, this);
     }
 
-    /*
-     * Beside the audio delay, because they are asked for together.
-     *
-     * The subtitles have had a delay of their own in their own panel since the
-     * beginning, and it stays there. This is the same number in the place
-     * somebody reaches for when the sound is out and the words are out with it:
-     * one panel, two arrows each, no hunting.
-     */
     private OsdSettingsItem createSubtitleDelayItem(final int delayMs) {
         final IntegerOsdSettingsItem.Listener itemListener =
                 (position, newValue) -> listener.onSubtitleDelayChange(newValue);
@@ -282,20 +240,16 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
 
         void onShowInfoCard();
 
-        /** Look the film up again, because what it found was wrong. */
         void onSearchAgain();
 
-        /** Put the address of what is playing on the clipboard. */
         void onCopyLink();
 
         void onOpenVideoTracks();
 
         void onOpenAudioTracks();
 
-        /** Move the sound against the picture, in milliseconds. */
         void onAudioDelayChange(int delayMs);
 
-        /** Move the subtitles against the picture, in milliseconds. */
         void onSubtitleDelayChange(int delayMs);
 
         void onOpenSubtitleSettings();

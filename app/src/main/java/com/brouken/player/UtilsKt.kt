@@ -36,16 +36,13 @@ object UtilsKt {
                                 player.clearVideoFrameMetadataListener(listener)
                             }
 
-                            // Calculate gaps between consecutive frames
                             var validGaps = 0
                             var totalValidDurationUs = 0L
 
                             for (i in (ignoreSamples + 1) until timestamps.size) {
                                 val gap = timestamps[i] - timestamps[i - 1]
 
-                                // Protect against dropped frames or discontinuities.
-                                // A normal frame gap shouldn't be larger than ~50ms (20fps minimum).
-                                // If gap is larger than 60ms, it's likely a dropped frame, so we ignore it in the math.
+                                // gaps over 60ms are dropped frames or discontinuities; leave them out
                                 if (gap in 1..60_000) {
                                     totalValidDurationUs += gap
                                     validGaps++

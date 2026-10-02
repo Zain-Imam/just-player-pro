@@ -22,9 +22,7 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Title" />
 
-    <!-- Bounded top and bottom rather than wrapping: the panel is now the full
-         height of the screen, and a list longer than it has to scroll instead
-         of running off the end of it. -->
+    <!-- bounded so a long list scrolls inside the full-height panel -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@android:id/list"
         android:layout_width="match_parent"

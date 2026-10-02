@@ -52,6 +52,7 @@ public class OsdSettingsController {
 
         subtitleAdapter = new SubtitleOsdSettingsAdapter(context, createSubtitleSettingsListener());
 
+        subtitleAdapter.setPositionMin(prefs.subtitlePositionMin());
         subtitleAdapter.setInitialValues(
                 prefs.subtitleVerticalPosition,
                 prefs.getSubtitleDelayForUri(prefs.mediaUri),
@@ -91,15 +92,11 @@ public class OsdSettingsController {
         playerSettingsWindow =
                 new PopupWindow(playerPanelView, com.brouken.player.Panels.width(context), FrameLayout.LayoutParams.MATCH_PARENT, true);
 
-        // The same edge, the same width, the same slide in as the track lists:
-        // opening one after the other should not move the panel about.
         osdSettingsWindow.setAnimationStyle(R.style.PanelAnimation);
         audioSettingsWindow.setAnimationStyle(R.style.PanelAnimation);
         playerSettingsWindow.setAnimationStyle(R.style.PanelAnimation);
 
-        // Closing a panel is the end of "you are busy", so the info card is
-        // allowed back — three seconds later, and only if the film is still
-        // paused. Without this it would stay away until the next pause.
+        // lets the info card come back once the panel closes
         osdSettingsWindow.setOnDismissListener(playerActivity::hideOverlayCardForNow);
         audioSettingsWindow.setOnDismissListener(playerActivity::hideOverlayCardForNow);
         playerSettingsWindow.setOnDismissListener(playerActivity::hideOverlayCardForNow);
@@ -114,7 +111,6 @@ public class OsdSettingsController {
     }
 
     public void showPlayerSettings() {
-        // Same for the quick panel: one thing on screen at a time.
         playerActivity.hideOverlayCardForNow();
         playerAdapter.setInitialValues(
                 prefs.speedForUri(prefs.mediaUri),
@@ -135,17 +131,10 @@ public class OsdSettingsController {
         playerSettingsWindow.showAtLocation(playerActivity.playerView, Gravity.END | Gravity.TOP, 0, 0);
         focusFirstRow(playerSettingsWindow);
 
-        // Same reason as the subtitle panel: without the delay the controller
-        // comes straight back when the panel is opened from a remote.
         playerActivity.playerView.postDelayed(playerActivity.playerView::hideController, 100);
     }
 
-    /**
-     * The sound's settings, from the audio button.
-     *
-     * Read fresh every time, like the others: the delay is kept per file, so
-     * the panel has to show this file's rather than whatever was set last.
-     */
+    // re-read each time: the delay is kept per file
     public void showAudioSettings() {
         playerActivity.hideOverlayCardForNow();
         audioAdapter.setInitialValues(prefs.getAudioDelayForUri(prefs.mediaUri));
@@ -159,11 +148,6 @@ public class OsdSettingsController {
         playerActivity.playerView.postDelayed(playerActivity.playerView::hideController, 100);
     }
 
-    /**
-     * Both panels, and the track pickers, need the focus to land on a row that
-     * does not exist yet. Panels holds the one copy of how, and why asking once
-     * is not enough.
-     */
     private void focusFirstRow(final PopupWindow window) {
         com.brouken.player.Panels.focusFirstRow(
                 window.getContentView().findViewById(android.R.id.list));
@@ -185,8 +169,7 @@ public class OsdSettingsController {
                 preferences().edit().putString("playbackEngine", engine).apply();
                 prefs.loadUserPreferences();
                 playerSettingsWindow.dismiss();
-                // The engine is chosen when the player is built, so the file has
-                // to be reopened — at the position it is already at.
+                // the engine is chosen when the player is built
                 playerActivity.rebuildPlayer();
             }
 
@@ -208,8 +191,7 @@ public class OsdSettingsController {
             public void onAdaptiveBufferingChange(boolean enabled) {
                 preferences().edit().putBoolean("adaptiveBuffering", enabled).apply();
                 prefs.loadUserPreferences();
-                // Buffering is configured on the load control the player is
-                // built with, so this one also needs the player rebuilt.
+                // buffering is set on the load control at build time
                 playerSettingsWindow.dismiss();
                 playerActivity.rebuildPlayer();
             }
@@ -258,9 +240,6 @@ public class OsdSettingsController {
             @Override
             public void onSubtitleDelayChange(int delayMs) {
                 playerActivity.updateSubtitleDelay(delayMs);
-                // The subtitle panel has the same number in it; it is rebuilt
-                // from the preference whenever it opens, so nothing to do but
-                // keep this one honest.
                 subtitleAdapter.setSubtitleDelay(delayMs);
             }
 
@@ -278,9 +257,24 @@ public class OsdSettingsController {
         };
     }
 
+    // call on every open and engine change: the values depend on the engine
+    public void refreshSubtitleValues() {
+        subtitleAdapter.setPositionMin(prefs.subtitlePositionMin());
+        subtitleAdapter.setInitialValues(
+                prefs.subtitleVerticalPosition,
+                prefs.getSubtitleDelayForUri(prefs.mediaUri),
+                prefs.subtitleSize,
+                prefs.subtitleEdgeType,
+                prefs.subtitleTypeface,
+                prefs.subtitleStyleEmbedded
+        );
+        subtitleAdapter.notifyDataSetChanged();
+    }
+
     public void showSubtitleSettings() {
-        // Nothing may sit under a panel: the card would show through it.
+        // the card would show through the panel
         playerActivity.hideOverlayCardForNow();
+        refreshSubtitleValues();
         TextView titleTextView = osdSettingsWindow.getContentView().findViewById(android.R.id.text1);
         titleTextView.setText(R.string.osd_subtitle_title);
         osdSettingsWindow.showAtLocation(playerActivity.playerView, Gravity.END | Gravity.TOP, 0, 0);
@@ -297,15 +291,7 @@ public class OsdSettingsController {
 
     private SubtitleOsdSettingsAdapter.Listener createSubtitleSettingsListener() {
         return new SubtitleOsdSettingsAdapter.Listener() {
-            /*
-             * Applied here, not left to the preference listener.
-             *
-             * Writing the value and waiting for the shared-preferences callback
-             * to notice worked on a phone and did nothing on a television: the
-             * arrows moved the number and the subtitles stayed where they were.
-             * Asking the player to restyle itself is immediate and does not
-             * depend on a callback arriving.
-             */
+            // restyle directly; waiting for the prefs callback fails on TVs
             @Override
             public void onSubtitlePositionChange(int position) {
                 prefs.updateSubtitleVerticalPosition(position);

@@ -26,14 +26,6 @@ import androidx.core.util.Consumer;
 
 import com.brouken.player.R;
 
-/**
- * Layout group which handles the icon animation while forwarding and rewinding.
- *
- * Since it's based on view's alpha the fading effect is more fluid (more YouTube-like) than
- * using static drawables, especially when [cycleDuration] is low.
- *
- * Used by [YouTubeOverlay][com.github.vkay94.dtpv.youtube.YouTubeOverlay].
- */
 public final class SecondsView extends ConstraintLayout {
 
     private long cycleDuration;
@@ -161,11 +153,6 @@ public final class SecondsView extends ConstraintLayout {
         });
     }
 
-    /**
-     * Defines the duration for a full cycle of the triangle animation.
-     * Each animation step takes 20% of it.
-     */
-
     public final long getCycleDuration() {
         return cycleDuration;
     }
@@ -179,10 +166,6 @@ public final class SecondsView extends ConstraintLayout {
         cycleDuration = value;
     }
 
-    /**
-     * Sets the `TextView`'s seconds text according to the device`s language.
-     */
-
     public final int getSeconds() {
         return seconds;
     }
@@ -194,10 +177,6 @@ public final class SecondsView extends ConstraintLayout {
         ));
         seconds = value;
     }
-
-    /**
-     * Mirrors the triangles depending on what kind of type should be used (forward/rewind).
-     */
 
     public final boolean isForward() {
         return isForward;
@@ -226,18 +205,12 @@ public final class SecondsView extends ConstraintLayout {
         icon = value;
     }
 
-    /**
-     * Starts the triangle animation
-     */
     public final void start() {
         stop();
         animate = true;
         firstAnimator.start();
     }
 
-    /**
-     * Stops the triangle animation
-     */
     public final void stop() {
         animate = false;
         firstAnimator.cancel();

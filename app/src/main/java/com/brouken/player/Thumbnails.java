@@ -12,22 +12,11 @@ import android.util.LruCache;
 
 import androidx.annotation.Nullable;
 
-/**
- * The frame you are dragging towards, shown while you drag.
- *
- * Only for a file on the device. A frame is fetched by opening the file a
- * second time and decoding at a keyframe, which over a connection would mean
- * downloading a second copy of the film to look at pictures of it -- so a
- * stream is not offered this at all.
- *
- * Everything happens on one background thread and only the newest request
- * survives: a drag across the bar asks for fifty positions and forty-nine of
- * them are already wrong by the time they could be answered. Frames are kept
- * in a small cache because a drag goes back and forth over the same places.
- */
+// scrub previews, local files only: frames come from a second open of the file;
+// one worker thread, and only the newest request is served
 public final class Thumbnails {
 
-    /** Frames are asked for at keyframes anyway, so nearby requests share one. */
+    // frames come from keyframes anyway, so nearby requests share one
     private static final long BUCKET_MS = 2000;
     private static final int CACHE_ENTRIES = 24;
     private static final int WIDTH = 320;
@@ -50,7 +39,6 @@ public final class Thumbnails {
     private volatile boolean released;
     private volatile long wanted = -1;
 
-    /** Whether a preview is possible and asked for. A stream is neither. */
     public static boolean available(final Context context, @Nullable final Uri uri) {
         if (uri == null || Utils.isSupportedNetworkUri(uri)) {
             return false;
@@ -68,7 +56,6 @@ public final class Thumbnails {
             try {
                 opened.setDataSource(context, uri);
             } catch (Exception e) {
-                // A file the retriever will not open simply has no previews.
                 Utils.log("No thumbnails for this file: " + e);
                 try {
                     opened.release();
@@ -87,12 +74,7 @@ public final class Thumbnails {
         });
     }
 
-    /**
-     * Ask for the frame at a position. The newest ask wins.
-     *
-     * A cached frame comes back at once, on this thread, so a drag back over
-     * ground it has covered draws without a flicker.
-     */
+    // a cached frame is delivered at once on the calling thread
     public void request(final long positionMs, final Callback callback) {
         if (released || worker == null) {
             return;
@@ -109,7 +91,6 @@ public final class Thumbnails {
             if (released || retriever == null) {
                 return;
             }
-            // Anything but the latest is already a wrong answer.
             if (wanted != bucket) {
                 return;
             }
@@ -124,7 +105,6 @@ public final class Thumbnails {
                             MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
                 }
             } catch (Exception e) {
-                // A frame that will not decode is one frame, not a failure.
                 return;
             }
             if (frame == null || released) {

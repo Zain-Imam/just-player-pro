@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- One cell of the poster grid.
-
-     The whole cell is the focusable thing, not the image inside it, so a D-pad
-     lands on something the size of a poster rather than something the size of an
-     icon.
-
-     The title is fixed at two lines so every cell is the same height and the
-     rows of the grid line up, whatever the titles happen to be. -->
+<!-- the whole cell takes focus; two-line titles keep the rows aligned -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"

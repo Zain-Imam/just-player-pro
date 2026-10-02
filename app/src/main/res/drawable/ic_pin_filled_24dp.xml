@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A filled star: this folder is kept at the top. Drawn in the accent, so
-     what is pinned reads at a glance rather than by shape alone. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"

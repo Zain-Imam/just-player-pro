@@ -18,19 +18,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Everything on the device that can be played, as folders and files.
- *
- * <p>One query, grouped here rather than by the database. The chooser this
- * project already had asks MediaStore to group for it, which is why it carries
- * {@code @RequiresApi(R)} — that form of the call arrived in Android 11, and
- * this application still runs on 7.1, which is exactly the old television boxes
- * it is best on. Counting rows in a loop costs nothing at these sizes and works
- * everywhere.
- *
- * <p>Nothing here touches the network and nothing here decodes a frame: a
- * folder list should appear instantly on a box that struggles to draw one.
- */
+// Videos on the device as folders and files. Grouped in code because
+// MediaStore's grouped query needs Android 11.
 public final class Library {
 
     private Library() {
@@ -38,21 +27,14 @@ public final class Library {
 
     /** A directory holding at least one playable file. */
     public static final class Folder {
-        /** What identifies it, and what a favourite is stored against. */
+        /** Also the key a pin is stored against. */
         public final String id;
-        /**
-         * What to call it on screen.
-         *
-         * <p>Not final: where two folders share a leaf name they are given the
-         * one above them as well, and that can only be known once every folder
-         * has been found. See disambiguate().
-         */
+        /** Not final: disambiguate() extends names that clash. */
         public String name;
         public int count;
         public long size;
         public long modified;
 
-        // Package-private for the same reason.
         Folder(final String id, final String name) {
             this.id = id;
             this.name = name;
@@ -66,7 +48,6 @@ public final class Library {
         public final long duration;
         public final long modified;
         public final String folderId;
-        /** What the folder is called, carried so the grouping need not guess. */
         public final String folderName;
 
         Video(final Uri uri, final String name, final long size, final long duration,
@@ -81,14 +62,7 @@ public final class Library {
         }
     }
 
-    /**
-     * Everything MediaStore knows about, newest query wins.
-     *
-     * <p>Returns an empty list rather than throwing: a missing permission, a
-     * volume being unmounted mid-query and a provider that simply declines all
-     * arrive here as exceptions, and an empty home screen with a line of text
-     * on it is a better answer than a crash on launch.
-     */
+    // empty on any error: no permission, unmounted volume, refusing provider
     @NonNull
     public static List<Video> videos(@NonNull final Context context) {
         final List<Video> videos = new ArrayList<>();
@@ -100,9 +74,7 @@ public final class Library {
         projection.add(MediaStore.Video.Media.SIZE);
         projection.add(MediaStore.Video.Media.DURATION);
         projection.add(MediaStore.Video.Media.DATE_MODIFIED);
-        // The path is what a folder is below Android 10, and remains the better
-        // answer above it: two cards can hold folders of the same name, and the
-        // display name alone cannot tell them apart.
+        // keyed by path: no buckets below 10, and names repeat across cards
         projection.add(MediaStore.Video.Media.DATA);
         if (buckets) {
             projection.add(MediaStore.MediaColumns.BUCKET_ID);
@@ -141,14 +113,11 @@ public final class Library {
                 final String folderName;
                 if (parent != null && !parent.isEmpty()) {
                     folderId = parent;
-                    // The directory's own name, falling back to what the store
-                    // calls the bucket when the path ends in nothing useful.
                     final String segment = lastSegment(parent);
                     folderName = segment == null || segment.isEmpty()
                             ? (bucketName == null ? parent : bucketName) : segment;
                 } else if (bucketId != null && !bucketId.isEmpty()) {
-                    // No path: allowed from Android 10 on, and a file with no
-                    // home at all would simply vanish from the list.
+                    // DATA may be empty from Android 10 on
                     folderId = "bucket:" + bucketId;
                     folderName = bucketName == null || bucketName.isEmpty()
                             ? bucketId : bucketName;
@@ -178,12 +147,7 @@ public final class Library {
         return videos;
     }
 
-    /**
-     * The folders those files live in, each with what is in it.
-     *
-     * <p>Insertion-ordered, so the caller decides the order rather than
-     * inheriting whatever the map felt like.
-     */
+    // in scan order; the caller sorts
     @NonNull
     public static List<Folder> folders(@NonNull final List<Video> videos) {
         final Map<String, Folder> byId = new LinkedHashMap<>();
@@ -202,21 +166,8 @@ public final class Library {
         return folders;
     }
 
-    /**
-     * Tell apart the folders that share a name.
-     *
-     * <p>A phone has several directories called "WhatsApp Animated Gifs" — one
-     * under WhatsApp, one under WhatsApp Business, one under Sent — and they
-     * arrived here as four identical-looking rows, two of them even carrying
-     * the same count and the same size. There is no way to choose between
-     * those, and no way to tell which one a favourite was put against.
-     *
-     * <p>Only the ones that clash are touched. Giving every folder its parent
-     * would make a tidy library read like a file path for the sake of a
-     * handful of duplicates that most people do not have.
-     */
-    // Package-private so it can be checked without a device: the logic is path
-    // arithmetic and the failures are silent, which is the worst combination.
+    // appends enough of the parent path to tell same-named folders apart;
+    // package-private for tests
     static void disambiguate(final List<Folder> folders) {
         final Map<String, List<Folder>> byName = new LinkedHashMap<>();
         for (final Folder folder : folders) {
@@ -232,20 +183,7 @@ public final class Library {
             if (group.size() < 2) {
                 continue;
             }
-            /*
-             * The shortest part of the path above that actually tells them
-             * apart, and no more of it than that.
-             *
-             * One step up is the obvious answer and on a real phone it is the
-             * wrong one: WhatsApp keeps a copy of this folder per account, all
-             * of them under a directory called "Media", so naming the parent
-             * produced four rows reading "· Media" and helped nobody. A step
-             * further is no better — two of the five then read "· WhatsApp".
-             *
-             * So: drop what every one of them has in common, then give each the
-             * least it needs to be unique. The accounts differ one level up and
-             * get "1001", "1003", "1004"; the two that need two levels get both.
-             */
+            // skip levels all share (often "Media"), then add the fewest that differ
             final List<List<String>> chains = new ArrayList<>();
             for (final Folder folder : group) {
                 chains.add(ancestors(folder.id));
@@ -260,14 +198,7 @@ public final class Library {
         }
     }
 
-    /**
-     * Every folder above this one, nearest first, stopping at the card.
-     *
-     * <p>Nothing above the storage root is a place anybody recognises.
-     * Internal storage is {@code /storage/emulated/0}, and walking past the
-     * folders into that produced a row labelled "0/WhatsApp" — which is the
-     * Android user id and means nothing at all to the person reading it.
-     */
+    // folder names above this one, nearest first, stopping at the storage root
     private static List<String> ancestors(final String path) {
         final List<String> chain = new ArrayList<>();
         String at = parentOf(path);
@@ -277,8 +208,7 @@ public final class Library {
                     || "storage".equals(segment) || "emulated".equals(segment)) {
                 break;
             }
-            // The user id under "emulated", which is the root of internal
-            // storage however it is numbered.
+            // the user id under "emulated" is the root of internal storage
             if ("emulated".equals(lastSegment(parentOf(at)))) {
                 break;
             }
@@ -288,16 +218,7 @@ public final class Library {
         return chain;
     }
 
-    /**
-     * How many levels, from nearest up, every one of them shares.
-     *
-     * <p>Never all of the shortest one. Where one path is the tail of another —
-     * {@code /WhatsApp/Media/X} inside
-     * {@code /Android/media/com.whatsapp/WhatsApp/Media/X} — the shorter chain
-     * runs out exactly when the common part ends, and dropping all of it left
-     * that folder with nothing to be called and no label at all, sitting bare
-     * beside others that had one. One level is always kept back.
-     */
+    // shared levels, capped one below the shortest so it keeps a label
     private static int commonPrefix(final List<List<String>> chains) {
         int shortest = Integer.MAX_VALUE;
         for (final List<String> chain : chains) {
@@ -320,10 +241,7 @@ public final class Library {
         return depth;
     }
 
-    /**
-     * The fewest levels above {@code common} that make this one unique,
-     * written the way a path reads: outermost first.
-     */
+    /** The fewest levels above {@code common} that make this one unique. */
     @Nullable
     private static String shortestUnique(final List<List<String>> chains, final int index,
                                          final int common) {
@@ -344,16 +262,7 @@ public final class Library {
                 return joined(slice);
             }
         }
-        /*
-         * Nothing unique to say, so say everything there is.
-         *
-         * This is the shallowest of a clashing set — the one whose path runs
-         * out before the others' do, where /WhatsApp/Media/X sits beside
-         * /Android/media/com.whatsapp/WhatsApp/Media/X. Left unlabelled it was
-         * the only row in the group without a location, which reads as an
-         * oversight. Its whole chain is still shorter than theirs, so the two
-         * labels differ anyway.
-         */
+        // the shallowest of the set: its whole chain still differs from the rest
         return mine.size() > common ? joined(mine.subList(common, mine.size())) : null;
     }
 

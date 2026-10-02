@@ -1,9 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-     Two overlapping sheets, which is what every platform has meant by "copy"
-     for forty years. Drawn rather than shipped as a bitmap so it takes the
-     tint of whatever theme is on.
--->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"

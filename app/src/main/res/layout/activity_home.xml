@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    The screen the application opens on.
-
-    One list, whatever it happens to be showing: the folders, the files inside
-    one of them, or what a search turned up. A second screen for each would mean
-    a second set of focus rules to get wrong on a remote, and there is nothing
-    on any of them that differs except the rows.
--->
+<!-- one list for folders, files and search results -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/home_root"
     android:layout_width="match_parent"
@@ -24,9 +17,7 @@
         android:paddingStart="16dp"
         android:paddingEnd="4dp">
 
-        <!-- Back sits in the bar rather than only under the system gesture, so
-             a remote can reach it: a television has a Back key, but nothing on
-             screen says a folder can be left. -->
+        <!-- on-screen back, so a remote can see a folder can be left -->
         <ImageButton
             android:id="@+id/home_up"
             android:layout_width="40dp"
@@ -116,8 +107,7 @@
             android:paddingBottom="16dp"
             android:scrollbars="vertical" />
 
-        <!-- Why the list is empty, which is never obvious: no permission, no
-             files, or a search that matched none of them. -->
+        <!-- says why the list is empty: no permission, no files, or no matches -->
         <TextView
             android:id="@+id/home_empty"
             android:layout_width="match_parent"

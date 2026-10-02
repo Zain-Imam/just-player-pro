@@ -22,23 +22,8 @@ import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/*
- * A page on the local network for filling in the long things.
- *
- * An API key is thirty-odd characters and a Stremio addon URL is longer, and
- * entering either on a television means a D-pad and an on-screen keyboard. This
- * puts a small page on the same network so a phone can do the typing, and the
- * keys are checked here rather than in two places.
- *
- * Deliberately small: one socket, no library, a connection at a time on its own
- * thread. It exists only while the settings screen that started it is open, and
- * a browser pointed at a stopped server is simply refused.
- *
- * Nothing is shown until the PIN on the television has been entered. What it is
- * not is secure against somebody already on your network -- the traffic is plain
- * HTTP across the LAN -- but it cannot be browsed by someone who has not seen
- * the screen, and it stops the moment that screen closes.
- */
+// LAN page for typing keys and addon URLs on a phone instead of a TV remote.
+// Locked by the on-screen PIN; plain HTTP, and only runs while settings is open.
 public final class SetupServer {
 
     public interface Listener {
@@ -50,8 +35,6 @@ public final class SetupServer {
     private static final int READ_LIMIT = 64 * 1024;
     private static final int SOCKET_TIMEOUT_MS = 15_000;
 
-    // The badge, drawn rather than fetched: serving the launcher icon meant a
-    // second request and a resource decode that came back empty on the device.
     private static final String MARK =
             "<svg width=\"56\" height=\"56\" viewBox=\"0 0 108 108\" xmlns=\"http://www.w3.org/2000/svg\">"
                     + "<path d=\"M54 6 L98 84 a12 12 0 0 1 -10 18 H20 a12 12 0 0 1 -10 -18 Z\""
@@ -127,9 +110,7 @@ public final class SetupServer {
                 // accept() throws when stop() closes the socket, which is normal.
                 return;
             }
-            // A browser opens several connections at once -- the page, the
-            // favicon, the logo. Serving them one after another on the accept
-            // loop made a save look like it had been swallowed.
+            // a thread per connection: browsers open several at once
             new Thread(() -> {
                 try {
                     client.setSoTimeout(SOCKET_TIMEOUT_MS);
@@ -198,9 +179,7 @@ public final class SetupServer {
             return;
         }
 
-        // Everything past here needs the PIN to have been entered on this
-        // server. Writing also needs the token the form carries, so a request
-        // from somewhere else cannot ride on the fact that somebody unlocked.
+        // the rest needs the PIN; writes also need the form's token
         if (!unlocked) {
             respond(out, path.startsWith("/test") || path.startsWith("/save") ? 403 : 200,
                     path.startsWith("/test") || path.startsWith("/save")
@@ -237,8 +216,7 @@ public final class SetupServer {
 
         String entered = value(form, "value");
         if (entered == null || entered.isEmpty()) {
-            // Empty means "the one already saved", so Test works on something
-            // that is set but not shown.
+            // empty means test the value already saved
             entered = addon
                     ? PreferenceManager.getDefaultSharedPreferences(context)
                             .getString(field, "")
@@ -250,14 +228,7 @@ public final class SetupServer {
         return addon ? describe(entered) : KeyCheck.check(field, entered).message;
     }
 
-    /*
-     * An addon is checked here the same way it is checked in the app.
-     *
-     * It used to be taken at its word from this page and only really tried when
-     * the same URL was typed into settings, so an addon added from a phone went
-     * unverified until the evening it was needed. Both routes ask it for a real
-     * subtitle now.
-     */
+    // asks the addon for a real subtitle, the same check the app makes
     private String describe(final String entered) {
         final String normalized = SubtitleAddons.normalizeUrl(entered);
         if (normalized == null) {
@@ -474,11 +445,6 @@ public final class SetupServer {
     }
 
     // ------------------------------------------------------------- plumbing
-
-    // Decoded and re-encoded rather than streamed off disk: the icon is a
-    // density-qualified resource and opening it as a raw stream came back
-    // empty, which showed as a broken image on the phone.
-
 
     private static void respond(final OutputStream out, final int code,
                                 final String type, final String body) throws IOException {

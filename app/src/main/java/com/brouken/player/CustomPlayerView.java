@@ -100,9 +100,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
 
         mScaleDetector = new ScaleGestureDetector(context, this);
 
-        // Tapping the padlock lifts the lock, wherever there is something to
-        // tap with. A television simply never delivers the click, and the key
-        // route in the activity is what answers there.
+        // on TV the click never arrives; the activity's key handling unlocks there
         exoErrorMessage.setOnClickListener(v -> {
             if (PlayerActivity.locked) {
                 PlayerActivity.locked = false;
@@ -112,18 +110,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         });
     }
 
-    /*
-     * A lock that actually locks.
-     *
-     * The lock had been enforced by checking it in each gesture, which covers
-     * the ones anybody thought of and none of the others: the controls could
-     * still be brought back by the library's own auto-show, by rebuilding the
-     * player, or by coming back from picture-in-picture — and once they were on
-     * screen, every button on them worked, lock or no lock.
-     *
-     * Every one of those goes through here. Nothing shows the controls while
-     * the screen is locked, so there is nothing to press.
-     */
+    // the lock check here also catches auto-show, player rebuilds and PiP
     @Override
     public void showController() {
         if (PlayerActivity.locked) {
@@ -132,18 +119,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         super.showController();
     }
 
-    /*
-     * With nothing open, the controls are the whole screen.
-     *
-     * There is no picture to get out of the way of — only black — and the
-     * controls are the only way to open anything. Hiding them leaves a blank
-     * screen with no visible way forward, which is what happened after closing
-     * the quick panel with no file loaded: the panel hides the controller on
-     * its way in, and nothing brought it back.
-     *
-     * So while there is no media, the controller does not hide. The lock does
-     * not apply either, because there is nothing to lock.
-     */
+    // with no media the controls are the only way to open anything
     @Override
     public void hideController() {
         if (!PlayerActivity.haveMedia) {
@@ -183,6 +159,8 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                 if (handleTouch) {
                     if (gestureOrientation == Orientation.HORIZONTAL) {
                         setCustomErrorMessage(null);
+                        // the swipe seeked to keyframes; next seeks are exact again
+                        com.brouken.player.engine.SeekPrecision.exact(PlayerActivity.player);
                     } else {
                         postDelayed(textClearRunnable, isHandledLongPress ? MESSAGE_TIMEOUT_LONG : MESSAGE_TIMEOUT_TOUCH);
                     }
@@ -234,14 +212,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
 
     public boolean tap() {
         if (PlayerActivity.locked) {
-            /*
-             * The padlock alone is a glance; a timeline is something to read.
-             *
-             * So where the timeline has been asked for, both stay for as long
-             * as the controls would -- which is a setting, and long enough to
-             * take in three times. Without it the padlock keeps its own brief
-             * appearance, exactly as before.
-             */
+            // with the locked timeline on, stay as long as the controls would
             final PlayerActivity activity = getContext() instanceof PlayerActivity
                     ? (PlayerActivity) getContext() : null;
             final boolean timeline = activity != null && activity.showLockedTimeline(0);
@@ -259,15 +230,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             return true;
         }
 
-        /*
-         * With nothing open, the controls stay.
-         *
-         * PlayerView refuses to show its controls while no player is attached,
-         * so once they were hidden there was no way to bring them back: the
-         * first tap on the empty screen put the app in a state where it looked
-         * broken and only force-stopping it helped. The tap is swallowed
-         * instead, which leaves the one thing on screen on screen.
-         */
+        // PlayerView can't reshow the controls without a player, so keep them
         return true;
     }
 
@@ -316,21 +279,15 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                 if (PlayerActivity.haveMedia) {
                     if (gestureScrollX > 0) {
                         if (seekStart + seekChange - SEEK_STEP  * distanceDiff >= 0) {
-                            if (PlayerActivity.exo() != null) {
-
-                                PlayerActivity.exo().setSeekParameters(SeekParameters.PREVIOUS_SYNC);
-
-                            }
+                            com.brouken.player.engine.SeekPrecision.apply(
+                                    PlayerActivity.player, SeekParameters.PREVIOUS_SYNC);
                             seekChange -= SEEK_STEP * distanceDiff;
                             position = seekStart + seekChange;
                             PlayerActivity.player.seekTo(position);
                         }
                     } else {
-                        if (PlayerActivity.exo() != null) {
-
-                            PlayerActivity.exo().setSeekParameters(SeekParameters.NEXT_SYNC);
-
-                        }
+                        com.brouken.player.engine.SeekPrecision.apply(
+                                PlayerActivity.player, SeekParameters.NEXT_SYNC);
                         if (seekMax == C.TIME_UNSET) {
                             seekChange += SEEK_STEP * distanceDiff;
                             position = seekStart + seekChange;
@@ -374,18 +331,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         return true;
     }
 
-    /*
-     * One finger held runs at double speed; two fingers held lock the screen.
-     *
-     * Both used to want the same gesture. Holding for speed is what everything
-     * else with a video in it now does, and it is the one reached for often, so
-     * it keeps the plain hold. Locking is a deliberate act done once before
-     * putting the phone in a pocket, and asking for a second finger is no
-     * hardship for something done that rarely — while making it impossible to
-     * trigger by accident, which is half of what a lock is for.
-     *
-     * Either gesture unlocks, so a hold is never a dead end.
-     */
+    // one-finger hold plays at 2x, two-finger hold locks; either one unlocks
     @Override
     public void onLongPress(MotionEvent motionEvent) {
         if (PlayerActivity.locked) {
@@ -447,7 +393,12 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             final float factor = scaleGestureDetector.getScaleFactor();
             mScaleFactor *= factor + (1 - factor) / 3 * 2;
             mScaleFactor = Utils.normalizeScaleFactor(mScaleFactor, mScaleFactorFit);
-            setScale(mScaleFactor);
+            final com.brouken.player.engine.EngineUi ui = engineUi();
+            if (ui != null && ui.zoomsInEngine()) {
+                ui.setZoom(mScaleFactor);
+            } else {
+                setScale(mScaleFactor);
+            }
             restoreSurfaceView();
             clearIcon();
             setCustomErrorMessage((int)(mScaleFactor * 100) + "%");
@@ -461,6 +412,17 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         if (PlayerActivity.locked)
             return false;
 
+        // mpv zooms in its own surface; its frame never reports an aspect ratio
+        final com.brouken.player.engine.EngineUi ui = engineUi();
+        if (ui != null && ui.zoomsInEngine()) {
+            mScaleFactor = ui.zoom();
+            mScaleFactorFit = ui.zoomFit();
+            canScale = true;
+            ImageButton buttonAspectRatio = findViewById(Integer.MAX_VALUE - 100);
+            buttonAspectRatio.setImageResource(R.drawable.ic_fit_screen_24dp);
+            hideController();
+            return true;
+        }
         mScaleFactor = getVideoSurfaceView().getScaleX();
         if (getResizeMode() != AspectRatioFrameLayout.RESIZE_MODE_ZOOM) {
             canScale = false;
@@ -485,9 +447,14 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
     public void onScaleEnd(ScaleGestureDetector scaleGestureDetector) {
         if (PlayerActivity.locked)
             return;
+        final com.brouken.player.engine.EngineUi ui = engineUi();
         if (mScaleFactor - mScaleFactorFit < 0.001) {
-            setScale(1.f);
-            setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
+            if (ui != null && ui.zoomsInEngine()) {
+                ui.setZoom(1f);
+            } else {
+                setScale(1.f);
+                setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
+            }
 
             ImageButton buttonAspectRatio = findViewById(Integer.MAX_VALUE - 100);
             buttonAspectRatio.setImageResource(R.drawable.ic_aspect_ratio_24dp);
@@ -496,6 +463,12 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             showController();
         }
         restoreSurfaceView();
+    }
+
+    @Nullable
+    private com.brouken.player.engine.EngineUi engineUi() {
+        return getContext() instanceof PlayerActivity
+                ? ((PlayerActivity) getContext()).engineUi() : null;
     }
 
     private void restoreSurfaceView() {
@@ -533,13 +506,9 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
     }
 
     public void setIconLock(boolean locked) {
-        // Keep the padlock button in step, however the lock was toggled — the
-        // button and the long-press gesture are two ways into the same state.
         if (getContext() instanceof PlayerActivity) {
             ((PlayerActivity) getContext()).updateButtonLock();
-            // Every way out of the lock comes through here, so this is the one
-            // place the locked timeline has to be taken away again -- the
-            // padlock, the held gesture and the remote alike.
+            // every way out of the lock passes here
             if (!locked) {
                 ((PlayerActivity) getContext()).hideLockedTimeline();
             }
@@ -556,7 +525,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();
             }
-            //videoSurfaceView.animate().setStartDelay(0).setDuration(0).scaleX(scale).scaleY(scale).start();
         }
     }
 

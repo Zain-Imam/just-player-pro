@@ -11,11 +11,7 @@
         android:name="android.hardware.touchscreen"
         android:required="false" />
 
-    <!-- libmpv declares minSdk 26, but it is an OPTIONAL engine that Media3
-         remains the default over. Overriding keeps Android 7.1 support — which
-         is exactly the old television boxes this player is best on — and the
-         mpv option is disabled at runtime below API 26 so the library is never
-         loaded there. -->
+    <!-- libmpv wants minSdk 26; the mpv engine is disabled at runtime below 26 -->
     <uses-sdk tools:overrideLibrary="dev.jdtech.mpv" />
 
     <uses-permission
@@ -54,12 +50,6 @@
         android:theme="@style/Theme.Player"
         tools:replace="android:allowBackup"
         tools:targetApi="n">
-        <!--
-            The screen the application opens on, and the only thing in the
-            launcher. The player is still every bit as reachable from another
-            application: it keeps all of the filters below, and nothing about
-            a hand-off from Stremio, a file manager or a browser changes.
-        -->
         <activity
             android:name=".HomeActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|touchscreen"
@@ -72,28 +62,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
-            <!-- The launcher shortcut list lives on whichever activity carries
-                 MAIN and LAUNCHER, which is this one now. -->
+            <!-- shortcuts must sit on the MAIN/LAUNCHER activity -->
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
-        <!--
-            singleTop, where this was singleTask until the home screen arrived.
-
-            singleTask puts an activity at the root of a task and pulls any
-            launch into the one task it lives in. With the player as the only
-            screen that was invisible. With a home screen underneath it, a film
-            sent over from another application would have joined this task,
-            landed on top of the home screen, and Back would have gone to the
-            folder list instead of back to whoever sent the film — which is
-            precisely the thing the back arrow exists to get right.
-
-            singleTop keeps a launch from elsewhere in the sender's own task,
-            so Back returns there. The home screen adds CLEAR_TOP when it opens
-            something, which is what stops a second player stacking on top of
-            one already running.
-        -->
+        <!-- singleTop keeps a launch from another app in that app's task, so Back
+             returns there; the home screen adds CLEAR_TOP itself -->
         <activity
             android:name=".PlayerActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|touchscreen"
@@ -137,15 +112,7 @@
 
                 <data android:mimeType="video/*" />
 
-                <!--
-                     Streaming manifests, which are not video/* to Android.
-
-                     A player handed an HLS link by a browser, by Stremio or by
-                     anything else that sets a type gets "application/x-mpegURL"
-                     or the Apple spelling of it, and a filter that only claims
-                     video/* is not offered at all. Both spellings and the DASH
-                     one are claimed, since both engines play all three.
-                -->
+                <!-- streaming manifests are not video/* to Android -->
                 <data android:mimeType="application/x-mpegURL" />
                 <data android:mimeType="application/x-mpegurl" />
                 <data android:mimeType="application/vnd.apple.mpegurl" />

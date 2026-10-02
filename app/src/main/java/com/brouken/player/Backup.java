@@ -18,83 +18,42 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Everything the player remembers, written out and read back in.
- *
- * For a new phone, a second device, or the day something is cleared by
- * accident. The settings are the easy part; what actually hurts to lose is the
- * keys -- a TMDB key, an OpenSubtitles login, the addons -- because those were
- * typed in one character at a time from another screen.
- *
- * What cannot travel is said plainly rather than exported and quietly broken:
- * the folders the player may read are Android's grants to this installation on
- * this device, and no file can carry them to another. So they are left out, and
- * the person importing is told to grant them again.
- */
+// exports and restores preferences; folder grants cannot travel and are left out
 public final class Backup {
 
-    /** What the file is, so a file that is not one of ours can be refused. */
     private static final String MARK = "just-player-pro-backup";
     private static final int FORMAT = 1;
 
     public enum Part {
-        /** How the player behaves: engine, subtitles, gestures, everything. */
         SETTINGS,
-        /** Keys and logins for the services, and the subtitle addons. */
         KEYS,
-        /** What has been played, and the titles it was identified as. */
         HISTORY,
-        /** Per-file memory: subtitle and audio delays, and speeds. */
         PER_FILE
     }
 
     private Backup() {
     }
 
-    /*
-     * Three lists rather than one.
-     *
-     * Keys are worth keeping apart because they are the part someone may not
-     * want in a file they hand to somebody else. The per-file memory is worth
-     * keeping apart because it is about one person's copies of one person's
-     * films and means nothing on another device. History likewise.
-     *
-     * Everything that is none of these is a setting.
-     */
     private static final String[] KEY_PREFIXES = {"apiKey", "subtitleAddon"};
     private static final String[] HISTORY_KEYS = {"urlHistory", "onlineIdentities"};
-    private static final String[] PER_FILE_KEYS = {"subtitleDelayMap", "audioDelayMap", "speedMap"};
+    private static final String[] PER_FILE_KEYS = {"subtitleDelayMap", "audioDelayMap", "speedMap", "aspectMap"};
 
-    /*
-     * Never exported, whatever is asked for.
-     *
-     * The folder grants belong to this installation and cannot be given away.
-     * The rest is where this device happened to be up to -- the file it was
-     * last playing, where it had got to in it -- which is not a setting anybody
-     * wants carried to another device, and would point at files that are not
-     * there.
-     */
+    // device-specific: folder grants and the current playback state
     private static final String[] NEVER = {
             "scopeUri", "scopeUris", "mediaUri", "mediaType",
             "subtitleUri", "subtitleUris", "audioTrackId", "subtitleTrackId",
-            "firstRun", "subtitleCustomFontName", "subtitleAddonsSeeded"
+            "firstRun", "subtitleCustomFontName", "subtitleAddonsSeeded",
+            // launch headers may carry tokens; the rest points at files on this device
+            "launchMemory", "subtitleLabels", "aspectStep", "aspectStepUri"
     };
 
-    /** The whole of what was asked for, as a JSON document. */
     public static String export(final Context context, final Set<Part> parts) throws JSONException {
         final SharedPreferences preferences =
                 PreferenceManager.getDefaultSharedPreferences(context);
         return write(preferences.getAll(), parts);
     }
 
-    /**
-     * The document, from a plain map of what is stored.
-     *
-     * Separated from the preferences themselves so the format can be tested
-     * without a device: what goes wrong in a backup is never the reading of a
-     * file, it is a value that comes back a different type from the one that
-     * went in, and that is testable on any machine.
-     */
+    // split from the preferences so the format can be unit tested
     public static String write(final Map<String, ?> stored, final Set<Part> parts)
             throws JSONException {
         final JSONObject values = new JSONObject();
@@ -124,7 +83,6 @@ public final class Backup {
         return document.toString(2);
     }
 
-    /** What an import did, so the person who asked can be told. */
     public static final class Result {
         public final int applied;
         public final boolean recognised;
@@ -135,19 +93,13 @@ public final class Backup {
         }
     }
 
-    /**
-     * Put back whatever the file happens to hold.
-     *
-     * No choosing on the way in: a file holds what it holds, and asking again
-     * which half of it to use is a question nobody has the information to
-     * answer. Anything unreadable is skipped rather than abandoning the rest,
-     * so a file from a newer version still restores what this one understands.
-     */
+    // unreadable entries are skipped so a file from a newer version still restores
     public static Result restore(final Context context, final String json) {
         final Map<String, Object> values = read(json);
         if (values == null) {
             return new Result(0, false);
         }
+        movePre42MpvSize(values);
         final SharedPreferences.Editor editor =
                 PreferenceManager.getDefaultSharedPreferences(context).edit();
         for (final Map.Entry<String, Object> entry : values.entrySet()) {
@@ -157,13 +109,16 @@ public final class Backup {
         return new Result(values.size(), true);
     }
 
-    /**
-     * What a document holds, as values of the types they were stored as.
-     *
-     * Null for a file that is not one of ours. An empty map for one of ours
-     * that carries nothing -- which is a different thing, and the person who
-     * imported it deserves to be told which happened.
-     */
+    // an older file holds mpv's size on the old scale; moved the way Prefs moves it
+    static void movePre42MpvSize(final Map<String, Object> values) {
+        final Object size = values.get(Prefs.PREF_KEY_SUBTITLE_SIZE_MPV);
+        if (size instanceof Integer && !values.containsKey(Prefs.PREF_KEY_MPV_SIZE_MOVED)) {
+            values.put(Prefs.PREF_KEY_SUBTITLE_SIZE_MPV, Prefs.mpvSizeFrom41((Integer) size));
+            values.put(Prefs.PREF_KEY_MPV_SIZE_MOVED, true);
+        }
+    }
+
+    // null for a file that is not a backup; an empty map for an empty backup
     @Nullable
     public static Map<String, Object> read(final String json) {
         final JSONObject document;
@@ -226,7 +181,6 @@ public final class Backup {
         return false;
     }
 
-    /** A value with its type beside it, because preferences are typed. */
     @Nullable
     private static JSONObject typed(final Object value) {
         try {
@@ -256,7 +210,6 @@ public final class Backup {
         }
     }
 
-    /** One stored entry, back as the type it was written as. */
     @Nullable
     private static Object value(@NonNull final JSONObject typed) {
         switch (typed.optString("t")) {
@@ -304,14 +257,12 @@ public final class Backup {
         }
     }
 
-    /** A name with the day in it, so two exports do not look alike. */
     public static String suggestedFileName() {
         final java.text.SimpleDateFormat day =
                 new java.text.SimpleDateFormat("yyyy-MM-dd", Locale.US);
         return "just-player-pro-" + day.format(new java.util.Date()) + ".json";
     }
 
-    /** The parts a file actually carries, for telling someone what they imported. */
     public static List<String> partsIn(final String json) {
         final List<String> named = new ArrayList<>();
         try {

@@ -2,33 +2,19 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <!-- The Just Player Pro identity, defined once: the launcher icon, the
-         Android TV banner and the in-app accent all read from here.
-
-         This is TorBox Advanced's default accent, which makes the two apps look
-         related, and distinct enough from other players to sit beside them on a
-         launcher without being mistaken for one. -->
-    <!-- Behind the badge in the launcher icon. The badge carries the colour; a
-         white field keeps its gradient edges readable under any launcher mask. -->
+    <!-- white so the badge's gradient edges stay readable under any launcher mask -->
     <color name="ic_launcher_background">#FFFFFFFF</color>
 
-    <!-- Seek bar. Three shades that cannot be mistaken for one another: the
-         played part is the app's orange, what is buffered ahead is bright grey,
-         and the rest is faint. With played and buffered both white, as they are
-         by default, dragging towards the end of the buffer hid the very thing
-         you were dragging towards. -->
+    <!-- seek bar: buffered bright grey, unplayed faint, so they stay distinct -->
     <color name="time_bar_buffered">#E6FFFFFF</color>
     <color name="time_bar_unplayed">#40FFFFFF</color>
 
-    <!-- The rating line on the info card. Fixed, not the accent: a star rating
-         reads as a rating because it is amber, and following the theme colour
-         would make it a pink or a blue number that means nothing at a glance. -->
+    <!-- fixed amber whatever the accent, so it reads as a rating -->
     <color name="rating_amber">#F5C518</color>
     <color name="shortcut_background">#F5F5F5</color>
 
     <color name="ui_controls_background">#98000000</color>
-    <!-- Opaque enough to read a track list against a bright scene, still
-         short of hiding the film the choice is being made about. -->
+    <!-- opaque enough to read a track list over a bright scene -->
     <color name="ui_panel_background">#E6101010</color>
     <color name="exo_bottom_bar_background" tools:keep="@color/exo_bottom_bar_background">@color/ui_controls_background</color>
     <color name="exo_black_opacity_70" tools:keep="@color/exo_black_opacity_70">@color/ui_controls_background</color>

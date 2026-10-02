@@ -5,9 +5,7 @@ import androidx.annotation.Nullable;
 
 import java.util.Map;
 
-// Asks each service whether a key works before it is saved, rather than letting
-// a typo sit there until the first search comes back empty and looks like the
-// service being down.
+// Checks a key with its service before it is saved.
 public final class KeyCheck {
 
     public static final class Result {
@@ -40,8 +38,7 @@ public final class KeyCheck {
             case ApiKeys.PREF_WYZIE:
                 return wyzie(key);
             default:
-                // Nothing to ask: the user name and password are only meaningful
-                // alongside an OpenSubtitles key, which is checked on its own.
+                // user name and password have no check of their own
                 return new Result(true, "Saved");
         }
     }

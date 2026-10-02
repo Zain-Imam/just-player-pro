@@ -23,20 +23,18 @@ final class History {
     private static final String KEY_TYPE = "type";
     private static final String KEY_TIME = "time";
 
-    /*
-     * Whether anything ever came out of it.
-     *
-     * An entry is written the moment a URL is opened, which is before anyone
-     * knows whether it will play — so a dead link, an expired debrid URL or a
-     * typo lands in the list beside the things that worked. This is set once
-     * the player has actually rendered a frame, and the list can then be asked
-     * to show only what played.
-     *
-     * Absent on entries written by earlier versions, which are given the
-     * benefit of the doubt: they were listed before this existed, and silently
-     * hiding somebody's history on upgrade is worse than listing a dud.
-     */
+    // set once a frame renders; missing on old entries, which count as played
     private static final String KEY_PLAYED = "played";
+
+    // how good an entry's name is, worst first; a name is only replaced by a
+    // better kind, and a file name never
+    static final int NAME_RAW = 0;
+    static final int NAME_LAUNCHER = 1;
+    static final int NAME_FILE = 2;
+    private static final String KEY_NAME_KIND = "nameKind";
+
+    // poster path of the identified film
+    private static final String KEY_POSTER = "poster";
 
     private static final int MAX_ENTRIES = 100;
 
@@ -59,18 +57,58 @@ final class History {
         final long time;
         /** Whether this one ever actually played. See KEY_PLAYED. */
         final boolean played;
+        /** NAME_RAW, NAME_LAUNCHER or NAME_FILE. */
+        final int nameKind;
+        /** The confirmed film's poster path, or null. See KEY_POSTER. */
+        @Nullable
+        final String poster;
 
-        Entry(Uri uri, String name, @Nullable String type, long time) {
-            this(uri, name, type, time, true);
-        }
-
-        Entry(Uri uri, String name, @Nullable String type, long time, boolean played) {
+        Entry(Uri uri, String name, @Nullable String type, long time, boolean played,
+              int nameKind, @Nullable String poster) {
             this.uri = uri;
             this.name = name;
             this.type = type;
             this.time = time;
             this.played = played;
+            this.nameKind = nameKind;
+            this.poster = poster;
         }
+
+        Entry withPlayed() {
+            return new Entry(uri, name, type, time, true, nameKind, poster);
+        }
+
+        Entry withName(final String newName, final int kind) {
+            return new Entry(uri, newName, type, time, played, kind, poster);
+        }
+
+        Entry withPoster(@Nullable final String path) {
+            return new Entry(uri, name, type, time, played, nameKind, path);
+        }
+    }
+
+    /** How good the name on the end of the link is on its own. */
+    static int rawKind(@NonNull final Uri uri) {
+        return FilmKey.identifies(displayName(uri)) ? NAME_FILE : NAME_RAW;
+    }
+
+    /** Whether a name, from wherever it came, is a real file name. */
+    static boolean isFileName(@Nullable final String name) {
+        return name != null && FilmKey.identifies(name);
+    }
+
+    /** The kind of name this link's entry has, or -1 if there is no entry. */
+    static int nameKindFor(final SharedPreferences preferences, @Nullable final Uri uri) {
+        if (uri == null) {
+            return -1;
+        }
+        final String key = uri.toString();
+        for (final Entry entry : load(preferences)) {
+            if (key.equals(entry.uri.toString())) {
+                return entry.nameKind;
+            }
+        }
+        return -1;
     }
 
     static boolean isNetworkUri(@Nullable final Uri uri) {
@@ -115,16 +153,29 @@ final class History {
         final String key = uri.toString();
         final String place = withoutQuery(uri);
 
+        // keep the best earlier name and poster; the newest wins a tie
+        String name = displayName(uri);
+        int kind = rawKind(uri);
+        String poster = null;
+        // ever played, so an expired link today does not hide yesterday's film
+        boolean played = false;
         for (int i = entries.size() - 1; i >= 0; i--) {
-            final Uri existing = entries.get(i).uri;
-            if (key.equals(existing.toString()) || place.equals(withoutQuery(existing))) {
+            final Entry existing = entries.get(i);
+            if (key.equals(existing.uri.toString()) || place.equals(withoutQuery(existing.uri))) {
+                if (existing.nameKind > kind
+                        || (existing.nameKind == kind && kind > NAME_RAW)) {
+                    name = existing.name;
+                    kind = existing.nameKind;
+                }
+                if (existing.poster != null) {
+                    poster = existing.poster;
+                }
+                played |= existing.played;
                 entries.remove(i);
             }
         }
 
-        // Not played yet — it has only been opened. markPlayed says otherwise.
-        entries.add(0, new Entry(uri, displayName(uri), type,
-                System.currentTimeMillis(), false));
+        entries.add(0, new Entry(uri, name, type, System.currentTimeMillis(), played, kind, poster));
 
         while (entries.size() > MAX_ENTRIES) {
             entries.remove(entries.size() - 1);
@@ -148,10 +199,7 @@ final class History {
                 return entry.name;
             }
         }
-        // A regenerated link is a different host and a different path, so the
-        // one thing it still shares with the entry that was stored is the file
-        // name on the end of it. Without this the prompt fell back to showing
-        // the identifier out of the URL, which is what it was trying to avoid.
+        // a regenerated link shares only the file name with the stored one
         final String file = lastSegment(uri);
         if (file != null) {
             for (final Entry entry : entries) {
@@ -164,7 +212,7 @@ final class History {
     }
 
     private static boolean resolved(final Entry entry) {
-        return entry.name != null && !entry.name.equals(displayName(entry.uri));
+        return entry.name != null && entry.nameKind > NAME_RAW;
     }
 
     @Nullable
@@ -189,54 +237,26 @@ final class History {
         return scheme + "://" + authority + (uri.getPath() == null ? "" : uri.getPath());
     }
 
-    /**
-     * Give an entry a name, but never in place of a better one.
-     *
-     * <p>Identifying a film answers with the name of the work -- "Silo" -- and
-     * that is the right thing to show on the card and the wrong thing to offer
-     * as the last video, where "Silo" could be any of thirty episodes. It is
-     * still far better than the identifier out of the link, so it is written
-     * only where nothing has named the entry yet: a launcher's title and a name
-     * resolved from the server are both the file itself, and both win.
-     */
-    static void fillInName(final SharedPreferences preferences, @Nullable final Uri uri,
-                           @Nullable final String name) {
-        if (uri == null || name == null || name.trim().isEmpty()) {
-            return;
-        }
-        final List<Entry> entries = load(preferences);
-        final String key = uri.toString();
-        boolean changed = false;
-
-        for (int i = 0; i < entries.size(); i++) {
-            final Entry entry = entries.get(i);
-            if (!key.equals(entry.uri.toString()) || resolved(entry)) {
-                continue;
-            }
-            entries.set(i, new Entry(entry.uri, name.trim(), entry.type, entry.time,
-                    entry.played));
-            changed = true;
-        }
-
-        if (changed) {
-            save(preferences, entries);
-        }
-    }
+    /** Renames unless the new kind is worse or the entry has a file name. */
     static void rename(final SharedPreferences preferences, @Nullable final Uri uri,
-                       @Nullable final String name) {
+                       @Nullable final String name, final int kind) {
         if (uri == null || name == null || name.trim().isEmpty()) {
             return;
         }
+        final String trimmed = name.trim();
         final List<Entry> entries = load(preferences);
         final String key = uri.toString();
         boolean changed = false;
 
         for (int i = 0; i < entries.size(); i++) {
             final Entry entry = entries.get(i);
-            if (!key.equals(entry.uri.toString()) || name.equals(entry.name)) {
+            if (!key.equals(entry.uri.toString())
+                    || entry.nameKind == NAME_FILE
+                    || kind < entry.nameKind
+                    || (kind == entry.nameKind && trimmed.equals(entry.name))) {
                 continue;
             }
-            entries.set(i, new Entry(entry.uri, name.trim(), entry.type, entry.time));
+            entries.set(i, entry.withName(trimmed, kind));
             changed = true;
         }
 
@@ -259,17 +279,32 @@ final class History {
         }
     }
 
+    /** Give the entry for this link the confirmed film's poster. See KEY_POSTER. */
+    static void setPoster(final SharedPreferences preferences, @Nullable final Uri uri,
+                          @Nullable final String posterPath) {
+        if (uri == null || posterPath == null || posterPath.isEmpty()) {
+            return;
+        }
+        final List<Entry> entries = load(preferences);
+        final String place = withoutQuery(uri);
+        boolean changed = false;
+        for (int i = 0; i < entries.size(); i++) {
+            final Entry entry = entries.get(i);
+            if (place.equals(withoutQuery(entry.uri)) && !posterPath.equals(entry.poster)) {
+                entries.set(i, entry.withPoster(posterPath));
+                changed = true;
+            }
+        }
+        if (changed) {
+            save(preferences, entries);
+        }
+    }
+
     static void clear(final SharedPreferences preferences) {
         preferences.edit().remove(PREF_KEY).apply();
     }
 
-    /**
-     * Say that this one played, so it survives the "only what played" filter.
-     *
-     * Called when a frame has actually been rendered rather than when playback
-     * is merely requested: a link that connects, buffers and then fails has not
-     * played, and should not be remembered as though it had.
-     */
+    // called once a frame renders: a link that buffers then fails never played
     static void markPlayed(final SharedPreferences preferences, @Nullable final Uri uri) {
         if (!isNetworkUri(uri)) {
             return;
@@ -280,7 +315,7 @@ final class History {
         for (int i = 0; i < entries.size(); i++) {
             final Entry entry = entries.get(i);
             if (!entry.played && key.equals(entry.uri.toString())) {
-                entries.set(i, new Entry(entry.uri, entry.name, entry.type, entry.time, true));
+                entries.set(i, entry.withPlayed());
                 changed = true;
             }
         }
@@ -315,12 +350,17 @@ final class History {
                 }
                 final String type = object.has(KEY_TYPE) && !object.isNull(KEY_TYPE)
                         ? object.optString(KEY_TYPE, null) : null;
+                // no stored kind: a name unlike the link's is taken as a launcher's
+                final int kind = object.has(KEY_NAME_KIND)
+                        ? object.optInt(KEY_NAME_KIND, NAME_RAW)
+                        : name.equals(displayName(uri)) ? rawKind(uri) : NAME_LAUNCHER;
+                final String poster = object.has(KEY_POSTER) && !object.isNull(KEY_POSTER)
+                        ? object.optString(KEY_POSTER, null) : null;
                 entries.add(new Entry(uri, name, type, object.optLong(KEY_TIME, 0L),
-                        object.optBoolean(KEY_PLAYED, true)));
+                        object.optBoolean(KEY_PLAYED, true), kind, poster));
             }
         } catch (JSONException e) {
-            // A corrupt list is not worth failing a launch over — the feature is
-            // a convenience, and starting empty is the recoverable outcome.
+            // a corrupt list just starts empty
             Utils.log("Discarding unreadable history: " + e);
             return new ArrayList<>();
         }
@@ -340,6 +380,10 @@ final class History {
                 }
                 object.put(KEY_TIME, entry.time);
                 object.put(KEY_PLAYED, entry.played);
+                object.put(KEY_NAME_KIND, entry.nameKind);
+                if (entry.poster != null) {
+                    object.put(KEY_POSTER, entry.poster);
+                }
                 array.put(object);
             }
         } catch (JSONException e) {

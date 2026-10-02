@@ -87,8 +87,7 @@ public final class BufferProfile {
             final int percent = (int) ((level * 100L) / scale);
 
             final int plugged = status.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
-            // Unknown charging state is treated as charging, so a device that will
-            // not say is never held to the smaller buffer.
+            // an unknown charging state (-1) counts as charging
             final boolean charging = plugged != 0;
 
             return percent <= LOW_BATTERY_PERCENT && !charging;
@@ -155,7 +154,7 @@ public final class BufferProfile {
             Utils.log("Could not read the heap limit: " + e);
         }
         if (heapMb <= 0) {
-            // No answer: take the tier at its word but stay modest.
+            // heap limit unknown: cap at 32 MB
             return Math.min(tier.targetBufferMb, 32);
         }
         return Math.max(8, Math.min(tier.targetBufferMb, heapMb / 2));

@@ -11,31 +11,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/*
- * Which language wins, asked once and answered the same way by both engines.
- *
- * A file with English, Japanese and Spanish audio has no idea which of them is
- * wanted, and the one the muxer happened to mark as default is a coin toss. A
- * single preferred language is not much better on a collection where some files
- * have the wanted language and some do not: what is actually wanted is an order
- * of preference, with a fallback further down it.
- *
- * This also closes a gap between the engines. mpv was told which subtitle
- * language to prefer and Media3 was not, so the same file opened with subtitles
- * on one engine and without them on the other.
- */
+// language preference order, shared by both engines
 public final class Languages {
 
     private Languages() {
     }
 
-    /** Audio languages in order of preference, best first, possibly empty. */
     public static String[] audio(final Context context) {
         final List<String> order = new ArrayList<>(
                 split(preference(context, "languageAudioPriority")));
 
-        // Read here rather than taken from Prefs: the other engine builds its
-        // options without one, and both must answer identically.
+        // read directly so both engines' option builders answer the same
         final String chosen = PreferenceManager.getDefaultSharedPreferences(context)
                 .getString("languageAudio", Prefs.TRACK_DEVICE);
 
@@ -50,13 +36,10 @@ public final class Languages {
         return unique(order);
     }
 
-    /** Subtitle languages in order of preference, best first, possibly empty. */
     public static String[] subtitle(final Context context) {
         final List<String> order = new ArrayList<>(
                 split(preference(context, "languageSubtitlePriority")));
 
-        // The system's own captioning language, which is what someone who set
-        // one up expects every player to honour.
         final CaptioningManager captioning =
                 (CaptioningManager) context.getSystemService(Context.CAPTIONING_SERVICE);
         final Locale locale = captioning == null ? null : captioning.getLocale();
@@ -64,8 +47,6 @@ public final class Languages {
             order.add(locale.getLanguage());
         }
 
-        // The language already chosen for searching for subtitles online: no
-        // reason to prefer one language in the file and another out of it.
         final String search = preference(context, "subtitleLanguage");
         if (search != null && !search.isEmpty()) {
             order.add(search);
@@ -74,11 +55,7 @@ public final class Languages {
         return unique(order);
     }
 
-    /*
-     * mpv matches what the container says, which for Matroska is usually the
-     * three-letter tag and for MP4 is usually the two. Both spellings are given
-     * so neither file type falls through.
-     */
+    // mpv matches the container's tag: usually 3 letters in Matroska, 2 in MP4
     public static String forMpv(final String[] languages) {
         final Set<String> spellings = new LinkedHashSet<>();
         for (final String language : languages) {
@@ -92,8 +69,7 @@ public final class Languages {
                 spellings.add(iso1);
             }
         }
-        // Built by hand rather than with String.join, which arrived in API 26
-        // and this app still runs on 25.
+        // String.join needs API 26 and the app still runs on 25
         final StringBuilder list = new StringBuilder();
         for (final String spelling : spellings) {
             if (list.length() > 0) {

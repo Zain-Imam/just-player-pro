@@ -42,14 +42,6 @@ import com.brouken.player.dtpv.SeekListener;
 import com.brouken.player.dtpv.youtube.views.CircleClipTapView;
 import com.brouken.player.dtpv.youtube.views.SecondsView;
 
-/**
- * Overlay for [DoubleTapPlayerView] to create a similar UI/UX experience like the official
- * YouTube Android app.
- *
- * The overlay has the typical YouTube scaling circle animation and provides some configurations
- * which can't be accomplished with the regular Android Ripple (I didn't find any options in the
- * documentation ...).
- */
 public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoubleTapListener {
 
     private final AttributeSet attrs;
@@ -67,12 +59,10 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
 
         LayoutInflater.from(context).inflate(R.layout.yt_overlay, this, true);
 
-        // Initialize UI components
         initializeAttributes();
         ((SecondsView)findViewById(R.id.seconds_view)).setForward(true);
         changeConstraints(true);
 
-        // This code snippet is executed when the circle scale animation is finished
         ((CircleClipTapView)findViewById(R.id.circle_clip_tap_view)).setPerformAtEnd(
                 new Runnable() {
                     @Override
@@ -91,14 +81,10 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
 
     private int playerViewRef;
 
-    // Player behaviors
     private DoubleTapPlayerView playerView;
-    // The interface rather than ExoPlayer, so the seek works under mpv too
+    // typed as Player so the seek works under mpv too
     private Player player;
 
-    /**
-     * Sets all optional XML attributes and defaults
-     */
     private void initializeAttributes() {
         if (attrs != null) {
             TypedArray a = getContext().obtainStyledAttributes(attrs,
@@ -107,7 +93,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
             // PlayerView => see onAttachToWindow
             playerViewRef = a.getResourceId(R.styleable.YouTubeOverlay_yt_playerView, -1);
 
-            // Durations
             setAnimationDuration((long)a.getInt(
                     R.styleable.YouTubeOverlay_yt_animationDuration, 650));
 
@@ -117,13 +102,11 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
             setIconAnimationDuration((long)a.getInt(
                     R.styleable.YouTubeOverlay_yt_iconAnimationDuration, 750));
 
-            // Arc size
             setArcSize((float)a.getDimensionPixelSize(
                     R.styleable.YouTubeOverlay_yt_arcSize,
                     getContext().getResources().getDimensionPixelSize(R.dimen.dtpv_yt_arc_size))
             );
 
-            // Colors
             setTapCircleColor(a.getColor(
                     R.styleable.YouTubeOverlay_yt_tapCircleColor,
                     ContextCompat.getColor(getContext(), R.color.dtpv_yt_tap_circle_color))
@@ -134,7 +117,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
                     ContextCompat.getColor(getContext(), R.color.dtpv_yt_background_circle_color))
             );
 
-            // Seconds TextAppearance
             setTextAppearance(a.getResourceId(
                     R.styleable.YouTubeOverlay_yt_textAppearance,
                     R.style.YTOSecondsTextAppearance)
@@ -147,7 +129,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
 
             a.recycle();
         } else {
-            // Set defaults
             setArcSize((float)getContext().getResources().getDimensionPixelSize(R.dimen.dtpv_yt_arc_size));
             setTapCircleColor(ContextCompat.getColor(getContext(), R.color.dtpv_yt_tap_circle_color));
             setCircleBackgroundColor(ContextCompat.getColor(getContext(), R.color.dtpv_yt_background_circle_color));
@@ -162,44 +143,24 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
 
-        // If the PlayerView is set by XML then call the corresponding setter method
         if (playerViewRef != -1)
             playerView((DoubleTapPlayerView)((View)getParent()).findViewById(playerViewRef));
     }
 
-    /**
-     * Obligatory call if playerView is not set via XML!
-     *
-     * Links the DoubleTapPlayerView to this view for recognizing the tapped position.
-     *
-     * @param playerView PlayerView which triggers the event
-     */
+    // required unless yt_playerView is set in XML
     public YouTubeOverlay playerView(DoubleTapPlayerView playerView) {
         this.playerView = playerView;
         return this;
     }
 
-    /**
-     * Obligatory call! Needs to be called whenever the Player changes.
-     *
-     * Performs seekTo-calls on the ExoPlayer's Player instance.
-     *
-     * @param player PlayerView which triggers the event
-     */
+    // call again whenever the player changes
     public YouTubeOverlay player(Player player) {
         this.player = player;
         return this;
     }
 
-        /*
-        Properties
-     */
-
     private SeekListener seekListener;
 
-    /**
-     * Optional: Sets a listener to observe whether double tap reached the start / end of the video
-     */
     public YouTubeOverlay seekListener(SeekListener listener) {
         seekListener = listener;
         return this;
@@ -207,18 +168,11 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
 
     private PerformListener performListener;
 
-    /**
-     * Sets a listener to execute some code before and after the animation
-     * (for example UI changes (hide and show views etc.))
-     */
     public YouTubeOverlay performListener(PerformListener listener) {
         performListener = listener;
         return this;
     }
 
-    /**
-     * Forward / rewind duration on a tap in seconds.
-     */
     private int seekSeconds;
     public final int getSeekSeconds() {
         return seekSeconds;
@@ -229,9 +183,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
         return this;
     }
 
-    /**
-     * Color of the scaling circle on touch feedback.
-     */
     public int getTapCircleColor() {
         return ((CircleClipTapView)findViewById(R.id.circle_clip_tap_view)).getCircleColor();
     }
@@ -250,9 +201,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
         return this;
     }
 
-    /**
-     * Color of the clipped background circle
-     */
     public final int getCircleBackgroundColor() {
         return ((CircleClipTapView)findViewById(R.id.circle_clip_tap_view)).getCircleBackgroundColor();
     }
@@ -271,10 +219,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
         return this;
     }
 
-    /**
-     * Duration of the circle scaling animation / speed in milliseconds.
-     * The overlay keeps visible until the animation finishes.
-     */
     private long animationDuration;
     public final long getAnimationDuration() {
         return ((CircleClipTapView)findViewById(R.id.circle_clip_tap_view)).getAnimationDuration();
@@ -289,10 +233,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
         return this;
     }
 
-    /**
-     * Size of the arc which will be clipped from the background circle.
-     * The greater the value the more roundish the shape becomes
-     */
     private float arcSize;
     public final float getArcSize() {
         return ((CircleClipTapView)findViewById(R.id.circle_clip_tap_view)).getArcSize();
@@ -312,9 +252,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
         return this;
     }
 
-    /**
-     * Duration the icon animation (fade in + fade out) for a full cycle in milliseconds.
-     */
     private long iconAnimationDuration = 750;
     public final long getIconAnimationDuration() {
         return ((SecondsView)findViewById(R.id.seconds_view)).getCycleDuration();
@@ -330,13 +267,7 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
         return this;
     }
 
-    /**
-     * One of the three forward icons which will be animated above the seconds indicator.
-     * The rewind icon will be the 180° mirrored version.
-     *
-     * Keep in mind that padding on the left and right of the drawable will be rendered which
-     * could result in additional space between the three icons.
-     */
+    // the rewind icon is this one mirrored
     private int icon;
     public final int getIcon() {
         return ((SecondsView)findViewById(R.id.seconds_view)).getIcon();
@@ -352,9 +283,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
         return this;
     }
 
-    /**
-     * Text appearance of the *xx seconds* text.
-     */
     private int textAppearance;
     public final int getTextAppearance() {
         return textAppearance;
@@ -370,11 +298,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
         return this;
     }
 
-    /**
-     * TextView view for *xx seconds*.
-     *
-     * In case of you'd like to change some specific attributes of the TextView in runtime.
-     */
     public final TextView getSecondsTextView() {
         return ((SecondsView)findViewById(R.id.seconds_view)).getTextView();
     }
@@ -397,8 +320,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
                 return;
             }
         }
-
-        //super.onDoubleTapStarted(posX, posY);
     }
 
     @Override
@@ -406,7 +327,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
         if (PlayerActivity.locked)
             return;
 
-        // Check first whether forwarding/rewinding is "valid"
         if (player == null || player.getMediaItemCount() < 1 || player.getCurrentPosition() < 0 || playerView == null || playerView.getWidth() < 0)
             return;
 
@@ -423,7 +343,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
             return;
 
         // YouTube behavior: show overlay on MOTION_UP
-        // But check whether the first double tap is in invalid area
         if (getVisibility() != View.VISIBLE) {
             if (posX < playerView.getWidth() * 0.35 || posX > playerView.getWidth() * 0.65) {
                 if (performListener != null)
@@ -445,8 +364,7 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
                 secondsView.setSeconds(0);
             }
 
-            // Cancel ripple and start new without triggering overlay disappearance
-            // (resetting instead of ending)
+            // reset so the overlay stays up
             ((CircleClipTapView)findViewById(R.id.circle_clip_tap_view)).resetAnimation(new Runnable() {
                 @Override
                 public void run() {
@@ -464,8 +382,7 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
                 secondsView.setSeconds(0);
             }
 
-            // Cancel ripple and start new without triggering overlay disappearance
-            // (resetting instead of ending)
+            // reset so the overlay stays up
             ((CircleClipTapView)findViewById(R.id.circle_clip_tap_view)).resetAnimation(new Runnable() {
                 @Override
                 public void run() {
@@ -475,28 +392,15 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
             forwarding();
         } else {
             // Middle area tapped: do nothing
-            //
-            // playerView?.cancelInDoubleTapMode()
-            // circle_clip_tap_view.endAnimation()
-            // triangle_seconds_view.stop()
         }
     }
 
-    /**
-     * Seeks the video to desired position.
-     * Calls interface functions when start reached ([SeekListener.onVideoStartReached])
-     * or when end reached ([SeekListener.onVideoEndReached])
-     *
-     * @param newPosition desired position
-     */
     private void seekToPosition(long newPosition) {
         if (player == null || playerView == null)
             return;
 
-        // Exact seeking where the engine supports it; mpv seeks exactly anyway.
-        if (player instanceof androidx.media3.exoplayer.ExoPlayer) {
-            ((androidx.media3.exoplayer.ExoPlayer) player).setSeekParameters(SeekParameters.EXACT);
-        }
+        // otherwise mpv keeps the keyframe snapping of the last drag
+        com.brouken.player.engine.SeekPrecision.exact(player);
 
         // Start of the video reached
         if (newPosition <= 0) {
@@ -507,7 +411,7 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
             return;
         }
 
-        // End of the video reached — again, only if the length is known.
+        // End of the video reached, if the length is known
         long total = player.getDuration();
         if (total != C.TIME_UNSET && newPosition >= total) {
             player.seekTo(total);
@@ -517,7 +421,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
             return;
         }
 
-        // Otherwise
         playerView.keepInDoubleTapMode();
         player.seekTo(newPosition);
     }
@@ -547,7 +450,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
             constraintSet.connect(secondsView.getId(), ConstraintSet.START,
                     ConstraintSet.PARENT_ID, ConstraintSet.START);
         }
-        //secondsView.start();
         constraintSet.applyTo((ConstraintLayout)findViewById(R.id.root_constraint_layout));
     }
 

@@ -88,18 +88,7 @@ public class Prefs {
     public Uri mediaUri;
     public Uri subtitleUri;
     public final java.util.List<Uri> subtitleUris = new java.util.ArrayList<>();
-    /*
-     * The folder the player was last given, and every folder it has been given.
-     *
-     * There was only ever one. Granting a second silently replaced the first,
-     * so a library split across two cards or two drives could never work: the
-     * half you granted second was the only half the player could look in for
-     * the next episode or a subtitle sitting beside the film.
-     *
-     * scopeUri is kept, and kept meaning what it always meant -- the most
-     * recent grant -- so nothing that reads it has to change. The list is the
-     * new thing, and the single one migrates into it on first load.
-     */
+    // scopeUri is the latest grant; scopeUris holds every granted folder
     public Uri scopeUri;
     public final java.util.List<Uri> scopeUris = new java.util.ArrayList<>();
     public String mediaType;
@@ -116,15 +105,7 @@ public class Prefs {
     public boolean firstRun = true;
     public boolean askScope = true;
     public boolean autoPiP = false;
-    /**
-     * Whether the end of a film starts the one after it.
-     *
-     * <p>Off, because a folder is not always a series: turning it on for
-     * everybody would mean a folder of holiday clips running straight through
-     * on its own, which nobody asked for.
-     */
     public boolean autoPlayNext = false;
-    /** Whether the sound goes on when the player is put away. Off unless asked for. */
     public boolean backgroundAudio = false;
     public boolean askResume = true;
     public boolean adaptiveBuffering = true;
@@ -152,13 +133,7 @@ public class Prefs {
 
     private LinkedHashMap positions;
 
-    /**
-     * How close to the end counts as having watched the whole thing.
-     *
-     * <p>Generous on purpose. Films often carry a second or two of black after
-     * the last frame, and some engines report the end a little short of the
-     * length the container claims; neither is somebody who stopped watching.
-     */
+    // slack for trailing black frames and engines that report the end early
     private static final long FINISHED_MS = 3_000;
     private final LinkedHashMap<String, Integer> subtitleDelayMap = new LinkedHashMap<>();
     private final LinkedHashMap<String, Integer> audioDelayMap = new LinkedHashMap<>();
@@ -211,6 +186,37 @@ public class Prefs {
         loadDelays(subtitleDelayMap, PREF_KEY_SUBTITLE_DELAY_MAP);
         loadDelays(audioDelayMap, PREF_KEY_AUDIO_DELAY_MAP);
         loadDelays(speedMap, PREF_KEY_SPEED_MAP);
+        loadDelays(aspectMap, PREF_KEY_ASPECT_MAP);
+        migrateAspectStep();
+        migrateMpvSubtitleSize();
+        loadSubtitleLabels();
+    }
+
+    static final String PREF_KEY_MPV_SIZE_MOVED = "subtitleSizeMpvMoved";
+    static final String PREF_KEY_SUBTITLE_SIZE_MPV = PREF_KEY_SUBTITLE_SIZE + "_mpv";
+
+    // an mpv size from the old scale, as the step that draws the same size now
+    static int mpvSizeFrom41(final int chosen) {
+        return chosen == 0 ? 0
+                : clampSubtitleSize(com.brouken.player.mpv.MpvSubtitleScale.stepDrawnLike41(chosen));
+    }
+
+    // runs once: converts a chosen mpv size to the corrected scale
+    private void migrateMpvSubtitleSize() {
+        if (mSharedPreferences.getBoolean(PREF_KEY_MPV_SIZE_MOVED, false)) {
+            return;
+        }
+        final SharedPreferences.Editor editor = mSharedPreferences.edit()
+                .putBoolean(PREF_KEY_MPV_SIZE_MOVED, true);
+        final int chosen = mSharedPreferences.getInt(PREF_KEY_SUBTITLE_SIZE_MPV, 0);
+        if (chosen != 0) {
+            final int moved = mpvSizeFrom41(chosen);
+            editor.putInt(PREF_KEY_SUBTITLE_SIZE_MPV, moved);
+            if ("mpv".equals(subtitleEngine)) {
+                subtitleSize = moved;
+            }
+        }
+        editor.apply();
     }
 
     public void loadUserPreferences() {
@@ -233,7 +239,7 @@ public class Prefs {
         languageAudio = mSharedPreferences.getString(PREF_KEY_LANGUAGE_AUDIO, languageAudio);
         subtitleStyleEmbedded = mSharedPreferences.getBoolean(PREF_KEY_SUBTITLE_STYLE_EMBEDDED, subtitleStyleEmbedded);
         subtitleVerticalPosition = getSubtitleVerticalPositionForVideoHeight(currentVideoHeight);
-        subtitleSize = mSharedPreferences.getInt(PREF_KEY_SUBTITLE_SIZE, subtitleSize);
+        subtitleSize = clampSubtitleSize(mSharedPreferences.getInt(subtitleSizeKey(), 0));
         subtitleEdgeType = valueOfEnum(SubtitleEdgeType.class, mSharedPreferences.getString(PREF_KEY_SUBTITLE_EDGE_TYPE, null), subtitleEdgeType);
         subtitleTypeface = valueOfEnum(SubtitleTypeface.class, mSharedPreferences.getString(PREF_KEY_SUBTITLE_TYPEFACE, null), subtitleTypeface);
         subtitleCustomFontEnabled = mSharedPreferences.getBoolean(PREF_KEY_SUBTITLE_CUSTOM_FONT_ENABLED, subtitleCustomFontEnabled);
@@ -258,28 +264,10 @@ public class Prefs {
             }
         }
 
-        // Recorded here rather than at the call sites: every media change goes
-        // through this method, so the history cannot quietly miss one.
+        // every media change passes through here
         History.record(mSharedPreferences, mediaUri, mediaType);
 
-        /*
-         * The last film is written down whoever started it.
-         *
-         * This used to sit inside the persistent-mode check below, and that was
-         * wrong in a way nobody would guess from the outside: an application
-         * that hands a film over with extras -- a position to start at, a
-         * request for the position back, or a set of subtitles, which Stremio
-         * and Nuvio all send -- puts this player into non-persistent mode, and
-         * the last-played pointer was then never updated. So an evening spent
-         * watching through another application left the pointer on whatever was
-         * last opened from inside this one, and "Play last video?" offered a
-         * film from days ago as though it were the one just watched.
-         *
-         * What non-persistent mode is actually for is the position: the
-         * launcher passed one and expects it handed back, so it owns that
-         * number. Which film was last played is this application's own business
-         * and belongs to it either way.
-         */
+        // saved even in non-persistent mode; only the position belongs to the launcher
         final SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
         if (mediaUri == null)
             sharedPreferencesEditor.remove(PREF_KEY_MEDIA_URI);
@@ -310,7 +298,7 @@ public class Prefs {
                 }
             }
         } catch (JSONException e) {
-            // A corrupt list is not worth a crash; the selected one still works.
+            // corrupt list: fall back to the selected subtitle
             if (subtitleUri != null) {
                 subtitleUris.add(subtitleUri);
             }
@@ -325,8 +313,6 @@ public class Prefs {
         } else {
             subtitleUris.remove(uri);
             subtitleUris.add(uri);
-            // Bounded: a dozen subtitles on one file is already unusual, and
-            // every one of them is a track the player has to open.
             while (subtitleUris.size() > MAX_SUBTITLES) {
                 subtitleUris.remove(0);
             }
@@ -348,25 +334,18 @@ public class Prefs {
             sharedPreferencesEditor.remove(PREF_KEY_SUBTITLE_TRACK_ID);
             sharedPreferencesEditor.apply();
         }
+        if (uri == null) {
+            subtitleLabels.clear();
+        }
+        if (persistentMode) {
+            saveSubtitleLabels();
+        }
     }
     public void updatePosition(final long position) {
         updatePosition(position, 0L);
     }
 
-    /**
-     * Where the film was left, with the length of it so that the end can be
-     * told apart from the middle.
-     *
-     * <p>A film watched all the way through is written down as not started.
-     * Otherwise it is remembered as sitting on its last frame: opening it again
-     * shows that frame and a play button rather than the film, and with "play
-     * the next file automatically" turned on it is worse still -- the film ends
-     * the instant it loads, so the folder is walked through at speed until it
-     * reaches something nobody has finished.
-     *
-     * <p>A duration of zero means the length is not known, and then nothing is
-     * assumed: the position is kept as it is.
-     */
+    // a film watched to the end is saved as 0; a duration of 0 means unknown
     public void updatePosition(final long position, final long duration) {
         if (mediaUri == null)
             return;
@@ -374,17 +353,7 @@ public class Prefs {
         while (positions.size() > 100)
             positions.remove(positions.keySet().toArray()[0]);
 
-        /*
-         * Kept in both places for a film another application started.
-         *
-         * nonPersitentPosition is the number handed back to that application
-         * when the player closes, and it has to stay exactly what it was: the
-         * launcher asked for it and is keeping its own count. Writing the same
-         * number into this player's own list as well takes nothing away from
-         * that, and is what lets the film be picked up again from here --
-         * without it, a film watched through Stremio and then reopened from the
-         * home screen started again from the beginning.
-         */
+        // also kept in the player's own list so a launcher's film can be resumed here
         positions.put(mediaUri.toString(), watchedThrough(position, duration) ? 0L : position);
         savePositions();
         if (!persistentMode) {
@@ -392,17 +361,7 @@ public class Prefs {
         }
     }
 
-    /**
-     * Whether a film left at this point was watched all the way through.
-     *
-     * <p>A duration of zero or less means the length is not known -- a live
-     * stream, or a file the engine has not measured yet -- and nothing is
-     * assumed of it.
-     *
-     * <p>The allowance never runs past the middle of the film, so that a clip
-     * shorter than the allowance itself is not counted as finished before it
-     * has been started.
-     */
+    // capped at half the duration so a very short clip is not counted as finished
     static boolean watchedThrough(final long position, final long duration) {
         if (duration <= 0) {
             return false;
@@ -459,7 +418,7 @@ public class Prefs {
     }
 
     public long getPosition() {
-        if (!persistentMode) {
+        if (!persistentMode && nonPersitentPosition >= 0) {
             return nonPersitentPosition;
         }
 
@@ -528,15 +487,13 @@ public class Prefs {
         sharedPreferencesEditor.apply();
 
         if (uri != null) {
-            // Newest first: the folder just granted is the likeliest place to
-            // find whatever is being played.
             scopeUris.remove(uri);
             scopeUris.add(0, uri);
             saveScopes();
         }
     }
 
-    /** Stop looking in a folder. The system grant is released by the caller. */
+    // the caller releases the system permission grant
     public void removeScope(final Uri uri) {
         if (uri == null) {
             return;
@@ -544,8 +501,7 @@ public class Prefs {
         scopeUris.remove(uri);
         saveScopes();
         if (uri.equals(scopeUri)) {
-            // Whatever is left becomes the one that answers for the old single
-            // setting, so nothing reading scopeUri sees a folder that has gone.
+            // keep scopeUri pointing at a folder that is still granted
             updateScope(scopeUris.isEmpty() ? null : scopeUris.get(0));
         }
     }
@@ -566,11 +522,10 @@ public class Prefs {
                     }
                 }
             } catch (org.json.JSONException e) {
-                // A list that will not parse is no worse than no list; the
-                // single folder below still gets the player working.
+                // unreadable list: the single folder below still works
             }
         }
-        // Anyone upgrading has one folder and no list.
+        // migrate the old single folder into the list
         if (scopeUri != null && !scopeUris.contains(scopeUri)) {
             scopeUris.add(0, scopeUri);
             saveScopes();
@@ -586,44 +541,49 @@ public class Prefs {
     }
 
     public void updateSubtitleVerticalPosition(final int subtitleVerticalPosition) {
-        this.subtitleVerticalPosition = subtitleVerticalPosition;
-        final SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
-        sharedPreferencesEditor.putInt(getSubtitleVerticalPositionKey(currentVideoHeight), subtitleVerticalPosition);
-        // Also as the general answer, for video heights not seen yet.
-        sharedPreferencesEditor.putInt(PREF_KEY_SUBTITLE_VERTICAL_POSITION + engineSuffix(), subtitleVerticalPosition);
-        sharedPreferencesEditor.apply();
+        this.subtitleVerticalPosition = clampSubtitlePosition(subtitleVerticalPosition,
+                subtitlePositionMin());
+        mSharedPreferences.edit()
+                .putInt(PREF_KEY_SUBTITLE_VERTICAL_POSITION + engineSuffix(),
+                        this.subtitleVerticalPosition)
+                .apply();
     }
 
+    // position does not depend on height; kept for existing callers
     public boolean refreshSubtitleVerticalPositionForVideoHeight(int videoHeight) {
         this.currentVideoHeight = videoHeight;
-        int position = getSubtitleVerticalPositionForVideoHeight(videoHeight);
-        if (subtitleVerticalPosition != position) {
-            subtitleVerticalPosition = position;
-            return true;
-        } else {
-            return false;
-        }
+        return false;
     }
 
     private int getSubtitleVerticalPositionForVideoHeight(int videoHeight) {
-        final int fallback = mSharedPreferences.getInt(PREF_KEY_SUBTITLE_VERTICAL_POSITION + engineSuffix(), 0);
-        String key = getSubtitleVerticalPositionKey(videoHeight);
-        return mSharedPreferences.getInt(key, fallback);
+        return clampSubtitlePosition(mSharedPreferences.getInt(
+                PREF_KEY_SUBTITLE_VERTICAL_POSITION + engineSuffix(), 0), subtitlePositionMin());
     }
 
-    private String getSubtitleVerticalPositionKey(int videoHeight) {
-        final String base = PREF_KEY_SUBTITLE_VERTICAL_POSITION + engineSuffix();
-        if (videoHeight > 0) {
-            return base + "_" + videoHeight;
-        } else {
-            return base;
-        }
+    public static final int SUBTITLE_SIZE_MIN = -30;
+    public static final int SUBTITLE_SIZE_MAX = 50;
+    public static final int SUBTITLE_POSITION_MIN = -8;
+    public static final int SUBTITLE_POSITION_MAX = 80;
+    // mpv keeps its own 22/720 bottom margin; -13 puts its text on the screen edge
+    public static final int SUBTITLE_POSITION_MIN_MPV = -13;
+
+    public static int clampSubtitleSize(final int size) {
+        return Math.max(SUBTITLE_SIZE_MIN, Math.min(SUBTITLE_SIZE_MAX, size));
     }
 
-    // The two engines draw subtitles at different sizes and sit them in
-    // different places, so a position that reads well under one is wrong under
-    // the other. Each keeps its own. Media3 keeps the unsuffixed keys so
-    // anything already set carries over.
+    public static int clampSubtitlePosition(final int position) {
+        return clampSubtitlePosition(position, SUBTITLE_POSITION_MIN);
+    }
+
+    public static int clampSubtitlePosition(final int position, final int min) {
+        return Math.max(min, Math.min(SUBTITLE_POSITION_MAX, position));
+    }
+
+    public int subtitlePositionMin() {
+        return "mpv".equals(subtitleEngine) ? SUBTITLE_POSITION_MIN_MPV : SUBTITLE_POSITION_MIN;
+    }
+
+    // each engine keeps its own size and position; Media3 uses the unsuffixed keys
     private String engineSuffix() {
         return "mpv".equals(subtitleEngine) ? "_mpv" : "";
     }
@@ -638,16 +598,128 @@ public class Prefs {
             return false;
         }
         subtitleEngine = normalized;
-        subtitleSize = mSharedPreferences.getInt(subtitleSizeKey(), 0);
+        subtitleSize = clampSubtitleSize(mSharedPreferences.getInt(subtitleSizeKey(), 0));
         subtitleVerticalPosition = getSubtitleVerticalPositionForVideoHeight(currentVideoHeight);
         return true;
     }
 
     public void updateSubtitleSize(final int subtitleSize) {
-        this.subtitleSize = subtitleSize;
+        this.subtitleSize = clampSubtitleSize(subtitleSize);
         final SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
-        sharedPreferencesEditor.putInt(subtitleSizeKey(), subtitleSize);
+        sharedPreferencesEditor.putInt(subtitleSizeKey(), this.subtitleSize);
         sharedPreferencesEditor.apply();
+    }
+
+    // only used to tell films apart where the address cannot (see FilmKey)
+    @Nullable
+    public String mediaTitle;
+
+    public void setMediaTitle(@Nullable final String title) {
+        mediaTitle = title == null || title.trim().isEmpty() ? null : title.trim();
+    }
+
+    @Nullable
+    public String filmKey() {
+        return FilmKey.of(mContext, mediaUri, mediaTitle);
+    }
+
+    @Nullable
+    private String filmKeyFor(@Nullable final Uri uri) {
+        if (uri == null) {
+            return null;
+        }
+        return FilmKey.of(mContext, uri, uri.equals(mediaUri) ? mediaTitle : null);
+    }
+
+    private static final String PREF_KEY_ASPECT_MAP = "aspectMap";
+    private static final int MAX_ASPECT_ENTRIES = 200;
+    private final LinkedHashMap<String, Integer> aspectMap = new LinkedHashMap<>();
+
+    public int aspectStep(final int count) {
+        final String key = filmKey();
+        final Integer stored = key == null ? null : aspectMap.get(key);
+        return stored != null && stored >= 0 && stored < count ? stored : 0;
+    }
+
+    public void updateAspectStep(final int step) {
+        final String key = filmKey();
+        if (key == null) {
+            return;
+        }
+        aspectMap.remove(key);
+        if (step != 0) {
+            aspectMap.put(key, step);
+        }
+        while (aspectMap.size() > MAX_ASPECT_ENTRIES) {
+            aspectMap.remove(aspectMap.keySet().iterator().next());
+        }
+        saveDelays(aspectMap, PREF_KEY_ASPECT_MAP);
+    }
+
+    // moves the old single-slot aspect setting into the per-film map
+    private void migrateAspectStep() {
+        final String uri = mSharedPreferences.getString("aspectStepUri", null);
+        final int step = mSharedPreferences.getInt("aspectStep", 0);
+        if (mSharedPreferences.contains("aspectStepUri") || mSharedPreferences.contains("aspectStep")) {
+            if (uri != null && step != 0) {
+                final String key = FilmKey.of(mContext, Uri.parse(uri), null);
+                if (key != null && !aspectMap.containsKey(key)) {
+                    aspectMap.put(key, step);
+                    saveDelays(aspectMap, PREF_KEY_ASPECT_MAP);
+                }
+            }
+            mSharedPreferences.edit().remove("aspectStepUri").remove("aspectStep").apply();
+        }
+    }
+
+    private static final String PREF_KEY_SUBTITLE_LABELS = "subtitleLabels";
+
+    private final Map<String, String> subtitleLabels = new LinkedHashMap<>();
+
+    @Nullable
+    public String subtitleLabel(@Nullable final Uri uri) {
+        return uri == null ? null : subtitleLabels.get(uri.toString());
+    }
+
+    public void putSubtitleLabel(@Nullable final Uri uri, @Nullable final String label) {
+        if (uri == null || label == null || label.trim().isEmpty()) {
+            return;
+        }
+        subtitleLabels.put(uri.toString(), label.trim());
+        saveSubtitleLabels();
+    }
+
+    private void loadSubtitleLabels() {
+        subtitleLabels.clear();
+        try {
+            final String stored = mSharedPreferences.getString(PREF_KEY_SUBTITLE_LABELS, null);
+            if (stored == null) {
+                return;
+            }
+            final JSONObject object = new JSONObject(stored);
+            final java.util.Iterator<String> keys = object.keys();
+            while (keys.hasNext()) {
+                final String key = keys.next();
+                subtitleLabels.put(key, object.optString(key));
+            }
+        } catch (JSONException e) {
+            Log.w(Utils.TAG, e);
+        }
+    }
+
+    private void saveSubtitleLabels() {
+        final JSONObject object = new JSONObject();
+        try {
+            for (final Uri uri : subtitleUris) {
+                final String label = subtitleLabels.get(uri.toString());
+                if (label != null) {
+                    object.put(uri.toString(), label);
+                }
+            }
+        } catch (JSONException e) {
+            return;
+        }
+        mSharedPreferences.edit().putString(PREF_KEY_SUBTITLE_LABELS, object.toString()).apply();
     }
 
     public void updateSubtitleDelay(final int subtitleDelayMs) {
@@ -660,14 +732,6 @@ public class Prefs {
         return getDelayForUri(subtitleDelayMap, uri);
     }
 
-    /*
-     * The audio delay is remembered exactly as the subtitle delay is: by file
-     * name, twenty-five files deep, in its own list.
-     *
-     * A film that needs its sound moved needs it moved every time it is opened
-     * -- the fault is in the file, not in the sitting -- and a viewer who has
-     * found the right number should never have to find it twice.
-     */
     public void updateAudioDelay(final int audioDelayMs) {
         if (mediaUri != null) {
             updateDelayForUri(audioDelayMap, PREF_KEY_AUDIO_DELAY_MAP, mediaUri, audioDelayMs);
@@ -678,23 +742,13 @@ public class Prefs {
         return getDelayForUri(audioDelayMap, uri);
     }
 
-    /*
-     * The speed a file was last watched at, kept the same way and in
-     * hundredths, because the store underneath holds whole numbers.
-     *
-     * The plain `speed` stays exactly what it was -- the last speed chosen,
-     * which is what a file nobody has watched before opens at -- so nothing
-     * about a first viewing changes. What changes is the second one: a
-     * documentary you watch at one and a quarter opens at one and a quarter
-     * again, however many films you have watched at normal speed since.
-     */
+    // stored in hundredths because the map holds integers
     public void updateSpeedForUri(final float speed) {
         if (mediaUri != null) {
             updateDelayForUri(speedMap, PREF_KEY_SPEED_MAP, mediaUri, Math.round(speed * 100));
         }
     }
 
-    /** The speed this file should open at: its own if it has one, else the last used. */
     public float speedForUri(@Nullable Uri uri) {
         final int hundredths = getDelayForUri(speedMap, uri);
         if (hundredths <= 0) {
@@ -703,25 +757,30 @@ public class Prefs {
         return hundredths / 100f;
     }
 
-    /** Whether this file has a speed of its own, as opposed to inheriting one. */
     public boolean hasSpeedForUri(@Nullable Uri uri) {
         return getDelayForUri(speedMap, uri) > 0;
     }
 
+    // keyed by FilmKey, falling back to the old file-name key
     private int getDelayForUri(final LinkedHashMap<String, Integer> map, @Nullable Uri uri) {
-        String key = getDelayKeyFromUri(uri);
-        if (key == null) {
-            return 0;
+        final String key = filmKeyFor(uri);
+        Integer delay = key == null ? null : map.get(key);
+        if (delay == null) {
+            final String legacy = getDelayKeyFromUri(uri);
+            delay = legacy == null ? null : map.get(legacy);
         }
-        Integer delay = map.get(key);
         return delay != null ? delay : 0;
     }
 
     private void updateDelayForUri(final LinkedHashMap<String, Integer> map, final String prefKey,
                                    @NonNull Uri uri, int delayMs) {
-        String key = getDelayKeyFromUri(uri);
+        final String key = filmKeyFor(uri);
         if (key == null) {
             return;
+        }
+        final String legacy = getDelayKeyFromUri(uri);
+        if (legacy != null) {
+            map.remove(legacy);
         }
         map.remove(key);
         map.put(key, delayMs);
@@ -799,6 +858,11 @@ public class Prefs {
     private String normalizeDelayKey(@Nullable String rawKey) {
         if (rawKey == null || rawKey.isEmpty()) return null;
 
+        // Already a film key; never re-read as an address.
+        if (rawKey.startsWith("f:") || rawKey.startsWith("t:") || rawKey.startsWith("u:")) {
+            return rawKey;
+        }
+
         boolean looksLikeUri = rawKey.contains("://")
                 || rawKey.startsWith("file:")
                 || rawKey.startsWith("content:");
@@ -836,5 +900,9 @@ public class Prefs {
 
     public void setPersistent(boolean persistentMode) {
         this.persistentMode = persistentMode;
+        if (persistentMode) {
+            // a launcher's position only applies to the film it came with
+            nonPersitentPosition = -1L;
+        }
     }
 }

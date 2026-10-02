@@ -17,17 +17,8 @@
       android:background="@color/exo_bottom_bar_background"
       android:layoutDirection="ltr">
 
-    <!-- The time row and the button strip share one LINE rather than being two
-         overlapping children of the frame.
-
-         As overlapping children the strip sat on top of the time row and ate
-         every touch inside it: in portrait there is not enough width for both,
-         so play/pause and the clock stopped responding while looking perfectly
-         normal. In a row the strip gets whatever width is left and scrolls
-         inside it, so nothing is ever unreachable at any screen size.
-
-         The frame is kept because the extra-controls scroller below is MEANT to
-         overlap — it replaces the strip in the player library's overflow mode. -->
+    <!-- a row, so the button strip cannot cover the clock and take its touches;
+         the extra-controls scroller below overlaps on purpose (overflow mode) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -45,10 +36,7 @@
           android:gravity="center_vertical"
           android:layoutDirection="ltr">
 
-        <!-- The clock is its own clickable thing rather than the whole row.
-             Tapping it toggles remaining against total, and while the row
-             carried the click the ripple lit up the play/pause button beside
-             it as though that had been pressed. -->
+        <!-- clickable on its own so the ripple does not light up play/pause -->
         <LinearLayout android:id="@+id/time_text"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
@@ -68,18 +56,7 @@
 
       </LinearLayout>
 
-      <!-- The strip scrolls, because in portrait it does not fit.
-
-           Eight buttons at the smallest size a finger can be asked to hit is
-           more width than a phone held upright has left once the clock has had
-           its share, so four of them, settings and the padlock among them,
-           were simply cut off the end of the screen with nothing to say they
-           were there. Shrinking them was not an option: they are already at the
-           minimum a touch target may be.
-
-           So it scrolls, with a fading edge to say so. In landscape everything
-           fits, the fade never appears, and fillViewport with the end gravity
-           below keeps the buttons hard against the right exactly as before. -->
+      <!-- scrolls because the buttons do not fit in portrait -->
       <HorizontalScrollView
           android:id="@+id/basic_controls_scroll"
           android:layout_width="0dp"
@@ -178,24 +155,7 @@
 
   </LinearLayout>
 
-  <!--
-       Play/pause is anchored to the middle of the screen, not to the middle of
-       whatever buttons happen to be on show.
-
-       This was one centred row of buttons, and what is in that row changes:
-       delete appears as a film ends, previous and next come and go with the
-       folder the film was opened from. Centring the row meant centring
-       whatever it currently held, so the play button wandered, and because
-       delete reserved its space on the left even while invisible, with next
-       and previous both showing the whole group sat a button's width right of
-       centre. In portrait, where there is no picture either side to hide it,
-       it looked like the controls had slipped off the middle of the screen.
-
-       Two equal halves either side of the play button fix that for every
-       combination: the halves are the same width whatever is in them, each
-       packs its buttons against the middle, and anything hidden is GONE and
-       costs nothing. The play button cannot move.
-  -->
+  <!-- equal halves keep play/pause centred whatever buttons are shown -->
   <LinearLayout
       android:id="@+id/exo_center_controls"
       android:layout_width="match_parent"
@@ -218,17 +178,7 @@
           style="@style/ExoStyledControls.Button.Center.Secondary"
           android:src="@drawable/exo_styled_controls_delete"/>
 
-      <!--
-           The file before this one in the folder it came from.
-
-           Its own button rather than exo_prev beside it: the player library's
-           previous and next move between items in a playlist, and this player
-           holds one item at a time and opens a different file instead. Driving
-           those two would mean fighting what they are for.
-
-           Placed opposite @id/next, so the pair sit either side of the play
-           button the way they do in every other player.
-      -->
+      <!-- previous file in the folder; exo_prev moves within a playlist -->
       <ImageButton android:id="@+id/prev"
           style="@style/ExoStyledControls.Button.Center.Secondary"
           android:src="@drawable/exo_styled_controls_previous"/>
@@ -242,15 +192,6 @@
 
     <ImageButton android:id="@+id/exo_play_pause"
         style="@style/ExoStyledControls.Button.Center.PlayPause"/>
-
-    <!--
-         The spinner used to sit here, in this row, sharing the slot with the
-         play button. Which meant it belonged to the controls: hiding them with
-         Back, or letting them time out, took the spinner away too — so a film
-         that had not finished buffering sat on a still picture with nothing at
-         all to say it was still working. It lives in exo_player_view.xml now,
-         outside the controller, where only playback state decides it.
-    -->
 
     <LinearLayout
         android:id="@+id/center_controls_after"

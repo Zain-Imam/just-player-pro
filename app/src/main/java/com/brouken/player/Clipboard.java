@@ -11,22 +11,12 @@ import androidx.annotation.Nullable;
 
 import java.io.File;
 
-/*
- * Putting a link on the clipboard, in the form somebody can actually use.
- *
- * A network URL is copied as it stands. A local file is the awkward case: what
- * the player is handed by a file manager is usually an opaque
- * content://media/external/video/media/1234, which is accurate and of no use to
- * anyone pasting it somewhere. Where the real path can be recovered it is
- * copied instead, and where it cannot the URI is, because a URI you can paste
- * back into this player beats nothing at all.
- */
+// copies a link; content URIs are resolved to a real path where possible
 final class Clipboard {
 
     private Clipboard() {
     }
 
-    /** What would be copied for this URI, or null if there is nothing to copy. */
     @Nullable
     static String textFor(final Context context, @Nullable final Uri uri) {
         if (uri == null) {
@@ -34,7 +24,6 @@ final class Clipboard {
         }
         final String scheme = uri.getScheme();
 
-        // A network address is already the thing you would want to share.
         if (History.isNetworkUri(uri)) {
             return uri.toString();
         }
@@ -48,13 +37,7 @@ final class Clipboard {
         return resolved != null ? resolved : uri.toString();
     }
 
-    /**
-     * The filesystem path behind a content URI, where the system will say.
-     *
-     * MediaStore still answers for its own items, which covers files opened
-     * from the gallery or a media browser. Documents from other providers do
-     * not have a path at all, and asking harder does not produce one.
-     */
+    // only MediaStore items still expose a path; other providers have none
     @Nullable
     private static String pathOf(final Context context, final Uri uri) {
         if (!"content".equals(uri.getScheme())) {
@@ -75,18 +58,12 @@ final class Clipboard {
                 }
             }
         } catch (Exception unavailable) {
-            // A provider that does not expose a path, or will not be queried
-            // for one. The URI is the answer in that case.
+            // no path exposed; the URI is used instead
         }
         return null;
     }
 
-    /**
-     * Copy it, and say so — except where the system says so itself.
-     *
-     * Android 13 and later show their own confirmation for anything put on the
-     * clipboard, so a toast as well is the same sentence twice.
-     */
+    // Android 13+ shows its own clipboard confirmation, so no toast there
     static void copy(final Context context, @Nullable final Uri uri, final CharSequence label) {
         final String text = textFor(context, uri);
         if (text == null) {

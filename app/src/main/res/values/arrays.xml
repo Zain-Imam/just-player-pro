@@ -28,8 +28,7 @@
     <item>0</item>
   </string-array>
 
-    <!-- Subtitle languages offered for online search. The value is the code each
-         source is asked with; SubDL wants it uppercased, which its own call does. -->
+    <!-- values are the codes sent to each source; SubDL's call uppercases them -->
     <string-array name="subtitle_language_entries" translatable="false">
         <item>English</item>
         <item>Arabic</item>

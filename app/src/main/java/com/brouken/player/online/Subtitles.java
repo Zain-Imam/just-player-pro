@@ -136,8 +136,7 @@ public final class Subtitles {
         if (ApiKeys.has(context, ApiKeys.PREF_WYZIE)) {
             all.addAll(wyzie(context, target));
         }
-        // The user's own addons need no key at all, which is what makes them the
-        // only coverage available to someone who has signed up for nothing.
+        // user addons need no key
         all.addAll(SubtitleAddons.search(context, target));
 
         for (final Result result : all) {
@@ -204,8 +203,7 @@ public final class Subtitles {
             return osCall(p, headers, "Text search");
         }
 
-        // An episode's own id, with NO season or episode numbers. Sometimes the
-        // only thing that finds very fresh content.
+        // the episode's own id with no season or episode; finds very new episodes
         if (id.imdbId != null) {
             final Map<String, String> p = Http.params();
             p.put("imdb_id", stripTt(id.imdbId));
@@ -399,12 +397,10 @@ public final class Subtitles {
     private static List<Result> wyzie(final Context context, final Target target) {
         final String key = ApiKeys.get(context, ApiKeys.PREF_WYZIE);
         final Identity id = target.identity;
-        // A series is asked by the SHOW's id with season and episode alongside.
+        // series are queried by the show's id, with season and episode alongside
         final String imdb = id.isSeries ? id.parentImdbId : id.imdbId;
 
         if (imdb == null) {
-            // No id, nothing to ask with — and saying so beats an empty list that
-            // looks like "no subtitles exist".
             Log.note("Wyzie skipped: no IMDb id");
             return new ArrayList<>();
         }
@@ -456,8 +452,7 @@ public final class Subtitles {
         final Identity id = target.identity;
         int score = 0;
 
-        // No language term here: it is a sort gate, not a score. See the
-        // comparator in search().
+        // language is applied as a sort gate in search()
 
         if (row.attemptLabel.toLowerCase(Locale.ROOT).contains("imdb")
                 || row.attemptLabel.toLowerCase(Locale.ROOT).contains("tmdb")) {
@@ -515,8 +510,7 @@ public final class Subtitles {
             return 0;
         }
 
-        // The whole release name appearing in the file name (or the reverse) is
-        // as close to "same rip" as this can get.
+        // one name containing the other: most likely the same rip
         if (a.equals(b) || b.contains(a) || a.contains(b)) {
             return 14;
         }
@@ -619,17 +613,18 @@ public final class Subtitles {
 
     // ------------------------------------------------------------- download
 
+    // reset time from OpenSubtitles' last quota refusal, or null
+    @Nullable
+    public static volatile String lastDownloadRefusal;
+
     @Nullable
     public static byte[] download(final Context context, final Result result) {
+        lastDownloadRefusal = null;
         if (result.source == Source.OPENSUBTITLES) {
             final String key = ApiKeys.get(context, ApiKeys.PREF_OPENSUBTITLES);
             if (key == null || result.fileId == null) {
                 return null;
             }
-
-            final Map<String, String> headers = Http.params();
-            headers.put("Api-Key", key);
-            headers.put("Content-Type", "application/json");
 
             final JSONObject payload = new JSONObject();
             try {
@@ -638,11 +633,20 @@ public final class Subtitles {
                 return null;
             }
 
-            final Http.Result response = Http.post(
-                    "https://api.opensubtitles.com/api/v1/download", headers, payload.toString());
+            String token = openSubtitlesToken(context, key);
+            Http.Result response = openSubtitlesDownload(key, token, payload);
+            if (response.code == 401 && token != null) {
+                // token expired: sign in again once and retry
+                forgetOpenSubtitlesToken();
+                token = openSubtitlesToken(context, key);
+                response = openSubtitlesDownload(key, token, payload);
+            }
             final JSONObject json = response.json();
             if (json == null) {
                 Log.note("OpenSubtitles download -> HTTP " + response.code);
+                if (response.code == 406) {
+                    lastDownloadRefusal = refusal(response.body);
+                }
                 return null;
             }
             final String link = json.optString("link", "");
@@ -653,6 +657,113 @@ public final class Subtitles {
             return null;
         }
         return unwrap(Http.getBytes(result.url, null));
+    }
+
+    // OpenSubtitles allows 5 anonymous downloads a day, 20 when signed in.
+    // A token lasts a day; a refused sign-in is not retried for ten minutes.
+    private static final String OPENSUBTITLES_API = "https://api.opensubtitles.com/api/v1";
+    private static final long OS_TOKEN_LIFE_MS = 23L * 60 * 60 * 1000;
+    private static final long OS_REFUSED_PAUSE_MS = 10L * 60 * 1000;
+    private static String osToken;
+    private static String osTokenUser;
+    private static String osBase = OPENSUBTITLES_API;
+    private static long osTokenAt;
+    private static long osRefusedAt;
+
+    @Nullable
+    private static synchronized String openSubtitlesToken(final Context context, final String key) {
+        final String user = ApiKeys.get(context, ApiKeys.PREF_OPENSUBTITLES_USER);
+        final String password = ApiKeys.get(context, ApiKeys.PREF_OPENSUBTITLES_PASSWORD);
+        if (user == null || password == null) {
+            return null;
+        }
+        final long now = android.os.SystemClock.elapsedRealtime();
+        if (osToken != null && user.equals(osTokenUser) && now - osTokenAt < OS_TOKEN_LIFE_MS) {
+            return osToken;
+        }
+        if (user.equals(osTokenUser) && osRefusedAt != 0 && now - osRefusedAt < OS_REFUSED_PAUSE_MS) {
+            return null;
+        }
+
+        final Map<String, String> headers = Http.params();
+        headers.put("Api-Key", key);
+        headers.put("Content-Type", "application/json");
+        final JSONObject login = new JSONObject();
+        try {
+            login.put("username", user);
+            login.put("password", password);
+        } catch (Exception e) {
+            return null;
+        }
+        final Http.Result response = Http.post(OPENSUBTITLES_API + "/login", headers, login.toString());
+        final JSONObject json = response.json();
+        final String token = json == null ? "" : json.optString("token", "");
+        osTokenUser = user;
+        if (token.isEmpty()) {
+            Log.note("OpenSubtitles login -> HTTP " + response.code);
+            osToken = null;
+            osRefusedAt = now;
+            return null;
+        }
+        // VIP accounts get their own host
+        final String base = json.optString("base_url", "").trim();
+        osBase = base.isEmpty() ? OPENSUBTITLES_API : "https://" + base + "/api/v1";
+        osToken = token;
+        osTokenAt = now;
+        osRefusedAt = 0;
+        return token;
+    }
+
+    private static synchronized void forgetOpenSubtitlesToken() {
+        osToken = null;
+        osBase = OPENSUBTITLES_API;
+    }
+
+    private static Http.Result openSubtitlesDownload(final String key, @Nullable final String token,
+                                                     final JSONObject payload) {
+        final Map<String, String> headers = Http.params();
+        headers.put("Api-Key", key);
+        headers.put("Content-Type", "application/json");
+        final String base;
+        synchronized (Subtitles.class) {
+            base = token == null ? OPENSUBTITLES_API : osBase;
+        }
+        if (token != null) {
+            headers.put("Authorization", "Bearer " + token);
+        }
+        return Http.post(base + "/download", headers, payload.toString());
+    }
+
+    // reset_time shortened for a toast ("11 h 45 min"); "" if no time is given,
+    // null if the body is not a quota refusal
+    @Nullable
+    static String refusal(@Nullable final String body) {
+        if (body == null) {
+            return null;
+        }
+        final JSONObject json;
+        try {
+            json = new JSONObject(body);
+        } catch (Exception e) {
+            return null;
+        }
+        final String reset = json.optString("reset_time", "").trim();
+        final Matcher hours = Pattern.compile("(\\d+)\\s*hour").matcher(reset);
+        final Matcher minutes = Pattern.compile("(\\d+)\\s*minute").matcher(reset);
+        final StringBuilder sb = new StringBuilder();
+        if (hours.find()) {
+            sb.append(Integer.parseInt(hours.group(1))).append(" h");
+        }
+        if (minutes.find()) {
+            if (sb.length() > 0) {
+                sb.append(' ');
+            }
+            sb.append(Integer.parseInt(minutes.group(1))).append(" min");
+        }
+        if (sb.length() > 0) {
+            return sb.toString();
+        }
+        return json.has("message") || json.has("remaining") ? "" : null;
     }
 
     @Nullable

@@ -39,23 +39,9 @@ public final class OnlineController {
     private final Context context;
     private final Host host;
     private final Handler main = new Handler(Looper.getMainLooper());
-    // Named, and unable to take the app down with it: see Background.
     private final ExecutorService worker = com.brouken.player.Background.single("online");
 
-    /*
-     * The list the last search returned, kept for the file it was fetched for.
-     *
-     * Downloading the wrong subtitle is normal -- several releases of the same
-     * film sit in the list and only the name tells them apart, and the name is
-     * often wrong. Getting back to the list meant identifying the film again
-     * and searching every source again: two dialogs and a network round trip to
-     * undo one tap. It is held for as long as the file is open, so the second
-     * choice costs what the first one did.
-     *
-     * Only for this file, and only until the film is identified differently --
-     * see forget(), where a new identity throws the list away, because results
-     * for the wrong film are worse than no results.
-     */
+    // kept so picking another subtitle for this file does not search again
     private Uri lastResultsUri;
     private List<Subtitles.Result> lastResults;
 
@@ -66,11 +52,7 @@ public final class OnlineController {
         @Nullable
         String mediaName();
 
-        /**
-         * @param label what the subtitle should be called in the picker, which
-         *              the download already knows and the file may not. See the
-         *              note where this is called.
-         */
+        // label names the track in the picker; the saved file may not give a name
         void loadSubtitle(Uri uri, @Nullable String label);
     }
 
@@ -106,46 +88,24 @@ public final class OnlineController {
         return preferences().getBoolean("skipSegments", true);
     }
 
-    // Whether a file is looked up as it starts, or only when asked. What the
-    // info card, the skip markers and the titles in history all hang off.
     public boolean identifiesAutomatically() {
         return !"manual".equals(preferences().getString("identifyMode", "auto"));
     }
 
-    // Identifying a file and searching it for subtitles used to be one action,
-    // so the card could not appear without a subtitle search and a search began
-    // without being asked for. They are separate now.
     public boolean autoSearchSubtitles() {
         return preferences().getBoolean("subtitleAutoSearch", false);
     }
 
-    /**
-     * Whether the info card and the subtitle search share one title.
-     *
-     * On, which is the default, they are the same thing: correcting the title
-     * to find subtitles also corrects what the card shows, which is what you
-     * want nearly always — they are both answers to "what is this?".
-     *
-     * Off, they are independent. That is for the case where the two questions
-     * genuinely differ: subtitles for the film that is playing, while the card
-     * shows something else entirely.
-     */
+    // whether the info card and the subtitle search share one title
     public boolean titlesAreLinked() {
         return preferences().getBoolean("linkSubtitleAndInfo", true);
     }
 
-    /** Where a card-only title is kept, when the two are not linked. */
     private static String cardKey(final String key) {
         return "card:" + key;
     }
 
-    /**
-     * The title the info card should show.
-     *
-     * Linked, that is simply the one title there is. Unlinked, it is the card's
-     * own if one has been chosen, and otherwise the shared one — so turning the
-     * setting off does not blank a card that was already right.
-     */
+    // unlinked, the card falls back to the shared title until it has its own
     @Nullable
     public Identity rememberedForCard(@Nullable final Uri uri) {
         if (uri == null) {
@@ -167,14 +127,7 @@ public final class OnlineController {
         return remembered(uri);
     }
 
-    /**
-     * Remember a title the person chose for the card.
-     *
-     * Kept whichever way the setting is pointing, so that turning linking off
-     * and on again does not lose a choice. Linked, it is written as the shared
-     * title too, which is what makes correcting the card correct the subtitle
-     * search with it.
-     */
+    // saved even when linked, so toggling the setting keeps the choice
     public void rememberForCard(@Nullable final Uri uri, final Identity identity) {
         if (uri == null || identity == null) {
             return;
@@ -192,7 +145,6 @@ public final class OnlineController {
         }
     }
 
-    /** Forget a card-only title, so the shared one applies again. */
     public void forgetCardTitle(@Nullable final Uri uri) {
         if (uri == null) {
             return;
@@ -231,7 +183,7 @@ public final class OnlineController {
             }
 
             if (found != null && !all.has(uri.toString())) {
-                // Learned under one key, remembered under all of them.
+                // found under another key; store it under this uri too
                 remember(uri, found);
             }
             return found;
@@ -270,8 +222,7 @@ public final class OnlineController {
                 all.put(nameKey(name), identity.toJson());
             }
 
-            // Bounded, like every other list the app keeps. A miss costs one
-            // dialog, so dropping an arbitrary entry over the cap is fine.
+            // capped; dropping an arbitrary entry only costs one more dialog
             while (all.length() > MAX_REMEMBERED) {
                 final Iterator<String> keys = all.keys();
                 if (!keys.hasNext()) break;
@@ -286,7 +237,6 @@ public final class OnlineController {
 
     // ------------------------------------------------- the last result list
 
-    /** Whether the results held are the results for this file. */
     private boolean hasResultsFor(@Nullable final Uri uri) {
         return uri != null && lastResults != null && !lastResults.isEmpty()
                 && uri.equals(lastResultsUri);
@@ -298,16 +248,11 @@ public final class OnlineController {
             return;
         }
         lastResultsUri = uri;
-        // A copy: what is handed back must not change underneath the list.
+        // a copy, so the caller's list can change without affecting this one
         lastResults = new ArrayList<>(results);
     }
 
-    /**
-     * Throw the held list away.
-     *
-     * Called wherever the film stops being the film those results were for --
-     * a different identity, or a different file.
-     */
+    // call when the identity or the file changes
     public void forgetResults() {
         lastResultsUri = null;
         lastResults = null;
@@ -317,8 +262,6 @@ public final class OnlineController {
         if (uri == null) {
             return;
         }
-        // The identity is about to change, so the results no longer belong to
-        // what is playing.
         if (uri.equals(lastResultsUri)) {
             forgetResults();
         }
@@ -377,31 +320,14 @@ public final class OnlineController {
             return;
         }
 
-        /*
-         * Asking first, when the setting says not to search on its own.
-         *
-         * Turning "Search subtitles automatically" off says: do not go and find
-         * subtitles without me. Pressing the button then went straight to a
-         * search anyway, because the film had already been identified as it
-         * opened and the answer was sitting there — so there was no way to say
-         * which film you wanted subtitles for. With the setting off, the box
-         * comes up every time.
-         */
         final Uri uri = host.mediaUri();
 
-        /*
-         * The list from last time, if it is still the list for this file.
-         *
-         * Straight to the results, because that is what the button was pressed
-         * for -- and the row at the top of them still reopens the question, so
-         * nothing is lost by not asking it first. "Change selection" is the
-         * other way in, and it comes through here with reIdentify set.
-         */
         if (!reIdentify && hasResultsFor(uri)) {
             showResults(activity, lastResults);
             return;
         }
 
+        // with auto search off, always ask which title to search for
         final boolean ask = reIdentify || !autoSearchSubtitles();
         final Identity known = ask ? null : remembered(uri);
         if (known != null) {
@@ -473,32 +399,12 @@ public final class OnlineController {
         });
     }
 
-    /*
-     * Work out what a file is without asking anybody anything.
-     *
-     * No dialog, no progress, no toast: this runs as a file starts, and the
-     * answer is what fills the info card, the skip markers and the title in the
-     * history list. Anything uncertain is dropped rather than guessed at — a
-     * name that does not parse as a title, a search that returns nothing, or a
-     * series whose episode is not in the file name. Getting it wrong silently
-     * is worse than leaving the card empty, and "Change title…" is there for
-     * the ones it declines to answer.
-     */
+    // identifies from the file name with no UI; gives up rather than guess
     public void identifySilently(@Nullable final Uri uri, final OnIdentified callback) {
         identifySilently(uri, callback, null);
     }
 
-    /*
-     * The same, but it always answers.
-     *
-     * Every way this can fail — no key, a name that is not a title, a search
-     * that found nothing, a series whose episode is not in the file name — used
-     * to be a quiet return. That is right for something running on its own as a
-     * file opens, and wrong for somebody who pressed a button and is watching
-     * the word "Identifying" not change. Anything that asked out loud passes a
-     * second answer for the case where there is nothing to show, and gets the
-     * search box instead of silence.
-     */
+    // ifNotFound is posted to the main thread when no confident match is found
     public void identifySilently(@Nullable final Uri uri, final OnIdentified callback,
                                  @Nullable final Runnable ifNotFound) {
         if (!ApiKeys.hasTmdb(context)) {
@@ -553,9 +459,6 @@ public final class OnlineController {
                 dismiss(progress);
                 if (candidates.isEmpty()) {
                     toast(R.string.online_no_matches);
-                    // Straight back to the box rather than back to the film:
-                    // the whole reason for typing was that the guess was wrong,
-                    // and one wrong guess is not a reason to stop.
                     showIdentifyDialog(activity, query, true, callback);
                     return;
                 }
@@ -564,14 +467,7 @@ public final class OnlineController {
         });
     }
 
-    /*
-     * Which programme, which season, which episode.
-     *
-     * Each step carries the list behind it so the step can be undone: the
-     * seasons are fetched once and handed to the episode list, which hands them
-     * back if you go back. Nothing below is fetched twice, and no wrong answer
-     * costs more than the one press that made it.
-     */
+    // each step keeps the list before it, so going back does not fetch again
     private void chooseCandidate(final Activity activity, final List<Tmdb.Candidate> candidates,
                                  final ReleaseName.Info parsed, final OnIdentified callback) {
         PosterPicker.show(activity, context.getString(R.string.online_identify_title), candidates,
@@ -608,7 +504,6 @@ public final class OnlineController {
         });
     }
 
-    /** The season list, shown again on the way back without fetching it twice. */
     private void showSeasons(final Activity activity, final List<Tmdb.Candidate> candidates,
                              final Tmdb.Candidate candidate, final List<Tmdb.Season> seasons,
                              final ReleaseName.Info parsed, final OnIdentified callback) {
@@ -706,14 +601,7 @@ public final class OnlineController {
         });
     }
 
-    /**
-     * The results, with a way back to the question above them.
-     *
-     * The button at the bottom of the dialog did this already, but a dialog
-     * button is not where anybody looks when the list is plainly for the wrong
-     * film. It is the first row now, and what you choose there overrides
-     * whatever was guessed.
-     */
+    // the first row reopens the title search
     private void showResults(final Activity activity, final List<Subtitles.Result> results) {
         final List<ListPicker.Row> rows = new ArrayList<>();
         rows.add(new SearchAgainRow(context.getString(R.string.online_search_again),
@@ -730,7 +618,6 @@ public final class OnlineController {
                 });
     }
 
-    /** The row that reopens the question, at the top of the results. */
     private static final class SearchAgainRow implements ListPicker.Row {
         private final String title;
         private final String detail;
@@ -762,10 +649,22 @@ public final class OnlineController {
                     ? result.release.trim()
                     : resolvedName();
 
+            final String refusal = Subtitles.lastDownloadRefusal;
+
             main.post(() -> {
                 dismiss(progress);
                 if (bytes == null || bytes.length == 0) {
-                    toast(R.string.online_download_failed);
+                    // daily quota hit: say when it resets, if the service gave a time
+                    if (refusal != null) {
+                        Toast.makeText(context, refusal.isEmpty()
+                                        ? context.getString(R.string.online_download_limit,
+                                                result.source.label)
+                                        : context.getString(R.string.online_download_limit_until,
+                                                result.source.label, refusal),
+                                Toast.LENGTH_LONG).show();
+                    } else {
+                        toast(R.string.online_download_failed);
+                    }
                     return;
                 }
 
@@ -778,18 +677,7 @@ public final class OnlineController {
                     return;
                 }
 
-                /*
-                 * The name goes with it, rather than being read back off the
-                 * file.
-                 *
-                 * Reading it back looked equivalent and was not. A subtitle
-                 * saved through MediaStore comes back as
-                 * content://media/external/downloads/1321321, and when the
-                 * display-name column cannot be read the only thing left to
-                 * fall back on is the last part of the address -- so the track
-                 * you had just chosen by name appeared in the picker as a row
-                 * of digits. The release name was in hand all along.
-                 */
+                // a MediaStore uri may not give its display name back, so pass it
                 host.loadSubtitle(saved.uri, stem);
                 Toast.makeText(context,
                         saved.location == null
@@ -838,8 +726,7 @@ public final class OnlineController {
 
         final String fromServer = Http.serverFileName(key);
         synchronized (resolvedNames) {
-            // An empty string records "asked, got nothing", so a link that
-            // cannot answer is not asked again on every search.
+            // empty means already asked with no answer
             resolvedNames.put(key, fromServer == null ? "" : fromServer);
         }
 
@@ -861,7 +748,7 @@ public final class OnlineController {
         if (dot <= 0 || name.length() - dot > 5) {
             return false;
         }
-        // A UUID is all hex and dashes; so is a hash. Neither is a title.
+        // UUIDs and hashes are hex and dashes, not titles
         return !stem.matches("(?i)[0-9a-f-]{8,}") && stem.matches(".*[A-Za-z].*");
     }
 

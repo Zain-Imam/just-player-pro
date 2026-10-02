@@ -2,17 +2,16 @@ package com.brouken.player.osd.item;
 
 import com.brouken.player.osd.OsdSettingsAdapter;
 
-/**
- * A delay in milliseconds, shown as a signed number of seconds.
- *
- * The subtitles and the sound each have one, they are read the same way -- a
- * sign, a tenth of a second, and minutes once there are any -- so they are
- * written the same way, once, here.
- */
+// value in ms, shown as signed seconds
 public class DelayOsdSettingsItem extends IntegerOsdSettingsItem {
 
     public DelayOsdSettingsItem(String title, int value, IntegerOsdSettingsItem.Listener listener, OsdSettingsAdapter adapter) {
         super(title, "", false, value, listener, adapter, 100);
+    }
+
+    @Override
+    protected boolean accelerates() {
+        return true;
     }
 
     @Override

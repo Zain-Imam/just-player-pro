@@ -1,9 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    The list and the text occupy the same space, one at a time, rather than
-    being two screens. A licence is long and a remote has to be able to scroll
-    it, so the text sits in its own ScrollView that can take the focus.
--->
+<!-- list and text share the space; the ScrollView takes focus so a remote can scroll -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"

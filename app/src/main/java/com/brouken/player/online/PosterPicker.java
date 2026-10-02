@@ -56,16 +56,7 @@ final class PosterPicker {
         return show(activity, title, items, onPicked, null);
     }
 
-    /**
-     * @param onBack one step back, or null when this is the first step.
-     *               <p>
-     *               A series is three questions deep — which programme, which
-     *               season, which episode — and answering one of them wrongly
-     *               used to mean cancelling out to the film and typing the
-     *               title again, because Cancel is the only thing a dialog
-     *               offers. The lists are already in hand by then, so going
-     *               back a step costs nothing and asks nobody anything.
-     */
+    // onBack returns to the previous step, or is null on the first step
     static AlertDialog show(final Activity activity, final CharSequence title,
                             final List<? extends Item> items, final OnPicked onPicked,
                             @Nullable final Runnable onBack) {
@@ -92,10 +83,7 @@ final class PosterPicker {
 
         dialog.show();
 
-        // On a television nothing is focused until something asks to be, and an
-        // unfocused grid ignores the remote entirely. The tiles are not laid
-        // out yet at this point, which is why asking once was not enough —
-        // see Panels.
+        // an unfocused grid ignores the remote; tiles are not laid out yet, see Panels
         com.brouken.player.Panels.focusFirstRow(grid);
 
         return dialog;
@@ -129,8 +117,7 @@ final class PosterPicker {
             holder.subtitle.setVisibility(subtitle == null || subtitle.isEmpty()
                     ? View.GONE : View.VISIBLE);
 
-            // Sized from the column the layout manager gave us, in the shape
-            // this particular item's image actually is.
+            // height from the column width and this item's aspect ratio
             final float aspect = item.aspect();
             holder.poster.post(() -> {
                 final int width = holder.poster.getWidth();

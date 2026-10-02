@@ -24,9 +24,6 @@ import androidx.core.view.GestureDetectorCompat;
 import com.brouken.player.CustomPlayerView;
 import com.brouken.player.R;
 
-/**
- * Custom player class for Double-Tapping listening
- */
 public class DoubleTapPlayerView extends CustomPlayerView {
 
     private final GestureDetectorCompat gestureDetector;
@@ -73,10 +70,6 @@ public class DoubleTapPlayerView extends CustomPlayerView {
         doubleTapDelay = 700L;
     }
 
-    /**
-     * If this field is set to `true` this view will handle double tapping, otherwise it will
-     * handle touches the same way as the original [PlayerView][com.google.android.exoplayer2.ui.PlayerView] does
-     */
     private boolean isDoubleTapEnabled;
 
     public final boolean isDoubleTapEnabled() {
@@ -87,10 +80,7 @@ public class DoubleTapPlayerView extends CustomPlayerView {
         isDoubleTapEnabled = var1;
     }
 
-    /**
-     * Time window a double tap is active, so a followed tap is calling a gesture detector
-     * method instead of normal tap (see [PlayerView.onTouchEvent])
-     */
+    // ms after a double tap during which further taps keep seeking
     private long doubleTapDelay;
 
     public final long getDoubleTapDelay() {
@@ -102,36 +92,19 @@ public class DoubleTapPlayerView extends CustomPlayerView {
         doubleTapDelay = value;
     }
 
-    /**
-     * Sets the [PlayerDoubleTapListener] which handles the gesture callbacks.
-     *
-     * Primarily used for [YouTubeOverlay][com.github.vkay94.dtpv.youtube.YouTubeOverlay]
-     */
     public final DoubleTapPlayerView controller(PlayerDoubleTapListener controller) {
         setController(controller);
         return this;
     }
 
-    /**
-     * Returns the current state of double tapping.
-     */
     public final boolean isInDoubleTapMode() {
         return gestureListener.isDoubleTapping();
     }
 
-    /**
-     * Resets the timeout to keep in double tap mode.
-     *
-     * Called once in [PlayerDoubleTapListener.onDoubleTapStarted]. Needs to be called
-     * from outside if the double tap is customized / overridden to detect ongoing taps
-     */
     public final void keepInDoubleTapMode() {
         gestureListener.keepInDoubleTapMode();
     }
 
-    /**
-     * Cancels double tap mode instantly by calling [PlayerDoubleTapListener.onDoubleTapFinished]
-     */
     public final void cancelInDoubleTapMode() {
         gestureListener.cancelInDoubleTapMode();
     }
@@ -141,8 +114,7 @@ public class DoubleTapPlayerView extends CustomPlayerView {
         if (isDoubleTapEnabled) {
             boolean consumed = gestureDetector.onTouchEvent(ev);
 
-            // Do not trigger original behavior when double tapping
-            // otherwise the controller would show/hide - it would flack
+            // keeps the controller from flickering during a double tap
             if (!consumed)
                 return super.onTouchEvent(ev);
 
@@ -155,7 +127,6 @@ public class DoubleTapPlayerView extends CustomPlayerView {
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
 
-        // If the PlayerView is set by XML then call the corresponding setter method
         if (controllerRef != -1) {
             try {
                 View view = ((View)getParent()).findViewById(this.controllerRef);
@@ -169,13 +140,6 @@ public class DoubleTapPlayerView extends CustomPlayerView {
         }
     }
 
-    /**
-     * Gesture Listener for double tapping
-     *
-     * For more information which methods are called in certain situations look for
-     * [GestureDetector.onTouchEvent][android.view.GestureDetector.onTouchEvent],
-     * especially for ACTION_DOWN and ACTION_UP
-     */
     private static final class DoubleTapGestureListener extends GestureDetector.SimpleOnGestureListener {
         private final Handler mHandler;
         private final Runnable mRunnable;
@@ -213,21 +177,12 @@ public class DoubleTapPlayerView extends CustomPlayerView {
         private static final String TAG = ".DTGListener";
         private static boolean DEBUG = false;
 
-        /**
-         * Resets the timeout to keep in double tap mode.
-         *
-         * Called once in [PlayerDoubleTapListener.onDoubleTapStarted]. Needs to be called
-         * from outside if the double tap is customized / overridden to detect ongoing taps
-         */
         public final void keepInDoubleTapMode() {
             isDoubleTapping = true;
             mHandler.removeCallbacks(mRunnable);
             mHandler.postDelayed(mRunnable, doubleTapDelay);
         }
 
-        /**
-         * Cancels double tap mode instantly by calling [PlayerDoubleTapListener.onDoubleTapFinished]
-         */
         public final void cancelInDoubleTapMode() {
             mHandler.removeCallbacks(mRunnable);
             isDoubleTapping = false;
@@ -237,7 +192,6 @@ public class DoubleTapPlayerView extends CustomPlayerView {
 
         @Override
         public boolean onDown(MotionEvent e) {
-            // Used to override the other methods
             if (isDoubleTapping) {
                 if (controls != null)
                     controls.onDoubleTapProgressDown(e.getX(), e.getY());
@@ -260,15 +214,11 @@ public class DoubleTapPlayerView extends CustomPlayerView {
 
         @Override
         public boolean onSingleTapConfirmed(MotionEvent e) {
-            // Ignore this event if double tapping is still active
-            // Return true needed because this method is also called if you tap e.g. three times
-            // in a row, therefore the controller would appear since the original behavior is
-            // to hide and show on single tap
+            // also fires after a third tap; true keeps the controller from toggling
             if (isDoubleTapping)
                 return true;
             if (DEBUG)
                 Log.d(TAG, "onSingleTapConfirmed: isDoubleTap = false");
-            //return rootView.performClick()
             return rootView.tap();
         }
 

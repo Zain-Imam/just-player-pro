@@ -8,8 +8,6 @@ import android.os.Build;
 import androidx.annotation.Nullable;
 import androidx.media3.common.PlaybackException;
 
-// Says what went wrong in words rather than in an error code, and offers the
-// details to whoever is going to be asked about it.
 public final class PlaybackError {
 
     private PlaybackError() {
@@ -29,13 +27,6 @@ public final class PlaybackError {
                 .create(), AlertDialog.BUTTON_POSITIVE);
     }
 
-    /*
-     * The same failure in a sentence somebody can act on.
-     *
-     * Media3 names its errors after the layer that raised them, which is the
-     * right thing for a bug report and no use at all to the person holding the
-     * remote. The code is still in the details.
-     */
     private static String plainly(final Activity activity, @Nullable final PlaybackException error) {
         if (error == null) {
             return activity.getString(R.string.error_unknown);
@@ -72,7 +63,7 @@ public final class PlaybackError {
                 .append(" (API ").append(Build.VERSION.SDK_INT).append(")\n")
                 .append(Build.MANUFACTURER).append(' ').append(Build.MODEL).append('\n')
                 .append("Engine: ").append(engine).append('\n');
-        // The address itself can carry a token, so only its shape is included.
+        // scheme and host only: the full URL can carry a token
         if (uri != null) {
             final android.net.Uri parsed = android.net.Uri.parse(uri);
             text.append("Source: ").append(parsed.getScheme()).append("://")
@@ -89,13 +80,7 @@ public final class PlaybackError {
         return text.toString();
     }
 
-    /*
-     * The same details as a square, for a screen you cannot copy off.
-     *
-     * A television has nowhere to share to. Reading a version string and an
-     * error code off it by eye and typing them into a phone is what this
-     * replaces.
-     */
+    // a QR code, since a TV usually has nowhere to share to
     private static void showCode(final Activity activity, final String details) {
         final int size = Math.round(Math.min(
                 activity.getResources().getDisplayMetrics().widthPixels,
@@ -137,7 +122,7 @@ public final class PlaybackError {
             activity.startActivity(Intent.createChooser(intent,
                     activity.getString(R.string.error_share)));
         } catch (Exception ignored) {
-            // Nothing to share with: a television with no mail or messaging app.
+            // no app to share to, e.g. on a TV
             showDetails(activity, details);
         }
     }

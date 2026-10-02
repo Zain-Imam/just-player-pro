@@ -14,8 +14,7 @@ class CustomDefaultTrackNameProvider extends DefaultTrackNameProvider {
     public String getTrackName(Format format) {
         String trackName = super.getTrackName(format);
         if (format.sampleMimeType != null) {
-            // The same table the track pickers use, so a codec is spelled the
-            // same way wherever it appears.
+            // same table as the track pickers, so codecs read the same everywhere
             String sampleFormat = TrackNames.fromMime(format.sampleMimeType);
             if (sampleFormat == null) {
                 sampleFormat = TrackNames.fromMime(format.codecs);

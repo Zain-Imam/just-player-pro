@@ -154,13 +154,7 @@ public final class SkipSegments {
         return null;
     }
 
-    /*
-     * Two more databases, asked the same way as the rest.
-     *
-     * Every source is merged rather than trusted in turn, so another one is
-     * another vote: where they agree the bounds get sharper, and a source that
-     * is alone in claiming something loses to the ones that agree.
-     */
+    // sources are merged as votes, so agreement sharpens the bounds
     private static void skipMe(final List<Raw> out, final String imdbId,
                                final Integer season, final Integer episode) {
         if (imdbId == null || imdbId.isEmpty()) {
@@ -282,7 +276,7 @@ public final class SkipSegments {
             if (seg == null) {
                 continue;
             }
-            // Its own confidence, where it gives one. Below half is a guess.
+            // the source's own confidence, when given; below 0.5 is a guess
             if (seg.has("confidence") && seg.optDouble("confidence", 1) < 0.5) {
                 continue;
             }

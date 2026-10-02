@@ -30,16 +30,7 @@ public final class ListPicker {
         @Nullable
         String detail();
 
-        /**
-         * Whether this is the one playing right now.
-         *
-         * Saying so in words under the row — "Playing now" — is easy to miss in
-         * a list of a dozen languages that all look alike. The row that is on
-         * is drawn in the accent colour as well, which is visible at a glance
-         * and from across a room.
-         *
-         * Default false, so a list of plain actions need not think about it.
-         */
+        // the row in use now, drawn in the accent colour
         default boolean current() {
             return false;
         }
@@ -58,8 +49,7 @@ public final class ListPicker {
                             final List<? extends Row> rows, final OnPicked onPicked,
                             final int actionLabel, @Nullable final Runnable action) {
         final RecyclerView list = new RecyclerView(activity);
-        // Fills the panel rather than hugging its rows, so the buttons sit at the
-        // bottom of the screen instead of floating under the last entry.
+        // full height, so the buttons sit at the bottom of the panel
         list.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         list.setLayoutManager(new LinearLayoutManager(activity));
@@ -81,39 +71,25 @@ public final class ListPicker {
 
         dressPanel(activity, dialog);
         dialog.show();
-        // The size has to be set after the window exists: a floating dialog
-        // clamps a full-height request made before it is shown back to whatever
-        // its contents happen to need.
+        // after show(): a floating dialog clamps a size set before it is shown
         sizePanel(activity, dialog);
 
-        // A television focuses nothing until something asks; an unfocused list
-        // ignores the remote entirely. And the rows do not exist yet at this
-        // point, which is why asking once was not enough — see Panels.
+        // an unfocused list ignores the remote; the rows do not exist yet, see Panels
         com.brouken.player.Panels.focusFirstRow(list);
 
         return dialog;
     }
 
-    /*
-     * The list arrives along the edge, not over the middle.
-     *
-     * What is being chosen — a subtitle track, an audio language, one of a
-     * dozen search results — is usually a decision about what is on screen at
-     * that moment. A dialog in the centre covers exactly that. The same list,
-     * given the full height of one side, leaves the film visible while it is
-     * being read, and on a television it gives the remote a single column to
-     * travel down instead of a floating box in the middle of nowhere.
-     */
+    // a full-height side panel, so the video stays visible
     private static void dressPanel(final Activity activity, final AlertDialog dialog) {
         final android.view.Window window = dialog.getWindow();
         if (window == null) {
             return;
         }
-        // Before the window is shown, or the entrance is not animated at all.
+        // must be set before show() or the entrance is not animated
         window.setWindowAnimations(R.style.PanelAnimation);
         window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(
                 androidx.core.content.ContextCompat.getColor(activity, R.color.ui_panel_background)));
-        // Barely dimmed: the whole point is that the film stays watchable.
         window.setDimAmount(0.2f);
     }
 
@@ -125,8 +101,7 @@ public final class ListPicker {
         window.setLayout(com.brouken.player.Panels.width(activity),
                 android.view.WindowManager.LayoutParams.MATCH_PARENT);
         window.setGravity(android.view.Gravity.END | android.view.Gravity.TOP);
-        // Flush to the edge, so it reads as part of the screen rather than as a
-        // card floating near it.
+        // drop the decor view's default inset so the panel sits flush
         window.getDecorView().setPadding(0, 0, 0, 0);
     }
 
@@ -174,8 +149,6 @@ public final class ListPicker {
             final Row row = rows.get(position);
             holder.title.setText(row.title());
 
-            // The one that is playing, in the accent colour. Both lines, so a
-            // row with a description does not read as half highlighted.
             if (row.current()) {
                 final int accent = com.brouken.player.Accent.color(holder.title.getContext());
                 holder.title.setTextColor(accent);
@@ -203,14 +176,7 @@ public final class ListPicker {
     private static final class Holder extends RecyclerView.ViewHolder {
         final TextView title;
         final TextView detail;
-        /*
-         * What the rows look like when they are not the one playing.
-         *
-         * Rows are recycled, so a row that was painted in the accent colour
-         * comes back around as some other row and has to be put back. Read
-         * once from the inflated view rather than named as a constant, so it
-         * follows the theme.
-         */
+        // theme colours, restored when a recycled accent row is rebound
         final int defaultTitleColor;
         final int defaultDetailColor;
 

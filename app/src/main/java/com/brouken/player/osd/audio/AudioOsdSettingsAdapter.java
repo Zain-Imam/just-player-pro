@@ -9,15 +9,6 @@ import com.brouken.player.osd.item.AudioDelayOsdSettingsItem;
 import com.brouken.player.osd.item.IntegerOsdSettingsItem;
 import com.brouken.player.osd.item.OsdSettingsItem;
 
-/**
- * The sound's own panel, reached from the audio button.
- *
- * The subtitle button has always opened a list of subtitle tracks and, at the
- * end of it, everything else about subtitles -- including their delay. The
- * audio button opened a list of tracks and stopped there, so the one setting
- * that belongs to a soundtrack lived only in the quick panel, which is not
- * where anybody adjusting the sound would look for it.
- */
 public class AudioOsdSettingsAdapter extends OsdSettingsAdapter {
 
     private final Listener listener;
@@ -39,7 +30,6 @@ public class AudioOsdSettingsAdapter extends OsdSettingsAdapter {
 
     public interface Listener {
 
-        /** Move the sound against the picture, in milliseconds. */
         void onAudioDelayChange(int delayMs);
 
     }

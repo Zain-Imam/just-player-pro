@@ -12,17 +12,7 @@ public class SimpleOsdSettingsItem implements OsdSettingsItem {
     public final Drawable icon;
     public final Listener listener;
 
-    /*
-     * An optional second thing to press, at the far end of the row.
-     *
-     * The info card row needs one: the row itself shows the card, and the
-     * button on the end looks the film up again when what it found was wrong.
-     * Two verbs, one row, and no sensible way to express that as two rows —
-     * "Show info card" and "Show info card, but for something else" is not a
-     * list anybody wants to read.
-     *
-     * Null on every other row, which then behaves exactly as before.
-     */
+    // optional second button at the end of the row
     @Nullable
     public final Drawable trailingIcon;
     @Nullable

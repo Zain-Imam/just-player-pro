@@ -9,31 +9,12 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-/*
- * The certificates mpv needs to open an https address at all.
- *
- * mpv does its own networking through FFmpeg and its own TLS through gnutls,
- * and neither of them knows anything about Android's trust store. Given an
- * https URL with no bundle to check it against, it fails the handshake, reports
- * "Failed to open", and then — because that is what desktop mpv does next —
- * goes looking for youtube-dl, which is not there either. What the person
- * watching sees is a stream that does not start, on one engine, with no reason
- * given.
- *
- * Every https stream was affected: debrid links, Stremio's, anything served
- * over TLS, which is everything now.
- *
- * Rather than shipping somebody else's copy of the Mozilla bundle and letting
- * it go stale, the device's own certificates are used. They live as separate
- * PEM files in the system store, so they are concatenated once into a single
- * file in the cache, which is the shape gnutls wants. It is rebuilt whenever
- * the store has more certificates in it than the copy was made from, so a
- * system update is picked up.
- */
+// mpv's TLS (FFmpeg + gnutls) ignores Android's trust store and needs a single PEM
+// bundle. Built from the system store; rebuilt when the store gains certificates.
 public final class CaBundle {
 
     private static final String[] STORES = {
-            // Android 14 and later keep the store in the conscrypt module.
+            // Android 14+ keeps the store in the conscrypt module
             "/apex/com.android.conscrypt/cacerts",
             "/system/etc/security/cacerts",
     };
@@ -44,7 +25,14 @@ public final class CaBundle {
     @Nullable
     public static String path(final Context context) {
         try {
-            final File bundle = new File(context.getCacheDir(), "cacert.pem");
+            // not in the cache dir: mpv rereads it on every connection (each seek), and
+            // the cache can be cleared during playback
+            final File bundle = new File(context.getNoBackupFilesDir(), "cacert.pem");
+            final File old = new File(context.getCacheDir(), "cacert.pem");
+            if (old.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                old.delete();
+            }
             final int available = countAvailable();
             if (available == 0) {
                 return null;
@@ -54,7 +42,6 @@ public final class CaBundle {
             }
             return build(bundle, available) ? bundle.getAbsolutePath() : null;
         } catch (Throwable error) {
-            // A device that keeps its certificates somewhere else entirely.
             return null;
         }
     }
@@ -70,7 +57,6 @@ public final class CaBundle {
         return 0;
     }
 
-    /** How many certificates went into the copy, recorded in its last line. */
     private static int countIn(final File bundle) {
         try (java.io.BufferedReader reader = new java.io.BufferedReader(
                 new java.io.FileReader(bundle))) {
@@ -113,8 +99,7 @@ public final class CaBundle {
                 if (!certificate.isFile() || !certificate.canRead()) {
                     continue;
                 }
-                // The files carry a readable description after the PEM block;
-                // only the block itself is wanted.
+                // system cert files have a text dump after the PEM block
                 final String text = read(certificate);
                 if (text == null) {
                     continue;
