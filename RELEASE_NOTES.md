@@ -1,3 +1,134 @@
+# 4.2.0
+
+A hotfix. Eight things reported from real use since 4.1.0, and every fault found
+while tracing them. Nothing was removed, and one thing was added — posters in
+Recent, off unless switched on. What looks different is the timeline behind a
+lock, the Recent list lined up with the folders, and one label in quick settings.
+
+Every fix was made for **both engines and both input methods** — Media3 and
+mpv, finger and remote. The worst of them were reproduced on a phone running
+4.1.0 first and shown gone on 4.2.0, and every fix has a check on the phone that
+passes on 4.2.0.
+
+## The headline
+
+**A stream no longer jumps to a place you tapped by accident.** On mpv, a tap
+near the end of an online stream while the server was busy, then a tap back,
+could leave the film stuck, and later jumping to that far point every time it
+passed the same moment. The reconnect after the tap back failed, the connection
+quietly carried on from the far point, and that data was stored straight after
+the part being watched. mpv now checks where every seek actually lands, and a
+wrong landing is never played: the film waits at the place you asked for, with
+the spinner, and asks again until the server answers. A join that does not
+belong is caught even when it arrives after the stream has stalled. On Media3
+the same tap could leave the film stuck for minutes, reading the whole file
+through from somewhere else, or stopped until it was closed; both are now
+noticed and the player rebuilt once at the last place actually played.
+
+**A film from another app behaves the same when it is opened again from
+Recents.** Its shape is remembered for the film, not for a link that changes
+every time. Its subtitles, title and request headers are remembered with it.
+Headers sent as whole `Name: value` strings are read correctly, and so are values
+with commas in them.
+
+**Picture-in-picture gives the picture back as it was.** On mpv, the video was
+locked to the film's own size on the way into the small window and never
+released, so on the way back the picture and the subtitles were stretched
+across the screen.
+
+## Fixed
+
+* **The timeline behind a lock no longer sits on the subtitles.** Elapsed time
+  is at the left, time left and the whole length are at the right, with a thin
+  bar along the bottom edge, and the subtitles step up while it is showing.
+* **The info card on mpv fits the picture**, not the whole screen.
+* **A subtitle keeps its own name.** One that was not UTF-8 was re-encoded into
+  a copy named after its row in the media library, so the picker listed a
+  number, and the copy lost its extension, so a styled `.ass` was read as SRT.
+* **Subtitle size and position move one step at a time.** On mpv the panel
+  showed Media3's numbers, coming back from Settings loaded Media3's size, held
+  presses sped up to five and ten a step, and the position was kept per video
+  height. Each engine now keeps one size and one position of its own, and
+  neither can run the text off the bottom of the screen.
+* **mpv's subtitles are the same size as Media3's at the same number.** mpv
+  worked to an old default font size and drew them at a little over half the
+  size. A size you had set on mpv is moved once, on upgrade, to the number that
+  looks the same.
+* **A film from another app no longer stops when an older player screen
+  closes.** The old screen released the shared player as it went, which by then
+  was the new film's.
+* **Double tap, Skip intro and chapter jumps land exactly.** After the first drag
+  of the timeline, every later seek snapped to a keyframe, seconds from where it
+  was aimed.
+* **On mpv, dragging the timeline moves the picture**, rather than showing the
+  first frame and nothing more until release.
+* **Taps during a slow seek count on from where it is going**, not from an old
+  position report.
+* **Play at the end plays the film again, on both engines** — from the play
+  button in the bar, OK on a remote, a headset or remote's play key, and the
+  picture-in-picture window. On mpv nothing restarted a finished film; on
+  Media3 only the centre button did.
+* **A subtitle found beside a stream is shown on both engines.** On mpv it never
+  arrived.
+* **A subtitle you download takes over from the one showing.** One with the same
+  name as a subtitle already loaded -- the same release from two sources, or
+  the same one twice -- left the old one playing, on both engines. One loaded
+  from the device was added on Media3 and never switched on.
+* **OpenSubtitles downloads use your account.** The username and password asked
+  for at setup were never sent, so every download was anonymous: 5 a day
+  instead of 20. When the day's downloads run out it now says so, and when they
+  come back, rather than "That subtitle could not be downloaded".
+* **Loading a subtitle from the device no longer reopens the film.** On mpv it
+  could start again from the beginning, and both engines opened the file twice.
+  The film now waits while you pick, and the subtitle is added the way a
+  downloaded one is: on mpv without a pause, on Media3 at the same moment.
+* **The next film is the next film.** After Next, or a shared link, the next
+  film kept the last one's title, request headers and subtitle.
+* **A stream error mid-film is treated as the stream's, not the engine's.** On a
+  fixed engine any error offered to switch engines, which also kept the stream
+  from being recovered.
+* **Notification, lock-screen and headset controls survive a film being handed
+  over** while another plays in the background.
+* **mpv names the film in the notification, on the lock screen and in a
+  television's "now playing"**, which were blank.
+* **A launching app that sends its subtitles as a list of text no longer crashes
+  the player.**
+* **A film with sound but no picture is noticed.** Usually Dolby Vision
+  profile 5 on a device without a Dolby Vision decoder, or a decoder that
+  claims a video it cannot draw: it played the sound over a black screen for as
+  long as anybody sat there. After five seconds of the film actually playing
+  with nothing drawn, Auto moves to the other engine, and with an engine chosen
+  the other one is offered. Profile 8 plays its HDR picture as before.
+* **Dialogs on a remote open with their main button chosen,** so OK presses it.
+  The focus was being handed to the panel the buttons sit in, and OK pressed
+  nothing until an arrow had been pressed first.
+* **Skip intro and credits keeps working for the whole film.** Anything that
+  rebuilt the player — coming back to the app, a stream error, a subtitle
+  attached, a change of engine — stopped the skip button for good, until the
+  switch was turned off and on again. Two lookups for the same film could also
+  answer in the wrong order and leave nothing to skip, and credits that run to
+  the end were dropped when the film's length was not known yet.
+* **On a remote, the skip button gets the focus** when it appears under the
+  controls a film opens with, so OK skips the intro rather than pausing.
+* **Recent keeps the file's real name.** Opening an entry again wrote it afresh
+  under the identifier on the end of its link, so an expired link turned
+  "Batman.2005.1080p.mkv" into "8787887" for good. The file name — from the
+  server, or from the link itself — is kept once known, a launcher's title
+  stands in only until it is, and the film's title from the info card is never
+  put there. A film that played stays listed even if opening it again fails.
+* **Recent lines up with the folders** below it.
+
+## New
+
+* **Settings → Home screen → Film posters in Recent**, off by default. A film
+  watched with the info card naming it — or chosen by hand on the card — shows
+  that film's poster beside its file name.
+
+## Changed
+
+* **Quick settings → "Skip intros and credits"** no longer says *experimental*;
+  the settings screen and the readme still do.
+
 # 4.1.0
 
 Eight things reported from real use, fixed — and the two that were owed from

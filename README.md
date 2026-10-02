@@ -10,7 +10,7 @@ Media3/ExoPlayer and a full build of mpv ship inside one app, and the player mov
 its own — so a file one cannot decode is handled by the other instead of failing. The same build is
 driven by a finger on a phone or by a D-pad from across the room, and behaves the same either way.
 
-[![Release](https://img.shields.io/badge/release-v4.1.0-F4601E?style=flat-square)](https://github.com/Zain-Imam/just-player-pro/releases/latest)
+[![Release](https://img.shields.io/badge/release-v4.2.0-F4601E?style=flat-square)](https://github.com/Zain-Imam/just-player-pro/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Zain-Imam/just-player-pro/total?style=flat-square&color=F4601E&label=downloads)](https://github.com/Zain-Imam/just-player-pro/releases)
 [![Android](https://img.shields.io/badge/Android-7.1%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](#building)
 [![Engines](https://img.shields.io/badge/engines-Media3%20%2B%20mpv-4C8BF5?style=flat-square)](#the-two-engines)
@@ -84,7 +84,7 @@ optional, each using a key you supply, and none of it touching the network until
 | 🎬 | **Info card while paused** | Poster, title, season and episode, date, rating and synopsis, centred on the picture and sized to it. How solid it sits over the film is a slider |
 | 🔍 | **Identify what you are watching** | A release name becomes a title through TMDB. Wrong guess? Pick from a grid of posters, then jump straight to an episode |
 | 💬 | **Subtitles from several sources** | OpenSubtitles, SubDL and Wyzie, plus any Stremio subtitle addon you add — searched separately, so each one only widens the net |
-| ⏩ | **Skip intros and credits** | Chapter marks where the file carries them; where it does not, community timings from IntroDB, TheIntroDB, SkipDB, SkipMe, IntroHater and AniSkip |
+| ⏩ | **Skip intros and credits** *(experimental)* | Chapter marks where the file carries them; where it does not, community timings from IntroDB, TheIntroDB, SkipDB, SkipMe, IntroHater and AniSkip |
 | 📱 | **Set up from your phone** | Typing an API key with a remote is miserable, so settings serves a PIN-gated page on your own network. Type the keys on a real keyboard |
 | 🎨 | **Eleven accent colours** | Applied at once, no restart. The colour runs through the controls, the seek bar and every highlight |
 | 🧠 | **Adaptive buffering** | Profiles chosen from device memory, battery level and whether the source is a live stream — and applied to *both* engines, so they buffer alike |
@@ -97,10 +97,10 @@ Grab the newest build from **[Releases](https://github.com/Zain-Imam/just-player
 
 | File | For |
 |---|---|
-| `just-player-pro-4.1.0-arm64-v8a.apk` | Almost every phone, tablet and TV box made since 2017 |
-| `just-player-pro-4.1.0-armeabi-v7a.apk` | Older 32-bit devices |
-| `just-player-pro-4.1.0-x86_64.apk` · `-x86.apk` | Emulators and the few x86 devices |
-| `just-player-pro-4.1.0-universal.apk` | All four at once — four times the mpv payload, so only if you are unsure |
+| `just-player-pro-4.2.0-arm64-v8a.apk` | Almost every phone, tablet and TV box made since 2017 |
+| `just-player-pro-4.2.0-armeabi-v7a.apk` | Older 32-bit devices |
+| `just-player-pro-4.2.0-x86_64.apk` · `-x86.apk` | Emulators and the few x86 devices |
+| `just-player-pro-4.2.0-universal.apk` | All four at once — four times the mpv payload, so only if you are unsure |
 
 Android 7.1 or newer. The mpv engine additionally needs Android 8.0 and is offered only there.
 
@@ -287,6 +287,10 @@ row** asks again, and what you choose there is what sticks, for that file, from 
   read the same list.
 
 ### Skipping intros and credits
+
+*Experimental.* The online markers are community timings for some release of the film, not
+necessarily yours, so a button can be a few seconds out or missing. Chapter marks in the file itself
+are exact.
 
 * **Chapters first, databases second.** If the file has chapters naming an intro or the credits,
   those are used — read from mpv directly, and parsed out of the Matroska container for Media3,
@@ -735,6 +739,6 @@ not come from this project, whatever it is called:
 SHA-256  6d:c1:c9:16:44:76:06:b1:ce:ba:13:3e:1c:50:6f:a8:
          8e:11:25:9b:08:2c:d3:16:61:d0:c6:6c:12:42:dc:a6
 
-apksigner verify --print-certs just-player-pro-4.1.0-arm64-v8a.apk
+apksigner verify --print-certs just-player-pro-4.2.0-arm64-v8a.apk
 ```
 </details>
