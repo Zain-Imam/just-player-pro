@@ -1,15 +1,7 @@
 #!/bin/bash
-#
 # Going back to the subtitle results costs nothing the second time.
-#
-# What is under test is that the second press of "Search online subtitles…"
-# shows the list already in hand rather than identifying the film again and
-# asking every source again. One identify and one search in the whole run,
-# which is the point: these services count what they hand out, and the second
-# press must not spend anything.
-#
-# What proves it is the absence of both dialogs the first press needed, and the
-# list arriving faster than a network round trip could manage.
+# The second "Search online subtitles…" press reuses the list: no identify or
+# search dialog, the same list. One identify and one search per run.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -68,8 +60,7 @@ fi
 sleep 4
 snap
 
-# The test file is not named after a film, so the player asks -- which is what
-# it is meant to do. Answering it once is what puts a film behind this file.
+# the test file has no film name, so the player asks once
 if grep -qF 'text="Which is this?"' "$SNAP"; then
   pass "an unrecognisable name is asked about rather than guessed at"
   FIELD="$(centre class android.widget.EditText)"
@@ -134,16 +125,8 @@ else
 fi
 
 echo "--- and it is the same list, not a new one ---"
-#
-# Not timed. A stopwatch was the obvious check and measures the wrong thing:
-# every reading of the screen here costs several seconds of uiautomator, so the
-# number that came back was this script's own overhead and would have failed a
-# player that answered instantly.
-#
-# What does distinguish the two cases is that the path to the network always
-# puts a dialog up -- "Identifying…", then "Searching…" -- and the check above
-# watched for both and saw neither. This adds the other half: the list is the
-# one from before, down to how many and which first.
+# not timed: each dump costs seconds of uiautomator. The network path always
+# shows a dialog (checked above); this checks the list is the same one.
 FIRST_COUNT="$(echo "$FIRST" | grep -oE '[0-9]+ subtitles' | head -1)"
 SECOND_COUNT="$(echo "$SECOND" | grep -oE '[0-9]+ subtitles' | head -1)"
 FIRST_TOP="$(echo "$FIRST" | cut -d'|' -f4)"

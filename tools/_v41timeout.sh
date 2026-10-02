@@ -1,14 +1,6 @@
 #!/bin/bash
-#
-# How long the controls actually stay on screen, read from the player's own log.
-#
-# Counting by hand is how this was got wrong in the first place. The player logs
-# a timestamped line when the controls appear and another when they have
-# finished going, so what is measured here is the whole of what a viewer sees,
-# fade included -- which is the only reading of the setting anybody has.
-#
+# How long the controls stay on screen, fade included, from the player's log.
 # ENGINE=mpv runs the same measurement on the other engine.
-#
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 
@@ -40,8 +32,7 @@ measure() {   # measure <seconds>
     fail "asked for ${1}s, but the controls never hid" "$(tail -3 "$WORK/ctl.log")"
     return
   fi
-  # Within three quarters of a second of what was asked for. The fade itself is
-  # a fixed cost that cannot be made shorter, so this is as close as it gets.
+  # within 0.75s of the setting; the fade is a fixed cost
   local ok
   ok="$(awk -v g="$got" -v w="$1" 'BEGIN { d = g - w; if (d < 0) d = -d; print (d <= 0.75) ? "y" : "n" }')"
   if [ "$ok" = "y" ]; then

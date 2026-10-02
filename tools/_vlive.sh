@@ -1,18 +1,7 @@
 #!/bin/bash
-# 8: live streams and adaptive playlists, on whichever engine is selected.
-#
-# The crash reported against v1 was every HLS stream dying on
-# NoSuchMethodError: getBandwidthMeter() -- the Media3 modules had been raised
-# past the patched ExoPlayer aars, and HlsMediaSource called into a method the
-# aar had not got. This proves the door is open: live HLS, on-demand HLS, DASH.
-#
-# A live stream reports no position through the media session -- there is no
-# duration to be at a position within -- so it is judged on playing without
-# error instead, which is all there is to judge.
-#
-# One stream was dropped from this list: Akamai's cph-p2p-msl test channel,
-# whose master playlist points at a variant that answers 404. Both engines
-# refuse it and both are right to; it is broken where it is served.
+# Live streams and adaptive playlists (live HLS, on-demand HLS, DASH) on the
+# selected engine. A live stream has no position, so it is judged on playing
+# without error.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1

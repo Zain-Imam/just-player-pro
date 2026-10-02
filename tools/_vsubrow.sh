@@ -1,5 +1,5 @@
 #!/bin/bash
-# The subtitle picker offers a file from storage, not only a search.
+# The subtitle picker offers a file from storage as well as a search.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"

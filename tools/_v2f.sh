@@ -1,8 +1,6 @@
 #!/bin/bash
-#
-# What is left: subtitle size parity between the engines and across aspect
-# modes, the HD mark on the quality row, and the one case #18 is actually about
-# — a subtitle that becomes a track and then fails when it is used.
+# Subtitle size parity across engines and aspect modes, the HD mark on the
+# quality row, and a subtitle that becomes a track and then fails on use.
 set -u
 . "$(cd "$(dirname "$0")" && pwd)/lib.sh"
 SCREEN_W="$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -37,7 +35,7 @@ play_on() { [ -z "$(playing)" ] && tap_control Play Pause >/dev/null 2>&1; sleep
 prepare
 adb push "$(hostpath "$WORK/first.srt")" /sdcard/Movies/first.srt >/dev/null 2>&1
 
-# ---------------------------------------------------- subtitle size parity
+# --- subtitle size parity
 for ENGINE in Media3 mpv; do
   item "17 size: $ENGINE, fit then crop"
   set_engine "$ENGINE" >/dev/null 2>&1
@@ -57,7 +55,7 @@ for ENGINE in Media3 mpv; do
   pass "$ENGINE: captured fit and crop for comparison"
 done
 
-# ---------------------------------------------------------- the HD mark
+# --- the HD mark
 item "21: the quality row carries an HD mark"
 set_engine Auto >/dev/null 2>&1
 adb shell "am force-stop $PKG" >/dev/null 2>&1
@@ -78,11 +76,9 @@ else
   fail "the quick panel opened"
 fi
 
-# ------------------------------------------- 18, in the condition it is about
+# --- a subtitle track that fails on use
 item "18: a subtitle that loads as a track and then fails"
-# Without storage permission the app can see the track but cannot read the
-# file, which is exactly what the original log showed: the player disables the
-# track and says nothing.
+# without storage permission the track is seen but its file cannot be read
 adb shell "pm revoke $PKG android.permission.READ_MEDIA_VIDEO" >/dev/null 2>&1
 adb shell "appops set $PKG MANAGE_EXTERNAL_STORAGE ignore" >/dev/null 2>&1
 sleep 2

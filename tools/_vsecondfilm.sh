@@ -1,39 +1,14 @@
 #!/bin/bash
-#
-# One player, however the second film arrives.
-#
-# This is the half of the launch-mode change that cannot be reasoned about.
-# The manifest used to say singleTask, which routed every launch to the one
-# instance; it says singleTop now, so that Back from an external launch returns
-# to whoever sent the film. The guarantee singleTask gave for free is made by
-# hand in PlayerActivity.onCreate, and this is what proves it.
-#
-# Two ways it could go wrong, and both of them are quiet:
-#
-#   * picture-in-picture -- a film left in a corner while the home screen is
-#     used to start another one;
-#   * "keep playing the sound" -- a film that goes on playing after its window
-#     is gone, with a second film arriving from another application.
-#
-# In both cases the failure is two players sounding at once, which a screenshot
-# cannot show and a passing test suite would never notice.
+# One player, however the second film arrives. The single instance is kept by
+# PlayerActivity.onCreate; a failure is two players sounding at once.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE "[0-9]+x[0-9]+" | head -1 | cut -dx -f1)"
 SCREEN_H="$(adb shell wm size 2>/dev/null | grep -oE "[0-9]+x[0-9]+" | head -1 | cut -dx -f2 | tr -d "\r")"
 
 # How many of this app's players the system is actually holding.
-#
-# Counted off the history entries inside the tasks -- "* Hist #0:" and so on --
-# and nothing else. Grepping the whole of dumpsys for the class name counts
-# every passing mention of it: the resolved intent filters, the pending
-# intents, the last orientation source. That came back as twelve players on a
-# device running one, which reads as a catastrophic bug and is a broken ruler.
-#
-# Counted for THIS package and no other. A debug build and a release build of
-# this player share a class name, differing only in the application id, so a
-# device with both installed counted the other one's leftover task as a second
-# player and reported the launch-mode guard broken when it was not.
+# counted from the task history entries ("* Hist #0:") for this package only:
+# dumpsys mentions the class elsewhere, and debug and release builds share it
 players() {
   adb shell "dumpsys activity activities" 2>/dev/null \
     | grep -E '\* Hist +#' \
@@ -53,10 +28,6 @@ pref() {   # pref <key> <true|false>
 }
 
 # Playing, given a moment to get there.
-#
-# A film just handed over has a decoder to build and a first frame to render
-# before the session says anything, and how long that takes is the device's
-# business. Asked repeatedly rather than once after a guess.
 playing_soon() {
   local n
   for n in $(seq 1 12); do
@@ -74,23 +45,9 @@ session_state() {
 prepare
 
 echo "=== 33. a second film started from the home screen while the first is away ==="
-#
-# Picture-in-picture is deliberately NOT switched on for this one, and that is
-# worth saying out loud rather than leaving as a gap.
-#
-# With a film in a corner the launcher is the focused application, and the
-# interlock in lib.sh refuses to press anything while that is true -- which is
-# the whole point of it, and not something to be worked around on somebody's own
-# phone. So the corner case is left for a person: play something, press Home,
-# tap another video, and count the films you can hear.
-#
-# What is automated is the part that carries the same risk and can be driven
-# safely: the first film backgrounded and released, a second started the way the
-# home screen starts one, and exactly one player left holding it.
-#
-# Set explicitly rather than assumed: an earlier run of this script left it on,
-# and the corner it put the film into is what the interlock then refused to
-# drive -- which looked like the home screen failing to come forward.
+# picture-in-picture is off: with a film in a corner the launcher has focus
+# and the interlock refuses to press anything, so that case is left for a person
+# set explicitly: an earlier run may have left it on
 pref autoPiP false || { fail "could not settle picture-in-picture"; exit 1; }
 open_film
 sleep 4
@@ -105,18 +62,12 @@ adb shell "am start -n $HOME_ACT" >/dev/null 2>&1
 sleep 6
 decline_resume
 
-#
-# Tapped, rather than started with an intent.
-#
-# "am start" is not the path under test and cannot be: it carries NEW_TASK, and
-# with NEW_TASK the system finds a task whose root is already this component and
-# brings that task forward instead -- which left the home screen sitting on top
-# of the first film and no second player at all. Nothing a person does produces
-# that. Tapping a row calls startActivity from inside the task, which is the
-# thing this test exists to exercise.
-#
+# tapped: am start carries NEW_TASK, which brings the old task forward instead
+# of starting a second player; a tap starts it from inside the task
 tap_row() {   # tap_row <label>
   local at n
+  # re-measure: the home screen is portrait, the size was taken in landscape
+  refresh_screen
   for n in $(seq 1 10); do
     at="$(centre text "$1")"
     [ -n "$at" ] && { adb shell "input tap $at" >/dev/null 2>&1; return 0; }
@@ -126,7 +77,8 @@ tap_row() {   # tap_row <label>
   return 1
 }
 
-tap_row Movies || { fail "could not reach the Movies folder on the home screen"; exit 1; }
+tap_row Movies || { fail "could not reach the Movies folder on the home screen" "$(focused) | $(dump | grep -oE 'text="[^"]+"' | tr "
+" " " | cut -c1-400)"; exit 1; }
 sleep 3
 tap_row jpp-smoke.ts || { fail "could not reach the test file"; exit 1; }
 CURRENT_SCREEN="$ACT"
@@ -144,8 +96,7 @@ if [ "$(current_activity)" = "PlayerActivity" ]; then
 else
   fail "the player did not come forward" "$(current_activity)"
 fi
-# Told to play, then asked: whether a film starts by itself depends on how it
-# was last left, which is a different feature with its own answer.
+# told to play: whether a film starts by itself depends on how it was left
 key KEYCODE_MEDIA_PLAY
 sleep 2
 if playing_soon; then
@@ -167,8 +118,7 @@ adb shell "input keyevent KEYCODE_HOME" >/dev/null 2>&1
 sleep 5
 echo "  still sounding with the window gone: $([ -n "$(playing)" ] && echo yes || echo no)"
 
-# The device's own settings stand in for another application: nothing in it is
-# pressed, it is only somewhere else for the launch to come from.
+# the device's Settings stands in for another app; nothing in it is pressed
 adb shell "am start -a android.settings.SETTINGS" >/dev/null 2>&1
 sleep 4
 CURRENT_SCREEN="$ACT"

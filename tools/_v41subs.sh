@@ -1,19 +1,15 @@
 #!/bin/bash
-#
-# The three things that went wrong while a subtitle was being attached.
-#
-# Attaching a sideloaded subtitle rebuilds the media item and re-prepares the
-# source, and three separate faults fell out of that: the film jumped back to an
-# older position, the aspect-ratio button stopped doing anything, and a newly
-# attached subtitle did nothing while the previous one stayed on screen.
-#
-# Local subtitle files throughout. Nothing here asks an online service anything,
-# so it can be run as often as it likes without spending anybody's quota.
+# Attaching a subtitle keeps the position and the resize button, and the new
+# subtitle replaces the old one. Local files only, so no online quota is used.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 
 SUB_A="/sdcard/Movies/jpp-first.srt"
 SUB_B="/sdcard/Movies/jpp-second.srt"
+# real files: mpv lists only what it could load, Media3 lists missing ones too
+adb push "$(hostpath "$WORK/first.srt")" "$SUB_A" >/dev/null 2>&1
+adb push "$(hostpath "$WORK/second.srt")" "$SUB_B" >/dev/null 2>&1
+trap 'adb shell "rm -f $SUB_A $SUB_B" >/dev/null 2>&1; cleanup' EXIT
 
 position() {
   adb shell dumpsys media_session 2>/dev/null \
@@ -83,13 +79,14 @@ fi
 echo
 echo "=== the aspect-ratio button still cycles ==="
 show_controls >/dev/null
-# Read the state the player writes down rather than the message it flashes up:
-# the announcement is gone in a couple of seconds and a screen dump takes most
-# of them, so reading the screen is a race the harness loses as often as it wins.
+# read the saved state: the announcement is gone before a dump finishes.
+# aspectMap keeps the mode per film; no entry means step 0.
 aspect_step() {
-  adb shell "run-as $PKG grep -o 'aspectStep\" value=\"[0-9]*' \
-      /data/data/$PKG/shared_prefs/${PKG}_preferences.xml" 2>/dev/null \
-    | grep -oE '[0-9]+$' | tr -d '\r'
+  local step
+  step="$(adb shell "run-as $PKG cat /data/data/$PKG/shared_prefs/${PKG}_preferences.xml" 2>/dev/null \
+    | tr -d '\r' | grep -F 'name="aspectMap"' | sed 's/&quot;/"/g' \
+    | grep -oE '"name":"f:jpp-smoke\.ts","delay":-?[0-9]+' | grep -oE '[0-9-]+$')"
+  echo "${step:-0}"
 }
 SHAPES=""
 for n in 1 2 3 4 5; do

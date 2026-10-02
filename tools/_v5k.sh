@@ -1,6 +1,5 @@
 #!/bin/bash
-# Are the two smoke failures a button that is missing, or one that is merely
-# past the edge of a strip that scrolls?
+# Which control-strip buttons a tap reaches, in portrait and in landscape.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"

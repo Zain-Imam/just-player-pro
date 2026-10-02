@@ -1,12 +1,7 @@
 #!/bin/bash
-# 6: OK on a highlighted skip button has to press the button, not pause the film.
-#
-# A phone starts in touch mode, where a request for focus is refused -- which is
-# why the button never highlights here and always does on a television. One
-# d-pad press leaves touch mode, and from then on this behaves as a remote does.
-#
-# The film is identified first, because the markers come from a database and
-# this test clip is not in it under its own name.
+# OK on a highlighted skip button presses it instead of pausing the film.
+# A phone starts in touch mode, which refuses focus; one d-pad press leaves it.
+# The film is identified first: the markers database does not know the clip.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -14,8 +9,6 @@ SCREEN_H="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 |
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1
          adb pull /sdcard/jpp-shot.png "$(hostpath "$WORK/shots/$1.png")" >/dev/null 2>&1; }
 seen() { dump | grep -q "text=\"$1\""; }
-# lib.sh already knows how to ask whether the film is running, and asking the
-# same way everywhere means one answer to be wrong about.
 running() { if [ -n "$(playing)" ]; then echo running; else echo stopped; fi; }
 
 prepare
@@ -24,24 +17,22 @@ open_film
 echo "--- telling it what the film is, so there are markers to skip ---"
 for try in 1 2 3; do tap_control Settings && break; sleep 2; done
 sleep 2
+# in landscape the panel scrolls: bring the card row into view first
+panel_row "Show info card" >/dev/null
 AT="$(centre content-desc 'Search again')"
 [ -z "$AT" ] && { fail "no search icon on the info card row"; exit 1; }
 tap $AT
 sleep 3
 FIELD="$(centre class android.widget.EditText)"
 [ -z "$FIELD" ] && { fail "no input box"; exit 1; }
-# The dialog has its own Clear, which empties the field in one press and does
-# not race with typing the way a row of deletes does.
+# the dialog's Clear empties the field without racing the typing
 CLEAR="$(centre text 'CLEAR')"
 [ -n "$CLEAR" ] && { tap $CLEAR; sleep 1; }
 tap $FIELD
 sleep 1
 adb shell "input text 'Inception'" >/dev/null 2>&1
 sleep 2
-# The keyboard is drawn over the dialog buttons in its own window, which the
-# screen dump does not show -- so Search looks reachable and a tap at its
-# coordinates lands on a letter key instead. Put the keyboard away first; back
-# closes it before it touches the dialog.
+# the keyboard covers the buttons in a window the dump misses, so hide it first
 adb shell "input keyevent KEYCODE_BACK" >/dev/null 2>&1
 sleep 2
 GO="$(centre text 'SEARCH')"
@@ -87,12 +78,10 @@ BEFORE_POS="$(position)"
 echo "  before OK: $(running) at ${BEFORE_POS}ms"
 shot skip-before
 key KEYCODE_DPAD_CENTER
-# A screen grab, not a screen dump: the undo offer only lasts three seconds and
-# a dump takes longer than that to come back.
+# a screenshot, not a dump: the undo offer lasts 3s, less than a dump takes
 shot skip-after
 AFTER_POS="$(position)"
-# A seek puts the session into BUFFERING for a moment, which is not the same as
-# having been paused -- so the question is asked once it has settled.
+# a seek briefly reports BUFFERING, so ask once it has settled
 sleep 3
 AFTER_STATE="$(running)"
 echo "  after OK:  $AFTER_STATE at ${AFTER_POS}ms"

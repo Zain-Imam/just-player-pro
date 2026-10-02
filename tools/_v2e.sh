@@ -1,9 +1,6 @@
 #!/bin/bash
-#
-# #19: changing the shape while paused, on mpv, which used to stay wrong until
-#      playback resumed.
-# #18: a subtitle that cannot be read must say so rather than be disabled
-#      silently while the picker claims it is playing.
+# Changing the resize mode while paused on mpv takes effect at once, and a
+# subtitle that cannot be read says so instead of being silently disabled.
 set -u
 . "$(cd "$(dirname "$0")" && pwd)/lib.sh"
 SCREEN_W="$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -33,7 +30,7 @@ item "19: changing the shape while paused, on mpv"
 set_engine mpv || fail "mpv could be selected"
 open_film
 sleep 3
-# show_controls pauses on its way in, which is the state this is about.
+# show_controls pauses, which is the case under test
 controls_up >/dev/null 2>&1
 echo "        playing while shape is changed: [$(playing)]  (empty means paused, which is the case under test)"
 shot "19-paused-before"
@@ -53,7 +50,7 @@ check "nothing crashed changing shape" "$(crashed)"
 echo "        (the shots show whether the picture is drawn correctly at once)"
 
 item "18: a subtitle that will not load says so"
-# A path that is not there at all: the track is offered, and fails on use.
+# a missing path: the track is offered and fails on use
 adb shell "rm -f /sdcard/Movies/missing.srt" >/dev/null 2>&1
 adb shell "am force-stop $PKG" >/dev/null 2>&1
 adb logcat -c >/dev/null 2>&1

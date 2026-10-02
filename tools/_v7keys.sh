@@ -1,7 +1,5 @@
 #!/bin/bash
-# 1, on a remote: OK presses the pointer, Back puts it away without pressing it,
-# and neither walks out of the player.
-#
+# Remote: OK presses the pointer, Back dismisses it; neither leaves the player.
 # Run with "ok" or "back".
 . "$(dirname "$0")/lib.sh"
 WAY="${1:-ok}"

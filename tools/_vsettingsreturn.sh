@@ -1,9 +1,6 @@
 #!/bin/bash
-# Coming back from the settings screen does not reopen the file -- unless what
-# was changed is one of the few that cannot be applied to a running player.
-#
-# Counted from a cleared log each time: this phone's buffer rolls in seconds,
-# so a count taken across two phases measures the buffer, not the player.
+# Returning from settings does not reopen the file, except after the few
+# changes a running player cannot take. The fast-rolling log is cleared per phase.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -29,13 +26,8 @@ centre_like() {
     | awk 'NF==4 {print int(($1+$3)/2), int(($2+$4)/2)}'
 }
 
-# Into settings by way of the quick panel.
-#
-# Not by long-pressing the cog: the controls hide themselves after a few
-# seconds and this film has a "Skip intro" button which sits in the same corner
-# once they are gone, so a remembered coordinate presses that instead. A panel
-# does not time out, so the row can be found while the film is paused, the film
-# set playing again behind it, and the row pressed with the film still running.
+# into settings via the quick panel: once the controls hide, a remembered cog
+# position lands on the Skip intro button
 into_settings() {
   local at row n
   show_controls >/dev/null
@@ -106,19 +98,8 @@ done
 if [ -z "$AT" ]; then
   fail "no adaptive buffering row"
 else
-  # Read from a fresh dump rather than from the stored snapshot. The snapshot
-  # taken here kept coming back without the row the scroll above had just
-  # found, and an empty answer reads exactly like a row that has lost its
-  # warning -- which is a bad way to be told nothing is wrong.
-  # The warning, looked for on the screen the row was just found on, rather
-  # than tied to the row by counting nodes after it.
-  #
-  # Reading the summary as "the second text after the title" is how this used to
-  # work and it kept coming back empty while the screen plainly showed the
-  # sentence -- the node offsets shift whenever a preference category is added
-  # above, and a check that reports a missing warning because it counted wrong
-  # is worse than no check. This is weaker by exactly one thing, that the
-  # sentence belongs to this row and not another, and it does not go wrong.
+  # a fresh dump, and the warning looked for anywhere on screen: node offsets
+  # shift whenever a category is added above
   WARNED=""
   for n in 1 2 3 4 5 6; do
     WARNED="$(dump | grep -m1 'reopens whatever is playing')"

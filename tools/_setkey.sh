@@ -1,9 +1,7 @@
 #!/bin/bash
 # Put a key back into a settings row: _setkey.sh "<row label>" "<value>"
-#
-# The value is typed, never echoed. The keyboard is put away before the dialog
-# buttons are pressed, because it is drawn over them in a window the screen dump
-# does not show -- so a tap at the button's own coordinates lands on a letter.
+# The value is never echoed. The keyboard is hidden before pressing the buttons:
+# it covers them in a window the dump does not show.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"

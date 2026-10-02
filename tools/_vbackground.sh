@@ -1,10 +1,7 @@
 #!/bin/bash
-# The sound carries on when the player is put away -- but only if asked.
-#
-# Home, not the power button: it is the same onStop the screen going off gives,
-# and it neither locks the phone nor touches a single setting of its own. The
-# only thing this script switches is the player's own preference, and it puts
-# it back at the end.
+# The sound carries on when the player is put away, only if the setting asks.
+# Uses Home: the same onStop as the screen going off, without locking the
+# phone. Only the player's own preference is changed, and it is restored.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -18,7 +15,7 @@ centre_like() {
     | awk 'NF==4 {print int(($1+$3)/2), int(($2+$4)/2)}'
 }
 
-# What the switch says about itself, from the summary under its title.
+# the switch's state, read from the summary under its title
 setting_state() {
   local summary
   summary="$(dump | grep -A6 -F "$SETTING" | grep -oE 'text="(The screen may go off[^"]*|Playback stops[^"]*)"' | head -1)"
@@ -32,6 +29,8 @@ setting_state() {
 reach_setting() {
   local n at
   open_settings
+  # re-measure: the size was taken in landscape with the film up
+  refresh_screen
   for n in $(seq 1 16); do
     at="$(centre_like "$SETTING")"
     [ -n "$at" ] && { echo "$at"; return 0; }
@@ -46,6 +45,13 @@ set_background_audio() {
   local want="$1" at state
   at="$(reach_setting)"
   [ -z "$at" ] && { fail "no '$SETTING' row in settings"; exit 1; }
+  # scroll into full view: the summary that holds the state is below the edge;
+  # refresh_screen again here, since reach_setting ran in a subshell
+  refresh_screen
+  swipe $((SCREEN_W / 2)) $((SCREEN_H * 60 / 100)) $((SCREEN_W / 2)) $((SCREEN_H * 45 / 100)) 700
+  sleep 1
+  at="$(centre_like "$SETTING")"
+  [ -z "$at" ] && { fail "no '$SETTING' row in settings"; exit 1; }
   state="$(setting_state)"
   if [ "$state" != "$want" ]; then
     tap $at
@@ -59,7 +65,7 @@ set_background_audio() {
   fi
 }
 
-# Put the player away the way a person does, and leave it away for a while.
+# press Home and stay away for a while
 go_home() {
   key KEYCODE_HOME
   sleep "${1:-5}"

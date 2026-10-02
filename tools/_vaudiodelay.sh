@@ -1,8 +1,6 @@
 #!/bin/bash
 # The audio delay: in the quick panel, on either engine, remembered per file.
-#
-# Run it once per engine -- the engine is whatever the settings say when it
-# starts, so _setengine.sh decides which one is under test.
+# Run once per engine; set it beforehand with _setengine.sh.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -24,13 +22,10 @@ focus_bounds() {
     | grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' \
     | sed -E 's/bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"/\1 \2 \3 \4/'
 }
-# Signed tenths, so every assertion is about how far the number moved rather
-# than where it started: the delay is kept per file and the run before left it
-# wherever it left it.
+# signed tenths, so checks measure movement: the delay is kept per file
 tenths() { echo "$1" | tr -d ' s' | awk -F. '{ v = ($1 < 0 || $0 ~ /^-/) ? -1 : 1; gsub(/[-+]/, "", $1); print v * ($1 * 10 + $2) }'; }
 
-# uiautomator comes back empty now and then -- two of these scripts dumping at
-# the same moment is enough. An empty screen is not an answer, so ask again.
+# uiautomator sometimes returns an empty dump, so ask again
 snap() {
   local n
   for n in 1 2 3; do
@@ -52,8 +47,7 @@ open_panel() {
   grep -q '"Quick settings"' "$SNAP"
 }
 
-# Down the panel with the d-pad, which is both how a television gets there and
-# what scrolls the list: the row starts below the fold on a phone.
+# d-pad down the panel, as a TV does; it also scrolls the row into view
 focus_row() {
   local n ry
   for n in $(seq 1 16); do
@@ -149,9 +143,8 @@ else
   fail "the delay ran past five seconds" "$LIMIT"
 fi
 
-# On mpv the delay is a property, and a debug build says so when what mpv holds
-# is not exactly the string it was handed. "-> null" is the one that matters: it
-# means mpv has no such property and the delay went nowhere.
+# a debug build logs what mpv holds for audio-delay;
+# "-> null" means mpv has no such property
 echo "--- what the engine did with the number ---"
 READBACK="$(adb logcat -d 2>/dev/null | grep -oE 'mpv audio-delay = [-0-9.]+ -> [^ ]+' | tail -1 | tr -d '\r')"
 if [ -n "$READBACK" ]; then
@@ -193,8 +186,7 @@ key KEYCODE_BACK
 sleep 2
 open_film
 open_panel >/dev/null
-# The row has to be on screen before its value can be read, and on a phone it
-# starts below the fold.
+# on a phone the row starts below the fold
 focus_row >/dev/null
 AGAIN="$(delay_now)"
 echo "  on reopening:    $AGAIN"

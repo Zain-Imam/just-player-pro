@@ -1,18 +1,12 @@
 #!/bin/bash
-#
 # Shared harness for the scripts that drive the player over adb.
-#
-# The interlock lives here so there is one copy of it: nothing is pressed
-# unless the player is the thing in front. If the player is not in front, a
-# press would land on the launcher and open whatever sits under it, so the
-# run stops instead.
+# The interlock lives here: nothing is pressed unless the player is in front,
+# since a press would otherwise land on the launcher.
 
 set -u
 export MSYS_NO_PATHCONV=1
 
-# adb has to be reachable. Use it if it is already on PATH; otherwise take the
-# SDK location from the environment, and failing that look where the SDK
-# installs by default on each platform.
+# find adb: PATH, then the SDK from the environment, then default SDK locations
 if ! command -v adb >/dev/null 2>&1; then
   for sdk in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}" \
              "$HOME/AppData/Local/Android/Sdk" \
@@ -41,9 +35,8 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 WORK="$HERE/../.smoke-media"
 mkdir -p "$WORK"
 
-# adb is a Windows program under Git Bash, and MSYS_NO_PATHCONV stops the shell
-# converting the device paths it is given — which means host paths have to be
-# converted by hand instead. Everywhere else this is a no-op.
+# adb is a Windows program under Git Bash and MSYS_NO_PATHCONV is set, so host
+# paths are converted by hand; a no-op elsewhere
 hostpath() {
   if command -v cygpath >/dev/null 2>&1; then cygpath -w "$1"; else echo "$1"; fi
 }
@@ -54,19 +47,8 @@ pass() { echo "PASS  $1"; PASSED=$((PASSED + 1)); }
 fail() { echo "FAIL  $1"; [ -n "${2:-}" ] && echo "        $2"; FAILED=$((FAILED + 1)); }
 check() { if [ "$2" = "0" ]; then pass "$1"; else fail "$1" "${3:-}"; fi; }
 
-#
-# One dump at a time, with a breath between them.
-#
-# Each dump registers an automation service with the accessibility framework
-# and unregisters it again. Run back to back, a new one can arrive before the
-# last has let go -- "UiAutomationService already registered" -- and on one
-# phone that took the system's own accessibility menu down with it, putting a
-# "keeps stopping" dialog in front of whatever was being tested.
-#
-# A lock file makes two dumps from one run impossible, and the short wait after
-# each gives the framework time to release. It costs a fraction of a second per
-# dump and removes a failure that looked like the application's fault.
-#
+# One dump at a time, with a pause after each: back-to-back dumps can hit
+# "UiAutomationService already registered" and crash the accessibility menu.
 dump() {
   local lock="${WORK:-/tmp}/dump.lock" waited=0
   while [ -e "$lock" ] && [ $waited -lt 30 ]; do
@@ -89,19 +71,7 @@ onscreen() { [ -n "$(centre "$@")" ]; }
 
 alive()   { adb shell "pidof $PKG" 2>/dev/null | tr -d '\r'; }
 playing() { adb shell "dumpsys media_session | grep -o 'state=PLAYING' | head -1" 2>/dev/null | tr -d '\r'; }
-# Crashes belonging to the app under test, and nothing else.
-#
-# This used to count every FATAL EXCEPTION in the buffer, whoever it belonged
-# to — including uiautomator, which dies with "already registered" whenever two
-# of these scripts dump the screen at the same moment. That reported five
-# crashes against a player that had not crashed at all. Only lines naming this
-# package, or the ones immediately under them, are ours.
-# Crashes belonging to the app under test, and nothing else.
-#
-# This used to count every FATAL EXCEPTION in the buffer, whoever it belonged
-# to — including uiautomator, which dies with "already registered" whenever two
-# of these scripts dump the screen at the same moment. That reported five
-# crashes against a player which had not crashed at all.
+# crashes of the app under test only; uiautomator crashes too when dumps overlap
 crashed() {
   adb logcat -b crash -d 2>/dev/null | grep -A3 "FATAL EXCEPTION" \
     | grep -c "Process: $PKG"
@@ -109,17 +79,10 @@ crashed() {
 focused()     { adb shell "dumpsys window | grep -m1 mCurrentFocus" 2>/dev/null | tr -d '\r'; }
 focused_app() { adb shell "dumpsys window | grep -m1 mFocusedApp" 2>/dev/null | tr -d '\r'; }
 
-# ------------------------------------------------------- the safety interlock
+# --- the safety interlock
 
-# Two questions, because one of them is not enough.
-#
-# mCurrentFocus names the focused window, which for one of this app's own
-# panels is "PopupWindow:..." with no package in it at all — so trusting only
-# that refuses to press the app's own menus. mFocusedApp names the activity
-# behind whatever has focus, and that is always the package.
-#
-# Both have to agree: the activity in front must be ours, and the focused
-# window must not belong to somebody else.
+# in_front: mFocusedApp must be ours, and mCurrentFocus must not be another
+# package's window (the app's own panels show as PopupWindow:...).
 # Which of this app's screens the test is working on, so it can be brought back.
 CURRENT_SCREEN="${CURRENT_SCREEN:-}"
 
@@ -141,15 +104,8 @@ in_front() {
 }
 
 # The phone's own security page, not the player's.
-#
-# Motorola's Security Hub puts "Potentially risky website" in front whenever
-# this app fetches from a host it does not recognise — a subtitle source, a test
-# stream. It steals focus and the run grinds to a halt behind it.
-#
-# It is dismissed by DECLINING: "Cancel and exit" only. Never "Continue anyway",
-# never "Add site to allow list" — a test does not get to change what a phone
-# trusts. This is the one place anything outside the player is pressed, it is
-# named here so it can be audited, and it only ever says no.
+# Motorola's Security Hub covers the app on unknown hosts. It is only ever
+# declined ("Cancel and exit"); this is the one press outside the player.
 dismiss_security_prompt() {
   case "$(focused)" in
     *securityhub*|*PhishingDetection*) ;;
@@ -171,17 +127,14 @@ require_player() {
   in_front && return 0
   dismiss_security_prompt >/dev/null 2>&1 && in_front && return 0
 
-  # A phone puts things in front of you unasked: a security scanner, a system
-  # dialog, an update notice. Wait for it to go.
+  # wait for anything the phone put in front unasked to go
   for n in 1 2 3 4 5 6 7 8 9 10; do
     sleep 2
     dismiss_security_prompt
     in_front && return 0
   done
 
-  # Still not there. Bring this app's own screen back — which can only ever
-  # start this app — and give it a moment. Nothing is pressed until it is in
-  # front; this is a way of getting there, not a way round it.
+  # still not there: restart this app's own screen, which can only start this app
   if [ -n "$CURRENT_SCREEN" ]; then
     adb shell "am start -n $CURRENT_SCREEN" >/dev/null 2>&1
     for n in 1 2 3 4 5 6 7 8 9 10; do
@@ -208,15 +161,8 @@ hold()  { require_player; adb shell "input keyevent --longpress $1" >/dev/null 2
 swipe() { require_player; adb shell "input swipe $1 $2 $3 $4 $5" >/dev/null 2>&1; }
 
 # The window as it is held right now, not the panel the phone was built with.
-#
-# `wm size` reports the physical panel and never turns, so on a player that asks
-# for landscape every script was working from 1080x2400 while the window was
-# 2400x1080 -- and a list dragged from 70% of 2400 was dragged from a point
-# below the bottom of the screen, which does nothing at all. Five rows that were
-# plainly there came back as missing.
-#
-# Scripts set these two at the top before anything is open; this corrects them
-# once there is a window to measure.
+# wm size never turns; scripts set SCREEN_W/H at the top and this corrects
+# them from the root node once a window is up.
 refresh_screen() {
   local wh
   wh="$(dump | grep -m1 -oE 'bounds="\[0,0\]\[[0-9]+,[0-9]+\]"' \
@@ -229,11 +175,10 @@ refresh_screen() {
   return 0
 }
 
-# ---------------------------------------------------------------- test media
+# --- test media
 
 prepare() {
-  # Nothing works if the thing under test is not installed, and starting a
-  # missing package fails quietly enough to look like a bug in the player.
+  # a missing package fails quietly enough to look like a player bug
   local installed
   installed="$(adb shell 'pm list packages' 2>/dev/null | tr -d '\r')"
   if ! echo "$installed" | grep -qx "package:$PKG"; then
@@ -285,13 +230,7 @@ cleanup() {
 open_film() {
   adb shell "am force-stop $PKG" >/dev/null 2>&1
   adb logcat -c >/dev/null 2>&1
-  # Something for the interlock to bring back.
-  #
-  # This used to be cleared, and clearing it is what turns a stray Back into
-  # the end of the run: with nothing recorded, require_player has no screen of
-  # this app to restore, so it gives up and stops instead of recovering. The
-  # player activity is this app's own, so starting it can only ever start this
-  # app — which is the whole of what the interlock is protecting.
+  # something for the interlock to bring back; it can only start this app
   CURRENT_SCREEN="$ACT"
   adb shell "am start -a android.intent.action.VIEW -d $URI -t video/mp2t -n $ACT --grant-read-uri-permission --esa subs file://$SUBS --esa subs.name Smoke" >/dev/null 2>&1
   local waited=0
@@ -307,18 +246,13 @@ open_film() {
 }
 
 open_settings() {
-  # Force-stopped first so the list starts at the top. Resuming an activity that
-  # is already there keeps wherever it was scrolled to, and then a hunt for a row
-  # near the top scrolls away from it and reports it missing.
+  # force-stopped so the list starts at the top, not wherever it was scrolled
   adb shell "am force-stop $PKG" >/dev/null 2>&1
   sleep 1
   CURRENT_SCREEN="$SETTINGS"
   adb shell "am start -n $SETTINGS" >/dev/null 2>&1
 
-  # Wait for something only the settings screen has, not merely for the window
-  # to name this package. During a force-stop the old window still carries the
-  # name for a moment, and returning then means pressing at a screen that is on
-  # its way out.
+  # wait for something only settings has; a closing window keeps the name briefly
   local waited=0
   while [ $waited -lt 25 ]; do
     case "$(focused)" in
@@ -338,18 +272,8 @@ open_settings() {
 }
 
 # Pause, and make sure of it.
-#
-# Everything else here rests on this. A paused player keeps its controls up for
-# as long as you leave them, so a dump -- which takes a second or two -- reads a
-# screen that is standing still. A playing one takes them away on a timer, and
-# then a button that was plainly there when the search began has gone by the
-# time uiautomator reads the screen, and is reported as a button that does not
-# exist. Two false failures in an otherwise clean run were exactly that.
-#
-# It used to press the centre key, which is a toggle, and only when the media
-# session said the film was playing -- so when the session had not caught up it
-# pressed nothing at all, and when the session was stale it pressed play. The
-# pause key is not a toggle: sending it twice still pauses.
+# A paused player keeps its controls up, so a slow dump still finds them.
+# The pause key is not a toggle: sending it twice still pauses.
 pause_player() {
   local n
   for n in 1 2 3 4 5; do
@@ -360,10 +284,8 @@ pause_player() {
   return 0
 }
 
-# Up, and asked about the strip itself rather than about one button on it. The
-# buttons at the far end are off-screen until the strip is dragged, so asking
-# for one of those is really asking whether the controls are up *and* already
-# scrolled to the end -- which sent it looking for them all over again.
+# Up, judged by the strip itself: buttons at its far end are off-screen until
+# it is dragged.
 show_controls() {
   pause_player
   if ! onscreen resource-id "$PKG:id/controls_scroll_view"; then
@@ -373,23 +295,8 @@ show_controls() {
   return 0
 }
 
-# The button strip scrolls sideways on a narrow screen.
-#
-# In portrait the row of buttons is wider than the phone, so the padlock, the
-# rotate button and picture-in-picture are past the right edge until the strip
-# is dragged. A test that only looks at what is visible decides they do not
-# exist.
-# Find one of several possible names and press it.
-#
-# Two reasons for the list. A button that toggles has two descriptions — the
-# subtitle button is "Enable subtitles" or "Disable subtitles" depending on
-# what is on — and looking for one, failing, then looking for the other means
-# the strip has already been dragged to the far end by the first search.
-#
-# And the strip itself scrolls sideways on a narrow screen: in portrait the
-# padlock, the rotate button and picture-in-picture sit past the right edge
-# until it is dragged, and a test that only reads what is visible decides they
-# do not exist.
+# Centre of the first of these names on screen: a toggle has two (Enable or
+# Disable subtitles). tap_control drags the strip, which scrolls in portrait.
 find_control() {
   local name at
   for name in "$@"; do
@@ -426,10 +333,8 @@ tap_control() {
 }
 
 # A row in the quick panel.
-#
-# The panel is its own list down one side of the screen, so it is dragged there
-# rather than down the middle of the film -- and in landscape it is short enough
-# that the rows at the bottom of it are off the end until it is.
+# The panel is its own list down one side, so it is dragged there; in
+# landscape its bottom rows are off the end.
 panel_row() {
   local want at n px from to
   want="$1"
@@ -458,39 +363,11 @@ panel_row() {
   return 1
 }
 
-# Drag, do not fling.
-#
-# A fast swipe throws the list, and it keeps going long after the finger is up —
-# so a row can go past between one look and the next, and a hunt for something
-# that is plainly there reports it missing. A slow drag over a short distance
-# moves exactly as far as it is told.
-#
-# The screen as it is now, which is not what `wm size` answers.
-#
-# `wm size` reports the panel: 1080x2400 whichever way up the phone is. Held
-# sideways the screen is 2400x1080, so a drag computed from that starts at
-# y=2040 -- a thousand pixels below the bottom of it. The press lands nowhere,
-# nothing scrolls, and a row plainly on the screen is reported missing. Two
-# rows were, and neither was a fault in the application.
-#
-# The root node of a dump is the window, so its bounds are the screen the right
-# way round. The panel size is kept as a fallback for the case where a dump
-# comes back empty, which it sometimes does over a moving picture.
-#
-# Asked of the window manager, never of uiautomator.
-#
-# Reading the size from a dump works, but a dump registers an automation
-# service against the accessibility framework, and this harness already takes
-# more of those than the framework is comfortable with -- enough, on one phone,
-# to crash the system's own accessibility menu with "UiAutomationService
-# already registered". The rotation is a plain dumpsys read and costs nothing,
-# so the panel size is simply turned the right way round instead.
+# The screen as it is now, from the window manager: wm size never turns, and
+# a dump would register yet another automation service.
 screen_now() {   # echoes "<width> <height>"
   local size
-  # cur= is the display as it stands, already the right way round. Working it
-  # out from the rotation instead is a trap: the field reads ROTATION_90, and
-  # taking the last digit of that gives 9 rather than 1, so a sideways screen
-  # was read as upright and every drag went off the bottom of it.
+  # cur= is the display as it stands, already the right way round
   size="$(adb shell dumpsys window displays 2>/dev/null \
         | grep -m1 -oE 'cur=[0-9]+x[0-9]+' | cut -d= -f2 | tr -d '\r')"
   [ -z "$size" ] && size="$(adb shell wm size 2>/dev/null \
@@ -499,18 +376,9 @@ screen_now() {   # echoes "<width> <height>"
   echo "${size%x*} ${size#*x}"
 }
 
-#
 # A row in the quick settings panel, scrolling the panel to reach it.
-#
-# The panel is a list of fourteen anchored to one edge, and only a handful are
-# in view at once -- fewer still with the phone held sideways. Looking without
-# scrolling found the rows near the top and reported the rest missing, and
-# because the panel was then left open over the controls, the step after it
-# could not find its button either: one row out of view failed a whole section.
-#
-# Scrolled at the panel's own x rather than the middle of the screen, since the
-# middle is beside the panel, not on it.
-#
+# Only a few rows are in view at once. Scrolled at the panel's own x, since
+# the middle of the screen is beside it.
 panel_row() {   # panel_row <row text>
   local at n anchor px w h
   at="$(centre text "$1")"
@@ -540,10 +408,7 @@ scroll_to() {
   [ -n "$at" ] && { echo "$at"; return 0; }
 
   # Most of the window, but never all of it.
-  #
-  # Two thirds is still less than one screenful, so no row can pass through the
-  # visible area between one look and the next, which is the thing a long drag
-  # would otherwise get wrong.
+  # two thirds is under a screenful, so no row can slip past between looks
   set -- $(screen_now) "$1"
   w="$1"; h="$2"; shift 2
   from=$(( (h * 85) / 100 ))
@@ -560,10 +425,7 @@ scroll_to() {
 
 
 # The home screen, from a cold start.
-#
-# Force-stopped first for the same reason open_settings is: an activity that is
-# already there comes back wherever it was left, and a test that expects the
-# folder list would find whatever folder was last opened.
+# force-stopped first: a resumed activity would show the last folder opened
 open_home() {
   adb shell "am force-stop $PKG" >/dev/null 2>&1
   adb logcat -c >/dev/null 2>&1
@@ -582,11 +444,7 @@ open_home() {
 }
 
 # Which activity of ours is in front, by class name alone.
-#
-# The filtering is done here rather than on the device: the phone's grep does
-# not take an alternation written this way, and -m1 closes the pipe under
-# dumpsys, which prints a broken-pipe warning and returns nothing at all. It
-# looked exactly like "no activity of ours is in front".
+# filtered here: the phone's grep lacks this alternation, and -m1 breaks dumpsys
 current_activity() {
   adb shell "dumpsys activity activities" 2>/dev/null \
     | grep -m1 "topResumedActivity" \
@@ -595,13 +453,8 @@ current_activity() {
 }
 
 # Whether the focused thing is the row for this name.
-#
-# Read off the focused node's own description rather than inferred from where it
-# sits. Every row on the home screen describes itself as "<name>, <details>"
-# for the benefit of a screen reader, and that turns out to be the only reliable
-# way to tell a row apart from the star beside it: the two share a line, so any
-# check based on position matches both, and a test meaning to open a folder
-# pressed the centre key on its star and quietly favourited it instead.
+# matched on the row's "<name>, <details>" description, since the star
+# beside it shares the line
 focused_row_is() {   # focused_row_is <snapshot> <name>
   local line
   line="$(grep 'focused="true"' "$1" | tail -1)"
@@ -619,18 +472,8 @@ focused_desc_is() {  # focused_desc_is <snapshot> <content-desc>
 }
 
 # Say "not now" to the offer of the last video.
-#
-# The home screen makes that offer every time it opens, which is what it is for
-# and what the setting says it does -- but it sits over the folder list, so a
-# test that went looking for folders found a dialog instead. This is the app's
-# own dialog, and declining leaves the device exactly as it was found.
-#
-# Dismissed with Back rather than by tapping the button, which matters more
-# than it looks: a tap puts the window into touch mode, and in touch mode a
-# list row is not focusable at all, so the first arrow press afterwards lands
-# on the toolbar instead of the list and every D-pad check that follows is
-# walking the wrong part of the screen. Back leaves the window where a remote
-# left it.
+# The offer covers the folder list on every open. Back keeps the window out of
+# touch mode, where list rows cannot take focus; a tap would not.
 decline_resume() {
   local at
   at="$(centre text 'NOT NOW')"
@@ -642,10 +485,7 @@ decline_resume() {
 }
 
 # Wait for one of this app's screens to settle in front.
-#
-# A fixed sleep is not enough after leaving the player: releasing a decoder and
-# handing the window back takes as long as it takes, and a check a moment too
-# early sees neither screen resumed and reads exactly like "we left the app".
+# a fixed sleep is not enough: releasing the decoder takes as long as it takes
 wait_for_activity() {   # wait_for_activity <ClassName> [seconds]
   local want="$1" limit="${2:-15}" n=0
   while [ $n -lt "$limit" ]; do
@@ -657,13 +497,7 @@ wait_for_activity() {   # wait_for_activity <ClassName> [seconds]
 }
 
 # Walk the remote down a list until the named row has focus.
-#
-# Left first, always. A folder row is two focusable things side by side, the
-# row and its star, and once focus is in the star column pressing down moves
-# star to star for the whole length of the list -- correct behaviour, and it
-# means a search for a row by pressing down alone can run to the end without
-# ever touching one. Left steps back into the row column; on a row that is
-# already in it, it does nothing.
+# left first: in the star column, down moves star to star and never hits a row
 focus_row_by_dpad() {   # focus_row_by_dpad <snapshot> <name> [presses]
   local file="$1" want="$2" limit="${3:-16}" n=0
   adb shell "input keyevent KEYCODE_DPAD_LEFT" >/dev/null 2>&1

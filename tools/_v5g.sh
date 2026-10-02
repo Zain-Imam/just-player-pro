@@ -1,5 +1,5 @@
 #!/bin/bash
-# Item 4: the setting that keeps the card's title and the subtitle title apart.
+# The "One title for both" setting is on the settings screen.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"

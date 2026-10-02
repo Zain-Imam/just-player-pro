@@ -1,6 +1,5 @@
 #!/bin/bash
-# The chosen title survives reopening (item 3), and the undo offer in the real
-# player goes after three seconds (item 2).
+# The chosen title survives reopening; the player's undo offer goes after 3s.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -25,7 +24,7 @@ echo
 echo "--- 2. the undo offer in the player itself ---"
 play_player 2>/dev/null || tap_control "Play" >/dev/null 2>&1
 sleep 1
-# Make sure something is running: the skip button only shows over a playing film.
+# the skip button only shows over a playing film
 adb shell "input keyevent KEYCODE_MEDIA_PLAY" >/dev/null 2>&1
 sleep 3
 for n in $(seq 1 12); do
@@ -46,7 +45,7 @@ else
   else
     fail "no undo offer after skipping"
   fi
-  # Look again once the window must have closed.
+  # look again once the undo window is over
   while [ $(( ($(date +%s%N) - START) / 1000000 )) -lt 4200 ]; do sleep 0.3; done
   shot undo-late
   T=$(( ($(date +%s%N) - START) / 1000000 ))

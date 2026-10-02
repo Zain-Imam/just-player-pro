@@ -1,13 +1,7 @@
 #!/bin/bash
-# 1: two pointers on a first run, whichever way each one is dismissed.
-#
-# The pictures are the evidence: a tap target is drawn on a canvas, so there is
-# no text in the view tree for a screen dump to find.
-#
-# Run it with a path: "away" taps clear of the circle, "press" presses the
-# circle itself -- which is the one that was broken, because pressing it used to
-# open the file picker there and then and the second pointer waited for a
-# callback that never came.
+# First-run pointers, whichever way each one is dismissed.
+# Drawn on a canvas, so the screenshots are the evidence.
+# Run with "away" (tap clear of the circle) or "press" (press the circle).
 . "$(dirname "$0")/lib.sh"
 WAY="${1:-away}"
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1
@@ -26,8 +20,7 @@ done
 sleep 4
 shot "$WAY-1"
 
-# The circle is centred on the button it points at, which is the middle of the
-# bottom strip; clear of it means the far top corner of the picture.
+# the circle is centred on the button; "away" taps the far top corner
 if [ "$WAY" = press ]; then
   set -- $(bounds_of content-desc "Open file")
   if [ $# -ne 4 ]; then set -- $(bounds_of content-desc "Open"); fi

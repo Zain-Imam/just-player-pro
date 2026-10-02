@@ -1,11 +1,7 @@
 #!/bin/bash
-#
 # The home screen: folders with counts, a file that opens, Back that returns,
 # a favourite that sticks, a sort that changes the order, and a search that finds.
-#
-# Driven by the remote throughout, not by taps. Everything here has to work
-# both ways, and the remote is the half that breaks -- a row nothing can focus
-# looks perfectly correct in a screenshot.
+# Remote only: a row nothing can focus still looks right in a screenshot.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 
@@ -41,11 +37,10 @@ shot home-root
 echo "--- the test folder is listed, with a count ---"
 snap
 echo "  rows: $(grep -oE 'text="[^"]+"' "$SNAP" | sed 's/text=//;s/"//g' | tr '\n' '|' | cut -c1-300)"
-# Scrolled for rather than expected on the first screen: a dump only holds what
-# is drawn, and a phone with favourites and a dozen folders pushes anything
-# alphabetically late below the fold.
+# scrolled for: folders late in the alphabet can be below the fold
 SEEN=0
-for n in $(seq 1 10); do
+# 25 steps: a full Recent list and many folders need more than 10 to pass M
+for n in $(seq 1 25); do
   grep -qF 'text="Movies"' "$SNAP" && { SEEN=1; break; }
   key KEYCODE_DPAD_DOWN
   sleep 1
@@ -86,11 +81,6 @@ else
 fi
 
 echo "--- and Back inside a folder goes up, not out ---"
-#
-# Worth a check of its own. This went wrong in a way nothing else here would
-# have caught: every other path out of a folder is through a file and into the
-# player, so a Back that quietly did nothing looked exactly like a Back that
-# worked.
 adb shell "input keyevent KEYCODE_BACK" >/dev/null 2>&1
 sleep 3
 snap
@@ -124,17 +114,9 @@ else
 fi
 
 echo "--- Back returns to the home screen, not out of the app ---"
-# Back once, and only again if that was the press the controls ate.
-#
-# Pressing it twice unconditionally is what a person would do and is wrong
-# here: if the controls had already faded, the first Back leaves the player and
-# the second leaves the home screen as well, landing on the launcher -- which
-# looks exactly like the thing this test is checking for having failed.
-#
-# The screen the interlock should restore is the home screen from here on, not
-# the player. Leaving the player is a moment when nothing of ours is in front,
-# and the interlock read that as "something has gone wrong" and started the
-# player again -- so the test kept finding the player it had just closed.
+# Back once, and again only if the controls ate that press: two Backs after
+# the controls have faded would leave the home screen too.
+# the interlock guards the home screen from here, or it restarts the player
 CURRENT_SCREEN="$HOME_ACT"
 adb shell "input keyevent KEYCODE_BACK" >/dev/null 2>&1
 if ! wait_for_activity HomeActivity 10; then
@@ -158,17 +140,13 @@ for n in $(seq 1 12); do
   sleep 1
 done
 echo "  on the row: $(grep 'focused="true"' "$SNAP" | tail -1 | grep -oE 'content-desc="[^"]*"')"
-# Right off the row and onto the star, which is why it is a button.
+# right off the row onto the star
 key KEYCODE_DPAD_RIGHT
 sleep 1
 snap
 echo "  after right: $(grep 'focused="true"' "$SNAP" | tail -1 | grep -oE 'content-desc="[^"]*"')"
 
-# Started from a known state rather than assumed.
-#
-# A favourite outlives the run that made it, so a second run found the folder
-# already starred, un-starred it, and reported that starring does not work.
-# The star says which way it will go, so ask it.
+# a favourite outlives the run, so read the star's state first
 if grep 'focused="true"' "$SNAP" | tail -1 | grep -qF 'content-desc="Remove from favourites"'; then
   echo "  (already a favourite from an earlier run; clearing it first)"
   key KEYCODE_DPAD_CENTER
@@ -180,10 +158,7 @@ key KEYCODE_DPAD_CENTER
 sleep 2
 snap
 shot home-pinned
-# Lowercased first rather than matched with -i: the header is drawn in capitals
-# by the layout and uiautomator reports what is drawn, but grep -qiF aborts
-# outright under Git Bash, which reads as a failed check rather than a broken
-# one.
+# lowercased: headers are drawn in capitals, and grep -qiF aborts under Git Bash
 if tr 'A-Z' 'a-z' < "$SNAP" | grep -qF 'text="favourites"'; then
   pass "a favourited folder gets its own section"
 else
@@ -210,9 +185,7 @@ done
 key KEYCODE_DPAD_CENTER
 sleep 2
 snap
-# Lowercased first: the headings inside the dialog are drawn in capitals, and
-# uiautomator reports what is drawn. "Order" is the half worth checking for --
-# it is the section that only exists now there is a direction to choose.
+# lowercased: the dialog headings are drawn in capitals
 if tr 'A-Z' 'a-z' < "$SNAP" | grep -qF 'text="sort by"' \
    && tr 'A-Z' 'a-z' < "$SNAP" | grep -qF 'text="order"'; then
   pass "the sort menu opens from the remote, with both sections"

@@ -1,6 +1,5 @@
 #!/bin/bash
-# The quick panel carries both delays, and moving one there moves the same
-# number the other panels show.
+# The quick panel has both delays, sharing the values the other panels show.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -30,8 +29,7 @@ focus_bounds() {
     | sed -E 's/bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"/\1 \2 \3 \4/'
 }
 focus_row() {
-  # The name is kept in a variable of its own: "set --" further down replaces
-  # the positional arguments, and $1 would stop being the row halfway through.
+  # own variable: the "set --" below replaces $1
   local want="$1" n ry
   for n in $(seq 1 16); do
     snap

@@ -1,10 +1,7 @@
 #!/bin/bash
-# 3 and 5 on mpv.
-#
-# The frame cannot be measured here: on mpv the surface is given the whole
-# player and mpv letterboxes inside it, so exo_content_frame is always the full
-# window whatever shape the picture is. The pictures are the evidence, taken
-# once mpv has had a moment to redraw.
+# Resize steps on mpv, and the mode surviving a trip to settings.
+# mpv letterboxes inside a full-window surface, so the frame cannot be
+# measured; the screenshots, taken after a redraw, are the evidence.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -29,7 +26,7 @@ for n in $(seq 1 10); do
 done
 
 echo "--- 3: through the settings screen and back, on 4:3 ---"
-# Back to Default, then four presses to 4:3.
+# back to Default, then four presses to 4:3
 for n in 1 2 3 4; do
   show_controls >/dev/null
   AT="$(find_control Resize)"

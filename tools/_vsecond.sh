@@ -1,6 +1,5 @@
 #!/bin/bash
-# 9: a second film handed over while the player is still in memory must be the
-# film that is described, not the one before it.
+# A second film handed over while the player is in memory is the one described.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -11,7 +10,7 @@ seen() { dump | grep -q "$1"; }
 
 prepare
 
-# A second file, so the two have different addresses and different names.
+# a second file, so the two differ in address and name
 SECOND="/sdcard/Movies/jpp-second.ts"
 adb shell "cp $MEDIA $SECOND" >/dev/null 2>&1
 adb shell "am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file://$SECOND" >/dev/null 2>&1
@@ -53,16 +52,17 @@ else
   pass "nothing of the first film is left on the title"
 fi
 
-echo "--- and a third, with no title at all, so the file name must show ---"
+# a film keeps the title its launching app sent, so its own one shows here
+echo "--- and the first film again, with no title, so its own remembered one shows ---"
 adb shell "am start -a android.intent.action.VIEW -d $URI -t video/mp2t -n $ACT --grant-read-uri-permission" >/dev/null 2>&1
 sleep 8
 adb shell "input keyevent KEYCODE_MEDIA_PAUSE" >/dev/null 2>&1
 sleep 3
 shot second-third
-if seen 'text="jpp-smoke"'; then
-  pass "with no title given, the file name shows"
+if seen 'text="Film One"' || seen 'text="jpp-smoke"'; then
+  pass "with no title given, the film shows its own (remembered) title"
 else
-  fail "the file name did not appear" "$(dump | grep -oE 'text="[^"]+"' | head -4 | tr '\n' ' ')"
+  fail "the film's own title did not appear" "$(dump | grep -oE 'text="[^"]+"' | head -4 | tr '\n' ' ')"
 fi
 if seen 'text="Film Two"'; then
   fail "the previous title is still stuck on"

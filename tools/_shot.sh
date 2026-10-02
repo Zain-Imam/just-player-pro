@@ -1,6 +1,6 @@
 #!/bin/bash
-# Select each subtitle in turn and photograph the screen, since Media3 draws
-# cues on a canvas where the view tree cannot see them.
+# Selects each subtitle in turn and screenshots it: Media3 draws cues on a
+# canvas the view tree cannot see.
 set -u
 . "$(cd "$(dirname "$0")" && pwd)/lib.sh"
 SCREEN_W="$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -62,10 +62,9 @@ pick() {   # pick <row> <shot name>
   local at; at="$(centre text "$1")"
   [ -z "$at" ] && { echo "   no row $1"; return; }
   tap $at; sleep 3
-  # Play again, by the control's name rather than a bare OK: with the
-  # controls up, OK activates whatever holds the focus.
+  # play by name: with the controls up, OK presses whatever has focus
   if [ -z "$(playing)" ]; then tap_control Play Pause >/dev/null 2>&1; fi
-  # Let the controls fade of their own accord, so they are not over the cue.
+  # let the controls fade so they are not over the cue
   sleep 9
   echo "   playing now: [$(playing)]"
   shot "$2"

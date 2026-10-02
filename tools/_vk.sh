@@ -1,5 +1,5 @@
 #!/bin/bash
-# 7: the info card background follows the slider.  _vk.sh <0..100>
+# The info card background follows the slider.  _vk.sh <0..100>
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -24,7 +24,7 @@ for n in $(seq 1 14); do
 done
 [ -z "$AT" ] && { fail "no background slider on the settings screen"; exit 1; }
 
-# The bar itself, dragged to where the value should be.
+# drag the slider to the value
 set -- $(bounds_of class android.widget.SeekBar)
 if [ $# -ne 4 ]; then
   set -- $(dump | grep -F 'SeekBar' | tail -1 \

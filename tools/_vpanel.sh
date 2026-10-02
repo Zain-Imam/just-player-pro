@@ -1,5 +1,5 @@
 #!/bin/bash
-# Why does the panel check not reach the audio row?
+# Lists the quick-panel rows before and after scrolling to the audio row.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"

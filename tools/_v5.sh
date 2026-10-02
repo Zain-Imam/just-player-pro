@@ -1,5 +1,5 @@
 #!/bin/bash
-# Item 5: the rotation button offers landscape, portrait and auto-rotate.
+# The rotation button offers landscape, portrait and auto-rotate.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -17,8 +17,7 @@ prepare
 open_film
 echo "opened: $(held)"
 
-# Find the button once, then press it without a dump in between: the label it
-# puts on screen only stays for a couple of seconds and a dump takes longer.
+# no dump between finding and pressing: the label is gone in ~2s
 AT="$(find_control Rotate)"
 if [ -z "$AT" ]; then
   show_controls

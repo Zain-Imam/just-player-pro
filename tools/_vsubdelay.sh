@@ -1,11 +1,7 @@
 #!/bin/bash
 # Moving the subtitle delay must not reopen the file.
-#
-# It used to: a hundred milliseconds of delay called setMediaItem and prepare,
-# which on a stream is a re-buffer -- a spinner and a stall for a number that
-# the renderer reads on every frame anyway. This watches a stream across a
-# delay change and asks three things: that nothing was restarted, that the
-# position never stopped moving, and that the delay arrived all the same.
+# Watches a stream across a delay change: nothing restarts, the position
+# keeps moving, and the delay still arrives.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -99,8 +95,7 @@ AFTER="$(position)"
 echo "  position after: ${AFTER}ms   state: $(state)"
 shot subdelay-after
 
-# The player logs a line whenever it reopens the file. Read from this app's own
-# tag, never the whole buffer.
+# the player logs each reopen; read only this app's tag
 RESTARTS="$(adb logcat -d -s JustPlayer 2>/dev/null | grep -c 'Restarting playback')"
 echo "  reopens logged: $RESTARTS"
 if [ "$RESTARTS" = "0" ]; then

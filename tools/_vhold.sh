@@ -1,10 +1,6 @@
 #!/bin/bash
-# Holding the arrow moves the subtitle delay fast, and a single press still
-# moves it by exactly one step.
-#
-# Driven through the remote path -- a held d-pad key -- because that is what a
-# television has, and adb can hold a key honestly. The touch buttons share the
-# same accelerating step.
+# Holding the arrow moves the subtitle delay fast; one press moves one step.
+# Uses a held d-pad key; the touch buttons share the same accelerating step.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -57,9 +53,7 @@ for n in $(seq 1 10); do
 done
 [ "$found" = 0 ] && { fail "never landed on the Delay row"; exit 1; }
 
-# In tenths, signed, so the assertions are about how far it moved rather than
-# where it happens to have started -- the delay is remembered per file and a
-# previous run leaves it wherever it left it.
+# in signed tenths, so checks measure movement: the delay is kept per file
 tenths() { echo "$1" | tr -d ' s' | awk -F. '{ v = ($1 < 0 || $0 ~ /^-/) ? -1 : 1; gsub(/[-+]/, "", $1); print v * ($1 * 10 + $2) }'; }
 
 BEFORE="$(delay_now)"
@@ -77,17 +71,15 @@ else
   fail "a single press moved $MOVED tenths, not 1" "$BEFORE -> $ONE"
 fi
 
-# A real hold is a fast run of key events, which is what a d-pad sends while it
-# is down. `input keyevent --longpress` is not that: it is one synthetic press.
-# Twenty keycodes in a single call arrive back to back, which is the run.
+# a held key is a fast run of events; input keyevent --longpress is one press.
+# Twenty keycodes in one call arrive back to back.
 echo "--- a run of 20, as a held arrow sends ---"
 adb shell "input keyevent $(for i in $(seq 1 20); do printf 'KEYCODE_DPAD_RIGHT '; done)" >/dev/null 2>&1
 sleep 1
 HELD="$(delay_now)"
 echo "  after the run:   $HELD"
 
-# Twenty presses at the base step would move it 20 tenths and no more.
-# Accelerating, it has to be well past that.
+# 20 presses at the base step move 20 tenths; accelerating goes well past that
 RUN=$(( $(tenths "$HELD") - $(tenths "$ONE") ))
 echo "  the run moved:   $RUN tenths, for 20 presses"
 if [ "$RUN" -gt 20 ]; then

@@ -1,19 +1,7 @@
 #!/bin/bash
-#
 # The parts smoke.sh and verify.sh do not reach.
-#
-# Five things, each of which can only be answered by using the app:
-#
-#   * the decoder extensions — the ffmpeg, AV1, IAMF and MPEG-H aars in
-#     app/libs are built separately from the Media3 they run against, which is
-#     exactly the mismatch that broke HLS, and nothing else here plays a file
-#     that needs one of them;
-#   * the track pickers under a remote, since the focus bugs that made the
-#     quick panel unusable were the same in those and were fixed by analogy;
-#   * picture-in-picture;
-#   * leaving and coming back;
-#   * and landscape, which is a different layout pass from portrait.
-#
+# Decoder extensions, track pickers by remote, picture-in-picture, leaving and
+# coming back, and landscape.
 # Usage:  tools/deeper.sh [package]
 set -u
 HERE_SCRIPT="$(cd "$(dirname "$0")" && pwd)"
@@ -34,13 +22,10 @@ focused_row() {
   if [ -n "$named" ]; then echo "$named"; else echo "$node" | grep -oE 'bounds="[^"]+"' | head -1; fi
 }
 
-# ------------------------------------------------- the decoder extensions
+# --- the decoder extensions
 
 # The samples, fetched once and kept.
-#
-# None of these are in the repository: they are tens of megabytes of somebody
-# else's audio, and they only have to exist while this is running. They come
-# from the MPlayer sample archive, which has hosted them for twenty years.
+# not in the repository: they come from the MPlayer sample archive
 fetch_samples() {
   mkdir -p "$MEDIA_DIR"
   local base="https://samples.mplayerhq.hu/A-codecs"
@@ -63,8 +48,7 @@ sample.opus|https://filesamples.com/samples/audio/opus/sample1.opus
 FETCH
 }
 
-# Push one of the fetched files and open it, by whichever URI the system
-# will give for it.
+# push a fetched file and open it by whatever URI the system gives
 stage_and_open() {   # stage_and_open <local name> <mime>
   local name="$1" mime="$2" remote="/sdcard/Movies/$1"
   [ -s "$MEDIA_DIR/$name" ] || return 1
@@ -127,7 +111,7 @@ sample.opus|audio/opus|Opus
 FILES
 }
 
-# --------------------------------------------- the pickers, driven by keys
+# --- the pickers, driven by keys
 
 reach_by_keys() {   # reach_by_keys <name...> — walk the control row and press it
   local tries=0 focus=""
@@ -152,9 +136,7 @@ pickers_by_keys() {
     local label="${which%%:*}" rest="${which#*:}"
     local a="${rest%%:*}" b="${rest##*:}"
 
-    # show_controls, not a bare OK. With the controls already up, OK activates
-    # whatever holds the focus — it was pressing play/pause and then hunting for
-    # a button on a strip that had moved.
+    # show_controls, not OK: with the controls up, OK presses whatever has focus
     show_controls
     if ! reach_by_keys "$a" "$b"; then
       fail "the arrows reach the $label button"
@@ -183,12 +165,9 @@ pickers_by_keys() {
   check "nothing crashed driving the pickers" "$(crashed)"
 }
 
-# ------------------------------------------------ picture-in-picture
+# --- picture-in-picture
 
-# What the activity manager actually calls it here. The first guess was
-# mLastReportedPictureInPictureMode, which this Android does not report at all,
-# so the check failed while the detail line it printed said, in plain words,
-# mIsInPictureInPictureMode=true.
+# the flag this Android version reports
 in_pip() { adb shell "dumpsys activity $PKG | grep -c 'mIsInPictureInPictureMode=true'" 2>/dev/null | tr -d '\r'; }
 
 pip_check() {
@@ -216,18 +195,10 @@ pip_check() {
   check "nothing crashed around picture-in-picture" "$(crashed)"
 }
 
-# ------------------------------------------------ resuming where it left off
+# --- resuming where it left off
 
 # Open the film the way a file manager does: no extras at all.
-#
-# open_film hands over a sidecar subtitle, and that is not a neutral thing to
-# do. A launcher that passes subtitles, a start position, or asks for a result
-# is treated as owning the playback: apiAccess goes true, persistent mode goes
-# off, and the position is kept in memory and handed back to the launcher
-# rather than written down. That is deliberate — Stremio and the rest keep
-# their own place — so a film opened that way is expected not to remember
-# anything, and testing resume through it asks the player to break its own
-# contract. It duly "failed", twice, doing exactly what it is supposed to.
+# extras such as open_film's subtitle make the launcher own the position
 open_film_plainly() {
   adb shell "am force-stop $PKG" >/dev/null 2>&1
   adb logcat -c >/dev/null 2>&1
@@ -255,15 +226,7 @@ resume_check() {
   pass "played to $before ms"
 
   # Leave the way a person leaves.
-  #
-  # This used to force-stop the app, which does not deliver onStop, so nothing
-  # was ever saved and the test was asking the player to remember something it
-  # had never been told. Back is what someone actually presses, and it is the
-  # lifecycle callback that writes the position down.
-  #
-  # (What a force-stop does show is real, and is written up as a limitation
-  # rather than a failure: a player killed outright — by the system under
-  # memory pressure, say — loses its place back to the last time it stopped.)
+  # Back runs onStop, which saves the position; a force-stop does not.
   key KEYCODE_BACK
   sleep 3
   adb shell "am force-stop $PKG" >/dev/null 2>&1
@@ -278,7 +241,7 @@ resume_check() {
   done
   sleep 5
 
-  # It either resumes, or asks whether to — both are the setting doing its job.
+  # it either resumes or asks; both are the setting working
   local asked after
   asked="$(dump | grep -oE 'text="[^"]*(Resume|resume)[^"]*"' | head -1)"
   after="$(position_ms)"
@@ -293,7 +256,7 @@ resume_check() {
   check "nothing crashed reopening" "$(crashed)"
 }
 
-# ------------------------------------------------------------- landscape
+# --- landscape
 
 landscape_check() {
   section "landscape"
@@ -319,12 +282,8 @@ landscape_check() {
     else
       fail "the quick panel opens in landscape"
     fi
-    # How wide the window is once it has turned.
-    #
-    # wm size reports the panel the way it is built into the phone, 1080x2400,
-    # whichever way up it is being held — so comparing against it in landscape
-    # said everything was drawn off the edge when nothing was. The root of the
-    # view tree is the window, so it is asked instead.
+    # the window width once turned: wm size reports the panel as built (1080x2400)
+    # whichever way up, so the root view's bounds are used
     local right screen_w
     screen_w="$(dump | grep -oE 'bounds="\[0,0\]\[[0-9]+,[0-9]+\]"' | head -1 | grep -oE '[0-9]+,[0-9]+\]"$' | cut -d, -f1)"
     [ -z "$screen_w" ] && screen_w="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | tail -1 | tr x '\n' | sort -n | tail -1)"

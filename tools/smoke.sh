@@ -1,21 +1,12 @@
 #!/bin/bash
-#
-# Drive the player through the things that break, and say what failed.
-#
-# The unit tests cover what can be checked without a screen and the
-# instrumented tests cover what only the device can answer. This covers the
-# third kind: behaviour you can only see by using the thing — that a lock
-# actually locks, that a panel opens on the edge it is supposed to, that a
-# button saying "Identifying" eventually stops saying it.
-#
-# Every check prints PASS or FAIL and the script exits non-zero if any failed,
-# so it can be run before a build goes out rather than after somebody complains.
+# Drives the player through the things that break and says what failed.
+# Each check prints PASS or FAIL; the script exits non-zero if any failed.
 
 HERE_SCRIPT="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE_SCRIPT/lib.sh"
 trap cleanup EXIT
 
-# ------------------------------------------------------------------- checks
+# --- checks
 
 prepare
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -224,9 +215,10 @@ echo
 echo "== the run left the settings as it found them"
 adb shell "run-as $PKG cat shared_prefs/${PKG}_preferences.xml" 2>/dev/null > "$WORK/prefs-after.xml"
 if [ -s "$WORK/prefs-before.xml" ]; then
-  DRIFT="$(diff "$WORK/prefs-before.xml" "$WORK/prefs-after.xml" 2>/dev/null \
+  # sorted: Android writes the file in its own order
+  DRIFT="$(diff <(sort "$WORK/prefs-before.xml") <(sort "$WORK/prefs-after.xml") 2>/dev/null \
            | grep -E '^[<>]' | grep -oE 'name="[^"]+"' | sort -u \
-           | grep -vE 'mediaUri|mediaType|position|urlHistory|onlineIdentities|subtitleUri|subtitleTrackId|resizeMode|aspectStep|brightness|scale|speed' \
+           | grep -vE 'mediaUri|mediaType|position|urlHistory|onlineIdentities|subtitleUri|subtitleTrackId|resizeMode|aspectStep|aspectMap|launchMemory|brightness|scale|speed' \
            | tr '\n' ' ')"
   if [ -z "$DRIFT" ]; then
     pass "no lasting setting was changed"

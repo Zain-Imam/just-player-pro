@@ -1,10 +1,7 @@
 #!/bin/bash
 # Export and import are offered, and the export asks what should go in the file.
-#
-# The file picker itself is Android's, not ours, and the interlock in lib.sh
-# refuses to press anything outside this app -- which is the point of it. So
-# what is checked here is everything up to the picker; what the file itself
-# holds is checked by BackupTest, which does not need a device.
+# The interlock refuses taps outside the app, so this stops at the system
+# picker; BackupTest checks what the file holds.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -29,7 +26,9 @@ centre_like() {
 }
 reach() {
   local n at
-  for n in $(seq 1 18); do
+  # the screen size as it is held now
+  refresh_screen
+  for n in $(seq 1 30); do
     at="$(centre_like "$1")"
     [ -n "$at" ] && { echo "$at"; return 0; }
     swipe $((SCREEN_W / 2)) $((SCREEN_H * 70 / 100)) $((SCREEN_W / 2)) $((SCREEN_H * 40 / 100)) 700
@@ -50,13 +49,21 @@ else
   fail "no export row in settings"
   exit 1
 fi
-if [ -n "$(centre_like 'Import from a file')" ]; then
+# with Export on the last screen line, Import is just below it
+if [ -n "$(reach 'Import from a file')" ]; then
   pass "settings offers an import"
 else
   fail "no import row in settings"
 fi
 
 echo "--- and the export asks what goes in the file ---"
+# Where it is now: finding Import may have moved the list.
+EXPORT_AT="$(centre_like 'Export to a file')"
+if [ -z "$EXPORT_AT" ]; then
+  swipe $((SCREEN_W / 2)) $((SCREEN_H * 40 / 100)) $((SCREEN_W / 2)) $((SCREEN_H * 60 / 100)) 700
+  sleep 1
+  EXPORT_AT="$(centre_like 'Export to a file')"
+fi
 tap $EXPORT_AT
 sleep 3
 snap

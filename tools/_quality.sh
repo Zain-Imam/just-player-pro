@@ -1,10 +1,6 @@
 #!/bin/bash
-#
-# Does choosing a different video quality actually change the picture?
-#
-# On both engines, because the mime-prefix bug that stopped subtitles being
-# chosen had no video branch at all — mpv never wrote vid, silently. The header
-# line names the resolution in use, which is how the answer is read.
+# Choosing a different video quality changes the picture, on both engines.
+# Read from the resolution the panel header shows.
 set -u
 . "$(cd "$(dirname "$0")" && pwd)/lib.sh"
 SCREEN_W="$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -83,8 +79,7 @@ for ENGINE in Media3 mpv; do
   echo "        rungs: $LADDER"
   shot "$ENGINE-quality-list"
 
-  # Pick the lowest rung offered, which is the one most likely to differ from
-  # whatever Auto settled on.
+  # the lowest rung offered is the likeliest to differ from Auto
   PICK=""
   for P in 234p 270p 360p 396p 480p 540p; do
     if echo "$LADDER" | grep -q "\"$P\""; then PICK="$P"; break; fi
@@ -100,7 +95,7 @@ for ENGINE in Media3 mpv; do
     key KEYCODE_BACK; sleep 2; continue
   fi
   tap $C; sleep 6
-  # Let it actually switch, then read the header again.
+  # let it switch, then read the header again
   controls_up >/dev/null 2>&1
   AFTER="$(resolution)"
   echo "        header after choosing $PICK: ${AFTER:-none}"

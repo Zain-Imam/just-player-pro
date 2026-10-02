@@ -1,16 +1,7 @@
 #!/bin/bash
-#
 # The back arrow in the player's title bar, and where leaving actually goes.
-#
-# Two things are being proved, and only the second is interesting: that the
-# arrow is there and can be pressed with a finger and with a remote, and that
-# pressing it leaves for wherever the film came from rather than for the
-# launcher. The second is the whole point of it existing.
-#
-# One engine per run, the way every other script in here works: the engine is
-# whatever the settings say when it starts, and _setengine.sh decides that
-# beforehand. Switching it from inside would mean running that script as a
-# child, and its cleanup deletes the test media the parent is still using.
+# Works by finger and remote, and leaves for wherever the film came from.
+# One engine per run; set it beforehand with _setengine.sh.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 
@@ -100,10 +91,7 @@ fi
 
 echo
 echo "--- from another application, leaving goes back to that application ---"
-#
-# The device's own settings stand in for Stremio: already installed, not one of
-# the user's own applications, and nothing is pressed in it. All that matters is
-# that the player was started by something sitting in another task.
+# the device's Settings stands in for Stremio: an app in another task
 adb shell "am force-stop $PKG" >/dev/null 2>&1
 sleep 1
 adb shell "am start -a android.settings.SETTINGS" >/dev/null 2>&1

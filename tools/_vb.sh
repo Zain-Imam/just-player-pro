@@ -1,7 +1,6 @@
 #!/bin/bash
-# 3: the shape survives a trip to the settings screen.
-# 4: every step has its own icon.
-# 5: the first step is Default, and a forced ratio does not follow a new file.
+# The resize mode survives the settings screen, each step has its own icon,
+# the first step is Default, and a forced ratio does not carry to a new file.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"

@@ -1,7 +1,6 @@
 #!/bin/bash
-# Item 6: two pointers on a first run -- the files, then the key.
-# They are drawn on a canvas, so uiautomator cannot read them: the evidence is
-# the pictures.
+# First-run pointers: the files, then the key.
+# They are drawn on a canvas, so the screenshots are the evidence.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1

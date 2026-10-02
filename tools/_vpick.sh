@@ -1,12 +1,6 @@
 #!/bin/bash
-#
 # The player's Open button leads to this application's own folder list.
-#
-# Nothing is changed in settings first: Auto is what people have, Auto now
-# means this, and what is being checked is exactly what comes out of the box.
-# The file chosen there has to reach the player, which is the half that a
-# picker gets wrong -- returning an address the player cannot read looks
-# identical to returning nothing.
+# Settings stay at Auto, and the chosen file must reach the player and play.
 . "$(dirname "$0")/lib.sh"
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
 SCREEN_H="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f2 | tr -d '\r')"
@@ -66,8 +60,7 @@ if grep -qF 'text="Choose a video"' "$SNAP" || grep -qF 'text="Choose a file"' "
 else
   fail "the chooser is not titled as one"
 fi
-# The address box and the settings cog have no business in a question about
-# which file on this device.
+# no address box or settings cog while choosing a file
 if grep -q 'content-desc="Settings"' "$SNAP"; then
   fail "the settings button is still there while choosing a file"
 else
@@ -75,11 +68,7 @@ else
 fi
 
 echo "--- choosing a file reaches the player ---"
-#
-# Tapped rather than driven by the remote. That the browser is navigable with a
-# remote is proved by _vhome.sh, on this same screen and this same layout; what
-# is being proved here is the plumbing either side of it -- that the player asks
-# this screen for a file, and that the answer comes back and plays.
+# tapped: remote navigation of this screen is covered by _vhome.sh
 snap
 AT="$(centre text 'Movies')"
 if [ -z "$AT" ]; then
@@ -104,9 +93,7 @@ if [ -z "$AT" ]; then
   exit 1
 fi
 tap $AT
-# Waited for rather than slept through: handing the result back finishes the
-# chooser and resumes the player, and a check taken between the two sees the
-# screen on its way out and reads it as never having arrived.
+# waited for: the chooser finishes before the player resumes
 wait_for_activity PlayerActivity 20
 WHERE="$(current_activity)"
 echo "  in front: $WHERE"

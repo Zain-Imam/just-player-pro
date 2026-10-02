@@ -1,5 +1,5 @@
 #!/bin/bash
-# Item 1: with automatic search off, the button must ask which film first.
+# With automatic search off, the subtitle search asks which film first.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"

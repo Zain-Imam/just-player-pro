@@ -1,5 +1,5 @@
 #!/bin/bash
-# 9, the other half: the info card must not describe the film before this one.
+# The info card must not show the previous film's details.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -21,6 +21,9 @@ URI2="content://media/external/video/media/$ID2"
 open_film
 echo "--- telling it the first film is Inception ---"
 for try in 1 2 3; do tap_control Settings && break; sleep 2; done
+sleep 2
+# in landscape the panel scrolls; reach the card row first
+panel_row "Show info card" >/dev/null
 sleep 2
 AT="$(centre content-desc 'Search again')"
 [ -z "$AT" ] && { fail "no search icon"; exit 1; }

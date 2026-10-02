@@ -1,6 +1,5 @@
 #!/bin/bash
-# The items the first sweep did not reach, plus the ones its own mistakes
-# reported wrongly.
+# Open button, network URL box, quick panel and audio picker checks.
 set -u
 . "$(cd "$(dirname "$0")" && pwd)/lib.sh"
 SCREEN_W="$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -10,8 +9,7 @@ OUT="$WORK/shots"; mkdir -p "$OUT"
 item() { echo; echo "-------- $*"; }
 shot() { adb shell screencap -p /sdcard/s.png >/dev/null 2>&1; adb pull /sdcard/s.png "$(hostpath "$OUT/$1.png")" >/dev/null 2>&1; }
 
-# Opening with no file offers to resume the last one; that dialog sits over the
-# controls, and the test is about the controls.
+# opening with no file offers to resume, and that dialog covers the controls
 dismiss_resume() {
   if dump | grep -q 'Play last video'; then
     local at; at="$(centre text 'NOT NOW')"
@@ -66,7 +64,6 @@ else
                     *) fail "Cancel is offered" ;; esac
     case "$BODY" in *PLAY*|*Play*) pass "Play is offered" ;;
                     *) fail "Play is offered" ;; esac
-    # The field should be empty rather than holding whatever was copied.
     if dump | grep -qE 'text="https?://'; then
       fail "the box starts empty" "something is already in it"
     else

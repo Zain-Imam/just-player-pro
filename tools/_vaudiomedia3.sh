@@ -1,13 +1,6 @@
 #!/bin/bash
-# The Media3 audio delay is really applied, not merely displayed.
-#
-# Media3 has no audio delay of its own: the delay is the clock the audio
-# renderer reports, and the picture follows that clock. So the delay is visible
-# in the one place the clock is written down -- the elapsed time on the
-# controls. Five seconds of delay is five seconds of clock that playback did not
-# account for.
-#
-# Run with the engine set to Media3.
+# The Media3 audio delay is really applied: it shifts the audio clock, so the
+# elapsed time on the controls moves. Run with the engine set to Media3.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -103,8 +96,7 @@ shot audiodelay-media3-clock
 
 MOVED=$(( AFTER - BEFORE ))
 echo "  the clock moved ${MOVED}s over about four seconds of playing"
-# Four of playing plus five of delay, less whatever the pauses cost. Seven is
-# comfortably past anything four seconds of playback could account for.
+# 4s of playing plus 5s of delay, less the pauses; 7 is past what 4s gives
 if [ "$MOVED" -ge 7 ]; then
   pass "the delay reached the audio clock: ${MOVED}s where playing alone gives about 4"
 else

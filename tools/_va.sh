@@ -1,5 +1,5 @@
 #!/bin/bash
-# 2: a remote reaching the search icon on the info-card row.
+# A remote reaching the search icon on the info-card row.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"

@@ -1,10 +1,7 @@
 #!/bin/bash
-# The spinner has to stay when the controls go.
-#
-# Deterministic rather than hoping to catch a slow connection: let the controls
-# auto-hide, then jump a long way forward with the arrow, which is a seek the
-# player has to refill for. The controls are already hidden at that point, so if
-# the spinner were still a child of them there would be nothing on screen at all.
+# The spinner stays when the controls hide.
+# Lets the controls auto-hide, then seeks far ahead so the player must refill;
+# a spinner inside the controls would leave nothing on screen.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1

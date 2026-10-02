@@ -1,10 +1,7 @@
 #!/bin/bash
 # A file this device has no hardware decoder for says so before it stalls.
-#
-# The test file is AV1, which this phone decodes only in software -- exactly the
-# case the warning exists for. A file it can decode in hardware must produce no
-# warning at all, which is the other half of the test: a warning that appears
-# for everything is a warning nobody reads.
+# The test file is AV1, decoded only in software here; a file the hardware
+# can decode must give no warning at all.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -72,9 +69,7 @@ else
   exit 1
 fi
 
-# The offer of the other engine belongs on Media3 only: from mpv there is
-# nowhere better to go, and a button that changes nothing is worse than no
-# button. So which engine is playing decides what must be there.
+# the other-engine offer is Media3 only: from mpv there is nowhere better to go
 ENGINE="$(adb shell "run-as $PKG cat shared_prefs/${PKG}_preferences.xml" 2>/dev/null \
   | grep -oE 'name="playbackEngine">[a-z0-9]+' | cut -d'>' -f2 | tr -d '\r')"
 ENGINE="${ENGINE:-auto}"

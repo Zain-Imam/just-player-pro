@@ -1,6 +1,5 @@
 #!/bin/bash
-# The top line says how fast a stream is arriving -- and says nothing about a
-# file on the device.
+# The top line shows how fast a stream arrives, and no speed for a local file.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -52,22 +51,18 @@ for n in $(seq 1 20); do
 done
 sleep 5
 refresh_screen
-# Read it while the film is playing, not paused: a paused film with a full
-# buffer is not downloading anything, and the honest answer then is no speed at
-# all. The controls are brought up with the d-pad, which does not pause.
+# read while playing: a paused film with a full buffer downloads nothing;
+# the d-pad brings up the controls without pausing
 STREAM=""
 for n in $(seq 1 16); do
-  # The controls hide themselves after a few seconds and a screen dump takes
-  # two of them, so they are asked for again before every attempt.
+  # the controls hide sooner than a dump takes, so ask for them each time
   key KEYCODE_DPAD_UP
   STREAM="$(meta_line)"
   [ -n "$STREAM" ] && echo "  the line reads: $STREAM"
   echo "$STREAM" | grep -qE '[0-9]+(\.[0-9])? *(B|KB|MB)/s' && break
   if [ "$n" = 3 ]; then
-    # uiautomator will not describe a screen that never stops moving, and on
-    # this engine a live stream is exactly that: the dumps come back empty. A
-    # paused live stream still fills its cache, so the speed is still there to
-    # be read, and the screen holds still long enough to be read from.
+    # uiautomator cannot dump a screen that never stops moving (a live stream
+    # here); paused, the cache still fills, so the speed can still be read
     echo "  (pausing so the screen can be read)"
     key KEYCODE_MEDIA_PAUSE
     sleep 2

@@ -1,9 +1,6 @@
 #!/bin/bash
-# A downloaded subtitle is known by its release name, not by the digits the file
-# was saved under.
-#
-# One search and one download, no more: these services count what they hand out.
-# The search is done through Wyzie, which is the one with room to spare.
+# A downloaded subtitle is listed under its release name, not its saved digits.
+# One search and one download, through Wyzie: the services count downloads.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -66,12 +63,7 @@ echo "--- what came back ---"
 shot subname-results
 LIST="$(texts)"
 echo "$LIST" | head -12 | sed 's/^/    /'
-# The first row that is actually a subtitle.
-#
-# Not simply the first line with letters in it: the list begins with a count
-# ("149 subtitles") and two actions, and tapping one of those downloads nothing
-# and wastes the run. A result is a title with its source and language on the
-# line under it, so that pairing is what is looked for.
+# first real result: a title whose next line has its source and language
 FIRST="$(echo "$LIST" | awk '
   NR > 1 && $0 ~ /·/ && $0 ~ /(Wyzie|OpenSubtitles|SubDL|addon)/ { print previous; exit }
   { previous = $0 }')"
@@ -105,8 +97,7 @@ else
   pass "no bare file id in the picker"
 fi
 
-# The release name it was picked under, or at least the start of it: the row in
-# the picker may be shortened, and a release name is long.
+# the release name, or its start: the picker row may be shortened
 STEM="$(echo "$FIRST" | cut -c1-12)"
 if echo "$NOW" | grep -qF "$STEM"; then
   pass "the track is called what the subtitle was called: $STEM…"

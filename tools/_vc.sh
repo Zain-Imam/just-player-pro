@@ -1,10 +1,6 @@
 #!/bin/bash
-# 3: a forced ratio has to survive the settings screen, and the frame button has
-# to go on from where the picture actually is.
-#
-# Settings is started on top of the player rather than through the panel, which
-# is the same thing the panel does -- and means back returns to the film rather
-# than to the launcher.
+# A forced ratio survives the settings screen, and the resize button carries on
+# from the current mode. Settings is started over the player, as the panel does.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -13,7 +9,17 @@ shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1
          adb pull /sdcard/jpp-shot.png "$(hostpath "$WORK/shots/$1.png")" >/dev/null 2>&1; }
 picture() { bounds_of resource-id "$PKG:id/exo_content_frame"; }
 
+# Media3 only: on mpv the frame is always the whole window
+if adb shell "run-as $PKG cat shared_prefs/${PKG}_preferences.xml" 2>/dev/null     | grep -q 'name="playbackEngine">mpv<'; then
+  echo "SKIP  the frame is not measurable on mpv (see _v42checks D, _v2e)"
+  exit 0
+fi
+
 prepare
+# start from Default: the mode is remembered per film
+adb shell "am force-stop $PKG" >/dev/null 2>&1
+prefs_now="$(adb shell "run-as $PKG cat shared_prefs/${PKG}_preferences.xml" 2>/dev/null | tr -d '\r' | grep -v 'name="aspectMap"')"
+[ -n "$prefs_now" ] && echo "$prefs_now" | adb shell "run-as $PKG sh -c 'cat > shared_prefs/${PKG}_preferences.xml'"
 open_film
 
 # Four presses: Crop, Stretch, 16:9, 4:3.

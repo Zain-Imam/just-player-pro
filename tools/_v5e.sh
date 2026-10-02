@@ -1,5 +1,5 @@
 #!/bin/bash
-# Item 3: a title chosen by hand on the info card wins, and keeps winning.
+# A title picked by hand on the info card wins and stays.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -37,7 +37,7 @@ dump | grep -oE 'text="[^"]+"' | head -8
 echo
 echo "--- and after closing and opening the file again ---"
 open_film
-# The card comes up on a pause, which is what show_controls does.
+# show_controls pauses, which brings up the card
 show_controls >/dev/null
 sleep 4
 shot card-after-reopen

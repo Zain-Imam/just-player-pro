@@ -1,5 +1,5 @@
 #!/bin/bash
-# A key that is set says so, and one that is not says that.
+# Each key row says whether its key is set.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -17,7 +17,7 @@ snap() {
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1
          adb pull /sdcard/jpp-shot.png "$(hostpath "$WORK/shots/$1.png")" >/dev/null 2>&1; }
 
-# The row's own summary: the line under a title, in the same block as it.
+# the summary line under a row's title
 summary_under() {
   snap
   grep -A6 -F "text=\"$1" "$SNAP" | grep -oE 'text="(✓[^"]*|Not set)"' | head -1 \
@@ -52,19 +52,29 @@ for row in "TMDB key" "Wyzie key"; do
 done
 shot ticks-set
 
-echo "--- and the ones that are not ---"
-for row in "SubDL key" "OpenSubtitles key"; do
+# read from the app: the .env test keys may set every one of them
+key_set() { adb shell "run-as $PKG cat shared_prefs/${PKG}_preferences.xml" 2>/dev/null   | tr -d '' | grep -E "name=\"$1\">[^<]+<" >/dev/null; }
+echo "--- the others, ticked exactly when they have a key ---"
+for pair in "SubDL key:apiKeySubdl" "OpenSubtitles key:apiKeyOpenSubtitles"; do
+  row="${pair%%:*}"; pref="${pair##*:}"
   if ! reach "$row"; then
     echo "  (no row called $row)"
     continue
   fi
   SUM="$(summary_under "$row")"
   echo "  $row: [$SUM]"
-  case "$SUM" in
-    "Not set") pass "$row says it is not set" ;;
-    ✓*)        fail "$row is ticked without a key" "[$SUM]" ;;
-    *)         fail "$row says nothing either way" "[$SUM]" ;;
-  esac
+  if key_set "$pref"; then
+    case "$SUM" in
+      ✓*) pass "$row has a key and is ticked" ;;
+      *)  fail "$row has a key but is not ticked" "[$SUM]" ;;
+    esac
+  else
+    case "$SUM" in
+      "Not set") pass "$row says it is not set" ;;
+      ✓*)        fail "$row is ticked without a key" "[$SUM]" ;;
+      *)         fail "$row says nothing either way" "[$SUM]" ;;
+    esac
+  fi
 done
 
 echo "--- the addons row counts them ---"

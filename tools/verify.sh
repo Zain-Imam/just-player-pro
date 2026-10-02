@@ -1,15 +1,6 @@
 #!/bin/bash
-#
 # The long verification: every setting, both input methods, both engines, and
 # the online features with real keys.
-#
-# smoke.sh is the quick one that runs before a build goes out. This is the one
-# that runs before a release, and it takes as long as it takes.
-#
-# Credentials come from .env in the repository root and are pushed into the app
-# through its own setup page, which tests that page at the same time. Nothing is
-# printed that would disclose a key.
-#
 # Usage:  tools/verify.sh [package]
 
 set -u
@@ -21,16 +12,15 @@ ENV_FILE="$HERE_SCRIPT/../.env"
 
 section() { echo; echo "======== $*"; }
 
-# ------------------------------------------------------------------ settings
+# --- settings
 
-# Read a preference back out of the app. Works on a debuggable build directly;
-# otherwise the value has to be read off the screen.
+# read a preference from the app (debuggable builds only)
 pref() {
   adb shell "run-as $PKG cat shared_prefs/${PKG}_preferences.xml" 2>/dev/null \
     | tr '<' '\n' | grep -F "name=\"$1\"" | head -1
 }
 
-# ------------------------------------------------------- configure from .env
+# --- configure from .env
 
 configure_from_env() {
   section "configuring the app from .env, through its own setup page"
@@ -40,10 +30,7 @@ configure_from_env() {
     return 1
   fi
   # Read, never sourced and never echoed.
-  #
-  # The file is "NAME:value" a line at a time, which the shell would try to run
-  # as commands — and in failing would print every secret in it. Each line is
-  # split by hand instead, and nothing here ever prints a value.
+  # sourcing "NAME:value" lines would run them and print the secrets in errors
   local line name value count=0
   while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in ''|'#'*) continue ;; esac
@@ -160,7 +147,7 @@ configure_from_env() {
   adb forward --remove "tcp:$port" >/dev/null 2>&1
 }
 
-# ------------------------------------------------------------------- run it
+# --- run it
 
 prepare
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -168,11 +155,9 @@ SCREEN_H="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 |
 
 configure_from_env
 
-# ----------------------------------------------------------- every setting
+# --- every setting
 
-# Two of these open a picker belonging to the system, not to this app. Back is
-# the only key that cannot open anything, so it is the only one sent without
-# the interlock, and only to come back from a picker this test opened itself.
+# Back skips the interlock, only to leave a system picker this test opened
 back_anywhere() { adb shell "input keyevent KEYCODE_BACK" >/dev/null 2>&1; }
 
 sweep_settings() {
@@ -180,10 +165,7 @@ sweep_settings() {
 
   local line type title at
   # Read from a descriptor of its own.
-  #
-  # adb reads standard input, so a loop fed on standard input loses the rest of
-  # its list to the first adb command inside it — which is why this swept one
-  # row and then stopped.
+  # adb reads stdin, so a loop fed on stdin would lose its list to the first adb
   while IFS='|' read -r type title <&3; do
     [ -z "$title" ] && continue
 
@@ -211,17 +193,7 @@ sweep_settings() {
         fi
         continue ;;
       "Built by")
-        # This one is not pressed, and that is deliberate.
-        #
-        # It does exactly what it says: it hands off to whatever opens
-        # github.com, so pressing it puts the GitHub app or a browser in front
-        # of the phone. The interlock then correctly refuses to press anything
-        # further and stops the run — after another application has been opened,
-        # which is the one thing this harness must never do.
-        #
-        # So the row is checked for being there, and where it points is checked
-        # by asking the system which application would answer it. That is the
-        # whole of what pressing it would do, established without doing it.
+        # not pressed: it opens another app; ask the system which app would answer
         if adb shell "cmd package query-activities -a android.intent.action.VIEW \
                       -d https://github.com/Zain-Imam" 2>/dev/null \
              | grep -qE "packageName=(com.github.android|com.android.chrome|.*browser.*)"; then
@@ -266,9 +238,7 @@ sweep_settings() {
         pass "opened: $title" ;;
     esac
 
-    # No Back here on purpose. Whatever this opened, the next row starts by
-    # opening settings again from nothing — and a Back pressed at a screen that
-    # turned out to have no dialog on it walks out of settings altogether.
+    # no Back here: on a screen with no dialog it would leave settings
 
     if [ -z "$(alive)" ]; then fail "still alive after: $title"; fi
   done 3<<'ROWS'
@@ -315,7 +285,7 @@ Preference|Licences
 ROWS
 }
 
-# ------------------------------------------------------------ both engines
+# --- both engines
 
 set_engine() {   # set_engine Media3 | mpv | Auto
   open_settings
@@ -378,10 +348,7 @@ engine_matrix() {
     fi
 
     # Seeking, with the controls away.
-    #
-    # With them up the arrows move focus along the buttons, which is what they
-    # are for there; the seek is what they do when there is nothing to move
-    # between. Checking it with the controls up tests the wrong thing.
+    # with the controls up the arrows move focus instead of seeking
     local before after i
     for i in 1 2 3; do
       onscreen content-desc Settings || break
@@ -407,13 +374,8 @@ engine_matrix() {
     check "$engine: every scaling mode" "$broke"
 
     # And a stream, on this engine.
-    #
-    # Everything above is a local file, and the two engines are most unalike
-    # over the network: one does its own TLS and knows nothing of Android's
-    # trust store, the other goes through Android and reaches HLS through a
-    # separate module that has to match the ExoPlayer it is built against.
-    # Both of those have already broken, and neither showed anything on screen
-    # when it did — the player opened, named the file, and sat at 00:00.
+    # the engines differ most over the network: mpv does its own TLS, and Media3
+    # needs an HLS module that matches its ExoPlayer
     play_url "$engine: an HLS stream over https" \
       "https://d2zihajmogu5jn.cloudfront.net/bipbop-advanced/bipbop_16x9_variant.m3u8" \
       "application/x-mpegURL"
@@ -424,7 +386,7 @@ engine_matrix() {
   set_engine Auto && pass "the engine is back on Auto"
 }
 
-# ------------------------------------------------------- playing off the web
+# --- playing off the web
 
 play_url() {  # play_url <name> <url> <mime>
   adb shell "am force-stop $PKG" >/dev/null 2>&1
@@ -465,18 +427,11 @@ from_the_web() {
     "application/x-mpegURL"
 }
 
-# ------------------------------------------------- driving it with a remote
+# --- driving it with a remote
 
-# A television has no touchscreen. Everything reachable by finger has to be
-# reachable by arrows, and pressing OK on a focused button has to press it.
-# Whatever holds the focus right now, named well enough to tell it from the
-# next thing.
-#
-# A panel row is a ViewGroup and carries no text of its own — the label and the
-# value are children of it — so asking for text alone comes back empty for every
-# row and makes "it moved" impossible to see. Its position on screen does tell
-# them apart, so that is the fallback: text or description where there is one,
-# and where there is not, where the thing is.
+# everything reachable by finger must be reachable by arrows and OK
+# Whatever holds the focus now. A panel row has no text of its own, so its
+# bounds stand in where there is no text or description.
 focused_row() {
   local node
   node="$(dump | grep -F 'focused="true"' | head -1)"
@@ -521,8 +476,7 @@ by_remote_only() {
   fi
 
   # Arrow onto the settings button and press it.
-  # Look both ways. Pressing right until it stops leaves focus on the last
-  # button in the row, which is not where the settings button is.
+  # look both ways: pressing right to the end overshoots the settings button
   local tries=0 focus
   while [ $tries -lt 14 ]; do
     focus="$(dump | grep -F 'focused="true"' | grep -oE 'content-desc="[^"]+"' | head -1)"
@@ -551,12 +505,8 @@ by_remote_only() {
       else
         fail "OK opens the quick panel"
       fi
-      # And the panel itself is navigable, which is two separate questions.
-      #
-      # Something has to hold the focus the moment it opens, and an arrow has
-      # to move that focus somewhere else. Asking only the second question is
-      # how this passed while broken: a panel that opens with the focus nowhere
-      # swallows every arrow press, and a remote has no way in.
+      # the panel must hold focus when it opens and an arrow must move it;
+      # a panel with the focus nowhere swallows every arrow press
       local first second
       first="$(focused_row)"
       if [ -n "$first" ]; then
@@ -589,14 +539,10 @@ by_remote_only() {
   check "nothing crashed while driving with keys" "$(crashed)"
 }
 
-# ------------------------------------------------ identifying a real film
+# --- identifying a real film
 
 # Back, but only when there is something for it to close.
-#
-# Pressed at a player with nothing open over it, Back leaves the player — and
-# everything after that is a test pressing at a launcher, which is exactly the
-# thing this harness must never do. It ended a run that way: one blind Back
-# after a card that had already gone.
+# at a bare player Back leaves it, and the harness must not press at a launcher
 back_if_something_is_open() {
   if dump | grep -qE 'Which is this|Search online|CANCEL|Cancel|Quick settings'; then
     key KEYCODE_BACK
@@ -652,9 +598,7 @@ online_features() {
       back_if_something_is_open
     else
       fail "found Show info card"
-      # Closed either way. Left open, the panel covers the controls and the
-      # subtitle search below never finds its button -- one missing row used to
-      # take the whole of the online section with it.
+      # close it either way: left open, the panel covers the subtitle button
       back_if_something_is_open
     fi
   fi
@@ -687,23 +631,11 @@ online_features() {
   adb shell "content delete --uri content://media/external/video/media/$rid" >/dev/null 2>&1
 }
 
-# ------------------------------- the names R8 is not allowed to change
+# --- the names R8 is not allowed to change
 
-# Four things in the player are reached by name at run time, not by a method
-# call, because the fields they live in are private to Media3:
-#
-#   DefaultTimeBar.seekBounds, .progressBar, .scrubberBar  — so a touch on the
-#     timeline can be told from one merely near it, and
-#   PlayerControlView.trackNameProvider                    — so audio tracks
-#     read "English · 5.1 · EAC3" instead of "Track 2".
-#
-# Reflection by name is invisible to R8, which renames private fields freely,
-# so app/proguard-rules.pro tells it not to. If a rule and a field ever stop
-# matching — an aar rebuilt, a rule edited — the lookups return nothing, both
-# of them catch the failure and carry on, and the release build quietly behaves
-# differently from the debug one with nothing in the log.
-#
-# The mapping file says what R8 actually did, so it is asked directly.
+# Media3 private fields reached by reflection (DefaultTimeBar.seekBounds,
+# .progressBar, .scrubberBar; PlayerControlView.trackNameProvider) must keep
+# their names under R8; the mapping file says what R8 did.
 keep_rules_held() {
   section "the names R8 was told to leave alone"
 
@@ -722,11 +654,7 @@ keep_rules_held() {
       "androidx.media3.ui.PlayerControlView:trackNameProvider"; do
     owner="${pair%%:*}"
     name="${pair##*:}"
-    # R8 lists what it renamed. A member it left alone is either written as
-    # mapping to itself or not written at all — beside these three, sibling
-    # fields with no rule of their own show up renamed ("bufferedBar -> l"),
-    # which is what being renamed looks like. So the question is not whether
-    # the name appears, it is whether it appears pointing somewhere else.
+    # a kept member maps to itself or is absent; a renamed one points elsewhere
     renamed="$(awk -v owner="$owner" -v field="$name" '
           $0 ~ "^"owner" ->"  { inside = 1; next }
           /^[^ ]/             { inside = 0 }
@@ -740,8 +668,7 @@ keep_rules_held() {
            "R8 renamed it to '$renamed', so looking it up by name finds nothing"
     fi
 
-    # And the rule itself, since a rule that has been deleted or misspelled
-    # renames the field on the next build and nothing here would say why.
+    # and the rule itself: without it the next build renames the field
     if grep -q "$name" app/proguard-rules.pro; then
       pass "the rule for it is still in proguard-rules.pro: $name"
     else
@@ -752,7 +679,7 @@ keep_rules_held() {
 }
 
 
-# ------------------------------- rotation, and a link that does not work
+# --- rotation, and a link that does not work
 
 # Where the film has got to, in milliseconds, or nothing if it cannot be read.
 position_ms() {
@@ -763,22 +690,14 @@ position_ms() {
 rotation_and_dead_links() {
   section "rotating, and a link that does not work"
 
-  # Rotation is pressed through the app's own button, never through the
-  # system setting. The orientation of this phone belongs to whoever owns
-  # it, and a test has no business changing it.
+  # rotation uses the app's button only; the phone's own setting is left alone
   open_film
   # dump() splits the tree on "<", so the hierarchy tag arrives without it.
   local was now before after
   was="$(dump | grep -oE 'rotation="[0-9]"' | head -1 | grep -oE '[0-9]')"
 
-  # What the position is before the screen turns.
-  #
-  # Not whether it is playing: reaching the rotate button means showing the
-  # controls, and show_controls pauses first, deliberately, so that a test is
-  # not racing the film. Asserting "still playing" afterwards asks the harness
-  # to contradict itself, and it duly failed — on a player that was behaving
-  # perfectly. What actually matters when a screen turns is that the place in
-  # the film survives it.
+  # the position before turning: show_controls pauses, so the place in the
+  # film is what must survive the turn
   before="$(position_ms)"
 
   if tap_control Rotate; then
@@ -798,12 +717,8 @@ rotation_and_dead_links() {
       fail "the place in the film survived rotating" "was $before, now $after"
     fi
 
-    # And it still plays when told to, which is the part rotating could break.
-    #
-    # Pressed as a bare OK this was wrong twice over: with the controls up, OK
-    # activates whatever has the focus — which is the rotate button that was
-    # just pressed — and if the film was playing anyway, OK pauses it. So the
-    # play control is found by name and pressed, which does one thing only.
+    # it still plays when told to: Play is pressed by name, since OK would press
+    # the focused rotate button
     tap_control Play Pause >/dev/null 2>&1
     sleep 3
     if [ -n "$(playing)" ]; then
@@ -825,8 +740,7 @@ rotation_and_dead_links() {
     fail "found the rotate button"
   fi
 
-  # A link that answers, but not with a file. This is what an expired debrid
-  # link looks like, and the player must say so rather than sit there or go.
+  # a link that answers without a file, as an expired debrid link does
   adb shell "am force-stop $PKG" >/dev/null 2>&1
   adb logcat -c >/dev/null 2>&1
   CURRENT_SCREEN=""

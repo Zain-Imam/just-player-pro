@@ -1,8 +1,6 @@
 #!/bin/bash
-#
-# A scratch pad for one question at a time, on the same interlock as the rest.
-# Not part of the suite; kept so the next investigation does not start with
-# somebody typing an unguarded tap into a terminal.
+# Scratch script for one-off device checks, on the same interlock as the suite.
+# Not part of the suite.
 
 set -u
 HERE_SCRIPT="$(cd "$(dirname "$0")" && pwd)"

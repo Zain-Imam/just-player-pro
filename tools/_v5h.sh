@@ -1,7 +1,6 @@
 #!/bin/bash
-# Item 4, the behaviour: with the titles kept apart, changing the card must
-# leave the film alone -- which is visible in the skip markers, since those
-# follow the film's own title and not the card's.
+# With the titles kept apart, changing the card leaves the film alone;
+# the skip markers show it, since they follow the film's own title.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -62,7 +61,7 @@ fi
 
 echo
 echo "--- and the film is untouched ---"
-# Back to playing, where the skip offer lives.
+# the skip offer only shows while playing
 adb shell "input keyevent KEYCODE_MEDIA_PLAY" >/dev/null 2>&1
 sleep 2
 if wait_for "Skip intro" 10; then

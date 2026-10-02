@@ -1,5 +1,5 @@
 #!/bin/bash
-# 2: can a remote reach the search icon on the info-card row?
+# D-pad from the quick panel to the search icon on the info-card row.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"

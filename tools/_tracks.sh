@@ -1,5 +1,5 @@
 #!/bin/bash
-# Does choosing a different subtitle track actually change what is shown?
+# Choosing a different subtitle track changes what is shown.
 set -u
 . "$(cd "$(dirname "$0")" && pwd)/lib.sh"
 SCREEN_W="$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -17,8 +17,7 @@ set_engine() {
   tap $c; sleep 2
 }
 
-# The info card hides the controls when a paused film has been identified, so
-# one press is not always enough to get them back.
+# the info card can hide the controls again, so one press may not do
 controls_up() {
   show_controls
   local n
@@ -75,12 +74,11 @@ choose() {   # choose <row text>
 try() {   # try <row text>
   echo
   echo "== choosing $1"
-  # Close whatever is open first: the picker from the previous round is still
-  # on top, and the controls cannot be reached through it.
+  # close the previous picker first: it covers the controls
   if dump | grep -q 'text="Subtitles"'; then key KEYCODE_BACK; sleep 2; fi
   open_picker >/dev/null 2>&1 || { echo "   picker would not open"; return; }
   choose "$1" || return
-  # Let it play a little so a cue is on screen.
+  # let it play so a cue is on screen
   key KEYCODE_DPAD_CENTER >/dev/null 2>&1
   sleep 5
   local c; c="$(cues)"; echo "   showing: ${c:-nothing}"

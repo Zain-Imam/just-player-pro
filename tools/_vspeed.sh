@@ -83,17 +83,8 @@ fi
 key KEYCODE_BACK
 sleep 2
 
-#
-# Measured at half speed rather than at one and a half.
-#
-# The smoke clip is 1080p60, and asking for one and a half times that is 90
-# frames a second through the decoder and onto a 60Hz panel. Media3 keeps the
-# clock and drops what it cannot draw; mpv holds the picture and the sound
-# together, so it plays what the hardware can and no faster -- which is right,
-# and means the rate says nothing about whether the speed was set. Half speed
-# is 30 frames a second, which every device here manages, so it measures the
-# speed control instead of the panel.
-#
+# measured at half speed: 1.5x of this 1080p60 clip is 90fps, which mpv
+# caps at what the hardware draws; 30fps measures the speed control instead
 echo "--- set it to half speed ---"
 open_panel || { fail "the quick settings panel did not open"; exit 1; }
 focus_speed || { fail "could not reach the speed row"; exit 1; }

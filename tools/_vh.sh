@@ -1,6 +1,5 @@
 #!/bin/bash
-# Put "Info card when paused" back on -- an earlier run in this session turned
-# it off -- and read the background slider while we are there.
+# Turns "Info card when paused" back on and reads the background slider.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"

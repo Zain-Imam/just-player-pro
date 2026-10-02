@@ -1,5 +1,5 @@
 #!/bin/bash
-# The audio delay is reachable from the audio button, not only from the quick panel.
+# The audio delay can also be reached from the audio button.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -56,8 +56,7 @@ echo "--- and the arrows work there ---"
 value() { snap; grep -A4 '"Audio delay"' "$SNAP" | grep -oE 'text="[-+0-9. ]+s"' | head -1 | sed 's/text=//;s/"//g'; }
 tenths() { echo "$1" | tr -d ' s' | awk -F. '{ v = ($1 < 0 || $0 ~ /^-/) ? -1 : 1; gsub(/[-+]/, "", $1); print v * ($1 * 10 + $2) }'; }
 BEFORE="$(value)"
-# Three presses, not one: the first key a freshly opened panel receives can be
-# spent landing the focus on its first row.
+# three presses: a new panel may spend the first key focusing its first row
 key KEYCODE_DPAD_RIGHT
 sleep 1
 key KEYCODE_DPAD_RIGHT
