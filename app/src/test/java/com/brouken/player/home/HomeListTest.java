@@ -10,14 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * The parts of the home screen that can be checked without a device.
- *
- * <p>Sizes and orders, not layout. These are the failures that hide: a folder
- * that says "1.0 GB" where it means a thousand megabytes, or a sort that puts
- * "Ätherwelle" after "Zulu" because it compared characters rather than words.
- * Neither shows up in a screenshot, and neither is worth finding on a phone.
- */
+// Home screen sizes and sort orders, checked without a device.
 public class HomeListTest {
 
     private static Library.Folder folder(final String name, final int count,
@@ -37,8 +30,6 @@ public class HomeListTest {
         return names;
     }
 
-    // ------------------------------------------------------------ sizes
-
     @Test
     public void bytesBelowAKilobyteAreJustBytes() {
         assertEquals("0 B", Readable.size(0));
@@ -53,8 +44,6 @@ public class HomeListTest {
 
     @Test
     public void tenAndAboveLoseTheDecimal() {
-        // 9.5 KB keeps its digit, 10 KB does not: a column of sizes is easier
-        // to scan when the wide numbers are short.
         assertTrue(Readable.size(9 * 1024 + 512).startsWith("9."));
         assertEquals("10 KB", Readable.size(10 * 1024));
     }
@@ -76,8 +65,6 @@ public class HomeListTest {
     public void anImpossibleSizeSaysNothingRatherThanSomethingWrong() {
         assertEquals("", Readable.size(-1));
     }
-
-    // ------------------------------------------------------------ order
 
     @Test
     public void foldersSortByNameIgnoringCase() {
@@ -109,9 +96,6 @@ public class HomeListTest {
 
     @Test
     public void equalEntriesFallBackToTheNameRatherThanShuffling() {
-        // Every folder here is the same size, so only the tie-break decides the
-        // order. Without one the list would reshuffle between two runs and look
-        // as though something had changed.
         final List<Library.Folder> folders = new ArrayList<>();
         folders.add(folder("charlie", 1, 100, 5));
         folders.add(folder("alpha", 1, 100, 5));
@@ -139,12 +123,9 @@ public class HomeListTest {
         Sort.apply(new ArrayList<Library.Folder>(), Sort.Folders.SIZE);
     }
 
-    // ----------------------------------------------------------- locale
-
     @Test
     public void sizesDoNotDependOnTheDeviceLanguage() {
-        // A decimal comma is correct in half of Europe; what matters is that it
-        // is a number and a unit, not which separator the device chose.
+        // only the number and unit are checked; the separator may be a comma
         final Locale before = Locale.getDefault();
         try {
             Locale.setDefault(Locale.GERMANY);
@@ -155,8 +136,6 @@ public class HomeListTest {
             Locale.setDefault(before);
         }
     }
-
-    // ------------------------------------------------------- reversing
 
     @Test
     public void reversingNameGoesZToA() {
@@ -182,9 +161,7 @@ public class HomeListTest {
 
     @Test
     public void reversingIsExactlyTheSameListUpsideDown() {
-        // Including where two entries tie: the name breaks the tie in the
-        // direction asked for as well, so the reversed list really is the
-        // other one read backwards and not a third order of its own.
+        // ties break by name in the asked direction too
         final List<Library.Folder> forwards = new ArrayList<>();
         forwards.add(folder("charlie", 1, 100, 5));
         forwards.add(folder("alpha", 1, 100, 5));
@@ -201,8 +178,7 @@ public class HomeListTest {
 
     @Test
     public void notReversingIsWhatItAlwaysWas() {
-        // The two-argument form is the one the rest of the app used before a
-        // direction existed, and it has to keep meaning the same thing.
+        // the two-argument form must stay ascending
         final List<Library.Folder> one = new ArrayList<>();
         one.add(folder("big", 3, 1000, 2));
         one.add(folder("small", 1, 10, 1));
@@ -218,9 +194,6 @@ public class HomeListTest {
 
     @Test
     public void everyOrderNamesBothOfItsDirections() {
-        // A direction row that said "A to Z" under Size would be worse than no
-        // direction at all, so every order has to carry its own two labels and
-        // they have to differ from each other.
         for (final Sort.Folders order : Sort.Folders.values()) {
             assertTrue(order.name(), order.first != 0);
             assertTrue(order.name(), order.reversedFirst != 0);
@@ -232,8 +205,6 @@ public class HomeListTest {
             assertTrue(order.name(), order.first != order.reversedFirst);
         }
     }
-
-    // ------------------------------------------- telling folders apart
 
     private static Library.Folder at(final String path) {
         final String name = path.substring(path.lastIndexOf('/') + 1);
@@ -251,8 +222,6 @@ public class HomeListTest {
 
     @Test
     public void foldersWithUniqueNamesAreLeftAlone() {
-        // Most libraries have no clashes at all, and turning every row into a
-        // path for the sake of the ones that do would be the wrong trade.
         final List<Library.Folder> folders = new ArrayList<>();
         folders.add(at("/storage/emulated/0/DCIM/Camera"));
         folders.add(at("/storage/emulated/0/Movies"));
@@ -264,9 +233,7 @@ public class HomeListTest {
 
     @Test
     public void clashingFoldersGetTheLeastThatTellsThemApart() {
-        // The real shape from a phone with two WhatsApp accounts: every copy
-        // sits under a folder called "Media", so naming the parent tells you
-        // nothing. What differs is the account number, one level further up.
+        // two WhatsApp accounts: only the account number differs
         final String base = "/storage/emulated/0/Android/media/com.whatsapp/WhatsApp";
         final List<Library.Folder> folders = new ArrayList<>();
         folders.add(at(base + "/accounts/1001/Media/WhatsApp Video"));
@@ -281,9 +248,6 @@ public class HomeListTest {
 
     @Test
     public void oneLevelIsNotEnoughWhenTwoOfThemShareIt() {
-        // /WhatsApp/Media/X against /Android/media/com.whatsapp/WhatsApp/Media/X.
-        // Both read "WhatsApp" one level past the common "Media", so the deeper
-        // one has to go further before it says anything useful.
         final List<Library.Folder> folders = new ArrayList<>();
         folders.add(at("/storage/emulated/0/WhatsApp/Media/WhatsApp Video"));
         folders.add(at("/storage/emulated/0/Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Video"));
@@ -298,9 +262,6 @@ public class HomeListTest {
 
     @Test
     public void everyClashingFolderIsLabelled() {
-        // Including the shallowest, which used to be left bare because its path
-        // ran out before a unique slice was found -- and a row with no location
-        // beside three that have one reads as a bug.
         final List<Library.Folder> folders = new ArrayList<>();
         folders.add(at("/storage/emulated/0/WhatsApp/Media/Gifs"));
         folders.add(at("/storage/emulated/0/Android/media/com.whatsapp/WhatsApp/Media/Gifs"));
@@ -314,8 +275,7 @@ public class HomeListTest {
 
     @Test
     public void theStorageRootNeverAppearsInALabel() {
-        // Internal storage is /storage/emulated/0, and "0" is an Android user
-        // id that means nothing to anybody reading a folder list.
+        // the 0 in /storage/emulated/0 is a user id, not a folder name
         final List<Library.Folder> folders = new ArrayList<>();
         folders.add(at("/storage/emulated/0/Gifs"));
         folders.add(at("/storage/emulated/0/WhatsApp/Gifs"));

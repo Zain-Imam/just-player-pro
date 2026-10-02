@@ -22,23 +22,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-/*
- * The undo offer, on a real device, on the real handler.
- *
- * This cannot be reached by driving the player itself: the skip button only
- * appears over a file that has chapter marks or a film the databases know, and
- * there is no such file to hand. The timing is the whole of what changed, and
- * timing is exactly what a device runs differently from a laptop -- so the
- * controller is built here with the same Activity, the same layout and the same
- * main-thread Handler it has in the player, and only the film is a stand-in.
- *
- * SettingsActivity is borrowed as somewhere to put the button. Any of this
- * app's own activities would do; that one needs no media to open.
- */
+// Proves the skip undo offer expires on real time, on the main-thread Handler.
+// SettingsActivity only hosts the button; it opens without media.
 @RunWith(AndroidJUnit4.class)
 public class SkipUndoDeviceTest {
 
-    /** A film that is not playing, whose position the test moves by hand. */
     private static final class Stub implements SkipController.Host {
         volatile double position;
         volatile boolean playing = true;
@@ -106,14 +94,7 @@ public class SkipUndoDeviceTest {
             assertTrue("undo should be on screen straight after a skip",
                     visible(scenario, skip));
 
-            /*
-             * Paused, which is the case the old version could never get out of.
-             *
-             * The offer used to expire on playback position, so a film that was
-             * not moving never reached the end of the window and the button sat
-             * there for as long as it was left. Three seconds of real time is
-             * three seconds whatever the film is doing.
-             */
+            // paused on purpose: the offer must expire on wall-clock time
             film.playing = false;
 
             Thread.sleep(2000);
@@ -124,13 +105,7 @@ public class SkipUndoDeviceTest {
             assertTrue("undo should be gone three seconds after the skip",
                     !visible(scenario, skip));
 
-            /*
-             * And going back into the intro offers it again.
-             *
-             * A segment that has been skipped is not struck off: returning to
-             * it is the most likely moment to want the button, and it is also
-             * how anybody checks what they just missed.
-             */
+            // seeking back into the intro offers the skip again
             film.position = 10;
             film.playing = true;
             final Button again = waitForButton(rootHeld, 3000);
@@ -140,8 +115,6 @@ public class SkipUndoDeviceTest {
             scenario.onActivity(activity -> held.get().stop());
         }
     }
-
-    // ------------------------------------------------------------- plumbing
 
     private static Button waitForButton(final AtomicReference<ViewGroup> root, final long ms)
             throws Exception {

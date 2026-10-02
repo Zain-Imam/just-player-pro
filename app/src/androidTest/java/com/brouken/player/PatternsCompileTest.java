@@ -13,22 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-/*
- * Load every class that holds regular expressions, on the device.
- *
- * Android does not use the same regular-expression engine as desktop Java. It
- * uses ICU, and ICU rejects patterns desktop Java is happy with — an unescaped
- * closing brace after a quantifier, for one. A pattern like that compiles in a
- * unit test on a laptop, fails in a static initialiser on a phone, and takes
- * the whole process down the first time anything touches the class.
- *
- * That is exactly what happened, on the thread that works out what is playing,
- * so the film vanished back to the launcher with nothing said. This is the test
- * that catches the next one: it touches each class, which runs its static
- * initialiser, and it compiles every pattern it finds in it.
- *
- * A class added with patterns in it belongs in this list.
- */
+// Android compiles regex with ICU, which rejects some patterns desktop Java accepts.
+// Loads each class and compiles its patterns; add new pattern classes here.
 @RunWith(AndroidJUnit4.class)
 public class PatternsCompileTest {
 
@@ -54,8 +40,7 @@ public class PatternsCompileTest {
 
         for (final Class<?> type : CLASSES_WITH_PATTERNS) {
             try {
-                // Forces the static initialiser, which is where a pattern that
-                // will not compile actually goes off.
+                // runs the static initialiser, where a bad pattern throws
                 Class.forName(type.getName(), true, type.getClassLoader());
             } catch (Throwable error) {
                 failures.add(type.getSimpleName() + " would not load: " + error);
@@ -85,9 +70,7 @@ public class PatternsCompileTest {
             if (value instanceof Pattern) {
                 check(failures, type, field.getName(), ((Pattern) value).pattern());
             } else if (value instanceof String) {
-                // A regular expression kept as a string and handed to
-                // String.matches or replaceAll never sees Pattern.compile at
-                // load time, so it is checked here too when it looks like one.
+                // regex strings for String.matches/replaceAll are not compiled at load
                 final String text = (String) value;
                 if (looksLikeAPattern(text)) {
                     check(failures, type, field.getName(), text);

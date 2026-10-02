@@ -45,13 +45,7 @@ public class ReleaseNameTest {
         assertNull(ReleaseName.parse("VID-20230515-WA0001.mp4").year);
     }
 
-    /*
-     * A film is searched for by name, with the year alongside rather than
-     * inside the words.
-     *
-     * "The Runner 2026" finds nothing at TMDB because it is looking for those
-     * words in a title. "The Runner", with 2026 as the year, finds it.
-     */
+    // TMDB matches the year as a field; inside the query it finds nothing
     @Test
     public void theSearchQueryIsTheTitleWithoutTheYear() {
         final ReleaseName.Info info = ReleaseName.parse("The.Runner.2026.1080p.WEB-DL.mkv");

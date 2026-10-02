@@ -19,39 +19,10 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-/**
- * Does the ExoPlayer in libs/ still have the methods the published Media3
- * modules call?
- *
- * ExoPlayer does not come from Maven here. It comes from
- * libs/lib-exoplayer-release.aar, a patched build, and libs/lib-ui-release.aar
- * likewise — the player needs setMapDV7ToHevc, showProgress and
- * hideControllerImmediately, which upstream has not got. Every other Media3
- * module does come from Maven, and those modules are compiled against the
- * ExoPlayer of their own version.
- *
- * So the version in build.gradle and the version those aars were built from
- * have to agree, and nothing enforces it. Nothing warns at build time either:
- * the modules are separate artefacts, so javac and R8 both accept a call to a
- * method that is not there, and the program only finds out when it runs the
- * line.
- *
- * That happened. media3_version was raised to 1.11.0 while the aars stayed at
- * 1.10.0, and HlsMediaSource 1.11.0 calls BaseMediaSource.getBandwidthMeter(),
- * added after 1.10.0. Every HLS stream then killed the playback thread with
- * NoSuchMethodError. What you saw was a player that opened, showed the title,
- * and sat at 00:00 — no error, no dialog, nothing in the interface at all to
- * say the stream had died. It would have shipped.
- *
- * This reads the class files of every Media3 jar there is — the published
- * modules and the aars both — picks out every method and field they name in
- * one another, and checks each one is really there. It is the same question
- * the virtual machine asks when it reaches the line, asked here instead, where
- * the answer costs a second rather than a stream at midnight.
- */
+// Proves the Media3 modules from Maven link against the patched aars in libs/.
+// A version mismatch builds fine and only fails at runtime with NoSuchMethodError.
 public class Media3LinkageTest {
 
-    /** Every Media3 package, wherever the class holding it came from. */
     private static final String[] MEDIA3 = {
             "androidx/media3/",
     };
@@ -60,8 +31,6 @@ public class Media3LinkageTest {
     public void everyPublishedModuleLinksAgainstTheBundledExoPlayer() throws Exception {
         final List<File> modules = media3Jars();
 
-        // If this cannot see the jars it is not proving anything, and should
-        // say so rather than pass quietly.
         assertTrue("no Media3 jars on the test classpath — this test "
                         + "is not checking anything; classpath was:\n" + classpath(),
                 modules.size() >= 8);
@@ -116,26 +85,12 @@ public class Media3LinkageTest {
         }
     }
 
-    // ------------------------------------------------------------- classpath
-
     private static String classpath() {
         return System.getProperty("java.class.path", "");
     }
 
-    /**
-     * Every jar that holds Media3 code: the published modules, and the aars in
-     * libs/ that ExoPlayer, the player view and the decoders come from.
-     *
-     * Both sides are read, because the calls go both ways. The published
-     * modules call into ExoPlayer — that is the direction that broke — and
-     * ExoPlayer and the decoder extensions call back out into media3-common,
-     * -decoder, -extractor and -datasource, which are published. A mismatch
-     * shows up as a missing method in whichever direction happens to be
-     * looking, so neither direction is worth checking alone.
-     *
-     * Gradle puts each one on the classpath twice, in two different shapes, so
-     * they are gathered by module name and taken once.
-     */
+    // both directions are read: the modules call ExoPlayer and the aars call back out.
+    // gradle lists each jar twice in different shapes, so one is kept per module.
     private static List<File> media3Jars() {
         final List<File> found = new ArrayList<>();
         final Set<String> seen = new LinkedHashSet<>();
@@ -156,14 +111,8 @@ public class Media3LinkageTest {
         return found;
     }
 
-    /**
-     * Which module a classpath entry belongs to.
-     *
-     * Gradle hands these over in two shapes, and neither is laid out by group:
-     *   .../transformed/jetified-media3-exoplayer-hls-1.10.0-runtime.jar
-     *   .../transformed/jetified-media3-exoplayer-hls-1.10.0/jars/classes.jar
-     * Both answer "media3-exoplayer-hls".
-     */
+    // gradle names jars like jetified-media3-exoplayer-hls-1.10.0-runtime.jar
+    // or .../jetified-media3-exoplayer-hls-1.10.0/jars/classes.jar
     private static String moduleOf(final String element) {
         String path = element.replace('\\', '/');
         if (path.endsWith("/jars/classes.jar")) {
@@ -179,8 +128,6 @@ public class Media3LinkageTest {
         if (name.endsWith("-runtime")) {
             name = name.substring(0, name.length() - "-runtime".length());
         }
-        // Trim the trailing version, so "media3-exoplayer-hls-1.10.0" is one
-        // module however it is spelled on the classpath.
         final int dash = name.lastIndexOf('-');
         if (dash > 0 && dash + 1 < name.length()
                 && Character.isDigit(name.charAt(dash + 1))) {
@@ -189,15 +136,6 @@ public class Media3LinkageTest {
         return name;
     }
 
-    // --------------------------------------------------------- does it exist
-
-    /**
-     * Why this call would not link, or null if it would.
-     *
-     * Both answers matter. A method that has been added since is the case that
-     * bit; a whole class that has been added since is the same mistake showing
-     * a different face, and is just as fatal at the moment it runs.
-     */
     private static String whyItWouldNotLink(final Call call) {
         final String owner = call.owner.replace('/', '.');
         final Class<?> target;
@@ -206,7 +144,7 @@ public class Media3LinkageTest {
         } catch (ClassNotFoundException | NoClassDefFoundError absent) {
             return "no such class — " + owner + " is not in the aar at all";
         } catch (Throwable unreadable) {
-            // Something else stopped it being read. Not evidence of a fault.
+            // unreadable for another reason; not a linkage fault
             return null;
         }
 
@@ -240,11 +178,7 @@ public class Media3LinkageTest {
                 }
             }
         } catch (NoClassDefFoundError incomplete) {
-            // If what is missing is another Media3 class, that is the fault
-            // being looked for. If it is something else, it is only absent
-            // from this JVM — the framework classes here are stubs, and a
-            // class touching OpenGL cannot be read through on a laptop. That
-            // is a limit of the test, not a defect in the player.
+            // only a missing Media3 class is a fault; framework classes are stubs on the JVM
             final String missing = String.valueOf(incomplete.getMessage());
             if (missing.startsWith("androidx/media3/")) {
                 return "cannot be read — " + owner + " needs " + missing
@@ -261,10 +195,7 @@ public class Media3LinkageTest {
         final List<Class<?>> all = new ArrayList<>();
         final List<Class<?>> queue = new ArrayList<>();
         queue.add(start);
-        // An interface has no superclass, but equals, hashCode, toString and
-        // getClass can still be called through one — the compiler writes the
-        // interface as the owner and the virtual machine finds them on Object.
-        // Without this, every such call read as a missing method.
+        // calls to equals/hashCode through an interface resolve on Object
         queue.add(Object.class);
         while (!queue.isEmpty()) {
             final Class<?> here = queue.remove(0);
@@ -308,8 +239,6 @@ public class Media3LinkageTest {
         return "D";
     }
 
-    // ------------------------------------------------- reading a class file
-
     private static final class Call {
         final String owner;
         final String name;
@@ -329,13 +258,6 @@ public class Media3LinkageTest {
             NAME_AND_TYPE = 12, METHOD_HANDLE = 15, METHOD_TYPE = 16, DYNAMIC = 17,
             INVOKE_DYNAMIC = 18, MODULE = 19, PACKAGE = 20;
 
-    /**
-     * Every method and field a class file names in one of the given packages.
-     *
-     * Only the constant pool is read. That is where the references live — the
-     * owner, the name, and the exact signature — and reading it needs no
-     * library and no version of anything.
-     */
     private static List<Call> callsInto(final byte[] classFile, final String[] packages)
             throws IOException {
         final List<Call> calls = new ArrayList<>();

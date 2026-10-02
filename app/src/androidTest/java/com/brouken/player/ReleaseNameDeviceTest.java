@@ -10,15 +10,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/*
- * The same corpus as the plain test, run where it actually matters.
- *
- * Everything downstream of the parser — the title in the history list, the info
- * card, the skip markers, the search box — is only as good as what comes out of
- * it, and it runs on a background thread as a file opens. This proves it does
- * not throw, and gets the right answers, on the device's own regular-expression
- * engine rather than on a laptop's.
- */
+// The release name corpus again, on the device's own ICU regex engine.
 @RunWith(AndroidJUnit4.class)
 public class ReleaseNameDeviceTest {
 

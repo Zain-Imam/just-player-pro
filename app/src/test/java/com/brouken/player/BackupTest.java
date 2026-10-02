@@ -14,14 +14,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * What a backup must survive: a round trip.
- *
- * The failure that matters in a file like this is not a crash, it is a value
- * that comes back subtly different from the one that went in -- a float landing
- * as a double, a boolean as the string "true" -- because the player then reads
- * it back and throws at some unrelated moment weeks later.
- */
+// A backup must round-trip every value with its exact type.
 public class BackupTest {
 
     private static Map<String, Object> everything() {
@@ -112,15 +105,7 @@ public class BackupTest {
         assertTrue(back.isEmpty());
     }
 
-    /**
-     * Everything the home screen remembers travels with a backup.
-     *
-     * Named one by one rather than trusted to the rule that says "anything
-     * unrecognised is a setting". That rule is what carries them today, and it
-     * is one edit away from not doing — a new prefix in KEY_PREFIXES, a name
-     * added to NEVER — and a favourite that silently stops being exported is
-     * the kind of loss nobody notices until they have already wiped the phone.
-     */
+    // home screen keys named one by one, so a prefix change cannot drop them
     @Test
     public void theHomeScreenIsPartOfTheSettings() throws Exception {
         final Map<String, Object> stored = new LinkedHashMap<>();
@@ -139,7 +124,6 @@ public class BackupTest {
         assertEquals("home", read.get("startOn"));
     }
 
-    /** And they are not quietly counted as keys or as per-file memory. */
     @Test
     public void theHomeScreenIsNotExportedWithTheKeys() throws Exception {
         final Map<String, Object> stored = new LinkedHashMap<>();
@@ -154,14 +138,7 @@ public class BackupTest {
         assertNull("a favourite is not a key", read.get("homePinnedFolders"));
     }
 
-    /**
-     * A file written by 3.0 still imports, and leaves 4.0's own settings alone.
-     *
-     * The restore puts back what the file holds and touches nothing else, so a
-     * backup made before the home screen existed cannot reset it: the keys are
-     * simply not in the document, and what is not in the document is not
-     * written.
-     */
+    // restore writes only what the file holds, so old files keep home settings
     @Test
     public void aBackupFromBeforeTheHomeScreenStillReadsBack() {
         final String fromThree = "{\n"
@@ -180,9 +157,29 @@ public class BackupTest {
         assertNotNull("a 3.0 file is still one of ours", read);
         assertEquals("mpv", read.get("playbackEngine"));
         assertEquals(Boolean.TRUE, read.get("askResume"));
-        // Nothing about the home screen in it, so nothing about the home screen
-        // is written back, and what 4.0 already has survives the import.
         assertFalse(read.containsKey("homePinnedFolders"));
         assertFalse(read.containsKey("startOn"));
+    }
+
+    @Test
+    public void anMpvSizeFromBefore42IsMovedOnTheWayIn() {
+        final Map<String, Object> old = new LinkedHashMap<>();
+        old.put(Prefs.PREF_KEY_SUBTITLE_SIZE_MPV, 30);
+        Backup.movePre42MpvSize(old);
+        assertEquals(Prefs.mpvSizeFrom41(30), old.get(Prefs.PREF_KEY_SUBTITLE_SIZE_MPV));
+        assertEquals(Boolean.TRUE, old.get(Prefs.PREF_KEY_MPV_SIZE_MOVED));
+
+        // a file already on the new scale is left alone
+        final Map<String, Object> current = new LinkedHashMap<>();
+        current.put(Prefs.PREF_KEY_SUBTITLE_SIZE_MPV, 30);
+        current.put(Prefs.PREF_KEY_MPV_SIZE_MOVED, true);
+        Backup.movePre42MpvSize(current);
+        assertEquals(30, current.get(Prefs.PREF_KEY_SUBTITLE_SIZE_MPV));
+
+        // The default stays the default.
+        final Map<String, Object> untouched = new LinkedHashMap<>();
+        untouched.put(Prefs.PREF_KEY_SUBTITLE_SIZE_MPV, 0);
+        Backup.movePre42MpvSize(untouched);
+        assertEquals(0, untouched.get(Prefs.PREF_KEY_SUBTITLE_SIZE_MPV));
     }
 }

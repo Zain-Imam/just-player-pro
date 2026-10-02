@@ -10,19 +10,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Skipping from the file's own chapter marks.
- *
- * A file that names its chapters has said exactly where its intro and credits
- * are, at the timings of the cut you actually have — which is better than a
- * community database guessing about some other release. That is why chapters
- * are consulted first.
- *
- * None of this can be checked on the device without a file whose chapters are
- * named "Intro" and "Credits", and no public sample has those. The matching is
- * plain Java, so it is checked here instead, where a chapter list can simply be
- * written down.
- */
+// Skip segments from chapter names; no public sample file has named chapters.
 public class SkipFromChaptersTest {
 
     private static List<SkipSegments.ChapterMark> chapters(final Object... titleAndStart) {
@@ -61,8 +49,7 @@ public class SkipFromChaptersTest {
 
     @Test
     public void theNamesPeopleActuallyUse() {
-        // Every spelling kindOfChapter accepts, so that widening it later does
-        // not quietly narrow it.
+        // every spelling kindOfChapter accepts, so narrowing it fails here
         final String[] intros = {"OP", "Opening", "intro", "Avant", "Title", "Titles",
                 "Opening credits", "Main title", "Main titles"};
         for (final String name : intros) {
@@ -89,8 +76,6 @@ public class SkipFromChaptersTest {
 
     @Test
     public void ordinaryChaptersOfferNothing() {
-        // A film chaptered "Chapter 1..12" has not said where anything is, and
-        // must not produce a skip button over an arbitrary twelfth of it.
         final List<SkipSegments.Segment> found = SkipSegments.fromChapters(
                 chapters("Chapter 1", 0, "Chapter 2", 600, "Chapter 3", 1200), 1800);
         assertTrue("nothing recognisable", found.isEmpty());
