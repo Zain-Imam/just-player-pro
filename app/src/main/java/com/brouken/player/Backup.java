@@ -18,7 +18,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-// exports and restores preferences; folder grants cannot travel and are left out
 public final class Backup {
 
     private static final String MARK = "just-player-pro-backup";
@@ -44,7 +43,10 @@ public final class Backup {
             "subtitleUri", "subtitleUris", "audioTrackId", "subtitleTrackId",
             "firstRun", "subtitleCustomFontName", "subtitleAddonsSeeded",
             // launch headers may carry tokens; the rest points at files on this device
-            "launchMemory", "subtitleLabels", "aspectStep", "aspectStepUri"
+            "launchMemory", "subtitleLabels", "aspectStep", "aspectStepUri",
+            // from Android 13 the phone keeps the app's language, not this setting
+            AppLanguage.PREF_KEY, AppLanguage.PREF_OLD_WAY,
+            Showcase.PREF_FOLDERS, Showcase.PREF_HIDE_BARS, Showcase.PREF_TV
     };
 
     public static String export(final Context context, final Set<Part> parts) throws JSONException {
@@ -53,7 +55,6 @@ public final class Backup {
         return write(preferences.getAll(), parts);
     }
 
-    // split from the preferences so the format can be unit tested
     public static String write(final Map<String, ?> stored, final Set<Part> parts)
             throws JSONException {
         final JSONObject values = new JSONObject();
@@ -100,6 +101,7 @@ public final class Backup {
             return new Result(0, false);
         }
         movePre42MpvSize(values);
+        movePre50SeekPreview(values);
         final SharedPreferences.Editor editor =
                 PreferenceManager.getDefaultSharedPreferences(context).edit();
         for (final Map.Entry<String, Object> entry : values.entrySet()) {
@@ -109,12 +111,18 @@ public final class Backup {
         return new Result(values.size(), true);
     }
 
-    // an older file holds mpv's size on the old scale; moved the way Prefs moves it
     static void movePre42MpvSize(final Map<String, Object> values) {
         final Object size = values.get(Prefs.PREF_KEY_SUBTITLE_SIZE_MPV);
         if (size instanceof Integer && !values.containsKey(Prefs.PREF_KEY_MPV_SIZE_MOVED)) {
             values.put(Prefs.PREF_KEY_SUBTITLE_SIZE_MPV, Prefs.mpvSizeFrom41((Integer) size));
             values.put(Prefs.PREF_KEY_MPV_SIZE_MOVED, true);
+        }
+    }
+
+    static void movePre50SeekPreview(final Map<String, Object> values) {
+        final Object old = values.get("scrubThumbnails");
+        if (old instanceof Boolean && !values.containsKey(SeekPreview.PREF_KEY)) {
+            values.put(SeekPreview.PREF_KEY, (Boolean) old ? SeekPreview.ALL : SeekPreview.OFF);
         }
     }
 
@@ -273,7 +281,7 @@ public final class Backup {
                 }
             }
         } catch (JSONException e) {
-            // Nothing to name.
+            // not a backup, so nothing to name
         }
         return named;
     }

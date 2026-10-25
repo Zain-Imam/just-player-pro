@@ -11,8 +11,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-// stored as key lists, not indices: unknown keys are dropped, new ones appended
-// keys are persisted, so never rename one
+// keys are persisted, so never rename one; unknown keys are dropped
 final class ControlOrder {
 
     static final String OPEN = "open";
@@ -135,6 +134,21 @@ final class ControlOrder {
             case ROTATE:   return R.string.controls_name_rotate;
             case PIP:      return R.string.controls_name_pip;
             default:       return R.string.controls_name_repeat;
+        }
+    }
+
+    @android.annotation.SuppressLint("PrivateResource")
+    static int icon(final String key) {
+        switch (key) {
+            case OPEN:     return R.drawable.ic_folder_open_24dp;
+            case SUBTITLE: return androidx.media3.ui.R.drawable.exo_ic_subtitle_on;
+            case AUDIO:    return R.drawable.ic_audio_track_24dp;
+            case ASPECT:   return R.drawable.ic_aspect_ratio_24dp;
+            case SETTINGS: return R.drawable.ic_settings_24dp;
+            case LOCK:     return R.drawable.ic_lock_open_24dp;
+            case ROTATE:   return R.drawable.ic_auto_rotate_24dp;
+            case PIP:      return R.drawable.ic_picture_in_picture_alt_24dp;
+            default:       return androidx.media3.ui.R.drawable.exo_styled_controls_repeat_all;
         }
     }
 

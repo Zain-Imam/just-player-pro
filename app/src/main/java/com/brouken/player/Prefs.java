@@ -70,6 +70,7 @@ public class Prefs {
     static final String PREF_KEY_SUBTITLE_EDGE_TYPE = "subtitleEdgeType";
     static final String PREF_KEY_SUBTITLE_CUSTOM_FONT_ENABLED = "subtitleCustomFontEnabled";
     static final String PREF_KEY_SUBTITLE_CUSTOM_FONT_NAME = "subtitleCustomFontName";
+    static final String PREF_KEY_SUBTITLE_COLOR = "subtitleColor";
     private static final String PREF_KEY_SUBTITLE_DELAY_MAP = "subtitleDelayMap";
     private static final String PREF_KEY_AUDIO_DELAY_MAP = "audioDelayMap";
     private static final String PREF_KEY_SPEED_MAP = "speedMap";
@@ -130,8 +131,12 @@ public class Prefs {
     public SubtitleTypeface subtitleTypeface = SubtitleTypeface.Regular;
     public boolean subtitleCustomFontEnabled;
     public String subtitleCustomFontName;
+    public String subtitleColor = SubtitleColors.DEFAULT;
 
     private LinkedHashMap positions;
+    // a separate file keeps the positions file readable by older versions
+    private LinkedHashMap<String, Long> durations;
+    private static final int MAX_POSITIONS = 100;
 
     // slack for trailing black frames and engines that report the end early
     private static final long FINISHED_MS = 3_000;
@@ -187,21 +192,21 @@ public class Prefs {
         loadDelays(audioDelayMap, PREF_KEY_AUDIO_DELAY_MAP);
         loadDelays(speedMap, PREF_KEY_SPEED_MAP);
         loadDelays(aspectMap, PREF_KEY_ASPECT_MAP);
+        loadMpvFilms();
         migrateAspectStep();
         migrateMpvSubtitleSize();
+        SeekPreview.migrate(mSharedPreferences);
         loadSubtitleLabels();
     }
 
     static final String PREF_KEY_MPV_SIZE_MOVED = "subtitleSizeMpvMoved";
     static final String PREF_KEY_SUBTITLE_SIZE_MPV = PREF_KEY_SUBTITLE_SIZE + "_mpv";
 
-    // an mpv size from the old scale, as the step that draws the same size now
     static int mpvSizeFrom41(final int chosen) {
         return chosen == 0 ? 0
                 : clampSubtitleSize(com.brouken.player.mpv.MpvSubtitleScale.stepDrawnLike41(chosen));
     }
 
-    // runs once: converts a chosen mpv size to the corrected scale
     private void migrateMpvSubtitleSize() {
         if (mSharedPreferences.getBoolean(PREF_KEY_MPV_SIZE_MOVED, false)) {
             return;
@@ -244,6 +249,7 @@ public class Prefs {
         subtitleTypeface = valueOfEnum(SubtitleTypeface.class, mSharedPreferences.getString(PREF_KEY_SUBTITLE_TYPEFACE, null), subtitleTypeface);
         subtitleCustomFontEnabled = mSharedPreferences.getBoolean(PREF_KEY_SUBTITLE_CUSTOM_FONT_ENABLED, subtitleCustomFontEnabled);
         subtitleCustomFontName = mSharedPreferences.getString(PREF_KEY_SUBTITLE_CUSTOM_FONT_NAME, subtitleCustomFontName);
+        subtitleColor = mSharedPreferences.getString(PREF_KEY_SUBTITLE_COLOR, subtitleColor);
     }
 
     public void updateMedia(final Context context, final Uri uri, final String type) {
@@ -298,7 +304,6 @@ public class Prefs {
                 }
             }
         } catch (JSONException e) {
-            // corrupt list: fall back to the selected subtitle
             if (subtitleUri != null) {
                 subtitleUris.add(subtitleUri);
             }
@@ -350,14 +355,34 @@ public class Prefs {
         if (mediaUri == null)
             return;
 
-        while (positions.size() > 100)
-            positions.remove(positions.keySet().toArray()[0]);
-
+        final String key = mediaUri.toString();
         // also kept in the player's own list so a launcher's film can be resumed here
-        positions.put(mediaUri.toString(), watchedThrough(position, duration) ? 0L : position);
+        remember(positions, key, watchedThrough(position, duration) ? 0L : position, MAX_POSITIONS);
+        if (duration > 0) {
+            remember(durations, key, duration, MAX_POSITIONS);
+        }
+        durations.keySet().retainAll(positions.keySet());
         savePositions();
         if (!persistentMode) {
             nonPersitentPosition = position;
+        }
+    }
+
+    // re-inserted on every save, so the cap drops the film left longest
+    @SuppressWarnings("unchecked")
+    static void remember(final Map map, final String key, final Object value, final int max) {
+        map.remove(key);
+        while (!map.isEmpty() && map.size() >= max) {
+            map.remove(map.keySet().iterator().next());
+        }
+        map.put(key, value);
+    }
+
+    static long recentNameDelayMs(final SharedPreferences preferences) {
+        try {
+            return Math.max(1L, Long.parseLong(preferences.getString("recentNameDelay", "30"))) * 1000L;
+        } catch (NumberFormatException | ClassCastException e) {
+            return 30_000L;
         }
     }
 
@@ -402,8 +427,15 @@ public class Prefs {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        try (FileOutputStream fos = mContext.openFileOutput("durations", Context.MODE_PRIVATE);
+             ObjectOutputStream os = new ObjectOutputStream(fos)) {
+            os.writeObject(durations);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
+    @SuppressWarnings("unchecked")
     private void loadPositions() {
         try {
             FileInputStream fis = mContext.openFileInput("positions");
@@ -415,6 +447,97 @@ public class Prefs {
             e.printStackTrace();
             positions = new LinkedHashMap(10);
         }
+        // older saves have no durations file
+        try (FileInputStream fis = mContext.openFileInput("durations");
+             ObjectInputStream is = new ObjectInputStream(fis)) {
+            durations = (LinkedHashMap<String, Long>) is.readObject();
+        } catch (Exception e) {
+            durations = new LinkedHashMap<>();
+        }
+    }
+
+    static long savedPosition(final Context context, @Nullable final Uri uri) {
+        return uri == null ? 0L : saved(context, "positions", uri.toString());
+    }
+
+    static long savedDuration(final Context context, @Nullable final Uri uri) {
+        return uri == null ? 0L : saved(context, "durations", uri.toString());
+    }
+
+    private static long saved(final Context context, final String file, final String link) {
+        try (FileInputStream fis = context.openFileInput(file);
+             ObjectInputStream is = new ObjectInputStream(fis)) {
+            final Object map = is.readObject();
+            if (map instanceof Map) {
+                return lookup((Map<?, ?>) map, link);
+            }
+        } catch (Exception ignored) {
+            // nothing saved yet
+        }
+        return 0L;
+    }
+
+    static long lookup(final Map<?, ?> saved, final String link) {
+        final String key = matchingKey(saved.keySet(), link);
+        final Object value = key == null ? null : saved.get(key);
+        return value instanceof Long ? (Long) value : 0L;
+    }
+
+    // exact link, then another token, then file name: debrid links change each time
+    @Nullable
+    static String matchingKey(final java.util.Collection<?> keys, final String link) {
+        if (keys.contains(link)) {
+            return link;
+        }
+        final String place = withoutQuery(link);
+        final String name = fileName(place);
+        final boolean byName = name != null && FilmKey.identifies(name);
+        String samePlace = null;
+        String sameName = null;
+        for (final Object key : keys) {
+            if (!(key instanceof String)) {
+                continue;
+            }
+            final String other = withoutQuery((String) key);
+            if (other.equals(place)) {
+                samePlace = (String) key;
+            } else if (byName && name.equals(fileName(other))) {
+                sameName = (String) key;
+            }
+        }
+        return samePlace != null ? samePlace : sameName;
+    }
+
+    static String withoutQuery(final String link) {
+        int end = link.length();
+        final int query = link.indexOf('?');
+        if (query >= 0) {
+            end = query;
+        }
+        final int fragment = link.indexOf('#');
+        if (fragment >= 0 && fragment < end) {
+            end = fragment;
+        }
+        return link.substring(0, end);
+    }
+
+    @Nullable
+    static String fileName(final String place) {
+        final int scheme = place.indexOf("://");
+        final String path = scheme < 0 ? place : place.substring(scheme + 3);
+        final int slash = path.lastIndexOf('/');
+        if (slash < 0) {
+            return null;
+        }
+        String name = path.substring(slash + 1);
+        try {
+            name = java.net.URLDecoder.decode(name.replace("+", "%2B"), "UTF-8");
+        } catch (Exception ignored) {
+            // a stray % stays as it is
+        }
+        // a document link keeps its folders in the last segment
+        name = name.substring(name.lastIndexOf('/') + 1).trim();
+        return name.isEmpty() ? null : name;
     }
 
     public long getPosition() {
@@ -426,26 +549,26 @@ public class Prefs {
         if (val != null)
             return (long) val;
 
-        // Return position for uri from limited scope (loaded after using Next action)
+        // a limited-scope uri opened by Next is matched by its trailing path
         if (ContentResolver.SCHEME_CONTENT.equals(mediaUri.getScheme())) {
             final String searchPath = SubtitleUtils.getTrailPathFromUri(mediaUri);
-            if (searchPath == null || searchPath.length() < 1)
-                return 0L;
-            final Set<String> keySet = positions.keySet();
-            final Object[] keys = keySet.toArray();
-            for (int i = keys.length; i > 0; i--) {
-                final String key = (String) keys[i - 1];
-                final Uri uri = Uri.parse(key);
-                if (ContentResolver.SCHEME_CONTENT.equals(uri.getScheme())) {
-                    final String keyPath = SubtitleUtils.getTrailPathFromUri(uri);
-                    if (searchPath.equals(keyPath)) {
-                        return (long) positions.get(key);
+            if (searchPath != null && searchPath.length() > 0) {
+                final Set<String> keySet = positions.keySet();
+                final Object[] keys = keySet.toArray();
+                for (int i = keys.length; i > 0; i--) {
+                    final String key = (String) keys[i - 1];
+                    final Uri uri = Uri.parse(key);
+                    if (ContentResolver.SCHEME_CONTENT.equals(uri.getScheme())) {
+                        final String keyPath = SubtitleUtils.getTrailPathFromUri(uri);
+                        if (searchPath.equals(keyPath)) {
+                            return (long) positions.get(key);
+                        }
                     }
                 }
             }
         }
 
-        return 0L;
+        return lookup(positions, mediaUri.toString());
     }
 
     public void updateOrientation() {
@@ -525,7 +648,6 @@ public class Prefs {
                 // unreadable list: the single folder below still works
             }
         }
-        // migrate the old single folder into the list
         if (scopeUri != null && !scopeUris.contains(scopeUri)) {
             scopeUris.add(0, scopeUri);
             saveScopes();
@@ -631,6 +753,85 @@ public class Prefs {
         return FilmKey.of(mContext, uri, uri.equals(mediaUri) ? mediaTitle : null);
     }
 
+    // films Auto had to move to mpv because Media3 cannot play them; they start there
+    private static final String PREF_KEY_MPV_FILMS = "mpvFilms";
+    private static final int MAX_MPV_FILMS = 200;
+    private final java.util.LinkedHashSet<String> mpvFilms = new java.util.LinkedHashSet<>();
+
+    public boolean startsOnMpv() {
+        final String key = filmKey();
+        return key != null && mpvFilms.contains(key);
+    }
+
+    public void rememberMpv() {
+        final String key = filmKey();
+        if (key == null) {
+            return;
+        }
+        mpvFilms.remove(key);
+        mpvFilms.add(key);
+        while (mpvFilms.size() > MAX_MPV_FILMS) {
+            mpvFilms.remove(mpvFilms.iterator().next());
+        }
+        mSharedPreferences.edit().putString(PREF_KEY_MPV_FILMS,
+                new JSONArray(new java.util.ArrayList<>(mpvFilms)).toString()).apply();
+    }
+
+    // a move to mpv for a reason that may pass is remembered only the second time
+    private static final String PREF_KEY_MPV_STRIKES = "mpvStrikes";
+    private final java.util.LinkedHashSet<String> mpvStrikes = new java.util.LinkedHashSet<>();
+
+    public void strikeMpv() {
+        final String key = filmKey();
+        if (key == null) {
+            return;
+        }
+        if (mpvStrikes.remove(key)) {
+            saveKeys(PREF_KEY_MPV_STRIKES, mpvStrikes);
+            rememberMpv();
+            return;
+        }
+        mpvStrikes.add(key);
+        while (mpvStrikes.size() > MAX_MPV_FILMS) {
+            mpvStrikes.remove(mpvStrikes.iterator().next());
+        }
+        saveKeys(PREF_KEY_MPV_STRIKES, mpvStrikes);
+    }
+
+    // mpv failed too: the next try starts on Media3 again
+    public void forgetMpv() {
+        final String key = filmKey();
+        if (key != null && (mpvFilms.remove(key) | mpvStrikes.remove(key))) {
+            saveKeys(PREF_KEY_MPV_FILMS, mpvFilms);
+            saveKeys(PREF_KEY_MPV_STRIKES, mpvStrikes);
+        }
+    }
+
+    private void saveKeys(final String prefKey, final java.util.Collection<String> keys) {
+        mSharedPreferences.edit().putString(prefKey,
+                new JSONArray(new java.util.ArrayList<>(keys)).toString()).apply();
+    }
+
+    private void loadMpvFilms() {
+        loadKeys(PREF_KEY_MPV_FILMS, mpvFilms);
+        loadKeys(PREF_KEY_MPV_STRIKES, mpvStrikes);
+    }
+
+    private void loadKeys(final String prefKey, final java.util.Collection<String> into) {
+        into.clear();
+        try {
+            final JSONArray array = new JSONArray(mSharedPreferences.getString(prefKey, "[]"));
+            for (int i = 0; i < array.length(); i++) {
+                final String key = array.optString(i, null);
+                if (key != null && !key.isEmpty()) {
+                    into.add(key);
+                }
+            }
+        } catch (JSONException e) {
+            Log.w(Utils.TAG, e);
+        }
+    }
+
     private static final String PREF_KEY_ASPECT_MAP = "aspectMap";
     private static final int MAX_ASPECT_ENTRIES = 200;
     private final LinkedHashMap<String, Integer> aspectMap = new LinkedHashMap<>();
@@ -656,7 +857,6 @@ public class Prefs {
         saveDelays(aspectMap, PREF_KEY_ASPECT_MAP);
     }
 
-    // moves the old single-slot aspect setting into the per-film map
     private void migrateAspectStep() {
         final String uri = mSharedPreferences.getString("aspectStepUri", null);
         final int step = mSharedPreferences.getInt("aspectStep", 0);
@@ -858,7 +1058,7 @@ public class Prefs {
     private String normalizeDelayKey(@Nullable String rawKey) {
         if (rawKey == null || rawKey.isEmpty()) return null;
 
-        // Already a film key; never re-read as an address.
+        // already a film key; never re-read as an address
         if (rawKey.startsWith("f:") || rawKey.startsWith("t:") || rawKey.startsWith("u:")) {
             return rawKey;
         }
@@ -889,6 +1089,16 @@ public class Prefs {
         final SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
         sharedPreferencesEditor.putString(PREF_KEY_SUBTITLE_TYPEFACE, subtitleTypeface.name());
         sharedPreferencesEditor.apply();
+    }
+
+    public void updateSubtitleColor(final String subtitleColor) {
+        this.subtitleColor = subtitleColor;
+        mSharedPreferences.edit().putString(PREF_KEY_SUBTITLE_COLOR, subtitleColor).apply();
+    }
+
+    public static java.io.File subtitleCustomFontFile(final Context context) {
+        return new java.io.File(new java.io.File(context.getFilesDir(), SUBTITLE_CUSTOM_FONT_DIR),
+                SUBTITLE_CUSTOM_FONT_FILE_NAME);
     }
 
     public void updateSubtitleStyleEmbedded(final boolean subtitleStyleEmbedded) {

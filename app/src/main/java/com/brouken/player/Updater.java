@@ -12,15 +12,12 @@ import androidx.annotation.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-// checks GitHub releases for a newer build and hands the APK to the installer
 public final class Updater {
 
     private static final String RELEASES =
@@ -79,11 +76,20 @@ public final class Updater {
                         ? activity.getString(R.string.update_ready)
                         : trim(release.notes))
                 .setNegativeButton(android.R.string.cancel, null)
-                // /releases/latest always points at the newest release
                 .setNeutralButton(R.string.update_open, (dialog, which) ->
                         open(Uri.parse(LATEST_PAGE)))
                 .setPositiveButton(R.string.update_install, (dialog, which) -> download(release))
                 .create(), AlertDialog.BUTTON_POSITIVE);
+    }
+
+    // the browser downloads and installs it: an app that fetches and installs APKs
+    // itself is what Play Protect flags as harmful
+    private void download(final Release release) {
+        if (release.apk != null) {
+            open(Uri.parse(release.apk));
+        } else {
+            open(Uri.parse(release.page == null ? LATEST_PAGE : release.page));
+        }
     }
 
     private static String trim(final String notes) {
@@ -93,61 +99,6 @@ public final class Updater {
             text.append(lines[i]).append('\n');
         }
         return text.toString().trim();
-    }
-
-    private void download(final Release release) {
-        if (release.apk == null) {
-            open(Uri.parse(release.page == null ? LATEST_PAGE : release.page));
-            return;
-        }
-        toast(activity.getString(R.string.update_downloading));
-        new Thread(() -> {
-            final File file = new File(activity.getCacheDir(), "update.apk");
-            boolean ok = false;
-            try {
-                final HttpURLConnection connection =
-                        (HttpURLConnection) new URL(release.apk).openConnection();
-                connection.setInstanceFollowRedirects(true);
-                connection.setConnectTimeout(20_000);
-                connection.setReadTimeout(60_000);
-                try (InputStream in = connection.getInputStream();
-                     FileOutputStream out = new FileOutputStream(file)) {
-                    final byte[] chunk = new byte[64 * 1024];
-                    int read;
-                    while ((read = in.read(chunk)) > 0) {
-                        out.write(chunk, 0, read);
-                    }
-                }
-                ok = file.length() > 0;
-            } catch (Exception ignored) {
-            }
-            final boolean done = ok;
-            main.post(() -> {
-                if (activity.isFinishing()) {
-                    return;
-                }
-                if (!done) {
-                    toast(activity.getString(R.string.update_failed));
-                    return;
-                }
-                install(file);
-            });
-        }).start();
-    }
-
-    private void install(final File file) {
-        try {
-            final Uri uri = androidx.core.content.FileProvider.getUriForFile(
-                    activity, activity.getPackageName() + ".updates", file);
-            final Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setDataAndType(uri, "application/vnd.android.package-archive");
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    | Intent.FLAG_ACTIVITY_NEW_TASK);
-            activity.startActivity(intent);
-        } catch (Exception e) {
-            // installer locked down, as on some TVs
-            toast(activity.getString(R.string.update_failed));
-        }
     }
 
     private void open(final Uri uri) {

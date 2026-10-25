@@ -72,6 +72,8 @@ public class ControlOrderActivity extends AppCompatActivity {
             final CheckBox shown = row.findViewById(R.id.row_shown);
 
             name.setText(ControlOrder.label(key));
+            final android.widget.ImageView icon = row.findViewById(R.id.row_icon);
+            icon.setImageResource(ControlOrder.icon(key));
 
             final Integer why = ControlOrder.unavailableReason(this, key);
             if (why != null) {
@@ -79,6 +81,7 @@ public class ControlOrderActivity extends AppCompatActivity {
                 note.setVisibility(View.VISIBLE);
                 name.setAlpha(0.5f);
                 note.setAlpha(0.5f);
+                icon.setAlpha(0.5f);
             }
 
             final int index = i;

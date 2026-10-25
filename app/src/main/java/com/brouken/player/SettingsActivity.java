@@ -47,13 +47,52 @@ import java.util.MissingResourceException;
 
 public class SettingsActivity extends AppCompatActivity {
 
-    static RecyclerView recyclerView;
+    private int navigationInset;
 
-    // finish rather than go to the manifest parent, which is the player
+    // the list finishes rather than go to the manifest parent, the player
     @Override
     public boolean onSupportNavigateUp() {
-        finish();
+        getOnBackPressedDispatcher().onBackPressed();
         return true;
+    }
+
+    static final String EXTRA_PAGE = "com.brouken.player.SETTINGS_PAGE";
+    static final String EXTRA_HIGHLIGHT = "com.brouken.player.SETTINGS_HIGHLIGHT";
+    // anyone can open settings, and any other page name would crash it
+    private static final List<String> PAGES = Arrays.asList("screen_appearance", "screen_home",
+            "screen_playback", "screen_audio", "screen_gestures", "screen_subtitles", "screen_online",
+            "screen_storage", "screen_advanced", "screen_about");
+
+    @Nullable
+    private String page() {
+        final String page = getIntent().getStringExtra(EXTRA_PAGE);
+        return PAGES.contains(page) ? page : null;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(final android.view.Menu menu) {
+        // typing is slow with a remote, so a television goes by the categories
+        if (!Utils.isTvBox(this)) {
+            menu.add(0, 1, 0, R.string.set_search)
+                    .setIcon(R.drawable.ic_search_24dp)
+                    .setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS);
+            final android.graphics.drawable.Drawable icon = menu.findItem(1).getIcon();
+            if (icon != null) {
+                final boolean dark = (getResources().getConfiguration().uiMode
+                        & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+                icon.mutate().setTint(dark ? Color.WHITE : Color.BLACK);
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull final android.view.MenuItem item) {
+        if (item.getItemId() == 1) {
+            SettingsSearch.show(this);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -64,16 +103,7 @@ public class SettingsActivity extends AppCompatActivity {
                     View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             );
             getWindow().setNavigationBarColor(Color.TRANSPARENT);
-
-            if (Build.VERSION.SDK_INT >= 35) {
-                int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
-
-                if (nightModeFlags == Configuration.UI_MODE_NIGHT_YES) {
-                    getWindow().getDecorView().setSystemUiVisibility(0);
-                } else if (nightModeFlags == Configuration.UI_MODE_NIGHT_NO) {
-                    getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-                }
-            }
+            // the bar icons follow light or dark in AppTheme, on every version
         }
 
         // settings can be opened before the player
@@ -86,15 +116,45 @@ public class SettingsActivity extends AppCompatActivity {
 
         setContentView(R.layout.settings_activity);
         if (savedInstanceState == null) {
+            final String page = page();
+            final androidx.fragment.app.Fragment first;
+            if (page != null) {
+                final Bundle args = new Bundle();
+                args.putString(PreferenceFragmentCompat.ARG_PREFERENCE_ROOT, page);
+                args.putString(EXTRA_HIGHLIGHT, getIntent().getStringExtra(EXTRA_HIGHLIGHT));
+                first = new SettingsFragment();
+                first.setArguments(args);
+            } else {
+                first = new SettingsHeaders();
+            }
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.settings, new SettingsFragment())
+                    .replace(R.id.settings, first)
                     .commit();
         }
+        setSupportActionBar(findViewById(R.id.settings_toolbar));
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
+
+        getSupportFragmentManager().registerFragmentLifecycleCallbacks(
+                new androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+                    @Override
+                    public void onFragmentViewCreated(@NonNull final androidx.fragment.app.FragmentManager fm,
+                                                      @NonNull final androidx.fragment.app.Fragment f,
+                                                      @NonNull final View v, @Nullable final Bundle state) {
+                        if (f instanceof PreferenceFragmentCompat) {
+                            pad((PreferenceFragmentCompat) f);
+                        }
+                    }
+
+                    @Override
+                    public void onFragmentStarted(@NonNull final androidx.fragment.app.FragmentManager fm,
+                                                  @NonNull final androidx.fragment.app.Fragment f) {
+                        updateTitle();
+                    }
+                }, true);
 
         if (Build.VERSION.SDK_INT >= 29) {
             LinearLayout layout = findViewById(R.id.settings_layout);
@@ -103,12 +163,184 @@ public class SettingsActivity extends AppCompatActivity {
                         windowInsets.getSystemWindowInsetTop(),
                         windowInsets.getSystemWindowInsetRight(),
                         0);
-                if (recyclerView != null) {
-                    recyclerView.setPadding(0, 0, 0, windowInsets.getSystemWindowInsetBottom());
-                }
+                navigationInset = windowInsets.getSystemWindowInsetBottom();
+                padAll(getSupportFragmentManager());
                 windowInsets.consumeSystemWindowInsets();
                 return windowInsets;
             });
+        }
+    }
+
+    private void pad(final PreferenceFragmentCompat page) {
+        final RecyclerView list = page.getListView();
+        if (list != null) {
+            list.setPadding(0, 0, 0, navigationInset);
+            list.setClipToPadding(false);
+        }
+    }
+
+    private void padAll(final androidx.fragment.app.FragmentManager fm) {
+        for (final androidx.fragment.app.Fragment f : fm.getFragments()) {
+            if (f instanceof PreferenceFragmentCompat && f.getView() != null) {
+                pad((PreferenceFragmentCompat) f);
+            }
+            padAll(f.getChildFragmentManager());
+        }
+    }
+
+    // a phone readies the first page behind the list, so only an open pane counts
+    void updateTitle() {
+        final androidx.fragment.app.Fragment shown = getSupportFragmentManager().findFragmentById(R.id.settings);
+        androidx.fragment.app.Fragment page = shown;
+        if (shown instanceof SettingsHeaders) {
+            page = null;
+            if (shown.getView() != null) {
+                final androidx.slidingpanelayout.widget.SlidingPaneLayout pane =
+                        ((SettingsHeaders) shown).getSlidingPaneLayout();
+                final androidx.fragment.app.Fragment detail = shown.getChildFragmentManager()
+                        .findFragmentById(androidx.preference.R.id.preferences_detail);
+                if (!pane.isSlideable() || pane.isOpen()) {
+                    page = detail;
+                }
+                ((SettingsHeaders) shown).markOpen(pane.isSlideable() ? null : detail);
+            }
+        }
+        setTitle(titleOf(page));
+    }
+
+    private CharSequence titleOf(@Nullable final androidx.fragment.app.Fragment page) {
+        if (page != null && page.getArguments() != null && page.getArguments().getCharSequence(EXTRA_TITLE) != null) {
+            return page.getArguments().getCharSequence(EXTRA_TITLE);
+        }
+        if (page instanceof PreferenceFragmentCompat) {
+            final androidx.preference.PreferenceScreen screen = ((PreferenceFragmentCompat) page).getPreferenceScreen();
+            if (screen != null && screen.getTitle() != null && screen.getTitle().length() > 0) {
+                return screen.getTitle();
+            }
+        }
+        return getString(R.string.pref_title);
+    }
+
+    // title of a page within a page, from the row that opened it
+    static final String EXTRA_TITLE = "com.brouken.player.SETTINGS_TITLE";
+
+    public static class SettingsHeaders extends androidx.preference.PreferenceHeaderFragmentCompat {
+
+        @NonNull
+        @Override
+        public PreferenceFragmentCompat onCreatePreferenceHeader() {
+            return new HeadersList();
+        }
+
+        @Override
+        public void onViewCreated(@NonNull final View view, @Nullable final Bundle savedInstanceState) {
+            super.onViewCreated(view, savedInstanceState);
+            getSlidingPaneLayout().addPanelSlideListener(
+                    new androidx.slidingpanelayout.widget.SlidingPaneLayout.SimplePanelSlideListener() {
+                        @Override
+                        public void onPanelOpened(@NonNull final View panel) {
+                            ((SettingsActivity) requireActivity()).updateTitle();
+                        }
+
+                        @Override
+                        public void onPanelClosed(@NonNull final View panel) {
+                            ((SettingsActivity) requireActivity()).updateTitle();
+                        }
+                    });
+            // one pane or two is only known once laid out
+            view.post(() -> {
+                if (isAdded()) {
+                    ((SettingsActivity) requireActivity()).updateTitle();
+                }
+            });
+        }
+
+        // none with one pane; a page within a page keeps its category marked
+        void markOpen(@Nullable final androidx.fragment.app.Fragment detail) {
+            final androidx.fragment.app.Fragment list = getChildFragmentManager()
+                    .findFragmentById(androidx.preference.R.id.preferences_header);
+            if (!(list instanceof PreferenceFragmentCompat)
+                    || ((PreferenceFragmentCompat) list).getPreferenceScreen() == null) {
+                return;
+            }
+            final String root = detail == null || detail.getArguments() == null ? null
+                    : detail.getArguments().getString(PreferenceFragmentCompat.ARG_PREFERENCE_ROOT);
+            if (detail != null && root == null) {
+                return;
+            }
+            final androidx.preference.PreferenceScreen screen = ((PreferenceFragmentCompat) list).getPreferenceScreen();
+            for (int i = 0; i < screen.getPreferenceCount(); i++) {
+                final androidx.preference.Preference header = screen.getPreference(i);
+                if (header instanceof SettingsHeaderPreference) {
+                    ((SettingsHeaderPreference) header).setOpen(root != null
+                            && root.equals(header.getExtras().getString(PreferenceFragmentCompat.ARG_PREFERENCE_ROOT)));
+                }
+            }
+        }
+    }
+
+    public static class HeadersList extends PreferenceFragmentCompat {
+
+        @Override
+        public void onCreatePreferences(@Nullable final Bundle savedInstanceState, @Nullable final String rootKey) {
+            setPreferencesFromResource(R.xml.settings_headers, rootKey);
+        }
+
+        @Override
+        public void onResume() {
+            super.onResume();
+            summarize();
+        }
+
+        private void summarize() {
+            final android.content.SharedPreferences prefs =
+                    PreferenceManager.getDefaultSharedPreferences(requireContext());
+            set("header_appearance", getString(R.string.set_hub_appearance,
+                    entry(R.array.accent_entries, R.array.accent_values, prefs.getString("accentColor", "orange")),
+                    entry(R.array.player_style_entries, R.array.player_style_values, prefs.getString("playerStyle", "classic"))));
+            set("header_home", getString(R.string.set_hub_home,
+                    entry(R.array.home_layout_entries, R.array.home_layout_values, prefs.getString("homeLayout", "list")),
+                    prefs.getInt("recentCount", 10)));
+            final String seek = SeekPreview.mode(requireContext());
+            set("header_playback", getString(R.string.set_hub_playback,
+                    entry(R.array.playback_engine_entries, R.array.playback_engine_values, prefs.getString("playbackEngine", "auto")),
+                    getString(SeekPreview.OFF.equals(seek) ? R.string.set_previews_off
+                            : SeekPreview.LOCAL.equals(seek) ? R.string.set_previews_local : R.string.set_previews_all)));
+            final String audio = prefs.getString("languageAudio", Prefs.TRACK_DEVICE);
+            set("header_audio", getString(R.string.set_hub_audio,
+                    getString(Prefs.TRACK_DEFAULT.equals(audio) ? R.string.pref_language_track_default
+                            : Prefs.TRACK_DEVICE.equals(audio) ? R.string.pref_language_track_device
+                            : R.string.pref_language_audio),
+                    getString(prefs.getBoolean("volumeBoost", false) ? R.string.set_on : R.string.set_off)));
+            set("header_gestures", getString(R.string.set_hub_gestures,
+                    prefs.getInt("doubleTapSeekSeconds", 10), prefs.getInt("controlsTimeoutSeconds", 6)));
+            set("header_subtitles", getString(R.string.set_hub_subtitles,
+                    com.brouken.player.online.SubtitleLanguages.nameInSentence(prefs.getString("subtitleLanguage", "en"))));
+            set("header_online", com.brouken.player.online.ApiKeys.hasTmdb(requireContext())
+                    ? getString(R.string.set_hub_online_set,
+                            entry(R.array.identify_mode_entries, R.array.identify_mode_values, prefs.getString("identifyMode", "auto")))
+                    : getString(R.string.set_hub_online_unset));
+            set("header_storage", getString(R.string.set_hub_storage));
+            set("header_advanced", getString(R.string.set_hub_advanced));
+            set("header_about", getString(R.string.set_hub_about, BuildConfig.VERSION_NAME));
+        }
+
+        private void set(final String key, final CharSequence summary) {
+            final Preference preference = findPreference(key);
+            if (preference != null) {
+                preference.setSummary(summary);
+            }
+        }
+
+        private String entry(final int entriesId, final int valuesId, @Nullable final String value) {
+            final String[] entries = getResources().getStringArray(entriesId);
+            final String[] values = getResources().getStringArray(valuesId);
+            for (int i = 0; i < values.length && i < entries.length; i++) {
+                if (values[i].equals(value)) {
+                    return entries[i];
+                }
+            }
+            return value == null ? "" : value;
         }
     }
 
@@ -265,10 +497,11 @@ public class SettingsActivity extends AppCompatActivity {
             Toast.makeText(requireContext(),
                     getString(R.string.pref_backup_imported, result.applied),
                     Toast.LENGTH_LONG).show();
+            // a restored light or dark recreates the open screens itself
+            AppTheme.apply(requireContext());
             requireActivity().recreate();
         }
 
-        // no row has an icon, so drop the reserved icon space
         private void useFullWidth(final androidx.preference.PreferenceGroup group) {
             group.setIconSpaceReserved(false);
             for (int i = 0; i < group.getPreferenceCount(); i++) {
@@ -285,17 +518,124 @@ public class SettingsActivity extends AppCompatActivity {
         // a ListPreference opens its own dialog before any click listener runs
         @Override
         public void onDisplayPreferenceDialog(@NonNull Preference preference) {
+            if (preference instanceof PictureListPreference) {
+                showPictureChoice((PictureListPreference) preference);
+                return;
+            }
             if (preference instanceof ListPreference && "accentColor".equals(preference.getKey())) {
                 showAccentSwatches((ListPreference) preference);
+                return;
+            }
+            if (preference instanceof ListPreference && "subtitleColor".equals(preference.getKey())) {
+                showSubtitleColorSwatches((ListPreference) preference);
                 return;
             }
             super.onDisplayPreferenceDialog(preference);
         }
 
+        private void showPictureChoice(final PictureListPreference preference) {
+            final android.content.Context context = requireContext();
+            final float density = getResources().getDisplayMetrics().density;
+            final int accent = Accent.color(context);
+            final CharSequence[] entries = preference.getEntries();
+            final CharSequence[] values = preference.getEntryValues();
+            final int picked = preference.findIndexOfValue(preference.getValue());
+
+            final LinearLayout cards = new LinearLayout(context);
+            cards.setOrientation(LinearLayout.VERTICAL);
+            final int pad = Math.round(16 * density);
+            cards.setPadding(pad, Math.round(8 * density), pad, Math.round(4 * density));
+            final androidx.appcompat.app.AlertDialog[] dialog = new androidx.appcompat.app.AlertDialog[1];
+            View pickedCard = null;
+            for (int i = 0; i < entries.length; i++) {
+                final View card = getLayoutInflater().inflate(R.layout.pref_picture_card, cards, false);
+                ((android.widget.ImageView) card.findViewById(R.id.picture_image))
+                        .setImageResource(preference.pictureAt(i));
+                ((android.widget.TextView) card.findViewById(R.id.picture_title)).setText(entries[i]);
+                final android.widget.TextView description = card.findViewById(R.id.picture_description);
+                final CharSequence line = preference.descriptionAt(i);
+                description.setText(line);
+                description.setVisibility(line == null ? View.GONE : View.VISIBLE);
+                card.setBackground(pictureCardBackground(i == picked, accent, density));
+                final String value = values[i].toString();
+                card.setOnClickListener(clicked -> {
+                    if (preference.callChangeListener(value)) {
+                        preference.setValue(value);
+                    }
+                    if (dialog[0] != null) {
+                        dialog[0].dismiss();
+                    }
+                });
+                if (i == picked) {
+                    pickedCard = card;
+                }
+                cards.addView(card);
+            }
+            final android.widget.ScrollView scroll = new android.widget.ScrollView(context);
+            scroll.addView(cards);
+            dialog[0] = new androidx.appcompat.app.AlertDialog.Builder(context)
+                    .setTitle(preference.getTitle())
+                    .setView(scroll)
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .create();
+            final View focus = pickedCard;
+            dialog[0].setOnShowListener(shown -> {
+                if (focus != null) {
+                    focus.requestFocus();
+                }
+            });
+            dialog[0].show();
+        }
+
+        static android.graphics.drawable.Drawable pictureCardBackground(final boolean picked,
+                                                                               final int accent, final float density) {
+            final android.graphics.drawable.StateListDrawable states =
+                    new android.graphics.drawable.StateListDrawable();
+            states.addState(new int[]{android.R.attr.state_focused},
+                    pictureCard(picked, accent, 3f, accent, density));
+            states.addState(new int[]{},
+                    pictureCard(picked, picked ? accent : 0x40808080, picked ? 2f : 1.5f, accent, density));
+            return new android.graphics.drawable.RippleDrawable(
+                    android.content.res.ColorStateList.valueOf(0x33808080), states, null);
+        }
+
+        private static android.graphics.drawable.GradientDrawable pictureCard(final boolean picked,
+                                                                              final int stroke, final float strokeDp,
+                                                                              final int accent, final float density) {
+            final android.graphics.drawable.GradientDrawable shape =
+                    new android.graphics.drawable.GradientDrawable();
+            shape.setCornerRadius(16 * density);
+            shape.setColor(picked ? androidx.core.graphics.ColorUtils.setAlphaComponent(accent, 0x1F) : 0);
+            shape.setStroke(Math.round(strokeDp * density), stroke);
+            return shape;
+        }
+
         private void showAccentSwatches(final ListPreference preference) {
+            final String[] names = getResources().getStringArray(R.array.accent_entries);
+            final String[] values = getResources().getStringArray(R.array.accent_values);
+            final int[] colors = new int[values.length];
+            for (int i = 0; i < values.length; i++) {
+                colors[i] = Accent.colorOf(requireContext(), values[i]);
+            }
+            showSwatches(preference, R.string.pref_accent, names, values, colors, false,
+                    () -> requireActivity().recreate());
+        }
+
+        private void showSubtitleColorSwatches(final ListPreference preference) {
+            final String[] names = getResources().getStringArray(R.array.subtitle_color_entries);
+            final String[] values = getResources().getStringArray(R.array.subtitle_color_values);
+            final int[] colors = new int[values.length];
+            for (int i = 0; i < values.length; i++) {
+                colors[i] = SubtitleColors.argb(values[i]);
+            }
+            // white and cream would vanish on a light dialog without an edge
+            showSwatches(preference, R.string.subtitle_color_title, names, values, colors, true, null);
+        }
+
+        private void showSwatches(final ListPreference preference, final int title,
+                                  final String[] names, final String[] values, final int[] colors,
+                                  final boolean edged, @Nullable final Runnable afterPick) {
             {
-                final String[] names = getResources().getStringArray(R.array.accent_entries);
-                final String[] values = getResources().getStringArray(R.array.accent_values);
                 final int current = Math.max(0, java.util.Arrays.asList(values)
                         .indexOf(preference.getValue()));
 
@@ -309,14 +649,26 @@ public class SettingsActivity extends AppCompatActivity {
                                 final View view = super.getView(position, convertView, parent);
                                 final android.widget.TextView text =
                                         (android.widget.TextView) view;
-                                final android.graphics.drawable.Drawable disc =
-                                        androidx.core.content.ContextCompat.getDrawable(
-                                                requireContext(), R.drawable.accent_swatch);
+                                final android.graphics.drawable.Drawable disc;
+                                if (edged) {
+                                    final android.graphics.drawable.GradientDrawable shape =
+                                            new android.graphics.drawable.GradientDrawable();
+                                    shape.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                                    shape.setSize(Utils.dpToPx(24), Utils.dpToPx(24));
+                                    shape.setColor(colors[position]);
+                                    shape.setStroke(Math.max(1, Utils.dpToPx(1)), 0x66808080);
+                                    disc = shape;
+                                } else {
+                                    disc = androidx.core.content.ContextCompat.getDrawable(
+                                            requireContext(), R.drawable.accent_swatch);
+                                    if (disc != null) {
+                                        disc.mutate().setColorFilter(
+                                                new android.graphics.PorterDuffColorFilter(
+                                                        colors[position],
+                                                        android.graphics.PorterDuff.Mode.SRC_IN));
+                                    }
+                                }
                                 if (disc != null) {
-                                    disc.mutate().setColorFilter(
-                                            new android.graphics.PorterDuffColorFilter(
-                                                    Accent.colorOf(requireContext(), values[position]),
-                                                    android.graphics.PorterDuff.Mode.SRC_IN));
                                     text.setCompoundDrawablesWithIntrinsicBounds(
                                             disc, null, null, null);
                                     text.setCompoundDrawablePadding(Utils.dpToPx(16));
@@ -326,11 +678,13 @@ public class SettingsActivity extends AppCompatActivity {
                         };
 
                 new android.app.AlertDialog.Builder(requireContext())
-                        .setTitle(R.string.pref_accent)
+                        .setTitle(title)
                         .setSingleChoiceItems(adapter, current, (dialog, which) -> {
                             preference.setValue(values[which]);
                             dialog.dismiss();
-                            requireActivity().recreate();
+                            if (afterPick != null) {
+                                afterPick.run();
+                            }
                         })
                         .setNegativeButton(android.R.string.cancel, null)
                         .show();
@@ -362,7 +716,7 @@ public class SettingsActivity extends AppCompatActivity {
                         final com.brouken.player.online.KeyCheck.Result result =
                                 com.brouken.player.online.KeyCheck.check(key, value);
                         report.append(result.ok ? "\u2713 " : "\u2717 ")
-                                .append(result.message).append('\n');
+                                .append(result.message(context)).append('\n');
                     }
 
                     for (int slot = 1; slot <= com.brouken.player.online.SubtitleAddons.MAX; slot++) {
@@ -374,11 +728,8 @@ public class SettingsActivity extends AppCompatActivity {
                         final com.brouken.player.online.SubtitleAddons.Probe probe =
                                 com.brouken.player.online.SubtitleAddons.probe(url);
                         report.append(probe.accepted() ? "\u2713 " : "\u2717 ")
-                                .append("Addon ").append(slot).append(": ")
-                                .append(probe.accepted()
-                                        ? (probe.name == null ? "answered" : probe.name)
-                                        : probe.verdict.name().toLowerCase(Locale.US)
-                                                .replace('_', ' '))
+                                .append(context.getString(R.string.pref_addon_slot, slot)).append(": ")
+                                .append(probe.accepted() ? probe.name(context) : probe.reason(context))
                                 .append('\n');
                     }
 
@@ -489,7 +840,8 @@ public class SettingsActivity extends AppCompatActivity {
                     com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES_USER,
                     com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES_PASSWORD,
                     com.brouken.player.online.ApiKeys.PREF_SUBDL,
-                    com.brouken.player.online.ApiKeys.PREF_WYZIE}) {
+                    com.brouken.player.online.ApiKeys.PREF_WYZIE,
+                    com.brouken.player.online.ApiKeys.PREF_MDBLIST}) {
                 final Preference preference = findPreference(key);
                 if (preference == null) {
                     continue;
@@ -545,6 +897,36 @@ public class SettingsActivity extends AppCompatActivity {
             }
         }
 
+        private void showRatingsOrder() {
+            final Preference row = findPreference("ratingsOrder");
+            if (row == null) {
+                return;
+            }
+            final java.util.List<String> names = new java.util.ArrayList<>();
+            for (final String site : com.brouken.player.online.Ratings.order(requireContext())) {
+                if (com.brouken.player.online.Ratings.isOn(requireContext(), site)) {
+                    names.add(com.brouken.player.online.Ratings.shortLabel(site));
+                }
+            }
+            row.setSummary(names.isEmpty() ? getString(R.string.pref_ratings_order_none)
+                    : android.text.TextUtils.join(", ", names));
+        }
+
+        private void checkMdbListKey(final String value) {
+            if (value.isEmpty()) {
+                return;
+            }
+            final android.content.Context context = requireContext().getApplicationContext();
+            com.brouken.player.online.Ratings.checkKey(context, value, result -> {
+                final int message = result == com.brouken.player.online.Ratings.KeyCheck.WORKS
+                        ? R.string.pref_mdblist_key_works
+                        : result == com.brouken.player.online.Ratings.KeyCheck.WRONG
+                        ? R.string.pref_mdblist_key_wrong
+                        : R.string.pref_mdblist_key_unreachable;
+                android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show();
+            });
+        }
+
         private void checkThenSave(final EditTextPreference preference,
                                    final String key, final String value) {
             final android.content.Context context = requireContext().getApplicationContext();
@@ -563,21 +945,70 @@ public class SettingsActivity extends AppCompatActivity {
                         preference.setText(value);
                         markWhatIsSet();
                     }
-                    android.widget.Toast.makeText(context, result.message,
+                    android.widget.Toast.makeText(context, result.message(context),
                             android.widget.Toast.LENGTH_LONG).show();
                 });
             }).start();
         }
 
+        // counted off the main thread: the folder can hold thousands of files
+        private void showImageCacheSize(final Preference preference) {
+            final android.content.Context context = requireContext().getApplicationContext();
+            new Thread(() -> {
+                final long bytes = ImageCache.size();
+                final String summary = bytes > 0
+                        ? context.getString(R.string.pref_image_cache_size,
+                                android.text.format.Formatter.formatShortFileSize(context, bytes))
+                        : context.getString(R.string.pref_image_cache_empty);
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        if (isAdded()) {
+                            preference.setSummary(summary);
+                        }
+                    });
+                }
+            }, "jpp-image-cache").start();
+        }
+
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+            // before the list reads it, so a stored "off" shows as Off
+            SeekPreview.migrate(PreferenceManager.getDefaultSharedPreferences(requireContext()));
+            PlayerCorner.migrate(PreferenceManager.getDefaultSharedPreferences(requireContext()));
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
+            final Preference battery = findPreference(PlayerCorner.BATTERY);
+            if (battery != null && !PlayerCorner.hasBattery(requireContext())) {
+                battery.setVisible(false);
+            }
+            final Preference theme = findPreference(AppTheme.PREF_KEY);
+            if (theme != null) {
+                // a television is always dark
+                theme.setVisible(!Utils.isTvBox(requireContext()));
+                theme.setOnPreferenceChangeListener((preference, newValue) -> {
+                    preference.getSharedPreferences().edit()
+                            .putString(AppTheme.PREF_KEY, String.valueOf(newValue)).apply();
+                    // AppCompat recreates the open screens, this one included
+                    AppTheme.apply(requireContext());
+                    return true;
+                });
+            }
             useFullWidth(getPreferenceScreen());
+            // the engine row may be on another page; its value decides what greys out here
+            applyEngineDependentState(PreferenceManager.getDefaultSharedPreferences(requireContext())
+                    .getString("playbackEngine", "auto"));
 
             final Preference controlsOrder = findPreference("controlsOrder");
             if (controlsOrder != null) {
                 controlsOrder.setOnPreferenceClickListener(clicked -> {
                     startActivity(new Intent(requireContext(), ControlOrderActivity.class));
+                    return true;
+                });
+            }
+
+            final Preference ratingsOrder = findPreference("ratingsOrder");
+            if (ratingsOrder != null) {
+                ratingsOrder.setOnPreferenceClickListener(clicked -> {
+                    startActivity(new Intent(requireContext(), RatingsOrderActivity.class));
                     return true;
                 });
             }
@@ -601,6 +1032,27 @@ public class SettingsActivity extends AppCompatActivity {
                 });
             }
 
+            final Preference images = findPreference("clearImageCache");
+            if (images != null) {
+                showImageCacheSize(images);
+                images.setOnPreferenceClickListener(clicked -> {
+                    final long bytes = ImageCache.size();
+                    if (bytes > 0) {
+                        new android.app.AlertDialog.Builder(requireContext())
+                                .setTitle(R.string.image_cache_clear_title)
+                                .setMessage(getString(R.string.image_cache_clear_message,
+                                        android.text.format.Formatter.formatShortFileSize(requireContext(), bytes)))
+                                .setNegativeButton(android.R.string.cancel, null)
+                                .setPositiveButton(R.string.image_cache_clear, (dialog, which) -> {
+                                    ImageCache.clear();
+                                    showImageCacheSize(images);
+                                })
+                                .show();
+                    }
+                    return true;
+                });
+            }
+
             final Preference update = findPreference("checkUpdate");
             if (update != null) {
                 update.setOnPreferenceClickListener(clicked -> {
@@ -618,13 +1070,18 @@ public class SettingsActivity extends AppCompatActivity {
                     com.brouken.player.online.ApiKeys.PREF_SUBDL,
                     com.brouken.player.online.ApiKeys.PREF_WYZIE);
 
-            // the login pair cannot be checked without using up a sign-in; just refresh
+            // unchecked: a login try uses up a sign-in, and some networks block MDBList
             for (final String key : new String[]{
                     com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES_USER,
-                    com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES_PASSWORD}) {
+                    com.brouken.player.online.ApiKeys.PREF_OPENSUBTITLES_PASSWORD,
+                    com.brouken.player.online.ApiKeys.PREF_MDBLIST}) {
                 final Preference preference = findPreference(key);
                 if (preference != null) {
                     preference.setOnPreferenceChangeListener((changed, newValue) -> {
+                        if (com.brouken.player.online.ApiKeys.PREF_MDBLIST.equals(key)) {
+                            com.brouken.player.online.Ratings.retrySoon();
+                            checkMdbListKey(newValue == null ? "" : newValue.toString().trim());
+                        }
                         new android.os.Handler(android.os.Looper.getMainLooper())
                                 .post(this::markWhatIsSet);
                         return true;
@@ -694,11 +1151,7 @@ public class SettingsActivity extends AppCompatActivity {
                         : getResources().getQuantityString(
                                 R.plurals.pref_folders_summary, folders, folders));
                 preferenceFolders.setOnPreferenceClickListener(preference -> {
-                    requireActivity().getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.settings, new FoldersFragment())
-                            .addToBackStack(null)
-                            .commit();
+                    openSubPage(new FoldersFragment(), preference.getTitle());
                     return true;
                 });
             }
@@ -714,7 +1167,7 @@ public class SettingsActivity extends AppCompatActivity {
             final Preference preferenceImport = findPreference("backupImport");
             if (preferenceImport != null) {
                 preferenceImport.setOnPreferenceClickListener(preference -> {
-                    // any type: shared files often arrive mistyped; the content is checked on read
+                    // any type: shared files often arrive mistyped; the content is checked
                     try {
                         backupImportPicker.launch(new String[]{"*/*"});
                     } catch (android.content.ActivityNotFoundException e) {
@@ -732,11 +1185,7 @@ public class SettingsActivity extends AppCompatActivity {
                         ? getString(R.string.pref_history_summary_empty)
                         : getResources().getQuantityString(R.plurals.pref_history_summary, count, count));
                 preferenceHistory.setOnPreferenceClickListener(preference -> {
-                    requireActivity().getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.settings, new HistoryFragment())
-                            .addToBackStack(null)
-                            .commit();
+                    openSubPage(new HistoryFragment(), preference.getTitle());
                     return true;
                 });
             }
@@ -760,11 +1209,7 @@ public class SettingsActivity extends AppCompatActivity {
                             R.plurals.pref_addons_summary_count, configured, configured));
                 }
                 preferenceAddons.setOnPreferenceClickListener(preference -> {
-                    requireActivity().getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.settings, new SubtitleAddonsFragment())
-                            .addToBackStack(null)
-                            .commit();
+                    openSubPage(new SubtitleAddonsFragment(), preference.getTitle());
                     return true;
                 });
             }
@@ -805,6 +1250,46 @@ public class SettingsActivity extends AppCompatActivity {
                 listPreferenceLanguageAudio.setEntryValues(entries.keySet().toArray(new String[0]));
             }
 
+            final ListPreference appLanguage = findPreference(AppLanguage.PREF_KEY);
+            if (appLanguage != null) {
+                final String chosen = AppLanguage.chosen(requireContext());
+                final String listed = AppLanguage.listed(chosen, appLanguage.getEntryValues());
+                if (listed != null) {
+                    appLanguage.setValue(listed);
+                }
+                // a language Android holds that the list has no form of: its own name
+                appLanguage.setSummaryProvider(preference -> {
+                    if (listed != null) {
+                        return appLanguage.getEntry();
+                    }
+                    final Locale locale = Locale.forLanguageTag(chosen);
+                    final String name = locale.getDisplayName(locale);
+                    return name.isEmpty() ? chosen
+                            : name.substring(0, 1).toUpperCase(locale) + name.substring(1);
+                });
+                appLanguage.setOnPreferenceChangeListener((preference, value) -> {
+                    AppLanguage.choose(requireActivity(), (String) value);
+                    return true;
+                });
+            }
+
+            final ListPreference subtitleLanguage = findPreference("subtitleLanguage");
+            if (subtitleLanguage != null) {
+                final java.util.List<String> codes = com.brouken.player.online.SubtitleLanguages.codes();
+                final java.util.Map<String, String> names = new java.util.HashMap<>();
+                for (final String code : codes) {
+                    names.put(code, com.brouken.player.online.SubtitleLanguages.name(code));
+                }
+                final java.text.Collator collator = java.text.Collator.getInstance();
+                java.util.Collections.sort(codes, (a, b) -> collator.compare(names.get(a), names.get(b)));
+                final String[] entries = new String[codes.size()];
+                for (int i = 0; i < entries.length; i++) {
+                    entries[i] = names.get(codes.get(i));
+                }
+                subtitleLanguage.setEntries(entries);
+                subtitleLanguage.setEntryValues(codes.toArray(new String[0]));
+            }
+
             customSubtitleFontSwitch = findPreference(Prefs.PREF_KEY_SUBTITLE_CUSTOM_FONT_ENABLED);
             customSubtitleFontChoose = findPreference(PREF_KEY_CUSTOM_SUBTITLE_FONT_CHOOSE);
 
@@ -828,18 +1313,53 @@ public class SettingsActivity extends AppCompatActivity {
             }
         }
 
+        private void openSubPage(final androidx.fragment.app.Fragment page, final CharSequence title) {
+            final Bundle args = new Bundle();
+            args.putCharSequence(EXTRA_TITLE, title);
+            page.setArguments(args);
+            final boolean inPane = getParentFragment() instanceof androidx.preference.PreferenceHeaderFragmentCompat;
+            getParentFragmentManager()
+                    .beginTransaction()
+                    .replace(inPane ? androidx.preference.R.id.preferences_detail : R.id.settings, page)
+                    .addToBackStack(null)
+                    .commit();
+        }
+
         @Override
         public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
             super.onViewCreated(view, savedInstanceState);
-            if (Build.VERSION.SDK_INT >= 29) {
-                recyclerView = getListView();
+            final String highlight = getArguments() == null ? null : getArguments().getString(EXTRA_HIGHLIGHT);
+            if (highlight != null && savedInstanceState == null) {
+                pickOut(highlight);
             }
+        }
+
+        private void pickOut(final String key) {
+            scrollToPreference(key);
+            getListView().postDelayed(() -> {
+                if (!isAdded() || !(getListView().getAdapter() instanceof androidx.preference.PreferenceGroup.PreferencePositionCallback)) {
+                    return;
+                }
+                final int position = ((androidx.preference.PreferenceGroup.PreferencePositionCallback)
+                        getListView().getAdapter()).getPreferenceAdapterPosition(key);
+                final RecyclerView.ViewHolder holder = getListView().findViewHolderForAdapterPosition(position);
+                if (holder == null) {
+                    return;
+                }
+                final View row = holder.itemView;
+                final android.graphics.drawable.Drawable before = row.getBackground();
+                row.setBackgroundColor(androidx.core.graphics.ColorUtils.setAlphaComponent(
+                        Accent.color(requireContext()), 0x40));
+                row.requestFocus();
+                row.postDelayed(() -> row.setBackground(before), 1500);
+            }, 300);
         }
 
         @Override
         public void onResume() {
             super.onResume();
             markWhatIsSet();
+            showRatingsOrder();
             if (pendingCustomFontFallbackPermission) {
                 pendingCustomFontFallbackPermission = false;
                 if (!needsManageExternalStoragePermission()) {
@@ -879,8 +1399,6 @@ public class SettingsActivity extends AppCompatActivity {
                     "mapDV7ToHevc",
                     "skipSilence",
                     "frameRateMatching",
-                    "subtitleCustomFontEnabled",
-                    "subtitleCustomFontChoose",
             };
 
             for (final String key : media3OnlyKeys) {
@@ -934,7 +1452,7 @@ public class SettingsActivity extends AppCompatActivity {
             try {
                 subtitleFolderPicker.launch(null);
             } catch (android.content.ActivityNotFoundException e) {
-                // Some television builds ship no document picker at all.
+                // some television builds ship no document picker at all
                 Toast.makeText(requireContext(), R.string.pref_subtitle_folder_failed,
                         Toast.LENGTH_LONG).show();
             }

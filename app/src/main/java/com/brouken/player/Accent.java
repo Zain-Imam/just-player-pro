@@ -42,6 +42,11 @@ public final class Accent {
         return KEYS.clone();
     }
 
+    // a context with this accent, for drawing before it is chosen for the whole app
+    public static Context themed(@NonNull final Context context, @Nullable final String key) {
+        return new android.view.ContextThemeWrapper(context, overlayFor(key));
+    }
+
     public static void apply(@NonNull final Activity activity) {
         activity.getTheme().applyStyle(overlayFor(stored(activity)), true);
     }

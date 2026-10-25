@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-// language preference order, shared by both engines
 public final class Languages {
 
     private Languages() {
@@ -47,9 +46,10 @@ public final class Languages {
             order.add(locale.getLanguage());
         }
 
+        // the search language as a real tag: pt-br searches as pt-BR, sp as es-ES
         final String search = preference(context, "subtitleLanguage");
         if (search != null && !search.isEmpty()) {
-            order.add(search);
+            order.add(com.brouken.player.online.SubtitleLanguages.trackTag(search));
         }
 
         return unique(order);
@@ -104,7 +104,8 @@ public final class Languages {
 
     private static String toIso3(final String language) {
         try {
-            final String iso3 = new Locale(language).getISO3Language();
+            // pt-BR and zh-Hant: the language part, which is what tracks are tagged with
+            final String iso3 = Locale.forLanguageTag(language).getISO3Language();
             return iso3.isEmpty() ? null : iso3;
         } catch (Exception e) {
             return null;
@@ -114,6 +115,10 @@ public final class Languages {
     private static String toIso1(final String language) {
         if (language.length() == 2) {
             return language;
+        }
+        final String base = Locale.forLanguageTag(language).getLanguage();
+        if (base.length() == 2) {
+            return base;
         }
         for (final String code : Locale.getISOLanguages()) {
             if (language.equalsIgnoreCase(toIso3(code))) {
