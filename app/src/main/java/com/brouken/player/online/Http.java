@@ -32,6 +32,9 @@ public final class Http {
 
     private static final int TIMEOUT_SECONDS = 20;
 
+    // the 20s limits are per read; a server dripping bytes would never trip them
+    private static final int CALL_TIMEOUT_SECONDS = 60;
+
     private static final Pattern DISPOSITION_EXTENDED =
             Pattern.compile("filename\\*\\s*=\\s*[^']*'[^']*'([^;\\s]+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern DISPOSITION_PLAIN =
@@ -49,6 +52,7 @@ public final class Http {
                     client = new OkHttpClient.Builder()
                             .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
                             .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                            .callTimeout(CALL_TIMEOUT_SECONDS, TimeUnit.SECONDS)
                             .build();
                 }
             }
@@ -130,6 +134,23 @@ public final class Http {
 
     @NonNull
     public static Result get(final String url, @Nullable final Map<String, String> headers) {
+        return get(url, headers, client());
+    }
+
+    // gives up sooner, for a service some networks block
+    @NonNull
+    public static Result get(final String url, @Nullable final Map<String, String> headers,
+                             final int timeoutSeconds) {
+        return get(url, headers, client().newBuilder()
+                .connectTimeout(timeoutSeconds, TimeUnit.SECONDS)
+                .readTimeout(timeoutSeconds, TimeUnit.SECONDS)
+                .callTimeout(timeoutSeconds * 2L, TimeUnit.SECONDS)
+                .build());
+    }
+
+    @NonNull
+    private static Result get(final String url, @Nullable final Map<String, String> headers,
+                              final OkHttpClient client) {
         final Request.Builder builder = new Request.Builder()
                 .url(url)
                 .header("User-Agent", USER_AGENT)
@@ -141,7 +162,7 @@ public final class Http {
             }
         }
 
-        try (Response response = client().newCall(builder.build()).execute()) {
+        try (Response response = client.newCall(builder.build()).execute()) {
             final ResponseBody body = response.body();
             return new Result(response.code(), body == null ? null : body.string(), null);
         } catch (IOException | IllegalArgumentException | IllegalStateException e) {

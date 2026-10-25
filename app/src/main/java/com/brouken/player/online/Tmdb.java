@@ -89,7 +89,6 @@ public final class Tmdb {
             return new ArrayList<>();
         }
 
-        // 1. The title, with the year beside it.
         if (year != null) {
             final List<Candidate> withYear = search(context, clean, year);
             if (!withYear.isEmpty()) {
@@ -97,10 +96,8 @@ public final class Tmdb {
             }
         }
 
-        // 2. The title on its own.
         tried.add(clean);
 
-        // 3. Without a subtitle after a colon or a dash.
         final String[] cuts = {":", " - ", " – "};
         for (final String cut : cuts) {
             final int at = clean.indexOf(cut);
@@ -109,7 +106,7 @@ public final class Tmdb {
             }
         }
 
-        // 4. Without the last word, for a name that kept one too many.
+        // without the last word, for a name that kept one too many
         final String[] words = clean.split("[ ]+");
         if (words.length > 2) {
             final StringBuilder shorter = new StringBuilder();
@@ -122,7 +119,6 @@ public final class Tmdb {
             tried.add(shorter.toString());
         }
 
-        // 5. Letters and digits only, for a name still carrying punctuation.
         final String bare = clean.replaceAll("[^A-Za-z0-9 ]+", " ")
                 .replaceAll("[ ]+", " ").trim();
         if (!bare.isEmpty()) {
@@ -153,7 +149,6 @@ public final class Tmdb {
         params.put("query", query.trim());
         params.put("include_adult", "false");
         if (year != null && year.matches("[0-9]{4}")) {
-            // Multi search takes one year for both kinds.
             params.put("year", year);
         }
 
@@ -176,7 +171,7 @@ public final class Tmdb {
             final String mediaType = row.optString("media_type", "");
             final boolean isSeries = "tv".equals(mediaType);
             if (!isSeries && !"movie".equals(mediaType)) {
-                // People show up in multi search too.
+                // people show up in multi search too
                 continue;
             }
 
@@ -236,7 +231,6 @@ public final class Tmdb {
                     movie.optDouble("vote_average", 0));
         }
 
-        // -- a series -------------------------------------------------------
         final Map<String, String> showParams = Http.params();
         showParams.put("api_key", key);
         showParams.put("append_to_response", "external_ids");
@@ -255,7 +249,6 @@ public final class Tmdb {
         final String showYear = firstAir.length() >= 4 ? firstAir.substring(0, 4) : candidate.year;
 
         if (season == null || episode == null) {
-            // A whole show, with no episode picked out yet.
             return new Identity(true, candidate.id, null, parentImdb, showTitle, null,
                     season, null, showYear,
                     nullIfEmpty(show.optString("overview", "")),
@@ -277,6 +270,7 @@ public final class Tmdb {
         String episodeOverview = null;
         String airDate = null;
         double rating = show.optDouble("vote_average", 0);
+        double episodeRating = 0;
 
         if (ep != null) {
             final JSONObject epExternal = ep.optJSONObject("external_ids");
@@ -287,16 +281,19 @@ public final class Tmdb {
             final double epRating = ep.optDouble("vote_average", 0);
             if (epRating > 0) {
                 rating = epRating;
+                episodeRating = epRating;
             }
         }
 
-        return new Identity(true, candidate.id, episodeImdb, parentImdb, showTitle, episodeTitle,
+        final Identity identity = new Identity(true, candidate.id, episodeImdb, parentImdb, showTitle, episodeTitle,
                 season, episode, showYear,
                 episodeOverview != null ? episodeOverview : nullIfEmpty(show.optString("overview", "")),
                 // the show poster is used for episodes too
                 nullIfEmpty(show.optString("poster_path", "")),
                 airDate != null ? airDate : nullIfEmpty(firstAir),
                 rating);
+        identity.episodeRating = episodeRating;
+        return identity;
     }
 
     public static final class Season implements PosterPicker.Item {
@@ -366,7 +363,7 @@ public final class Tmdb {
 
         @Override
         public float aspect() {
-            // A frame from the episode, not a poster.
+            // a frame from the episode, not a poster
             return 16f / 9f;
         }
 
@@ -454,6 +451,99 @@ public final class Tmdb {
                     nullIfEmpty(row.optString("air_date", ""))));
         }
         return episodes;
+    }
+
+    public static final class Extras {
+        public int runtimeMinutes;
+        @Nullable
+        public String genres;
+        @Nullable
+        public String backdropPath;
+        @NonNull
+        public final List<CastMember> cast = new ArrayList<>();
+    }
+
+    public static final class CastMember {
+        @NonNull
+        public final String name;
+        @Nullable
+        public final String character;
+        @Nullable
+        public final String profilePath;
+
+        CastMember(@NonNull String name, @Nullable String character, @Nullable String profilePath) {
+            this.name = name;
+            this.character = character;
+            this.profilePath = profilePath;
+        }
+    }
+
+    public static final String PROFILE_BASE = "https://image.tmdb.org/t/p/w185";
+    private static final int CAST_MAX = 15;
+
+    public static final String BACKDROP_BASE = "https://image.tmdb.org/t/p/w780";
+
+    // null offline or without a key
+    @Nullable
+    public static Extras extras(final Context context, final boolean isSeries, final int tmdbId) {
+        final String key = ApiKeys.get(context, ApiKeys.PREF_TMDB);
+        if (key == null || tmdbId <= 0) {
+            return null;
+        }
+        final Map<String, String> params = Http.params();
+        params.put("api_key", key);
+        // a show's whole cast, not one episode's
+        params.put("append_to_response", isSeries ? "aggregate_credits" : "credits");
+        final JSONObject item = Http.get(BASE + (isSeries ? "/tv/" : "/movie/") + tmdbId
+                + Http.query(params), null).json();
+        if (item == null) {
+            return null;
+        }
+        final Extras extras = new Extras();
+        extras.runtimeMinutes = item.optInt("runtime", 0);
+        if (extras.runtimeMinutes <= 0) {
+            final JSONArray times = item.optJSONArray("episode_run_time");
+            if (times != null && times.length() > 0) {
+                extras.runtimeMinutes = times.optInt(0, 0);
+            }
+        }
+        final JSONArray genres = item.optJSONArray("genres");
+        if (genres != null) {
+            final StringBuilder names = new StringBuilder();
+            for (int i = 0; i < genres.length() && i < 3; i++) {
+                final JSONObject genre = genres.optJSONObject(i);
+                final String name = genre == null ? null : nullIfEmpty(genre.optString("name", ""));
+                if (name != null) {
+                    names.append(names.length() > 0 ? " · " : "").append(name);
+                }
+            }
+            extras.genres = names.length() > 0 ? names.toString() : null;
+        }
+        extras.backdropPath = nullIfEmpty(item.optString("backdrop_path", ""));
+        readCast(item.optJSONObject(isSeries ? "aggregate_credits" : "credits"), extras.cast);
+        return extras;
+    }
+
+    static void readCast(@Nullable final JSONObject credits, final List<CastMember> into) {
+        final JSONArray cast = credits == null ? null : credits.optJSONArray("cast");
+        if (cast == null) {
+            return;
+        }
+        for (int i = 0; i < cast.length() && into.size() < CAST_MAX; i++) {
+            final JSONObject person = cast.optJSONObject(i);
+            final String name = person == null ? null : nullIfEmpty(person.optString("name", ""));
+            if (name == null) {
+                continue;
+            }
+            String character = nullIfEmpty(person.optString("character", ""));
+            final JSONArray roles = person.optJSONArray("roles");
+            if (character == null && roles != null && roles.length() > 0) {
+                final JSONObject role = roles.optJSONObject(0);
+                character = role == null ? null : nullIfEmpty(role.optString("character", ""));
+            }
+            into.add(new CastMember(name, character,
+                    nullIfEmpty(person.optString("profile_path", ""))));
+        }
     }
 
     @Nullable

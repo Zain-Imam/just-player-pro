@@ -1,32 +1,64 @@
 package com.brouken.player.online;
 
+import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.brouken.player.R;
+
 import java.util.Map;
 
-// Checks a key with its service before it is saved.
 public final class KeyCheck {
+
+    public enum Kind {
+        CLEARED, SAVED, ACCEPTED, REJECTED, RATE_LIMITED, NO_ANSWER, HTTP
+    }
 
     public static final class Result {
         public final boolean ok;
-        public final String message;
+        public final Kind kind;
+        @Nullable
+        final String service;
+        final int code;
 
-        Result(final boolean ok, final String message) {
-            this.ok = ok;
-            this.message = message;
+        Result(final Kind kind, @Nullable final String service, final int code) {
+            this.ok = kind == Kind.CLEARED || kind == Kind.SAVED || kind == Kind.ACCEPTED;
+            this.kind = kind;
+            this.service = service;
+            this.code = code;
+        }
+
+        // worded where it is shown, in the app's language
+        public String message(final Context context) {
+            switch (kind) {
+                case CLEARED:
+                    return context.getString(R.string.key_check_cleared);
+                case SAVED:
+                    return context.getString(R.string.key_check_saved);
+                case ACCEPTED:
+                    return context.getString(R.string.key_check_accepted, service);
+                case REJECTED:
+                    return context.getString(R.string.key_check_rejected, service);
+                case RATE_LIMITED:
+                    return context.getString(R.string.key_check_rate_limited, service);
+                case NO_ANSWER:
+                    return context.getString(R.string.key_check_no_answer, service);
+                default:
+                    return context.getString(R.string.key_check_http, service, code);
+            }
         }
     }
 
     private KeyCheck() {
     }
 
-    // Runs on the caller's thread, which must not be the main one.
+    // on the caller's thread, which must not be the main one
     @NonNull
     public static Result check(final String prefKey, @Nullable final String value) {
         final String key = value == null ? "" : value.trim();
         if (key.isEmpty()) {
-            return new Result(true, "Cleared");
+            return new Result(Kind.CLEARED, null, 0);
         }
         switch (prefKey) {
             case ApiKeys.PREF_TMDB:
@@ -39,7 +71,7 @@ public final class KeyCheck {
                 return wyzie(key);
             default:
                 // user name and password have no check of their own
-                return new Result(true, "Saved");
+                return new Result(Kind.SAVED, null, 0);
         }
     }
 
@@ -75,18 +107,18 @@ public final class KeyCheck {
 
     private static Result judge(final Http.Result response, final String service) {
         if (response.ok()) {
-            return new Result(true, service + " accepted the key");
+            return new Result(Kind.ACCEPTED, service, response.code);
         }
         switch (response.code) {
             case 401:
             case 403:
-                return new Result(false, service + " rejected the key");
+                return new Result(Kind.REJECTED, service, response.code);
             case 429:
-                return new Result(false, service + " is rate limiting; try again shortly");
+                return new Result(Kind.RATE_LIMITED, service, response.code);
             case 0:
-                return new Result(false, "No answer from " + service + " — check the connection");
+                return new Result(Kind.NO_ANSWER, service, 0);
             default:
-                return new Result(false, service + " answered HTTP " + response.code);
+                return new Result(Kind.HTTP, service, response.code);
         }
     }
 }

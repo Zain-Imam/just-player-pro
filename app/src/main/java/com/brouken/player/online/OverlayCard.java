@@ -35,6 +35,10 @@ public final class OverlayCard {
     private TextView meta;
     @Nullable
     private TextView overview;
+    @Nullable
+    private TextView ratings;
+    @Nullable
+    private Identity shownIdentity;
 
     public OverlayCard(final Activity activity, final ViewGroup attachTo, final View bounds,
                        final Picture picture) {
@@ -54,10 +58,16 @@ public final class OverlayCard {
 
         applyBackground(root.findViewById(R.id.online_overlay));
 
+        final com.brouken.player.PlayerStyle style = com.brouken.player.PlayerStyle.of(activity);
+        if (style != null) {
+            style.dressCard(root);
+        }
+
         poster = root.findViewById(R.id.overlay_poster);
         heading = root.findViewById(R.id.overlay_heading);
         meta = root.findViewById(R.id.overlay_meta);
         overview = root.findViewById(R.id.overlay_overview);
+        ratings = root.findViewById(R.id.overlay_ratings);
 
         // margins are left/top, so keep LTR on right-to-left devices
         root.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
@@ -68,7 +78,7 @@ public final class OverlayCard {
                 (v, l, t, r, b, ol, ot, or, ob) -> syncToVideo());
     }
 
-    // opacity is set on the shape colour; setAlpha would scale the drawable's own alpha
+    // opacity goes on the shape colour; setAlpha would scale the drawable alpha
     private static final int CARD_RED = 0x14;
     private static final int CARD_GREEN = 0x14;
     private static final int CARD_BLUE = 0x14;
@@ -84,6 +94,11 @@ public final class OverlayCard {
         if (card == null) {
             return;
         }
+        final com.brouken.player.PlayerStyle style = com.brouken.player.PlayerStyle.of(activity);
+        if (style != null) {
+            card.setBackground(style.infoCardBackground(backgroundPercent(activity)));
+            return;
+        }
         final android.graphics.drawable.Drawable background =
                 androidx.core.content.ContextCompat.getDrawable(
                         activity, R.drawable.online_overlay_card);
@@ -95,7 +110,6 @@ public final class OverlayCard {
         final int percent = backgroundPercent(activity);
         final int fill = Math.round(percent * 255f / 100f);
         shape.setColor(android.graphics.Color.argb(fill, CARD_RED, CARD_GREEN, CARD_BLUE));
-        // the outline fades with it
         final int stroke = Math.round(percent * 0x33 / 100f);
         final int width = Math.round(activity.getResources().getDisplayMetrics().density);
         shape.setStroke(width, android.graphics.Color.argb(stroke, 255, 255, 255));
@@ -154,17 +168,27 @@ public final class OverlayCard {
         }
 
         heading.setText(identity.heading());
-        meta.setText(metaLine(identity));
-        meta.setVisibility(metaLine(identity).isEmpty() ? View.GONE : View.VISIBLE);
 
         final String synopsis = identity.overview;
         overview.setText(synopsis == null ? "" : synopsis);
         overview.setVisibility(synopsis == null || synopsis.isEmpty() ? View.GONE : View.VISIBLE);
 
+        shownIdentity = identity;
+        showRatings(identity, null);
+
         Posters.load(poster, Posters.url(identity.posterPath), R.drawable.online_poster_placeholder);
 
         syncToVideo();
         root.setVisibility(View.VISIBLE);
+        if (Ratings.onCard(activity)) {
+            // from memory at once, else whenever MDBList answers; the card never waits
+            Ratings.fetch(activity, identity, found -> {
+                if (isShowing() && shownIdentity != null && shownIdentity.tmdbId == identity.tmdbId
+                        && shownIdentity.isSeries == identity.isSeries) {
+                    showRatings(identity, found);
+                }
+            });
+        }
         // the view may still be mid-layout on the first pause after opening
         root.post(this::syncToVideo);
     }
@@ -193,12 +217,126 @@ public final class OverlayCard {
         return root != null && root.getVisibility() == View.VISIBLE;
     }
 
-    private String metaLine(final Identity identity) {
+    // the meta line's star goes when the scores show TMDB's own number
+    private void showRatings(final Identity identity, @Nullable final java.util.Map<String, Double> found) {
+        final java.util.Map<String, Double> shown = Ratings.onCard(activity)
+                ? Ratings.forTitle(activity, identity, found) : java.util.Collections.emptyMap();
+        final boolean line = !shown.isEmpty() && ratings != null;
+        if (line) {
+            showIcons(Ratings.cardScores(shown, found));
+        }
+        if (ratings != null) {
+            ratings.setVisibility(line ? View.VISIBLE : View.GONE);
+        }
+        final String metaText = metaLine(identity, !(line && shown.containsKey(Ratings.TMDB)));
+        meta.setText(metaText);
+        meta.setVisibility(metaText.isEmpty() ? View.GONE : View.VISIBLE);
+        // the card is only as tall as the picture
+        overview.setMaxLines(line ? 3 : 4);
+    }
+
+    private void showIcons(final java.util.List<Ratings.CardScore> scores) {
+        final float density = activity.getResources().getDisplayMetrics().density;
+        final int height = Math.round(ratings.getTextSize() * 1.25f);
+        final android.text.SpannableStringBuilder line = new android.text.SpannableStringBuilder();
+        final StringBuilder spoken = new StringBuilder();
+        for (final Ratings.CardScore score : scores) {
+            final android.graphics.drawable.Drawable drawable =
+                    androidx.core.content.ContextCompat.getDrawable(activity, score.icon);
+            if (drawable == null) {
+                continue;
+            }
+            if (line.length() > 0) {
+                append(line, " ", new Gap(Math.round(10 * density)));
+                spoken.append(", ");
+            }
+            final int width = drawable.getIntrinsicHeight() > 0
+                    ? Math.round(height * drawable.getIntrinsicWidth() / (float) drawable.getIntrinsicHeight())
+                    : height;
+            drawable.setBounds(0, 0, width, height);
+            append(line, "￼", new Icon(drawable));
+            append(line, " ", new Gap(Math.round(4 * density)));
+            line.append(score.value);
+            spoken.append(Ratings.spokenName(activity, score.site)).append(' ').append(score.value);
+        }
+        ratings.setText(line);
+        ratings.setContentDescription(spoken);
+    }
+
+    private static void append(final android.text.SpannableStringBuilder line, final String text,
+                               final Object span) {
+        final int start = line.length();
+        line.append(text);
+        line.setSpan(span, start, line.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    }
+
+    private static final class Gap extends android.text.style.ReplacementSpan {
+        private final int width;
+
+        Gap(final int width) {
+            this.width = width;
+        }
+
+        @Override
+        public int getSize(@androidx.annotation.NonNull final android.graphics.Paint paint,
+                           final CharSequence text, final int start, final int end,
+                           @Nullable final android.graphics.Paint.FontMetricsInt fm) {
+            return width;
+        }
+
+        @Override
+        public void draw(@androidx.annotation.NonNull final android.graphics.Canvas canvas,
+                         final CharSequence text, final int start, final int end, final float x,
+                         final int top, final int y, final int bottom,
+                         @androidx.annotation.NonNull final android.graphics.Paint paint) {
+        }
+    }
+
+    // ImageSpan centres only from Android 10; this centres on the words everywhere
+    private static final class Icon extends android.text.style.ReplacementSpan {
+        private final android.graphics.drawable.Drawable drawable;
+
+        Icon(final android.graphics.drawable.Drawable drawable) {
+            this.drawable = drawable;
+        }
+
+        @Override
+        public int getSize(@androidx.annotation.NonNull final android.graphics.Paint paint,
+                           final CharSequence text, final int start, final int end,
+                           @Nullable final android.graphics.Paint.FontMetricsInt fm) {
+            if (fm != null) {
+                // room for the icon if it is taller than the line
+                final android.graphics.Paint.FontMetricsInt font = paint.getFontMetricsInt();
+                final int centre = (font.ascent + font.descent) / 2;
+                final int half = drawable.getBounds().height() / 2;
+                fm.ascent = Math.min(font.ascent, centre - half);
+                fm.descent = Math.max(font.descent, centre + half);
+                fm.top = Math.min(font.top, fm.ascent);
+                fm.bottom = Math.max(font.bottom, fm.descent);
+            }
+            return drawable.getBounds().width();
+        }
+
+        @Override
+        public void draw(@androidx.annotation.NonNull final android.graphics.Canvas canvas,
+                         final CharSequence text, final int start, final int end, final float x,
+                         final int top, final int y, final int bottom,
+                         @androidx.annotation.NonNull final android.graphics.Paint paint) {
+            final android.graphics.Paint.FontMetricsInt font = paint.getFontMetricsInt();
+            final int centre = y + (font.ascent + font.descent) / 2;
+            canvas.save();
+            canvas.translate(x, centre - drawable.getBounds().height() / 2f);
+            drawable.draw(canvas);
+            canvas.restore();
+        }
+    }
+
+    private String metaLine(final Identity identity, final boolean withRating) {
         final StringBuilder sb = new StringBuilder();
         if (identity.airDate != null && !identity.airDate.isEmpty()) {
             sb.append(identity.airDate);
         }
-        if (identity.rating > 0) {
+        if (withRating && identity.rating > 0) {
             if (sb.length() > 0) {
                 sb.append("  ·  ");
             }

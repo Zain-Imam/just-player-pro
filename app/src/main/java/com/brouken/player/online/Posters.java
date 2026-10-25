@@ -7,6 +7,7 @@ import android.os.Looper;
 import android.util.LruCache;
 import android.widget.ImageView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.concurrent.ExecutorService;
@@ -39,6 +40,20 @@ public final class Posters {
         return path.startsWith("http") ? path : Tmdb.IMAGE_BASE + path;
     }
 
+    @Nullable
+    private static byte[] fetch(final String url) {
+        final byte[] kept = com.brouken.player.ImageCache.read(url);
+        if (kept != null) {
+            com.brouken.player.Utils.log("Poster from the image cache");
+            return kept;
+        }
+        final byte[] bytes = Http.getBytes(url, null);
+        if (bytes != null) {
+            com.brouken.player.ImageCache.write(url, bytes);
+        }
+        return bytes;
+    }
+
     // clear the placeholder's tint and dimming
     private static void show(final ImageView view, final Bitmap bitmap) {
         view.setImageTintList(null);
@@ -69,7 +84,7 @@ public final class Posters {
         view.setImageResource(placeholder);
 
         WORKER.execute(() -> {
-            final byte[] bytes = Http.getBytes(url, null);
+            final byte[] bytes = fetch(url);
             if (bytes == null) {
                 return;
             }
@@ -78,12 +93,12 @@ public final class Posters {
             options.inPreferredConfig = Bitmap.Config.RGB_565;
             final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
             if (bitmap == null) {
+                com.brouken.player.ImageCache.remove(url);
                 return;
             }
             CACHE.put(url, bitmap);
 
             MAIN.post(() -> {
-                // Still the row that asked for it?
                 if (url.equals(view.getTag(TAG_KEY))) {
                     show(view, bitmap);
                 }

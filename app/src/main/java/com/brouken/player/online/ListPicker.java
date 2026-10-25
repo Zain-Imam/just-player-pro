@@ -30,9 +30,12 @@ public final class ListPicker {
         @Nullable
         String detail();
 
-        // the row in use now, drawn in the accent colour
         default boolean current() {
             return false;
+        }
+
+        default int icon() {
+            return 0;
         }
     }
 
@@ -49,13 +52,12 @@ public final class ListPicker {
                             final List<? extends Row> rows, final OnPicked onPicked,
                             final int actionLabel, @Nullable final Runnable action) {
         final RecyclerView list = new RecyclerView(activity);
-        // full height, so the buttons sit at the bottom of the panel
         list.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         list.setLayoutManager(new LinearLayoutManager(activity));
         list.addItemDecoration(new Separator(activity));
 
-        final AlertDialog.Builder builder = new AlertDialog.Builder(activity)
+        final AlertDialog.Builder builder = new AlertDialog.Builder(com.brouken.player.AppTheme.panels(activity))
                 .setTitle(title)
                 .setView(list)
                 .setNegativeButton(android.R.string.cancel, null);
@@ -73,14 +75,31 @@ public final class ListPicker {
         dialog.show();
         // after show(): a floating dialog clamps a size set before it is shown
         sizePanel(activity, dialog);
+        // the title and buttons exist only once shown
+        final com.brouken.player.PlayerStyle style = com.brouken.player.PlayerStyle.of(activity);
+        if (style != null) {
+            style.dressDialogText(dialog);
+        }
 
-        // an unfocused list ignores the remote; the rows do not exist yet, see Panels
-        com.brouken.player.Panels.focusFirstRow(list);
+        // an unfocused list ignores the remote; start on the row in use so OK changes nothing
+        int current = 0;
+        for (int i = 0; i < rows.size(); i++) {
+            if (rows.get(i).current()) {
+                current = i;
+                break;
+            }
+        }
+        com.brouken.player.Panels.focusRow(list, current);
 
         return dialog;
     }
 
-    // a full-height side panel, so the video stays visible
+    private static int highlight(final android.content.Context context) {
+        final int accent = com.brouken.player.Accent.color(context);
+        final com.brouken.player.PlayerStyle style = com.brouken.player.PlayerStyle.of(context);
+        return style != null ? style.highlight(accent) : accent;
+    }
+
     private static void dressPanel(final Activity activity, final AlertDialog dialog) {
         final android.view.Window window = dialog.getWindow();
         if (window == null) {
@@ -90,6 +109,10 @@ public final class ListPicker {
         window.setWindowAnimations(R.style.PanelAnimation);
         window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(
                 androidx.core.content.ContextCompat.getColor(activity, R.color.ui_panel_background)));
+        final com.brouken.player.PlayerStyle style = com.brouken.player.PlayerStyle.of(activity);
+        if (style != null) {
+            window.setBackgroundDrawable(style.panelBackground());
+        }
         window.setDimAmount(0.2f);
     }
 
@@ -111,7 +134,8 @@ public final class ListPicker {
         private final float inset;
 
         Separator(final Activity activity) {
-            paint.setColor(0x22FFFFFF);
+            final com.brouken.player.PlayerStyle style = com.brouken.player.PlayerStyle.of(activity);
+            paint.setColor(style != null ? style.dividerColour() : 0x22FFFFFF);
             paint.setStrokeWidth(activity.getResources().getDisplayMetrics().density);
             inset = 20 * activity.getResources().getDisplayMetrics().density;
         }
@@ -131,17 +155,31 @@ public final class ListPicker {
 
         private final List<? extends Row> rows;
         private final OnPicked onPicked;
+        private final boolean iconColumn;
 
         Adapter(List<? extends Row> rows, OnPicked onPicked) {
             this.rows = rows;
             this.onPicked = onPicked;
+            boolean any = false;
+            for (final Row row : rows) {
+                if (row.icon() != 0 || row.current()) {
+                    any = true;
+                    break;
+                }
+            }
+            iconColumn = any;
         }
 
         @NonNull
         @Override
         public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return new Holder(LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.online_result_item, parent, false));
+            final View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.online_result_item, parent, false);
+            final com.brouken.player.PlayerStyle style = com.brouken.player.PlayerStyle.of(parent.getContext());
+            if (style != null) {
+                style.dressListRow(view);
+            }
+            return new Holder(view);
         }
 
         @Override
@@ -149,13 +187,27 @@ public final class ListPicker {
             final Row row = rows.get(position);
             holder.title.setText(row.title());
 
+            final int accent = highlight(holder.title.getContext());
             if (row.current()) {
-                final int accent = com.brouken.player.Accent.color(holder.title.getContext());
                 holder.title.setTextColor(accent);
                 holder.detail.setTextColor(accent);
             } else {
                 holder.title.setTextColor(holder.defaultTitleColor);
                 holder.detail.setTextColor(holder.defaultDetailColor);
+            }
+
+            holder.icon.setVisibility(iconColumn ? View.VISIBLE : View.GONE);
+            if (row.icon() != 0) {
+                holder.icon.setImageResource(row.icon());
+                final com.brouken.player.PlayerStyle style =
+                        com.brouken.player.PlayerStyle.of(holder.icon.getContext());
+                holder.icon.setImageTintList(android.content.res.ColorStateList.valueOf(
+                        style != null ? style.iconColour() : 0xD9FFFFFF));
+            } else if (row.current()) {
+                holder.icon.setImageResource(R.drawable.ic_check_24dp);
+                holder.icon.setImageTintList(android.content.res.ColorStateList.valueOf(accent));
+            } else {
+                holder.icon.setImageDrawable(null);
             }
 
             final String detail = row.detail();
@@ -176,6 +228,7 @@ public final class ListPicker {
     private static final class Holder extends RecyclerView.ViewHolder {
         final TextView title;
         final TextView detail;
+        final android.widget.ImageView icon;
         // theme colours, restored when a recycled accent row is rebound
         final int defaultTitleColor;
         final int defaultDetailColor;
@@ -184,6 +237,7 @@ public final class ListPicker {
             super(view);
             title = view.findViewById(R.id.row_title);
             detail = view.findViewById(R.id.row_detail);
+            icon = view.findViewById(R.id.row_icon);
             defaultTitleColor = title.getCurrentTextColor();
             defaultDetailColor = detail.getCurrentTextColor();
         }

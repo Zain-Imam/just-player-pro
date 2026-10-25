@@ -34,7 +34,8 @@ import java.util.concurrent.Executors;
 public final class OnlineController {
 
     private static final String PREF_KEY_IDENTITIES = "onlineIdentities";
-    private static final int MAX_REMEMBERED = 80;
+    // keys, three or four a film; the least used films go first
+    private static final int MAX_REMEMBERED = 240;
 
     private final Context context;
     private final Host host;
@@ -52,16 +53,41 @@ public final class OnlineController {
         @Nullable
         String mediaName();
 
-        // label names the track in the picker; the saved file may not give a name
         void loadSubtitle(Uri uri, @Nullable String label);
+
+        // the automatic match reads these on the main thread, where the player lives
+
+        @Nullable
+        default String launchTitle() {
+            return null;
+        }
+
+        @Nullable
+        default String launchImdbId() {
+            return null;
+        }
+
+        @Nullable
+        default String fileName() {
+            return null;
+        }
+
+        // outermost first; asked on the worker thread, as it may query the media store
+        @NonNull
+        default List<String> folders() {
+            return new ArrayList<>();
+        }
+
+        // 0 while unknown or live
+        default double durationSeconds() {
+            return 0;
+        }
     }
 
     public OnlineController(final Context context, final Host host) {
         this.context = context;
         this.host = host;
     }
-
-    // ------------------------------------------------------------- settings
 
     public boolean isConfigured() {
         return ApiKeys.hasTmdb(context);
@@ -73,7 +99,7 @@ public final class OnlineController {
     }
 
     public boolean overlayEnabled() {
-        return preferences().getBoolean("overlayOnPause", false);
+        return preferences().getBoolean("overlayOnPause", true);
     }
 
     public int overlayDelaySeconds() {
@@ -96,7 +122,6 @@ public final class OnlineController {
         return preferences().getBoolean("subtitleAutoSearch", false);
     }
 
-    // whether the info card and the subtitle search share one title
     public boolean titlesAreLinked() {
         return preferences().getBoolean("linkSubtitleAndInfo", true);
     }
@@ -117,12 +142,16 @@ public final class OnlineController {
         try {
             final JSONObject all =
                     new JSONObject(preferences().getString(PREF_KEY_IDENTITIES, "{}"));
-            final Identity own = Identity.fromJson(all.optJSONObject(cardKey(uri.toString())));
+            Identity own = Identity.fromJson(all.optJSONObject(cardKey(uri.toString())));
+            if (own == null) {
+                // the same link with a new token
+                own = Identity.fromJson(all.optJSONObject(cardKey(pathKey(uri))));
+            }
             if (own != null) {
                 return own;
             }
         } catch (Exception ignored) {
-            // Fall through to the shared one.
+            // fall through to the shared one
         }
         return remembered(uri);
     }
@@ -135,10 +164,12 @@ public final class OnlineController {
         try {
             final JSONObject all =
                     new JSONObject(preferences().getString(PREF_KEY_IDENTITIES, "{}"));
-            all.put(cardKey(uri.toString()), identity.toJson());
+            final JSONObject json = identity.toJson();
+            putFresh(all, cardKey(uri.toString()), json);
+            putFresh(all, cardKey(pathKey(uri)), json);
+            trim(all);
             preferences().edit().putString(PREF_KEY_IDENTITIES, all.toString()).apply();
         } catch (Exception ignored) {
-            // One extra dialog next time, nothing worse.
         }
         if (titlesAreLinked()) {
             remember(uri, identity);
@@ -153,6 +184,7 @@ public final class OnlineController {
             final JSONObject all =
                     new JSONObject(preferences().getString(PREF_KEY_IDENTITIES, "{}"));
             all.remove(cardKey(uri.toString()));
+            all.remove(cardKey(pathKey(uri)));
             preferences().edit().putString(PREF_KEY_IDENTITIES, all.toString()).apply();
         } catch (Exception ignored) {
         }
@@ -161,7 +193,6 @@ public final class OnlineController {
     private SharedPreferences preferences() {
         return PreferenceManager.getDefaultSharedPreferences(context);
     }
-    // ------------------------------------------------------------- identity
 
     @Nullable
     public Identity remembered(@Nullable final Uri uri) {
@@ -173,6 +204,10 @@ public final class OnlineController {
 
             Identity found = Identity.fromJson(all.optJSONObject(uri.toString()));
             if (found == null) {
+                // the same link with a new token
+                found = Identity.fromJson(all.optJSONObject(pathKey(uri)));
+            }
+            if (found == null) {
                 found = byMatchingPath(all, uri);
             }
             if (found == null) {
@@ -183,7 +218,6 @@ public final class OnlineController {
             }
 
             if (found != null && !all.has(uri.toString())) {
-                // found under another key; store it under this uri too
                 remember(uri, found);
             }
             return found;
@@ -214,28 +248,56 @@ public final class OnlineController {
     private void remember(final Uri uri, final Identity identity) {
         try {
             final JSONObject all = new JSONObject(preferences().getString(PREF_KEY_IDENTITIES, "{}"));
-            all.put(uri.toString(), identity.toJson());
-            all.put(pathKey(uri), identity.toJson());
+            final JSONObject json = identity.toJson();
+            dropOtherTokens(all, uri);
+            putFresh(all, uri.toString(), json);
+            putFresh(all, pathKey(uri), json);
 
             final String name = cachedName(uri);
             if (name != null) {
-                all.put(nameKey(name), identity.toJson());
+                putFresh(all, nameKey(name), json);
             }
 
-            // capped; dropping an arbitrary entry only costs one more dialog
-            while (all.length() > MAX_REMEMBERED) {
-                final Iterator<String> keys = all.keys();
-                if (!keys.hasNext()) break;
-                all.remove(keys.next());
-            }
-
+            trim(all);
             preferences().edit().putString(PREF_KEY_IDENTITIES, all.toString()).apply();
         } catch (Exception e) {
-            // Losing the memory costs one extra dialog next time, nothing more.
         }
     }
 
-    // ------------------------------------------------- the last result list
+    // to the end, so the cap drops the films used least lately
+    private static void putFresh(final JSONObject all, final String key, final JSONObject value)
+            throws org.json.JSONException {
+        all.remove(key);
+        all.put(key, value);
+    }
+
+    private static void trim(final JSONObject all) {
+        while (all.length() > MAX_REMEMBERED) {
+            final Iterator<String> keys = all.keys();
+            if (!keys.hasNext()) break;
+            all.remove(keys.next());
+        }
+    }
+
+    // older tokens of the same link waste room and can bring back a replaced title
+    private static void dropOtherTokens(final JSONObject all, final Uri uri) {
+        final String self = uri.toString();
+        if (!self.startsWith("http")) {
+            return;
+        }
+        final String path = pathKey(uri);
+        final List<String> stale = new ArrayList<>();
+        final Iterator<String> keys = all.keys();
+        while (keys.hasNext()) {
+            final String key = keys.next();
+            if (key.startsWith("http") && !key.equals(self) && path.equals(pathKey(Uri.parse(key)))) {
+                stale.add(key);
+            }
+        }
+        for (final String key : stale) {
+            all.remove(key);
+        }
+    }
 
     private boolean hasResultsFor(@Nullable final Uri uri) {
         return uri != null && lastResults != null && !lastResults.isEmpty()
@@ -248,7 +310,6 @@ public final class OnlineController {
             return;
         }
         lastResultsUri = uri;
-        // a copy, so the caller's list can change without affecting this one
         lastResults = new ArrayList<>(results);
     }
 
@@ -269,13 +330,13 @@ public final class OnlineController {
             final JSONObject all = new JSONObject(preferences().getString(PREF_KEY_IDENTITIES, "{}"));
             all.remove(uri.toString());
             all.remove(pathKey(uri));
+            dropOtherTokens(all, uri);
             final String name = cachedName(uri);
             if (name != null) {
                 all.remove(nameKey(name));
             }
             preferences().edit().putString(PREF_KEY_IDENTITIES, all.toString()).apply();
         } catch (Exception e) {
-            // Nothing to undo.
         }
     }
 
@@ -308,8 +369,6 @@ public final class OnlineController {
                 .trim();
     }
 
-    // ---------------------------------------------------------------- entry
-
     public void searchSubtitles(final Activity activity, final boolean reIdentify) {
         if (!ApiKeys.hasTmdb(context)) {
             toast(R.string.online_needs_tmdb);
@@ -327,7 +386,6 @@ public final class OnlineController {
             return;
         }
 
-        // with auto search off, always ask which title to search for
         final boolean ask = reIdentify || !autoSearchSubtitles();
         final Identity known = ask ? null : remembered(uri);
         if (known != null) {
@@ -343,8 +401,6 @@ public final class OnlineController {
         });
     }
 
-    // ------------------------------------------------------------- identify
-
     public interface OnIdentified {
         void onIdentified(Identity identity);
     }
@@ -355,23 +411,42 @@ public final class OnlineController {
 
     public void identify(final Activity activity, final boolean manual,
                          final OnIdentified callback) {
+        // picked by hand, so the automatic match never checks it again
+        final OnIdentified picked = identity -> {
+            if (identity != null) {
+                identity.chosenBy = Identity.PICKED;
+            }
+            callback.onIdentified(identity);
+        };
         worker.execute(() -> {
-            final String name = resolvedName();
-            main.post(() -> showIdentifyDialog(activity, name, manual, callback));
+            final String name = Readings.searchName(resolvedName(), host.launchTitle());
+            main.post(() -> showIdentifyDialog(activity, name, manual, picked));
         });
     }
 
+    // one at a time, or a slow lookup stacks an identical box under this one
+    @Nullable
+    private AlertDialog identifyDialog;
+
     private void showIdentifyDialog(final Activity activity, @Nullable final String name,
                                     final boolean manual, final OnIdentified callback) {
+        if (activity.isFinishing() || activity.isDestroyed()
+                || (identifyDialog != null && identifyDialog.isShowing())) {
+            return;
+        }
         final ReleaseName.Info parsed = ReleaseName.parse(name);
 
         final EditText input = new EditText(activity);
         input.setInputType(InputType.TYPE_CLASS_TEXT);
         input.setSingleLine(true);
+        input.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH);
         input.setHint(R.string.online_search_hint);
 
-        final String prefilled = prefillSearch() && parsed.looksLikeTitle()
-                ? parsed.searchQuery()
+        // not ReleaseName, which cuts site-like words: Edge.of.Tomorrow to "morrow"
+        final NameReading.Parsed read = NameReading.parse(name);
+        final String prefilled = !prefillSearch() ? ""
+                : NameReading.titleOk(read) ? read.title
+                : parsed.looksLikeTitle() ? parsed.searchQuery()
                 : "";
         if (!prefilled.isEmpty()) {
             input.setText(prefilled);
@@ -391,7 +466,18 @@ public final class OnlineController {
                 })
                 .create();
 
-        dialog.show();
+        identifyDialog = dialog;
+        // focus Search: a focused field makes a TV keyboard swallow every key
+        com.brouken.player.Utils.showFocused(dialog, AlertDialog.BUTTON_POSITIVE);
+
+        // only the Search key searches; a remote's Enter (IME_NULL) opens the keyboard
+        input.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId != android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                return false;
+            }
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick();
+            return true;
+        });
 
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
             input.setText("");
@@ -399,7 +485,7 @@ public final class OnlineController {
         });
     }
 
-    // identifies from the file name with no UI; gives up rather than guess
+    // no UI; gives up rather than guess
     public void identifySilently(@Nullable final Uri uri, final OnIdentified callback) {
         identifySilently(uri, callback, null);
     }
@@ -411,26 +497,9 @@ public final class OnlineController {
             giveUp(ifNotFound);
             return;
         }
+        final Clues clues = clues();
         worker.execute(() -> {
-            final ReleaseName.Info parsed = ReleaseName.parse(resolvedName());
-            if (!parsed.looksLikeTitle()) {
-                giveUp(ifNotFound);
-                return;
-            }
-            final List<Tmdb.Candidate> candidates =
-                    Tmdb.searchHard(context, parsed.searchQuery(), parsed.year);
-            if (candidates.isEmpty()) {
-                giveUp(ifNotFound);
-                return;
-            }
-            final Tmdb.Candidate candidate = candidates.get(0);
-            if (candidate.isSeries && (parsed.season == null || parsed.episode == null)) {
-                giveUp(ifNotFound);
-                return;
-            }
-            final Identity identity = Tmdb.identify(context, candidate,
-                    candidate.isSeries ? parsed.season : null,
-                    candidate.isSeries ? parsed.episode : null);
+            final Identity identity = matchNow(uri, clues);
             if (identity == null) {
                 giveUp(ifNotFound);
                 return;
@@ -440,6 +509,150 @@ public final class OnlineController {
             }
             main.post(() -> callback.onIdentified(identity));
         });
+    }
+
+    // tryAgain when TMDB could not be asked or its details did not load
+    public interface OnNotSure {
+        void notSure(boolean tryAgain);
+    }
+
+    public void identifyAutomatically(@Nullable final Uri uri, final OnIdentified changed) {
+        identifyAutomatically(uri, changed, null);
+    }
+
+    public void identifyAutomatically(@Nullable final Uri uri, final OnIdentified changed,
+                                      @Nullable final OnNotSure notSure) {
+        if (uri == null) {
+            return;
+        }
+        if (!ApiKeys.hasTmdb(context)) {
+            android.util.Log.i(com.brouken.player.Utils.TAG, "Automatic match: off, there is no TMDB key");
+            return;
+        }
+        final Clues clues = clues();
+        worker.execute(() -> {
+            final Identity known = remembered(uri);
+            if (known != null) {
+                if (Identity.PICKED.equals(known.chosenBy) || Identity.AUTO.equals(known.chosenBy)) {
+                    return;
+                }
+                if (!oldGuessGives(known)) {
+                    known.chosenBy = Identity.PICKED;
+                    remember(uri, known);
+                    return;
+                }
+            }
+            final AutoMatch.Result result = match(uri, clues);
+            final Identity identity = result.match == null ? null : identityOf(result.match);
+            if (result.match != null && identity == null) {
+                android.util.Log.i(com.brouken.player.Utils.TAG,
+                        "Automatic match: the details of " + result.match.title + " didn't load");
+            }
+            if (identity == null && known == null && notSure != null) {
+                final boolean tryAgain = result.match != null
+                        || result.reason.startsWith("couldn't ask TMDB");
+                main.post(() -> notSure.notSure(tryAgain));
+            }
+            if (identity != null) {
+                remember(uri, identity);
+                if (known == null || known.tmdbId != identity.tmdbId
+                        || !java.util.Objects.equals(known.season, identity.season)
+                        || !java.util.Objects.equals(known.episode, identity.episode)) {
+                    main.post(() -> changed.onIdentified(identity));
+                }
+            } else if (known != null && !result.reason.startsWith("couldn't ask TMDB")) {
+                // not sure any more: nothing rather than a title that may be wrong
+                forget(uri);
+                main.post(() -> changed.onIdentified(null));
+            }
+        });
+    }
+
+    // what the player knows, read on the main thread
+    private static final class Clues {
+        @Nullable
+        String launchTitle;
+        @Nullable
+        String launchImdb;
+        @Nullable
+        String fileName;
+        List<String> folders;
+        double seconds;
+    }
+
+    private Clues clues() {
+        final Clues clues = new Clues();
+        clues.launchTitle = host.launchTitle();
+        clues.launchImdb = host.launchImdbId();
+        clues.fileName = host.fileName();
+        clues.seconds = host.durationSeconds();
+        return clues;
+    }
+
+    @Nullable
+    private AutoMatch autoMatch;
+    private final AniList.Service aniList = new AniList.Service();
+
+    private AutoMatch matcher() {
+        if (autoMatch == null) {
+            autoMatch = new AutoMatch(new MatchTmdb.Service(context), new MatchTmdb.DiskCache(context));
+        }
+        // the setting can change between films
+        autoMatch.useAnime(AniList.wanted(context) ? aniList : null);
+        return autoMatch;
+    }
+
+    @Nullable
+    private Identity matchNow(@Nullable final Uri uri, final Clues clues) {
+        final AutoMatch.Result result = match(uri, clues);
+        return result.match == null ? null : identityOf(result.match);
+    }
+
+    private AutoMatch.Result match(@Nullable final Uri uri, final Clues clues) {
+        if (clues.folders == null) {
+            clues.folders = host.folders();
+        }
+        final String link = uri == null ? null : uri.toString();
+        final List<NameReading.Reading> readings =
+                Readings.of(link, clues.fileName, clues.folders, clues.launchTitle);
+        final AutoMatch.LinkIds ids = Readings.ids(link, clues.launchImdb);
+        final AutoMatch.Result result = matcher().lookup(readings, ids, clues.seconds,
+                () -> uri == null ? null : serverName(uri), Readings.isWeb(link));
+        android.util.Log.i(com.brouken.player.Utils.TAG, "Automatic match: " + (result.match != null
+                ? result.match.title + " " + result.match.code() + " (tmdb " + result.match.tmdbId
+                        + (result.viaAnime ? ", with AniList" : "") + ")"
+                : "not sure, " + result.reason));
+        return result;
+    }
+
+    @Nullable
+    private Identity identityOf(final AutoMatch.Match match) {
+        final Identity identity = Tmdb.identify(context,
+                new Tmdb.Candidate(match.tmdbId, match.isSeries, match.title, null, null, null),
+                match.season, match.episode);
+        if (identity != null) {
+            identity.chosenBy = Identity.AUTO;
+        }
+        return identity;
+    }
+
+    // an unmarked title counts as automatic only if this older guess still gives it
+    private boolean oldGuessGives(final Identity known) {
+        final ReleaseName.Info parsed = ReleaseName.parse(resolvedName());
+        if (!parsed.looksLikeTitle()) {
+            return false;
+        }
+        final List<Tmdb.Candidate> candidates =
+                Tmdb.searchHard(context, parsed.searchQuery(), parsed.year);
+        if (candidates.isEmpty()) {
+            return false;
+        }
+        final Tmdb.Candidate top = candidates.get(0);
+        if (top.id != known.tmdbId || top.isSeries != known.isSeries) {
+            return false;
+        }
+        return !top.isSeries || (java.util.Objects.equals(parsed.season, known.season)
+                && java.util.Objects.equals(parsed.episode, known.episode));
     }
 
     private void giveUp(@Nullable final Runnable ifNotFound) {
@@ -495,7 +708,6 @@ public final class OnlineController {
             main.post(() -> {
                 dismiss(progress);
                 if (seasons.isEmpty()) {
-                    // No season list to show; fall back to asking for numbers.
                     askSeasonEpisode(activity, candidate, parsed, callback);
                     return;
                 }
@@ -525,7 +737,7 @@ public final class OnlineController {
             main.post(() -> {
                 dismiss(progress);
                 if (episodes.isEmpty()) {
-                    // A season with no episode list is still searchable as a whole.
+                    // a season with no episode list is still searchable as a whole
                     resolve(activity, candidate, season, null, callback);
                     return;
                 }
@@ -549,7 +761,7 @@ public final class OnlineController {
         layout.addView(season);
         layout.addView(episode);
 
-        new AlertDialog.Builder(activity)
+        com.brouken.player.PlayerStyle.dress(new AlertDialog.Builder(activity)
                 .setTitle(candidate.title)
                 .setView(layout)
                 .setNegativeButton(android.R.string.cancel, null)
@@ -558,7 +770,7 @@ public final class OnlineController {
                                 parseInt(season.getText().toString()),
                                 parseInt(episode.getText().toString()),
                                 callback))
-                .show();
+                .show());
     }
 
     private void resolve(final Activity activity, final Tmdb.Candidate candidate,
@@ -578,8 +790,6 @@ public final class OnlineController {
             });
         });
     }
-
-    // -------------------------------------------------------------- results
 
     private void runSearch(final Activity activity, final Identity identity) {
         final ProgressDialog progress = progress(activity, R.string.online_searching);
@@ -638,6 +848,11 @@ public final class OnlineController {
         public String detail() {
             return detail;
         }
+
+        @Override
+        public int icon() {
+            return R.drawable.ic_manage_search_24dp;
+        }
     }
 
     private void downloadAndLoad(final Activity activity, final Subtitles.Result result) {
@@ -654,7 +869,6 @@ public final class OnlineController {
             main.post(() -> {
                 dismiss(progress);
                 if (bytes == null || bytes.length == 0) {
-                    // daily quota hit: say when it resets, if the service gave a time
                     if (refusal != null) {
                         Toast.makeText(context, refusal.isEmpty()
                                         ? context.getString(R.string.online_download_limit,
@@ -687,8 +901,6 @@ public final class OnlineController {
             });
         });
     }
-
-    // ----------------------------------------------------------- file name
 
     private final java.util.Map<String, String> resolvedNames = new java.util.HashMap<>();
 
@@ -724,7 +936,7 @@ public final class OnlineController {
             }
         }
 
-        final String fromServer = Http.serverFileName(key);
+        final String fromServer = askServer(key);
         synchronized (resolvedNames) {
             // empty means already asked with no answer
             resolvedNames.put(key, fromServer == null ? "" : fromServer);
@@ -739,6 +951,29 @@ public final class OnlineController {
         return fromServer == null ? local : fromServer;
     }
 
+    @Nullable
+    private String serverName(final Uri uri) {
+        final String key = uri.toString();
+        synchronized (resolvedNames) {
+            final String cached = resolvedNames.get(key);
+            if (cached != null) {
+                return cached.isEmpty() ? null : cached;
+            }
+        }
+        final String fromServer = askServer(key);
+        synchronized (resolvedNames) {
+            resolvedNames.put(key, fromServer == null ? "" : fromServer);
+        }
+        return fromServer;
+    }
+
+    // some servers call every file "download"; such a name counts as no answer
+    @Nullable
+    private static String askServer(final String link) {
+        final String answer = Http.serverFileName(link);
+        return answer != null && NameReading.titleOk(NameReading.parse(answer)) ? answer : null;
+    }
+
     private static boolean looksLikeAName(@Nullable final String name) {
         if (name == null || name.length() < 5) {
             return false;
@@ -751,8 +986,6 @@ public final class OnlineController {
         // UUIDs and hashes are hex and dashes, not titles
         return !stem.matches("(?i)[0-9a-f-]{8,}") && stem.matches(".*[A-Za-z].*");
     }
-
-    // --------------------------------------------------------------- pieces
 
     private EditText numberField(final Activity activity, final int hint,
                                  @Nullable final Integer value) {
@@ -799,6 +1032,7 @@ public final class OnlineController {
         dialog.setIndeterminate(true);
         dialog.setCancelable(true);
         dialog.show();
+        com.brouken.player.PlayerStyle.dress(dialog);
         return dialog;
     }
 
@@ -807,7 +1041,7 @@ public final class OnlineController {
             try {
                 dialog.dismiss();
             } catch (IllegalArgumentException e) {
-                // The activity went away while the request was in flight.
+                // the activity went away while the request was in flight
             }
         }
     }

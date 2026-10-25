@@ -67,7 +67,7 @@ final class PosterPicker {
         grid.setPadding(pad, pad, pad, pad);
         grid.setClipToPadding(false);
 
-        final AlertDialog.Builder builder = new AlertDialog.Builder(activity)
+        final AlertDialog.Builder builder = new AlertDialog.Builder(com.brouken.player.AppTheme.panels(activity))
                 .setTitle(title)
                 .setView(grid)
                 .setNegativeButton(android.R.string.cancel, null);
@@ -82,6 +82,7 @@ final class PosterPicker {
         }));
 
         dialog.show();
+        com.brouken.player.PlayerStyle.dress(dialog);
 
         // an unfocused grid ignores the remote; tiles are not laid out yet, see Panels
         com.brouken.player.Panels.focusFirstRow(grid);
@@ -104,6 +105,10 @@ final class PosterPicker {
         public Holder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             final View view = LayoutInflater.from(parent.getContext())
                     .inflate(R.layout.online_poster_item, parent, false);
+            final com.brouken.player.PlayerStyle style = com.brouken.player.PlayerStyle.of(parent.getContext());
+            if (style != null) {
+                view.setBackground(style.posterCellBackground());
+            }
             return new Holder(view);
         }
 
@@ -117,7 +122,6 @@ final class PosterPicker {
             holder.subtitle.setVisibility(subtitle == null || subtitle.isEmpty()
                     ? View.GONE : View.VISIBLE);
 
-            // height from the column width and this item's aspect ratio
             final float aspect = item.aspect();
             holder.poster.post(() -> {
                 final int width = holder.poster.getWidth();

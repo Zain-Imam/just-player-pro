@@ -121,8 +121,6 @@ public final class Subtitles {
         }
     }
 
-    // ---------------------------------------------------------------- search
-
     @NonNull
     public static List<Result> search(final Context context, final Target target) {
         final List<Result> all = new ArrayList<>();
@@ -136,11 +134,11 @@ public final class Subtitles {
         if (ApiKeys.has(context, ApiKeys.PREF_WYZIE)) {
             all.addAll(wyzie(context, target));
         }
-        // user addons need no key
+        // addons need no key
         all.addAll(SubtitleAddons.search(context, target));
 
         for (final Result result : all) {
-            result.wantedLanguage = result.language.equalsIgnoreCase(target.language);
+            result.wantedLanguage = SubtitleLanguages.same(result.language, target.language);
             result.score = score(result, target);
         }
 
@@ -160,15 +158,18 @@ public final class Subtitles {
         return all;
     }
 
-    // ------------------------------------------------------- OpenSubtitles
-
     private static List<Result> openSubtitles(final Context context, final Target target) {
         final String key = ApiKeys.get(context, ApiKeys.PREF_OPENSUBTITLES);
         final Map<String, String> headers = Http.params();
         headers.put("Api-Key", key);
 
         final Identity id = target.identity;
-        final String language = target.language.toLowerCase(Locale.ROOT);
+        // OpenSubtitles' own code (pt-br, zh-tw); a language it lacks is not asked for
+        final String language = SubtitleLanguages.forOpenSubtitles(target.language);
+        if (language == null) {
+            Log.note("OpenSubtitles skipped: no " + target.language + " subtitles there");
+            return new ArrayList<>();
+        }
 
         if (target.manualQuery != null) {
             final Map<String, String> params = Http.params();
@@ -294,12 +295,14 @@ public final class Subtitles {
         return results;
     }
 
-    // ---------------------------------------------------------------- SubDL
-
     private static List<Result> subdl(final Context context, final Target target) {
         final String key = ApiKeys.get(context, ApiKeys.PREF_SUBDL);
         final Identity id = target.identity;
-        final String language = target.language.toUpperCase(Locale.ROOT);
+        final String language = SubtitleLanguages.forSubdl(target.language);
+        if (language == null) {
+            Log.note("SubDL skipped: no " + target.language + " subtitles there");
+            return new ArrayList<>();
+        }
 
         if (target.manualQuery != null) {
             final Map<String, String> p = Http.params();
@@ -392,8 +395,6 @@ public final class Subtitles {
         return results;
     }
 
-    // ---------------------------------------------------------------- Wyzie
-
     private static List<Result> wyzie(final Context context, final Target target) {
         final String key = ApiKeys.get(context, ApiKeys.PREF_WYZIE);
         final Identity id = target.identity;
@@ -404,10 +405,16 @@ public final class Subtitles {
             Log.note("Wyzie skipped: no IMDb id");
             return new ArrayList<>();
         }
+        // two letters only; pt-br and zh-tw go as pt and zh
+        final String language = SubtitleLanguages.forWyzie(target.language);
+        if (language == null) {
+            Log.note("Wyzie skipped: no " + target.language + " subtitles there");
+            return new ArrayList<>();
+        }
 
         final Map<String, String> p = Http.params();
         p.put("id", withTt(imdb));
-        p.put("language", target.language.toLowerCase(Locale.ROOT));
+        p.put("language", language);
         p.put("format", "srt");
         p.put("key", key);
         if (id.isSeries && id.season != null) p.put("season", String.valueOf(id.season));
@@ -445,8 +452,6 @@ public final class Subtitles {
         }
         return results;
     }
-
-    // -------------------------------------------------------------- ranking
 
     static int score(final Result row, final Target target) {
         final Identity id = target.identity;
@@ -582,7 +587,7 @@ public final class Subtitles {
                     return true;
                 }
             } catch (NumberFormatException e) {
-                // Not a season number after all.
+                // not a season number after all
             }
         }
         return false;
@@ -610,8 +615,6 @@ public final class Subtitles {
         }
         return total == 0 ? 0 : (double) found / total;
     }
-
-    // ------------------------------------------------------------- download
 
     // reset time from OpenSubtitles' last quota refusal, or null
     @Nullable
@@ -659,8 +662,7 @@ public final class Subtitles {
         return unwrap(Http.getBytes(result.url, null));
     }
 
-    // OpenSubtitles allows 5 anonymous downloads a day, 20 when signed in.
-    // A token lasts a day; a refused sign-in is not retried for ten minutes.
+    // 5 downloads a day anonymously, 20 signed in; a token lasts a day
     private static final String OPENSUBTITLES_API = "https://api.opensubtitles.com/api/v1";
     private static final long OS_TOKEN_LIFE_MS = 23L * 60 * 60 * 1000;
     private static final long OS_REFUSED_PAUSE_MS = 10L * 60 * 1000;
@@ -734,8 +736,7 @@ public final class Subtitles {
         return Http.post(base + "/download", headers, payload.toString());
     }
 
-    // reset_time shortened for a toast ("11 h 45 min"); "" if no time is given,
-    // null if the body is not a quota refusal
+    // "11 h 45 min" from reset_time; "" with no time, null if not a quota refusal
     @Nullable
     static String refusal(@Nullable final String body) {
         if (body == null) {
@@ -800,8 +801,6 @@ public final class Subtitles {
         Log.note("Subtitle archive held no subtitle");
         return null;
     }
-
-    // --------------------------------------------------------------- helpers
 
     static String stripTt(final String imdbId) {
         String s = imdbId.trim();

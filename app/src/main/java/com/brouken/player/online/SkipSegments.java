@@ -22,7 +22,7 @@ public final class SkipSegments {
     private static final double CLOSE_ENOUGH = 30;
 
     private static final String[] SOURCE_ORDER =
-            {"chapters", "introdb", "theintrodb", "skipdb", "skipme", "introhater", "aniskip"};
+            {"chapters", "introdb", "theintrodb", "skipdb", "aniskip"};
 
     private SkipSegments() {
     }
@@ -93,12 +93,17 @@ public final class SkipSegments {
         if (episode != null) params.put("episode", String.valueOf(episode));
         final String qs = Http.query(params);
 
-        introDb(raw, qs);
+        // IntroDB refuses a film (400) unless it is told it is one
+        final Map<String, String> introDbParams = Http.params();
+        introDbParams.putAll(params);
+        if (season == null && episode == null) {
+            introDbParams.put("is_movie", "true");
+        }
+
+        introDb(raw, Http.query(introDbParams));
         theIntroDb(raw, qs, durationSeconds);
         skipDb(raw, qs);
         aniSkip(raw, Subtitles.withTt(imdbId), season, episode);
-        skipMe(raw, imdbId, season, episode);
-        introHater(raw, imdbId, season, episode);
 
         return merge(raw);
     }
@@ -127,7 +132,6 @@ public final class SkipSegments {
             if (kind == null) {
                 continue;
             }
-            // A chapter runs until the next one starts, or to the end of the file.
             final double end = i + 1 < chapters.size()
                     ? chapters.get(i + 1).start
                     : duration;
@@ -154,71 +158,6 @@ public final class SkipSegments {
         return null;
     }
 
-    // sources are merged as votes, so agreement sharpens the bounds
-    private static void skipMe(final List<Raw> out, final String imdbId,
-                               final Integer season, final Integer episode) {
-        if (imdbId == null || imdbId.isEmpty()) {
-            return;
-        }
-        final StringBuilder url = new StringBuilder("https://db.skipme.workers.dev/v1/movies/")
-                .append(Subtitles.withTt(imdbId));
-        if (season != null && episode != null) {
-            url.append("/").append(season).append("/").append(episode);
-        }
-        final java.util.Map<String, String> headers = Http.params();
-        headers.put("User-Agent", "SkipMe.db/0.0");
-
-        final JSONObject body = Http.get(url.toString(), headers).json();
-        if (body == null) {
-            return;
-        }
-        final JSONArray segments = body.optJSONArray("segments");
-        for (int i = 0; segments != null && i < segments.length(); i++) {
-            final JSONObject seg = segments.optJSONObject(i);
-            if (seg == null) {
-                continue;
-            }
-            final Kind kind = kindOfChapter(seg.optString("category", ""));
-            if (kind == null) {
-                continue;
-            }
-            add(out, kind, seg.optDouble("start", -1), seg.optDouble("end", -1),
-                    "skipme", true, true);
-        }
-    }
-
-    private static void introHater(final List<Raw> out, final String imdbId,
-                                   final Integer season, final Integer episode) {
-        if (imdbId == null || imdbId.isEmpty()) {
-            return;
-        }
-        final StringBuilder url = new StringBuilder("https://introhater.com/api/v1/segments/")
-                .append(Subtitles.withTt(imdbId));
-        if (season != null && episode != null) {
-            url.append("/").append(season).append("/").append(episode);
-        }
-        final java.util.Map<String, String> params = Http.params();
-        params.put("key", "introhater_mpv_client");
-
-        final JSONObject body = Http.get(url + Http.query(params), null).json();
-        if (body == null) {
-            return;
-        }
-        final JSONArray segments = body.optJSONArray("segments");
-        for (int i = 0; segments != null && i < segments.length(); i++) {
-            final JSONObject seg = segments.optJSONObject(i);
-            if (seg == null) {
-                continue;
-            }
-            final Kind kind = kindOfChapter(seg.optString("type", ""));
-            if (kind == null) {
-                continue;
-            }
-            add(out, kind, seg.optDouble("start", -1), seg.optDouble("end", -1),
-                    "introhater", true, true);
-        }
-    }
-
     private static void introDb(final List<Raw> out, final String qs) {
         final JSONObject body = Http.get("https://api.introdb.app/segments" + qs, null).json();
         if (body == null) {
@@ -235,7 +174,7 @@ public final class SkipSegments {
     }
 
     private static void theIntroDb(final List<Raw> out, final String qs, final double duration) {
-        final JSONObject body = Http.get("https://api.theintrodb.org/v2/media" + qs, null).json();
+        final JSONObject body = Http.get("https://api.theintrodb.org/v4/media" + qs, null).json();
         if (body == null) {
             return;
         }
@@ -372,6 +311,7 @@ public final class SkipSegments {
         out.add(new Raw(kind, start, end, source, preciseStart, preciseEnd));
     }
 
+    // sources are merged as votes, so agreement sharpens the bounds
     private static List<Segment> merge(final List<Raw> raw) {
         final List<Segment> merged = new ArrayList<>();
 

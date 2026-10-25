@@ -262,6 +262,15 @@ public final class SkipController {
                 restingBottomMargin = ((ViewGroup.MarginLayoutParams)
                         button.getLayoutParams()).bottomMargin;
             }
+            final com.brouken.player.PlayerStyle style = com.brouken.player.PlayerStyle.of(activity);
+            if (style != null) {
+                style.dressSkipButton(button);
+                restingBottomMargin = style.skipBottomMargin(restingBottomMargin);
+                if (button.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+                    ((ViewGroup.MarginLayoutParams) button.getLayoutParams()).bottomMargin =
+                            restingBottomMargin;
+                }
+            }
             parent.addView(button);
             button.setOnClickListener(v -> {
                 if (undoAt >= 0) {
@@ -285,7 +294,7 @@ public final class SkipController {
             });
         }
 
-        button.setText(labelFor(segment.kind));
+        label(labelFor(segment.kind), R.drawable.ic_skip_next_24dp);
         button.setVisibility(View.VISIBLE);
         // focus for remotes; ignored in touch mode
         button.post(button::requestFocus);
@@ -306,10 +315,22 @@ public final class SkipController {
         }
         main.removeCallbacks(undoExpired);
         main.postDelayed(undoExpired, UNDO_WINDOW_MS);
-        button.setText(R.string.skip_undo);
+        label(R.string.skip_undo, R.drawable.ic_undo_24dp);
         button.setVisibility(View.VISIBLE);
         button.post(button::requestFocus);
         button.post(this::clearOfCard);
+    }
+
+    private void label(final int text, final int icon) {
+        button.setText(text);
+        final android.graphics.drawable.Drawable drawable =
+                androidx.core.content.ContextCompat.getDrawable(button.getContext(), icon);
+        if (drawable != null) {
+            final int size = com.brouken.player.Utils.dpToPx(20);
+            drawable.setBounds(0, 0, size, size);
+        }
+        button.setCompoundDrawablesRelative(drawable, null, null, null);
+        button.setCompoundDrawablePadding(com.brouken.player.Utils.dpToPx(8));
     }
 
     private void hideButton() {

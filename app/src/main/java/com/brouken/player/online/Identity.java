@@ -31,6 +31,15 @@ public final class Identity {
     public final String airDate;
     public final double rating;
 
+    // an episode's own TMDB score, 0 when it has none; rating falls back to the show's
+    public double episodeRating;
+
+    // AUTO or PICKED; null on older saves
+    @Nullable
+    public String chosenBy;
+    public static final String AUTO = "auto";
+    public static final String PICKED = "picked";
+
     public Identity(boolean isSeries, int tmdbId, @Nullable String imdbId,
                     @Nullable String parentImdbId, @NonNull String title,
                     @Nullable String episodeTitle, @Nullable Integer season,
@@ -84,8 +93,6 @@ public final class Identity {
         return imdbId != null ? imdbId : parentImdbId;
     }
 
-    // -- persistence ---------------------------------------------------------
-
     @NonNull
     public JSONObject toJson() {
         final JSONObject o = new JSONObject();
@@ -103,8 +110,10 @@ public final class Identity {
             o.putOpt("posterPath", posterPath);
             o.putOpt("airDate", airDate);
             o.put("rating", rating);
+            o.put("episodeRating", episodeRating);
+            o.putOpt("chosenBy", chosenBy);
         } catch (Exception e) {
-            // A JSONObject with String keys cannot actually throw here.
+            // cannot throw with String keys
         }
         return o;
     }
@@ -118,7 +127,7 @@ public final class Identity {
         if (title == null || title.isEmpty()) {
             return null;
         }
-        return new Identity(
+        final Identity identity = new Identity(
                 o.optBoolean("isSeries", false),
                 o.optInt("tmdbId", 0),
                 emptyToNull(o.optString("imdbId", null)),
@@ -132,6 +141,11 @@ public final class Identity {
                 emptyToNull(o.optString("posterPath", null)),
                 emptyToNull(o.optString("airDate", null)),
                 o.optDouble("rating", 0));
+        identity.chosenBy = emptyToNull(o.optString("chosenBy", null));
+        // older saves kept the episode's score in rating
+        identity.episodeRating = o.has("episodeRating") ? o.optDouble("episodeRating", 0)
+                : identity.isSeries && identity.episode != null ? identity.rating : 0;
+        return identity;
     }
 
     @Nullable

@@ -14,6 +14,7 @@ public final class ApiKeys {
     public static final String PREF_OPENSUBTITLES_PASSWORD = "apiKeyOpenSubtitlesPassword";
     public static final String PREF_SUBDL = "apiKeySubdl";
     public static final String PREF_WYZIE = "apiKeyWyzie";
+    public static final String PREF_MDBLIST = "apiKeyMdblist";
 
     private ApiKeys() {
     }

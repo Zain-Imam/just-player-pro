@@ -6,6 +6,8 @@ import android.content.SharedPreferences;
 import androidx.annotation.Nullable;
 import androidx.preference.PreferenceManager;
 
+import com.brouken.player.R;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,12 +24,11 @@ import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-// LAN page for typing keys and addon URLs on a phone instead of a TV remote.
-// Locked by the on-screen PIN; plain HTTP, and only runs while settings is open.
+// LAN page locked by the on-screen PIN; plain HTTP, only while settings is open
 public final class SetupServer {
 
     public interface Listener {
-        void onSaved(String summary);
+        void onSaved(int count);
     }
 
     private static final int PORT_FIRST = 8723;
@@ -42,6 +43,8 @@ public final class SetupServer {
                     + "<path d=\"M44 40 L74 60 L44 80 Z\" fill=\"#fff\"/></svg>";
 
     private final Context context;
+    // the page's words, in the language of the screen that started it
+    private final Context words;
     private final Listener listener;
     private final String pin;
     private final String token;
@@ -52,6 +55,7 @@ public final class SetupServer {
 
     public SetupServer(final Context context, final Listener listener) {
         this.context = context.getApplicationContext();
+        this.words = context.createConfigurationContext(context.getResources().getConfiguration());
         this.listener = listener;
         final SecureRandom random = new SecureRandom();
         this.pin = String.format(java.util.Locale.US, "%06d", random.nextInt(1_000_000));
@@ -107,7 +111,7 @@ public final class SetupServer {
             try {
                 client = socket.accept();
             } catch (IOException e) {
-                // accept() throws when stop() closes the socket, which is normal.
+                // accept() throws when stop() closes the socket
                 return;
             }
             // a thread per connection: browsers open several at once
@@ -174,7 +178,7 @@ public final class SetupServer {
                 respond(out, 200, "text/html; charset=utf-8", form(null, null));
             } else {
                 respond(out, 200, "text/html; charset=utf-8",
-                        lock("That PIN does not match the one on the player."));
+                        lock(text(R.string.setup_wrong_pin)));
             }
             return;
         }
@@ -205,12 +209,11 @@ public final class SetupServer {
         respond(out, 200, "text/html; charset=utf-8", form(null, null));
     }
 
-    // ---------------------------------------------------------------- actions
-
+    // "1" or "0" and a line break first, so the page colours it without reading the words
     private String test(final Map<String, String> form) {
         final String field = value(form, "field");
         if (field == null) {
-            return "Nothing to test";
+            return "0\n" + text(R.string.setup_nothing_to_test);
         }
         final boolean addon = field.startsWith("subtitleAddon");
 
@@ -223,28 +226,27 @@ public final class SetupServer {
                     : ApiKeys.get(context, field);
         }
         if (entered == null || entered.isEmpty()) {
-            return "Nothing entered";
+            return "0\n" + text(R.string.setup_nothing_entered);
         }
-        return addon ? describe(entered) : KeyCheck.check(field, entered).message;
+        if (addon) {
+            return describe(entered);
+        }
+        final KeyCheck.Result result = KeyCheck.check(field, entered);
+        return (result.ok ? "1\n" : "0\n") + result.message(words);
     }
 
     // asks the addon for a real subtitle, the same check the app makes
     private String describe(final String entered) {
         final String normalized = SubtitleAddons.normalizeUrl(entered);
         if (normalized == null) {
-            return "Not an addon URL";
+            return "0\n" + text(R.string.pref_addon_invalid);
         }
         final SubtitleAddons.Probe probe = SubtitleAddons.probe(normalized);
         if (!probe.accepted()) {
-            return "Rejected: " + readable(probe);
+            return "0\n" + probe.reason(words);
         }
-        return (probe.name == null ? "Addon" : probe.name)
-                + " · " + probe.subtitles + " subtitles"
-                + (probe.downloadVerified ? "" : " · download not proved");
-    }
-
-    private static String readable(final SubtitleAddons.Probe probe) {
-        return probe.verdict.name().toLowerCase(java.util.Locale.US).replace("_", " ");
+        return "1\n" + text(R.string.setup_addon_works, probe.name(words), probe.subtitles, probe.languages)
+                + (probe.downloadVerified ? "" : " " + text(R.string.pref_addon_ok_unverified));
     }
 
     private String save(final Map<String, String> form) {
@@ -265,7 +267,7 @@ public final class SetupServer {
                 saved++;
                 good.append(field.getValue()).append(" · ");
             } else {
-                bad.append(field.getValue()).append(": ").append(result.message).append(" · ");
+                bad.append(field.getValue()).append(": ").append(result.message(words)).append(" · ");
             }
         }
 
@@ -280,33 +282,37 @@ public final class SetupServer {
                 continue;
             }
             final String normalized = SubtitleAddons.normalizeUrl(entered);
+            final String slotName = text(R.string.pref_addon_slot, slot);
             if (normalized == null) {
-                bad.append("Addon ").append(slot).append(": not an addon URL · ");
+                bad.append(slotName).append(": ").append(text(R.string.pref_addon_invalid)).append(" · ");
                 continue;
             }
             final SubtitleAddons.Probe probe = SubtitleAddons.probe(normalized);
             if (!probe.accepted()) {
-                bad.append("Addon ").append(slot).append(": ")
-                        .append(readable(probe)).append(" · ");
+                bad.append(slotName).append(": ").append(probe.reason(words)).append(" · ");
                 continue;
             }
             editor.putString(key, normalized);
             saved++;
-            good.append("Addon ").append(slot).append(" · ");
+            good.append(slotName).append(" · ");
         }
 
         final String language = value(form, "subtitleLanguage");
         if (language != null && !language.isEmpty()) {
             editor.putString("subtitleLanguage", language.trim());
             saved++;
-            good.append("Language · ");
+            good.append(text(R.string.pref_subtitle_language)).append(" · ");
         }
 
         editor.apply();
         if (listener != null) {
-            listener.onSaved(saved + " saved");
+            listener.onSaved(saved);
         }
         return form(trim(good), trim(bad));
+    }
+
+    private String text(final int id, final Object... args) {
+        return words.getString(id, args);
     }
 
     @Nullable
@@ -318,21 +324,23 @@ public final class SetupServer {
         return value.isEmpty() ? null : value;
     }
 
-    private static Map<String, String> keyFields() {
+    private Map<String, String> keyFields() {
         final Map<String, String> fields = new LinkedHashMap<>();
-        fields.put(ApiKeys.PREF_TMDB, "TMDB key");
-        fields.put(ApiKeys.PREF_OPENSUBTITLES, "OpenSubtitles key");
-        fields.put(ApiKeys.PREF_OPENSUBTITLES_USER, "OpenSubtitles user");
-        fields.put(ApiKeys.PREF_OPENSUBTITLES_PASSWORD, "OpenSubtitles password");
-        fields.put(ApiKeys.PREF_SUBDL, "SubDL key");
-        fields.put(ApiKeys.PREF_WYZIE, "Wyzie key");
+        fields.put(ApiKeys.PREF_TMDB, text(R.string.pref_key_tmdb));
+        fields.put(ApiKeys.PREF_OPENSUBTITLES, text(R.string.pref_key_opensubtitles));
+        fields.put(ApiKeys.PREF_OPENSUBTITLES_USER, text(R.string.pref_key_opensubtitles_user));
+        fields.put(ApiKeys.PREF_OPENSUBTITLES_PASSWORD, text(R.string.pref_key_opensubtitles_password));
+        fields.put(ApiKeys.PREF_SUBDL, text(R.string.pref_key_subdl));
+        fields.put(ApiKeys.PREF_WYZIE, text(R.string.pref_key_wyzie));
         return fields;
     }
 
-    // ------------------------------------------------------------------ pages
-
     private String head(final String title) {
-        return "<!doctype html><html><head><meta charset=\"utf-8\">"
+        final java.util.Locale locale = words.getResources().getConfiguration().getLocales().get(0);
+        final boolean rtl = android.text.TextUtils.getLayoutDirectionFromLocale(locale)
+                == android.view.View.LAYOUT_DIRECTION_RTL;
+        return "<!doctype html><html lang=\"" + escape(locale.toLanguageTag()) + "\""
+                + (rtl ? " dir=\"rtl\"" : "") + "><head><meta charset=\"utf-8\">"
                 + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
                 + "<title>" + title + "</title><style>"
                 + "body{font:16px system-ui,sans-serif;margin:0;padding:24px;background:#111;"
@@ -361,15 +369,16 @@ public final class SetupServer {
         final StringBuilder html = new StringBuilder(head("Just Player Pro"));
         html.append("<div class=\"center\">" + MARK + "")
                 .append("<h1>Just Player Pro</h1>")
-                .append("<small>Enter the PIN shown on the player.</small></div>");
+                .append("<small>").append(escape(text(R.string.setup_enter_pin))).append("</small></div>");
         if (error != null) {
             html.append("<div class=\"banner bad\">").append(escape(error)).append("</div>");
         }
         html.append("<form method=\"post\" action=\"/unlock\">")
-                .append("<label>PIN</label>")
+                .append("<label>").append(escape(text(R.string.setup_pin))).append("</label>")
                 .append("<input name=\"pin\" inputmode=\"numeric\" autocomplete=\"off\" ")
                 .append("autofocus required>")
-                .append("<button class=\"wide\" type=\"submit\">Continue</button>")
+                .append("<button class=\"wide\" type=\"submit\">")
+                .append(escape(text(R.string.setup_continue))).append("</button>")
                 .append("</form></body></html>");
         return html.toString();
     }
@@ -380,59 +389,64 @@ public final class SetupServer {
                 .append("<h1>Just Player Pro</h1></div>");
 
         if (good != null) {
-            html.append("<div class=\"banner ok\">Saved: ").append(escape(good))
-                    .append(". The player has it — you can close this page now.</div>");
+            html.append("<div class=\"banner ok\">").append(escape(text(R.string.setup_saved, good)))
+                    .append("</div>");
         }
         if (bad != null) {
-            html.append("<div class=\"banner bad\">Not saved: ").append(escape(bad)).append("</div>");
+            html.append("<div class=\"banner bad\">").append(escape(text(R.string.setup_not_saved, bad)))
+                    .append("</div>");
         }
 
+        final String test = escape(text(R.string.setup_test));
         html.append("<form method=\"post\" action=\"/save\" id=\"f\">")
                 .append("<input type=\"hidden\" name=\"token\" value=\"").append(token).append("\">")
-                .append("<h2>Keys</h2>")
-                .append("<small>A key already set is not shown. Leave it empty to keep it.</small>");
+                .append("<h2>").append(escape(text(R.string.setup_keys))).append("</h2>")
+                .append("<small>").append(escape(text(R.string.setup_keys_note))).append("</small>");
 
         for (final Map.Entry<String, String> field : keyFields().entrySet()) {
             final boolean set = ApiKeys.has(context, field.getKey());
-            html.append("<label>").append(escape(field.getValue()))
-                    .append(set ? " — already set" : "").append("</label>")
+            html.append("<label>").append(escape(set
+                            ? text(R.string.setup_already_set, field.getValue()) : field.getValue()))
+                    .append("</label>")
                     .append("<div class=\"row\"><input name=\"").append(field.getKey())
                     .append("\" autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\">")
                     .append("<button type=\"button\" onclick=\"t('")
-                    .append(field.getKey()).append("')\">Test</button></div>")
+                    .append(field.getKey()).append("')\">").append(test).append("</button></div>")
                     .append("<div class=\"res\" id=\"r_").append(field.getKey()).append("\"></div>");
         }
 
-        html.append("<h2>Subtitle language</h2><label>Two-letter code</label>")
+        html.append("<h2>").append(escape(text(R.string.pref_subtitle_language))).append("</h2>")
+                .append("<label>").append(escape(text(R.string.setup_two_letter_code))).append("</label>")
                 .append("<input name=\"subtitleLanguage\" autocomplete=\"off\" value=\"")
                 .append(escape(language())).append("\">")
-                .append("<h2>Stremio subtitle addons</h2>")
-                .append("<small>These are shown because they are not secrets.</small>");
+                .append("<h2>").append(escape(text(R.string.pref_addons))).append("</h2>")
+                .append("<small>").append(escape(text(R.string.setup_addons_note))).append("</small>");
 
         for (int slot = 1; slot <= SubtitleAddons.MAX; slot++) {
             final String key = SubtitleAddons.key(slot);
             final String saved = PreferenceManager.getDefaultSharedPreferences(context)
                     .getString(key, "");
-            html.append("<label>Addon ").append(slot).append("</label>")
+            html.append("<label>").append(escape(text(R.string.pref_addon_slot, slot))).append("</label>")
                     .append("<div class=\"row\"><input name=\"").append(key)
                     .append("\" autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\"")
                     .append(" value=\"").append(escape(saved == null ? "" : saved)).append("\">")
                     .append("<button type=\"button\" onclick=\"t('").append(key)
-                    .append("')\">Test</button></div>")
+                    .append("')\">").append(test).append("</button></div>")
                     .append("<div class=\"res\" id=\"r_").append(key).append("\"></div>");
         }
 
-        html.append("<button class=\"wide\" type=\"submit\">Check and save</button></form>")
+        html.append("<button class=\"wide\" type=\"submit\">")
+                .append(escape(text(R.string.setup_check_and_save))).append("</button></form>")
                 .append("<script>")
                 .append("function t(k){var r=document.getElementById('r_'+k);")
-                .append("r.textContent='Checking…';r.className='res';")
+                .append("r.textContent=").append(js(text(R.string.pref_checking_all))).append(";r.className='res';")
                 .append("var b=new URLSearchParams();b.append('token','").append(token)
                 .append("');b.append('field',k);")
                 .append("b.append('value',document.getElementsByName(k)[0].value);")
                 .append("fetch('/test',{method:'POST',body:b}).then(function(x){return x.text()})")
-                .append(".then(function(m){r.textContent=m;")
-                .append("r.className='res '+(/reject|not|No answer|rate|HTTP/i.test(m)?'bad':'ok')})")
-                .append(".catch(function(){r.textContent='The player is no longer listening';")
+                .append(".then(function(m){r.textContent=m.substring(2);")
+                .append("r.className='res '+(m.charAt(0)==='1'?'ok':'bad')})")
+                .append(".catch(function(){r.textContent=").append(js(text(R.string.setup_gone))).append(";")
                 .append("r.className='res bad'})}")
                 .append("</script></body></html>");
         return html.toString();
@@ -443,8 +457,6 @@ public final class SetupServer {
                 .getString("subtitleLanguage", "en");
         return value == null ? "en" : value;
     }
-
-    // ------------------------------------------------------------- plumbing
 
     private static void respond(final OutputStream out, final int code,
                                 final String type, final String body) throws IOException {
@@ -519,6 +531,12 @@ public final class SetupServer {
     private static String escape(final String text) {
         return text.replace("&", "&amp;").replace("<", "&lt;")
                 .replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    // a quoted string for the page's script; a translation may hold quotes or "</"
+    private static String js(final String text) {
+        return "'" + text.replace("\\", "\\\\").replace("'", "\\'").replace("\"", "\\\"")
+                .replace("\n", "\\n").replace("<", "\\u003c") + "'";
     }
 
     @Nullable

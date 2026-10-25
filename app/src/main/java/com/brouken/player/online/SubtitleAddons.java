@@ -46,8 +46,6 @@ public final class SubtitleAddons {
         }
     }
 
-    // ------------------------------------------------------------- the list
-
     private static final String DEFAULT_ADDON = "https://opensubtitles-v3.strem.io";
     private static final String PREF_SEEDED = "subtitleAddonsSeeded";
 
@@ -113,7 +111,7 @@ public final class SubtitleAddons {
 
         String path = uri.getPath() == null ? "" : uri.getPath();
         path = path.replaceAll("(?i)/manifest\\.json$", "");
-        // Someone may paste the subtitles URL rather than the manifest.
+        // the subtitles URL may be pasted rather than the manifest
         path = path.replaceAll("(?i)/subtitles/(movie|series)/[^/]*$", "");
         path = path.replaceAll("/+$", "");
 
@@ -124,8 +122,6 @@ public final class SubtitleAddons {
         final String host = Uri.parse(baseUrl).getHost();
         return host == null || host.isEmpty() ? baseUrl : host;
     }
-
-    // --------------------------------------------------------------- search
 
     @Nullable
     static String path(final Identity identity) {
@@ -185,7 +181,6 @@ public final class SubtitleAddons {
                 continue;
             }
             final String url = firstString(row, "url");
-            // without a URL there is nothing to download
             if (url == null || !url.matches("(?i)^https?://.+")) {
                 continue;
             }
@@ -254,7 +249,7 @@ public final class SubtitleAddons {
         if (mapped != null) {
             return mapped;
         }
-        // A regional tag such as pt-br keeps its base language for matching.
+        // a regional tag such as pt-br keeps its base language for matching
         final int dash = value.indexOf('-');
         if (dash == 2) {
             return value.substring(0, 2);
@@ -313,8 +308,6 @@ public final class SubtitleAddons {
         }
     }
 
-    // ---------------------------------------------------------------- probe
-
     public enum Verdict {
         OK,
         UNREACHABLE,
@@ -348,6 +341,45 @@ public final class SubtitleAddons {
         public boolean accepted() {
             return verdict == Verdict.OK;
         }
+
+        public String name(final Context context) {
+            return name == null ? context.getString(com.brouken.player.R.string.pref_addon_unnamed) : name;
+        }
+
+        public String reason(final Context context) {
+            final int reason;
+            switch (verdict) {
+                case INVALID_URL:
+                    reason = com.brouken.player.R.string.pref_addon_invalid;
+                    break;
+                case UNREACHABLE:
+                    reason = com.brouken.player.R.string.pref_addon_unreachable;
+                    break;
+                case NOT_AN_ADDON:
+                    reason = com.brouken.player.R.string.pref_addon_not_an_addon;
+                    break;
+                case NO_SUBTITLE_RESOURCE:
+                    reason = com.brouken.player.R.string.pref_addon_no_subtitles_resource;
+                    break;
+                case NEEDS_CONFIGURATION:
+                    reason = com.brouken.player.R.string.pref_addon_needs_configuration;
+                    break;
+                case SUBTITLE_FETCH_FAILED:
+                    reason = com.brouken.player.R.string.pref_addon_fetch_failed;
+                    break;
+                case NO_SUBTITLES:
+                    reason = com.brouken.player.R.string.pref_addon_no_subtitles;
+                    break;
+                case NO_USABLE_URL:
+                    reason = com.brouken.player.R.string.pref_addon_no_usable_url;
+                    break;
+                case NOT_DOWNLOADABLE:
+                default:
+                    reason = com.brouken.player.R.string.pref_addon_not_downloadable;
+                    break;
+            }
+            return context.getString(reason);
+        }
     }
 
     @NonNull
@@ -366,7 +398,6 @@ public final class SubtitleAddons {
             return new Probe(Verdict.NOT_AN_ADDON, null, 0, 0, false);
         }
 
-        // must declare the "subtitles" resource
         if (!declaresSubtitles(manifest)) {
             return new Probe(Verdict.NO_SUBTITLE_RESOURCE, null, 0, 0, false);
         }
