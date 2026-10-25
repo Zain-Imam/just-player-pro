@@ -11,7 +11,6 @@ import androidx.annotation.Nullable;
 
 import java.io.File;
 
-// copies a link; content URIs are resolved to a real path where possible
 final class Clipboard {
 
     private Clipboard() {
@@ -63,8 +62,13 @@ final class Clipboard {
         return null;
     }
 
-    // Android 13+ shows its own clipboard confirmation, so no toast there
     static void copy(final Context context, @Nullable final Uri uri, final CharSequence label) {
+        copy(context, uri, label, false);
+    }
+
+    // Android 13+ confirms copies itself; a sensitive link stays out of its preview
+    static void copy(final Context context, @Nullable final Uri uri, final CharSequence label,
+                     final boolean sensitive) {
         final String text = textFor(context, uri);
         if (text == null) {
             Toast.makeText(context, R.string.copy_nothing, Toast.LENGTH_SHORT).show();
@@ -76,8 +80,15 @@ final class Clipboard {
             Toast.makeText(context, R.string.copy_nothing, Toast.LENGTH_SHORT).show();
             return;
         }
-        manager.setPrimaryClip(ClipData.newPlainText(label, text));
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        final ClipData clip = ClipData.newPlainText(label, text);
+        if (sensitive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            final android.os.PersistableBundle extras = new android.os.PersistableBundle();
+            extras.putBoolean(android.content.ClipDescription.EXTRA_IS_SENSITIVE, true);
+            clip.getDescription().setExtras(extras);
+        }
+        manager.setPrimaryClip(clip);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
+                || (sensitive && Utils.isTvBox(context))) {
             Toast.makeText(context, R.string.copy_done, Toast.LENGTH_SHORT).show();
         }
     }

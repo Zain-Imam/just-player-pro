@@ -14,8 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// another app's launch extras, replayed when the film is reopened from here
-// subtitles are kept as copies: the sender may revoke access after the player closes
+// subtitles kept as copies: the sender may revoke access after the player closes
 public final class LaunchMemory {
 
     static final String PREF_KEY = "launchMemory";
@@ -152,7 +151,7 @@ public final class LaunchMemory {
             final String stored = preferences.getString(PREF_KEY, null);
             return stored == null ? new JSONObject() : new JSONObject(stored);
         } catch (Exception e) {
-            // A corrupt store is no worse than an empty one.
+            // a corrupt store is no worse than an empty one
             return new JSONObject();
         }
     }

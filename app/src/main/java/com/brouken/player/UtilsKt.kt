@@ -9,15 +9,18 @@ import androidx.media3.exoplayer.video.VideoFrameMetadataListener
 
 object UtilsKt {
 
+    // onColorTransfer: the decoder's MediaFormat.COLOR_TRANSFER_*, reported once
     @JvmStatic
-    fun calculateFrameRateOnTheFly(player: ExoPlayer, onFrameRateCalculated: (Double) -> Unit) {
-        // Ignore the first 30 frames (often unstable due to decoder spin-up/syncing)
+    fun calculateFrameRateOnTheFly(player: ExoPlayer, onColorTransfer: (Int) -> Unit,
+                                   onFrameRateCalculated: (Double) -> Unit) {
+        // the first 30 frames are often unstable while the decoder spins up
         val ignoreSamples = 30
 
         val samplesToCollect = 60
         val totalSamplesNeeded = samplesToCollect + ignoreSamples
         val timestamps = ArrayList<Long>(totalSamplesNeeded)
         val mainHandler = Handler(Looper.getMainLooper())
+        var transferTold = false
 
         player.setVideoFrameMetadataListener(
             object : VideoFrameMetadataListener {
@@ -27,6 +30,12 @@ object UtilsKt {
                     format: Format,
                     mediaFormat: android.media.MediaFormat?
                 ) {
+                    if (!transferTold && mediaFormat != null
+                        && mediaFormat.containsKey(android.media.MediaFormat.KEY_COLOR_TRANSFER)) {
+                        transferTold = true
+                        val transfer = mediaFormat.getInteger(android.media.MediaFormat.KEY_COLOR_TRANSFER)
+                        mainHandler.post { onColorTransfer(transfer) }
+                    }
                     if (timestamps.size < totalSamplesNeeded) {
                         timestamps.add(presentationTimeUs)
 
@@ -42,7 +51,7 @@ object UtilsKt {
                             for (i in (ignoreSamples + 1) until timestamps.size) {
                                 val gap = timestamps[i] - timestamps[i - 1]
 
-                                // gaps over 60ms are dropped frames or discontinuities; leave them out
+                                // gaps over 60ms are dropped frames or discontinuities
                                 if (gap in 1..60_000) {
                                     totalValidDurationUs += gap
                                     validGaps++

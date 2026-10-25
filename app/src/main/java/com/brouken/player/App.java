@@ -1,14 +1,20 @@
 package com.brouken.player;
 
 import android.app.Application;
+import android.content.res.Configuration;
 
-// background thread failures are logged instead of killing the process;
-// the main thread keeps the default handler
+import androidx.annotation.NonNull;
+
+// background crashes are logged; the main thread keeps the default handler
 public final class App extends Application {
 
     @Override
     public void onCreate() {
         super.onCreate();
+        AppLanguage.start(this);
+        ImageCache.init(this);
+        Showcase.start(this);
+        AppTheme.start(this);
 
         final Thread.UncaughtExceptionHandler existing =
                 Thread.getDefaultUncaughtExceptionHandler();
@@ -25,5 +31,11 @@ public final class App extends Application {
                 error.printStackTrace();
             }
         });
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull final Configuration config) {
+        super.onConfigurationChanged(config);
+        AppLanguage.keep(this);
     }
 }

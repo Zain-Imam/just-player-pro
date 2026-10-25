@@ -9,7 +9,6 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-// checks the decoders against a stream's size, hardware support and bitrate
 // an overloaded decoder stops producing frames without reporting an error
 public final class Capability {
 
@@ -64,8 +63,7 @@ public final class Capability {
         return anyDecoder ? Verdict.HARD_WORK : Verdict.IMPOSSIBLE;
     }
 
-    // both engines share the hardware decoders; only mpv's FFmpeg software path
-    // can do better, so the offer only goes from Media3 to mpv
+    // hardware decoders are shared; only mpv's FFmpeg software path can do better
     public static boolean otherEngineMightDoBetter(final Verdict verdict, final boolean onMpv) {
         if (verdict == Verdict.FINE) {
             return false;
@@ -76,8 +74,7 @@ public final class Capability {
         return com.brouken.player.mpv.MpvPlayer.isSupported();
     }
 
-    // size only: performance points and areSizeAndRateSupported reject 1080p60
-    // on devices that play it fine
+    // size only: performance points reject 1080p60 on devices that play it fine
     private static boolean supportsSize(final MediaCodecInfo.VideoCapabilities video,
                                         final int width, final int height) {
         try {

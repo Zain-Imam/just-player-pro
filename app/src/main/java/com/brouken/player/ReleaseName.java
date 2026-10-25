@@ -9,8 +9,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-// Parses a release name or URL. The title is whatever precedes the first
-// episode, year or quality marker, with known tags removed.
+// the title is whatever precedes the first episode, year or quality marker
 public final class ReleaseName {
 
     private ReleaseName() {
@@ -103,7 +102,7 @@ public final class ReleaseName {
             if (bare.length() >= 8 && bare.matches("(?i)[0-9a-f]+")) {
                 return false;
             }
-            // "1080", "2160p", "Part 2" with nothing else.
+            // "1080", "2160p", "Part 2" with nothing else
             return !title.matches("(?i)[0-9\\s._-]*(p|part\\s*\\d+)?");
         }
 
@@ -256,7 +255,6 @@ public final class ReleaseName {
         final String withoutExtension = EXTENSION.matcher(raw).replaceAll("");
         final String withoutSite = SITE_PREFIX.matcher(withoutExtension).replaceAll("");
 
-        // separators normalised for matching; the original is kept for display
         String normalised = SEPARATORS.matcher(withoutSite).replaceAll(" ");
         normalised = WHITESPACE.matcher(normalised).replaceAll(" ").trim();
 
@@ -351,7 +349,6 @@ public final class ReleaseName {
                 episodeTitle(normalised, markerEnd, title), group);
     }
 
-    // reduces a URL to the name in it; plain names pass through unchanged
     @NonNull
     static String fromLink(@Nullable final String rawName) {
         String value = rawName == null ? "" : rawName.trim();
@@ -415,8 +412,7 @@ public final class ReleaseName {
 
     private static String decode(final String value) {
         String decoded = value;
-        // at most twice: proxied links can be double-encoded, but a third pass
-        // would decode real percent signs
+        // twice at most: links can be double-encoded, a third pass eats a real %
         for (int i = 0; i < 2; i++) {
             if (decoded.indexOf('%') < 0 && decoded.indexOf('+') < 0) {
                 break;
@@ -521,8 +517,7 @@ public final class ReleaseName {
         return title;
     }
 
-    // order matters: brackets first since they hold checksums and groups,
-    // the trailing dash last since removing a group leaves it behind
+    // order matters: brackets hold checksums, and removing a group leaves a dash
     private static String scrub(final String raw) {
         String text = BRACKETS.matcher(raw).replaceAll(" ");
         text = NOISE.matcher(text).replaceAll(" ");

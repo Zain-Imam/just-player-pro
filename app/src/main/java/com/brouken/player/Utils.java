@@ -76,18 +76,17 @@ public class Utils {
     public static final String FEATURE_FIRE_TV = "amazon.hardware.fire_tv";
 
     public static final String[] supportedExtensionsVideo = new String[] { "3gp", "m4v", "mkv", "mov", "mp4", "ts", "webm" };
-    public static final String[] supportedExtensionsSubtitle = new String[] { "srt", "ssa", "ass", "vtt", "ttml", "dfxp", "xml" };
+    public static final String[] supportedExtensionsSubtitle = new String[] { "srt", "ssa", "ass", "vtt", "ttml", "dfxp", "xml",
+            "smi", "sami", "mpl", "sub", "sup", "idx" };
 
     public static final String[] supportedMimeTypesVideo = new String[] {
-            // Local mime types on Android:
-            MimeTypes.VIDEO_MATROSKA, // .mkv
-            MimeTypes.VIDEO_MP4, // .mp4, .m4v
-            MimeTypes.VIDEO_WEBM, // .webm
-            "video/quicktime", // .mov
+            MimeTypes.VIDEO_MATROSKA,
+            MimeTypes.VIDEO_MP4,
+            MimeTypes.VIDEO_WEBM,
+            "video/quicktime",
             "video/mp2ts", // .ts, but also incompatible .m2ts
-            MimeTypes.VIDEO_H263, // .3gp
-            // For remote storages:
-            "video/x-m4v", // .m4v
+            MimeTypes.VIDEO_H263,
+            "video/x-m4v", // .m4v from remote storages
     };
     public static final String[] supportedMimeTypesSubtitle = new String[] {
             MimeTypes.APPLICATION_SUBRIP,
@@ -104,6 +103,19 @@ public class Utils {
 
     public static float pxToDp(float px) {
         return px / Resources.getSystem().getDisplayMetrics().density;
+    }
+
+    // no java.nio.file: it needs API 26, and catch (Exception) misses the Error on 25
+    public static byte[] readFile(final File file) throws IOException {
+        try (InputStream in = new java.io.FileInputStream(file)) {
+            final java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream((int) Math.max(0, file.length()));
+            final byte[] buffer = new byte[8192];
+            int got;
+            while ((got = in.read(buffer)) > 0) {
+                out.write(buffer, 0, got);
+            }
+            return out.toByteArray();
+        }
     }
 
     public static boolean fileExists(final Context context, final Uri uri) {
@@ -128,7 +140,10 @@ public class Utils {
         }
     }
 
-    public static void toggleSystemUi(final Activity activity, final CustomPlayerView playerView, final boolean show) {
+    public static void toggleSystemUi(final Activity activity, final CustomPlayerView playerView, boolean show) {
+        if (show && Showcase.on(activity, Showcase.PREF_HIDE_BARS)) {
+            show = false;
+        }
         if (Build.VERSION.SDK_INT >= 31) {
             Window window = activity.getWindow();
             if (window != null) {
@@ -203,21 +218,20 @@ public class Utils {
         return Math.round(volume * 100f / max);
     }
 
-    public static final int BOOST_STEP_MB = 100;
-    public static final int BOOST_STEPS = 10;
+    // above full volume, one point a step up to 150: +10 dB in 20 mB steps on Media3
+    public static final int BOOST_STEP_MB = 20;
+    public static final int BOOST_STEPS = 50;
 
     public static int boostedPercent() {
-        return 100 + PlayerActivity.boostLevel * (50 / BOOST_STEPS);
+        return 100 + PlayerActivity.boostLevel * 50 / BOOST_STEPS;
     }
 
-    // percent per swipe step
     public static final int VOLUME_FINE_STEP = 1;
 
-    // 1% steps: device volume goes to the step at or above, engine gain does the rest
-    // uses the stream range; getVolume's Samsung range means nothing to setStreamVolume
+    // stream range only: getVolume's Samsung range means nothing to setStreamVolume
     public static void adjustVolumeFine(final Context context, final AudioManager audioManager,
                                         final CustomPlayerView playerView, final boolean raise,
-                                        final boolean canBoost) {
+                                        final boolean canBoost, int steps) {
         // fine steps would override the player-only volume keys, so skip them there
         if (androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
                 .getBoolean("volumeKeysPlayerOnly", false)) {
@@ -233,35 +247,34 @@ public class Utils {
         }
         final int device = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 
-        // resync when something else moved the device volume
+        // resync when something else moved the device volume; a boost needs full volume
         int percent = PlayerActivity.volumeFinePercent;
         if (percent < 0 || (int) Math.ceil(percent * max / 100f) != device) {
             percent = Math.round(device * 100f / max);
+        }
+        if (percent < 100 && PlayerActivity.boostLevel > 0) {
             PlayerActivity.boostLevel = 0;
+            PlayerActivity.applyBoostLevel();
         }
 
-        // above full volume the boost takes over
-        if (raise && percent >= 100 && canBoost && PlayerActivity.canBoostVolume()) {
-            if (PlayerActivity.boostLevel < BOOST_STEPS) {
-                PlayerActivity.boostLevel++;
+        // above full volume the boost takes over, and goes first on the way down
+        if (percent >= 100 && (PlayerActivity.boostLevel > 0
+                || (raise && canBoost && PlayerActivity.canBoostVolume()))) {
+            int level = PlayerActivity.boostLevel + (raise ? steps : -steps);
+            steps = level < 0 ? -level : 0;
+            PlayerActivity.boostLevel = Math.max(0, Math.min(BOOST_STEPS, level));
+            PlayerActivity.applyBoostLevel();
+            if (steps == 0) {
+                playerView.setCustomErrorMessage(" " + boostedPercent());
+                playerView.setIconVolume(true);
+                playerView.setHighlight(PlayerActivity.boostLevel > 0);
+                logVolume(boostedPercent(), PlayerActivity.boostLevel > 0);
+                return;
             }
-            PlayerActivity.applyBoostLevel(true);
-            playerView.setCustomErrorMessage(" " + boostedPercent());
-            playerView.setIconVolume(true);
-            playerView.setHighlight(true);
-            return;
-        }
-        if (!raise && PlayerActivity.boostLevel > 0) {
-            PlayerActivity.boostLevel--;
-            PlayerActivity.applyBoostLevel(PlayerActivity.boostLevel > 0);
-            playerView.setCustomErrorMessage(" " + boostedPercent());
-            playerView.setIconVolume(true);
-            playerView.setHighlight(PlayerActivity.boostLevel > 0);
-            return;
         }
 
         percent = Math.max(0, Math.min(100,
-                percent + (raise ? VOLUME_FINE_STEP : -VOLUME_FINE_STEP)));
+                percent + (raise ? steps : -steps) * VOLUME_FINE_STEP));
         PlayerActivity.volumeFinePercent = percent;
 
         final int step = (int) Math.ceil(percent * max / 100f);
@@ -281,6 +294,13 @@ public class Utils {
         playerView.setCustomErrorMessage(percent > 0 ? " " + percent : "");
         playerView.setIconVolume(percent > 0);
         playerView.setHighlight(false);
+        logVolume(percent, false);
+    }
+
+    private static void logVolume(final int shown, final boolean red) {
+        if (BuildConfig.DEBUG) {
+            log("Volume shown: " + shown + (red ? " red" : ""));
+        }
     }
 
     public static void adjustVolume(final Context context, final AudioManager audioManager, final CustomPlayerView playerView, final boolean raise, boolean canBoost, boolean clear) {
@@ -297,18 +317,18 @@ public class Utils {
         final int volumeMax = getVolume(context,true, audioManager);
         boolean volumeActive = volume != 0;
 
-        // Handle volume changes outside the app (lose boost if volume is not maxed out)
-        if (volume != volumeMax) {
+        // a volume changed outside the app ends the boost, which needs full volume
+        if (volume != volumeMax && PlayerActivity.boostLevel > 0) {
             PlayerActivity.boostLevel = 0;
+            PlayerActivity.applyBoostLevel();
         }
 
         canBoost = canBoost && PlayerActivity.canBoostVolume();
 
         if (volume != volumeMax || (PlayerActivity.boostLevel == 0 && !raise)) {
-            PlayerActivity.applyBoostLevel(false);
             audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, raise ? AudioManager.ADJUST_RAISE : AudioManager.ADJUST_LOWER, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
             final int volumeNew = getVolume(context, false, audioManager);
-            // Custom volume step on Samsung devices (Sound Assistant)
+            // custom volume step on Samsung devices (Sound Assistant)
             if (raise && volume == volumeNew) {
                 playerView.volumeUpsInRow++;
             } else {
@@ -318,7 +338,7 @@ public class Utils {
                 audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE | AudioManager.FLAG_SHOW_UI);
             } else {
                 volumeActive = volumeNew != 0;
-                // As a percentage, so the number means the same on every device.
+                // as a percentage, so the number means the same on every device
                 playerView.setCustomErrorMessage(volumeActive
                         ? " " + volumePercent(context, audioManager) : "");
             }
@@ -332,8 +352,10 @@ public class Utils {
         }
 
         playerView.setIconVolume(volumeActive);
-        PlayerActivity.applyBoostLevel(PlayerActivity.boostLevel > 0);
+        PlayerActivity.applyBoostLevel();
         playerView.setHighlight(PlayerActivity.boostLevel > 0);
+        logVolume(PlayerActivity.boostLevel > 0 ? boostedPercent() : volumePercent(context, audioManager),
+                PlayerActivity.boostLevel > 0);
 
         if (clear) {
             playerView.postDelayed(playerView.textClearRunnable, CustomPlayerView.MESSAGE_TIMEOUT_KEY);
@@ -548,9 +570,11 @@ public class Utils {
     }
 
     public static boolean isTvBox(Context context) {
+        if (Showcase.on(context, Showcase.PREF_TV)) {
+            return true;
+        }
         final PackageManager pm = context.getPackageManager();
 
-        // TV for sure
         UiModeManager uiModeManager = (UiModeManager) context.getSystemService(UI_MODE_SERVICE);
         if (uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION) {
             return true;
@@ -560,14 +584,14 @@ public class Utils {
             return true;
         }
 
-        // Missing Files app (DocumentsUI) means box (some boxes still have non functional app or stub)
+        // no Files app (DocumentsUI) means a box, though some boxes ship a stub
         if (!hasSAFChooser(pm)) {
             return true;
         }
 
-        // Legacy storage no longer works on Android 11 (level 30)
+        // legacy storage no longer works on Android 11 (level 30)
         if (Build.VERSION.SDK_INT < 30) {
-            // (Some boxes still report touchscreen feature)
+            // some boxes still report a touchscreen
             if (!pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN) && !pm.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
                 return true;
             }
@@ -581,7 +605,6 @@ public class Utils {
             }
         }
 
-        // Default: No TV - use SAF
         return false;
     }
 
@@ -613,13 +636,10 @@ public class Utils {
                 Display.Mode activeMode = display.getMode();
 
                 if (supportedModes.length > 1) {
-                    // Refresh rate >= video FPS
                     List<Display.Mode> modesHigh = new ArrayList<>();
-                    // Max refresh rate
                     Display.Mode modeTop = activeMode;
                     int modesResolutionCount = 0;
 
-                    // Filter only resolutions same as current
                     for (Display.Mode mode : supportedModes) {
                         if (mode.getPhysicalWidth() == activeMode.getPhysicalWidth() &&
                                 mode.getPhysicalHeight() == activeMode.getPhysicalHeight()) {
@@ -709,10 +729,9 @@ public class Utils {
                         activity.initializePlayer();
                     }
                 })
-                // to handle the back key pressed or clicked outside the dialog:
                 .withOnCancelListener(new DialogInterface.OnCancelListener() {
                     public void onCancel(DialogInterface dialog) {
-                        dialog.cancel(); // MUST have
+                        dialog.cancel(); // must stay, though it looks redundant
                     }
                 });
         chooserDialog
@@ -940,8 +959,7 @@ public class Utils {
     }
 
     public static boolean switchFrameRate(final PlayerActivity activity, final Uri uri, final boolean play) {
-        // preferredDisplayModeId only available on SDK 23+
-        // ExoPlayer already uses Surface.setFrameRate() on Android 11+
+        // preferredDisplayModeId needs API 23; Media3 also calls setFrameRate on 11+
         if (Build.VERSION.SDK_INT >= 23) {
             if (activity.frameRateSwitchThread != null) {
                 activity.frameRateSwitchThread.interrupt();
@@ -958,6 +976,8 @@ public class Utils {
     }
     public static void showFocused(final android.app.AlertDialog dialog, final int button) {
         dialog.show();
+        // a no-op outside the player or with Classic
+        PlayerStyle.dress(dialog);
         final android.widget.Button target = dialog.getButton(button);
         if (target == null) {
             return;

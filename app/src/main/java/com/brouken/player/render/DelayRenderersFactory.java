@@ -28,8 +28,7 @@ public final class DelayRenderersFactory extends DefaultRenderersFactory {
         this.audioDelayMs = audioDelayMs;
     }
 
-    // shifts the position the text renderers see; a parse-time shift can't move
-    // embedded cues earlier because their timestamps start at 0
+    // a parse-time shift can't move embedded cues earlier: their times start at 0
     @Override
     protected void buildTextRenderers(@NonNull Context context, @NonNull TextOutput output, @NonNull Looper outputLooper, int extensionRendererMode, @NonNull ArrayList<Renderer> out) {
         ArrayList<Renderer> textRenderers = new ArrayList<>();
@@ -43,8 +42,7 @@ public final class DelayRenderersFactory extends DefaultRenderersFactory {
         }
     }
 
-    // shifts the audio clock that drives the video; retiming the buffers causes
-    // clicks and discontinuities
+    // shifts the audio clock; retiming the buffers causes clicks and gaps
     @Override
     protected AudioSink buildAudioSink(@NonNull Context context, boolean enableFloatOutput,
                                        boolean enableAudioTrackPlaybackParams) {
@@ -92,7 +90,6 @@ public final class DelayRenderersFactory extends DefaultRenderersFactory {
         public long getCurrentPositionUs(boolean sourceEnded) {
             final long positionUs = super.getCurrentPositionUs(sourceEnded);
             if (positionUs == AudioSink.CURRENT_POSITION_NOT_SET) {
-                // no clock yet
                 return positionUs;
             }
             return Math.max(0, positionUs + delayMs.get() * 1000L);

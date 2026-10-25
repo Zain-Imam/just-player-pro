@@ -20,8 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-// full licence texts, which MIT, ISC and Apache require to ship with the binary
-// gathered at build time from licenses/ at the repository root
+// full licence texts, gathered at build time from licenses/ at the repo root
 public class LicensesActivity extends AppCompatActivity {
 
     private static final String DIR = "licenses";

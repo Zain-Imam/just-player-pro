@@ -72,7 +72,7 @@ public final class LaunchSubtitles {
             if (list != null) {
                 addStrings(found, list.toArray(new String[0]));
             }
-            // A single one, not an array of one.
+            // a single one, not an array of one
             final Object single = value(bundle, key);
             if (single instanceof Uri) {
                 add(found, (Uri) single);
@@ -146,7 +146,7 @@ public final class LaunchSubtitles {
             } else if (item instanceof Parcelable) {
                 add(into, parse(item.toString()));
             }
-            // Strings are read once, by the string path.
+            // strings are read once, by the string path
         }
     }
 
@@ -194,7 +194,7 @@ public final class LaunchSubtitles {
         }
         try {
             final Uri uri = Uri.parse(value.trim());
-            // A bare path with no scheme is still a file somebody meant.
+            // a bare path with no scheme is still a file somebody meant
             return uri.getScheme() == null ? Uri.fromFile(new java.io.File(value.trim())) : uri;
         } catch (Exception e) {
             return null;

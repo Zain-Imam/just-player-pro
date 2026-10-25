@@ -13,7 +13,7 @@ import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter;
 
 import java.util.Locale;
 
-// counts bytes actually received; the bandwidth estimate stays high on a full buffer
+// counts bytes received; the bandwidth estimate stays high on a full buffer
 public final class NetworkSpeed implements BandwidthMeter {
 
     private static final long WINDOW_MS = 1500;

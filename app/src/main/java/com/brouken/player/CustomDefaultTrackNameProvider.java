@@ -25,7 +25,7 @@ class CustomDefaultTrackNameProvider extends DefaultTrackNameProvider {
             trackName += " (" + sampleFormat + ")";
         }
         if (format.label != null) {
-            if (!trackName.startsWith(format.label)) { // HACK
+            if (!trackName.startsWith(format.label)) {
                 trackName += " - " + format.label;
             }
         }

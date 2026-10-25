@@ -2,8 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-
     <uses-feature
         android:name="android.software.leanback"
         android:required="false" />
@@ -67,8 +65,7 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
-        <!-- singleTop keeps a launch from another app in that app's task, so Back
-             returns there; the home screen adds CLEAR_TOP itself -->
+        <!-- singleTop keeps another app's launch in its task; home adds CLEAR_TOP itself -->
         <activity
             android:name=".PlayerActivity"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize|uiMode|touchscreen"
@@ -104,7 +101,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <data android:scheme="" tools:ignore="AppLinkUrlError" /> <!-- External player compatibility in Kodi -->
+                <data android:scheme="" tools:ignore="AppLinkUrlError" /> <!-- external player compatibility in Kodi -->
                 <data android:scheme="content" />
                 <data android:scheme="file" />
                 <data android:scheme="http" />
@@ -728,11 +725,23 @@
             android:parentActivityName=".SettingsActivity"
             android:theme="@style/Theme.Player.Settings" />
         <activity
+            android:name=".RatingsOrderActivity"
+            android:exported="false"
+            android:label="@string/pref_ratings_order"
+            android:parentActivityName=".SettingsActivity"
+            android:theme="@style/Theme.Player.Settings" />
+        <activity
             android:name=".LicensesActivity"
             android:exported="false"
             android:label="@string/pref_licenses"
             android:parentActivityName=".SettingsActivity"
             android:theme="@style/Theme.Player.Settings" />
+        <activity
+            android:name=".FilmInfoActivity"
+            android:configChanges="keyboard|keyboardHidden|navigation"
+            android:exported="false"
+            android:parentActivityName=".HomeActivity"
+            android:theme="@style/Theme.Player.Home" />
         <activity
             android:name=".SettingsActivity"
             android:exported="true"
@@ -746,15 +755,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.updates"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/update_paths" />
-        </provider>
 
     </application>
 

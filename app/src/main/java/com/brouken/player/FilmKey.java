@@ -8,8 +8,7 @@ import androidx.annotation.Nullable;
 
 import java.util.Locale;
 
-// stable key for per-film memory; launch URLs carry a fresh token each time,
-// so it uses the file name, then the launch title, then the URI minus its query
+// launch URLs carry a fresh token each time, so the URI is the last resort
 public final class FilmKey {
 
     private static final String[] GENERIC = {

@@ -9,8 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// request headers from launch extras: MX Player's name/value array,
-// "Name: value" strings, a Bundle, a list or lines; invalid ones are dropped
+// accepts MX Player's name/value array, "Name: value" strings, a Bundle, a list or lines
 public final class LaunchHeaders {
 
     private LaunchHeaders() {

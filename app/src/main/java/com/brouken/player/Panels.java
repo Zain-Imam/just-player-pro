@@ -3,7 +3,6 @@ package com.brouken.player;
 import android.content.Context;
 import android.util.DisplayMetrics;
 
-// one size for every panel that slides in from the edge
 public final class Panels {
 
     // fits a track name with its codec
@@ -21,15 +20,20 @@ public final class Panels {
                 Math.round(metrics.widthPixels * MAX_FRACTION));
     }
 
-    // retries each frame until a row exists: rows lay out a frame or two after show,
-    // and a focused but empty RecyclerView leaves the D-pad nothing to move to
     public static void focusFirstRow(
             final androidx.recyclerview.widget.RecyclerView list) {
+        focusRow(list, 0);
+    }
+
+    // rows lay out a frame or two after show, so retry each frame until the row exists
+    public static void focusRow(
+            final androidx.recyclerview.widget.RecyclerView list, final int position) {
         if (list == null) {
             return;
         }
         list.post(new Runnable() {
             private int framesLeft = 20;
+            private boolean scrolled;
 
             @Override
             public void run() {
@@ -37,12 +41,17 @@ public final class Panels {
                     return;
                 }
 
-                final androidx.recyclerview.widget.RecyclerView.ViewHolder first =
-                        list.findViewHolderForAdapterPosition(0);
-                final android.view.View row = first != null ? first.itemView
-                        : (list.getChildCount() > 0 ? list.getChildAt(0) : null);
+                final androidx.recyclerview.widget.RecyclerView.ViewHolder wanted =
+                        list.findViewHolderForAdapterPosition(position);
+                final android.view.View row = wanted != null ? wanted.itemView
+                        : (position == 0 && list.getChildCount() > 0 ? list.getChildAt(0) : null);
                 if (row != null && row.requestFocus()) {
                     return;
+                }
+                // laid out but off screen: scroll to it, once
+                if (!scrolled && position > 0 && list.getChildCount() > 0) {
+                    scrolled = true;
+                    list.scrollToPosition(position);
                 }
 
                 if (--framesLeft > 0) {
@@ -50,7 +59,6 @@ public final class Panels {
                     return;
                 }
 
-                // out of frames: focus the list itself as a fallback
                 list.requestFocus();
             }
         });

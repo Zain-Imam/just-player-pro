@@ -62,7 +62,7 @@ public final class MatroskaChapters {
     private static boolean looksLikeMatroska(final Context context, final Uri uri) {
         final String name = Utils.getFileName(context, uri, true);
         if (name == null) {
-            // A content URI may not say; the EBML header check below decides.
+            // a content URI may not say; the EBML header check decides
             return true;
         }
         return name.matches("(?i).*\\.(mkv|mka|mks|webm)$");
@@ -80,7 +80,6 @@ public final class MatroskaChapters {
                 return;
             }
             if (id == ID_SEGMENT) {
-                // the chapters are inside the segment
                 readSegment(reader, out);
                 return;
             }
@@ -120,7 +119,7 @@ public final class MatroskaChapters {
             }
             if (id == ID_EDITION_ENTRY) {
                 readEdition(reader, reader.position() + size, out);
-                // The first edition is the one players use.
+                // the first edition is the one players use
                 return;
             }
             reader.skip(size);

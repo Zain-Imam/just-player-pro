@@ -17,7 +17,6 @@ public final class Background {
     public static ExecutorService pool(final String name, final int threads) {
         return Executors.newFixedThreadPool(Math.max(1, threads), runnable -> {
             final Thread thread = new Thread(runnable, name);
-            // never compete with playback
             thread.setPriority(Thread.MIN_PRIORITY);
             thread.setUncaughtExceptionHandler((t, error) ->
                     Utils.log(name + " gave up: " + error));

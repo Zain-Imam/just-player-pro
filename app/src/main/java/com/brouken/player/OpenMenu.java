@@ -30,7 +30,6 @@ final class OpenMenu {
         if (uri == null || uri.getScheme() == null) {
             return false;
         }
-        // A network URL needs a host; file:// and content:// do not.
         return History.isNetworkUri(uri) ? uri.getHost() != null && !uri.getHost().isEmpty() : true;
     }
 
@@ -38,24 +37,53 @@ final class OpenMenu {
                                     final Runnable searchOnline, final Runnable reIdentify,
                                     final boolean identified) {
         final java.util.List<CharSequence> labels = new java.util.ArrayList<>();
+        final java.util.List<Integer> icons = new java.util.ArrayList<>();
         final java.util.List<Runnable> actions = new java.util.ArrayList<>();
 
         labels.add(activity.getString(R.string.subtitle_source_file));
+        icons.add(R.drawable.ic_folder_open_24dp);
         actions.add(loadFile);
 
         labels.add(activity.getString(R.string.online_search_subtitles));
+        icons.add(R.drawable.ic_search_24dp);
         actions.add(searchOnline);
 
         if (identified) {
             labels.add(activity.getString(R.string.online_change_selection));
+            icons.add(R.drawable.ic_manage_search_24dp);
             actions.add(reIdentify);
         }
 
-        new AlertDialog.Builder(activity)
-                .setTitle(R.string.subtitle_source_title)
-                .setItems(labels.toArray(new CharSequence[0]),
+        final AlertDialog.Builder builder = new AlertDialog.Builder(activity)
+                .setTitle(R.string.subtitle_source_title);
+        PlayerStyle.dress(builder.setAdapter(withIcons(builder.getContext(), labels, icons),
                         (dialog, which) -> actions.get(which).run())
-                .show();
+                .show());
+    }
+
+    @android.annotation.SuppressLint("PrivateResource")
+    private static android.widget.ListAdapter withIcons(final Context context,
+                                                        final List<? extends CharSequence> labels,
+                                                        final List<Integer> icons) {
+        return new android.widget.ArrayAdapter<CharSequence>(context,
+                androidx.appcompat.R.layout.select_dialog_item_material, android.R.id.text1,
+                new ArrayList<CharSequence>(labels)) {
+            @androidx.annotation.NonNull
+            @Override
+            public android.view.View getView(final int position, final android.view.View convertView,
+                                             @androidx.annotation.NonNull final android.view.ViewGroup parent) {
+                final android.widget.TextView text =
+                        (android.widget.TextView) super.getView(position, convertView, parent);
+                final android.graphics.drawable.Drawable icon =
+                        androidx.core.content.ContextCompat.getDrawable(context, icons.get(position));
+                if (icon != null) {
+                    icon.mutate().setTint(text.getCurrentTextColor());
+                    text.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null);
+                    text.setCompoundDrawablePadding(Utils.dpToPx(20));
+                }
+                return text;
+            }
+        };
     }
 
     static void show(final PlayerActivity activity) {
@@ -63,23 +91,28 @@ final class OpenMenu {
                 History.load(androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity));
 
         final List<String> labels = new ArrayList<>();
+        final List<Integer> icons = new ArrayList<>();
         final List<Runnable> actions = new ArrayList<>();
 
         labels.add(activity.getString(R.string.open_source_local));
+        icons.add(R.drawable.ic_folder_open_24dp);
         actions.add(() -> activity.openFile(activity.mPrefs.mediaUri));
 
         labels.add(activity.getString(R.string.open_source_url));
+        icons.add(R.drawable.ic_link_24dp);
         actions.add(() -> showUrlInput(activity, activity::playMedia));
 
         if (!recent.isEmpty()) {
             labels.add(activity.getString(R.string.open_source_recent));
+            icons.add(R.drawable.ic_history_24dp);
             actions.add(() -> showRecent(activity, recent));
         }
 
-        new AlertDialog.Builder(activity)
-                .setTitle(R.string.open_source_title)
-                .setItems(labels.toArray(new String[0]), (dialog, which) -> actions.get(which).run())
-                .show();
+        final AlertDialog.Builder builder = new AlertDialog.Builder(activity)
+                .setTitle(R.string.open_source_title);
+        PlayerStyle.dress(builder.setAdapter(withIcons(builder.getContext(), labels, icons),
+                        (dialog, which) -> actions.get(which).run())
+                .show());
     }
 
     static void showUrl(final android.app.Activity activity, final OnPlay onPlay) {
@@ -93,7 +126,7 @@ final class OpenMenu {
         input.setHint(R.string.open_url_hint);
         input.setSingleLine(true);
 
-        // AlertDialog gives a custom view no margins of its own.
+        // AlertDialog gives a custom view no margins of its own
         final int margin = (int) TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, 20, activity.getResources().getDisplayMetrics());
         final FrameLayout container = new FrameLayout(activity);
@@ -119,6 +152,7 @@ final class OpenMenu {
         });
 
         dialog.show();
+        PlayerStyle.dress(dialog);
 
         final android.widget.Button paste = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
         if (paste != null) {
@@ -141,13 +175,13 @@ final class OpenMenu {
             labels[i] = recent.get(i).name;
         }
 
-        new AlertDialog.Builder(activity)
+        PlayerStyle.dress(new AlertDialog.Builder(activity)
                 .setTitle(R.string.open_source_recent)
                 .setItems(labels, (dialog, which) -> {
                     final History.Entry entry = recent.get(which);
                     activity.playMedia(entry.uri, entry.type);
                 })
-                .show();
+                .show());
     }
 
     private static void play(final android.app.Activity activity, final OnPlay onPlay, final String text) {
