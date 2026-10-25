@@ -1,3 +1,9 @@
+# 5.0.0
+
+The app in 18 more languages, Glass and Material You player styles, a dark or light theme in eleven colours, seek previews that follow your finger or remote (OK jumps there), a poster wall, a clock and battery in the player, and Settings you can search, in two panes on tablets and TVs.
+Film pages with the cast and scores from IMDb, Rotten Tomatoes and more (free MDBList key) in the order you choose, an episode's own score if you prefer it, smarter title matching, VTT and more subtitle formats in eight colours, and subtitle search in over 100 languages.
+Streams that drop out reopen where they stopped, slow hosts pause less often, files with padding at the end play to the very end, and updates now open in your browser, on both engines.
+
 # 4.2.0
 
 A hotfix. Eight things reported from real use since 4.1.0, and every fault found

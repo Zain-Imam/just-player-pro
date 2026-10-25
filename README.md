@@ -10,7 +10,7 @@ Media3/ExoPlayer and a full build of mpv ship inside one app, and the player mov
 its own — so a file one cannot decode is handled by the other instead of failing. The same build is
 driven by a finger on a phone or by a D-pad from across the room, and behaves the same either way.
 
-[![Release](https://img.shields.io/badge/release-v4.2.0-F4601E?style=flat-square)](https://github.com/Zain-Imam/just-player-pro/releases/latest)
+[![Release](https://img.shields.io/badge/release-v5.0.0-F4601E?style=flat-square)](https://github.com/Zain-Imam/just-player-pro/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Zain-Imam/just-player-pro/total?style=flat-square&color=F4601E&label=downloads)](https://github.com/Zain-Imam/just-player-pro/releases)
 [![Android](https://img.shields.io/badge/Android-7.1%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](#building)
 [![Engines](https://img.shields.io/badge/engines-Media3%20%2B%20mpv-4C8BF5?style=flat-square)](#the-two-engines)
@@ -18,13 +18,18 @@ driven by a finger on a phone or by a D-pad from across the room, and behaves th
 [![Decoders](https://img.shields.io/badge/mpv%20decoders-501-9C6ADE?style=flat-square)](#about-the-claim)
 [![Licence](https://img.shields.io/badge/licence-GPL--3.0-8A8A8A?style=flat-square)](LICENSE)
 
-<img src="docs/screenshots/01-touch-and-tv.jpg" alt="The same build on a television and on a phone: a film playing with its info card, the folder list, and a subtitle search">
+<img src="docs/screenshots/01-touch-and-tv.jpg" alt="The same build on a television and on a phone: a paused film with its info card on the TV, the poster wall on the phone">
 
 <table>
 <tr>
-<td width="33%"><img src="docs/screenshots/02-library.jpg" alt="The home screen, a folder, and the sort dialog"></td>
-<td width="33%"><img src="docs/screenshots/09-appearance.jpg" alt="The eleven accent colours, and the settings they colour"></td>
-<td width="33%"><img src="docs/screenshots/08-online-setup.jpg" alt="The key and addon settings, and the setup page open in a browser"></td>
+<td width="33%"><img src="docs/screenshots/02-library.jpg" alt="The home screen as a poster wall and as a list, and the sort choices"></td>
+<td width="33%"><img src="docs/screenshots/09-appearance.jpg" alt="One frame in the Classic, Glass and Material You styles"></td>
+<td width="33%"><img src="docs/screenshots/08-online-setup.jpg" alt="The setup page offered on a television, and the same page open on a phone"></td>
+</tr>
+<tr>
+<td width="33%"><img src="docs/screenshots/11-theme-and-colours.jpg" alt="The home screen in the dark and the light theme, the theme colour picker, and the home screen in green"></td>
+<td width="33%"><img src="docs/screenshots/12-film-info-and-ratings.jpg" alt="A film's page with its scores and cast, the info card with the same scores, and the screen that orders the rating sites"></td>
+<td width="33%"><img src="docs/screenshots/13-subtitle-style.jpg" alt="Subtitles in yellow over a film, with the subtitle panel open on its text colour"></td>
 </tr>
 </table>
 
@@ -48,18 +53,19 @@ player you already use.
 
 ### Playing a film
 
-<img src="docs/screenshots/04-playback.jpg" alt="A film playing on a phone, with the playback settings beside it">
-<img src="docs/screenshots/05-quick-settings.jpg" alt="The quick settings panel and the playback settings behind it">
+<img src="docs/screenshots/04-playback.jpg" alt="A film playing on a phone, with the details line under its title">
+<img src="docs/screenshots/05-quick-settings.jpg" alt="The quick settings panel beside the picture">
+<img src="docs/screenshots/14-controls.jpg" alt="Moving a button in Buttons and their order, the result, and a setting found by search">
 
 ### Titles and subtitles
 
-<img src="docs/screenshots/06-info-and-subtitles.jpg" alt="An info card over a paused film, and the subtitle search beside it">
-<img src="docs/screenshots/07-identify.jpg" alt="Confirming which film a file is, then picking the episode">
+<img src="docs/screenshots/06-info-and-subtitles.jpg" alt="An info card with the film's scores over a paused film, and subtitles found across several sources">
+<img src="docs/screenshots/07-identify.jpg" alt="Picking which film a file is from a grid of posters, and changing it from the film's page">
 
 ### Finding and keeping things
 
-<img src="docs/screenshots/03-search.jpg" alt="Searching the library by file name">
-<img src="docs/screenshots/10-backup-and-history.jpg" alt="History and backup, beside the subtitle sources and identification settings">
+<img src="docs/screenshots/03-search.jpg" alt="Searching by file name, a film's own page with its scores and cast, and the menu a held Recent film opens">
+<img src="docs/screenshots/10-backup-and-history.jpg" alt="Settings in sections, the storage and backup page, and Settings in Arabic">
 
 </details>
 
@@ -68,8 +74,9 @@ player you already use.
 **Just Player Pro** plays the video files you already have — on a phone, a tablet or a
 television — with no library to build, no account to make and no advertising.
 
-It opens on the folders that actually hold videos, hands the bitstream straight to the
-device's decoders, and carries a second engine for the files the first one cannot manage.
+It opens on what you played last and the folders that actually hold videos, as a list or a
+wall of posters, hands the bitstream straight to the device's decoders, and carries a second
+engine for the files the first one cannot manage.
 Where you want more than playback it will look a film up for its title, poster and
 synopsis, search several sources for subtitles, and skip past intros — each of those
 optional, each using a key you supply, and none of it touching the network until you ask.
@@ -79,15 +86,16 @@ optional, each using a key you supply, and none of it touching the network until
 | | Feature | What it does |
 |---|---|---|
 | ⚡ | **Two engines, one app** | Media3 hands the bitstream to the device's own decoders; a bundled mpv carries 501 of its own. On *Auto* the player starts on Media3 and moves to mpv for a file Media3 cannot take |
-| 📺 | **Touch and remote, one build** | The same APK on a phone, a tablet and an Android TV. Every control a finger reaches, a D-pad reaches — nothing is switched on by guessing what kind of device it is |
-| 🔎 | **Search and sort** | The home screen opens on the folders that hold videos, with counts and sizes, and stars the ones you use. Search by file name across the whole device, or sort folders and files four ways in either direction |
-| 🎬 | **Info card while paused** | Poster, title, season and episode, date, rating and synopsis, centred on the picture and sized to it. How solid it sits over the film is a slider |
-| 🔍 | **Identify what you are watching** | A release name becomes a title through TMDB. Wrong guess? Pick from a grid of posters, then jump straight to an episode |
-| 💬 | **Subtitles from several sources** | OpenSubtitles, SubDL and Wyzie, plus any Stremio subtitle addon you add — searched separately, so each one only widens the net |
-| ⏩ | **Skip intros and credits** *(experimental)* | Chapter marks where the file carries them; where it does not, community timings from IntroDB, TheIntroDB, SkipDB, SkipMe, IntroHater and AniSkip |
-| 📱 | **Set up from your phone** | Typing an API key with a remote is miserable, so settings serves a PIN-gated page on your own network. Type the keys on a real keyboard |
-| 🎨 | **Eleven accent colours** | Applied at once, no restart. The colour runs through the controls, the seek bar and every highlight |
-| 🧠 | **Adaptive buffering** | Profiles chosen from device memory, battery level and whether the source is a live stream — and applied to *both* engines, so they buffer alike |
+| 📺 | **Touch and remote, one build** | The same APK on a phone, a tablet and an Android TV. Every control a finger reaches, a D-pad reaches |
+| 🏠 | **A home screen for your films** | Recent on top, then the folders that hold videos, as a list or a wall of posters. Hold a film to pin it, start it over or open its page, with the cast and its scores. Search by file name across the device, or sort four ways |
+| 🎨 | **Three looks, eleven colours** | Classic, Glass or Material You for the player, in any of eleven accent colours, and a dark or light home screen. Applied at once, no restart |
+| 🖼 | **Previews while seeking** | Drag the bar, or hold an arrow on a remote, and the frame you are heading for follows along. Files and streams alike |
+| 🎬 | **Info card while paused** | Poster, title, season and episode, date, rating and synopsis, centred on the picture and sized to it. With a free MDBList key, IMDb, Rotten Tomatoes, Metacritic and more as well |
+| 🔍 | **Identify what you are watching** | A release name becomes a title through TMDB, with AniList's help for anime. When it is unsure it asks; pick from a grid of posters, then jump straight to an episode |
+| 💬 | **Subtitles from several sources** | OpenSubtitles, SubDL, Wyzie and any Stremio addon you add, in over 100 languages. SRT, ASS, VTT, SAMI and more, inside the file or beside it, in eight colours or your own font. The one you pick is remembered for that film |
+| ⏩ | **Skip intros and credits** *(experimental)* | Chapter marks where the file carries them; where it does not, community timings from IntroDB, TheIntroDB, SkipDB and AniSkip |
+| ⚙️ | **Settings you can search** | Ten sections that show what they are set to, a search box on every page, two panes on a TV. Keys can be typed on your phone through a PIN-gated page |
+| 🌍 | **Nineteen languages** | English plus Spanish, Portuguese, French, German, Russian, Ukrainian, Polish, Italian, Turkish, Arabic, Hindi, Indonesian, Chinese (both scripts), Japanese, Korean, Vietnamese and Persian, worded to fit the same screens |
 | 💾 | **Export and import** | Settings, keys, history and the per-file delays and speeds, in one file. The export asks what goes in it |
 | 🛡 | **Stays offline until you ask** | No ads, no tracking, no account, barely any permissions. Every online feature waits on a key of your own |
 
@@ -97,10 +105,10 @@ Grab the newest build from **[Releases](https://github.com/Zain-Imam/just-player
 
 | File | For |
 |---|---|
-| `just-player-pro-4.2.0-arm64-v8a.apk` | Almost every phone, tablet and TV box made since 2017 |
-| `just-player-pro-4.2.0-armeabi-v7a.apk` | Older 32-bit devices |
-| `just-player-pro-4.2.0-x86_64.apk` · `-x86.apk` | Emulators and the few x86 devices |
-| `just-player-pro-4.2.0-universal.apk` | All four at once — four times the mpv payload, so only if you are unsure |
+| `just-player-pro-5.0.0-arm64-v8a.apk` | Almost every phone, tablet and TV box made since 2017 |
+| `just-player-pro-5.0.0-armeabi-v7a.apk` | Older 32-bit devices |
+| `just-player-pro-5.0.0-x86_64.apk` · `-x86.apk` | Emulators and the few x86 devices |
+| `just-player-pro-5.0.0-universal.apk` | All four at once — four times the mpv payload, so only if you are unsure |
 
 Android 7.1 or newer. The mpv engine additionally needs Android 8.0 and is offered only there.
 
@@ -176,8 +184,8 @@ engine here, and nothing in this app tries to work around that.
 
 ## Two platforms
 
-One build, driven either way, behaving the same both ways. Nothing is switched on by asking what
-kind of device this is — only by what you actually press.
+One build, driven either way, behaving the same both ways. What a key or a touch does never depends
+on what kind of device this is. Only Settings and the home screen spread out wider on a television.
 
 | | Phone and tablet | Television and set-top box |
 |---|---|---|
@@ -201,12 +209,17 @@ televisions all get the same build. The detail — and what a television genuine
 ## Knowing what you are watching
 
 <div align="center">
-  <img src="docs/screenshots/07-identify.jpg" alt="Confirming which film a file is, then picking the episode">
+  <img src="docs/screenshots/07-identify.jpg" alt="Picking which film a file is from a grid of posters, and changing it from the film's page">
+  <img src="docs/screenshots/12-film-info-and-ratings.jpg" alt="A film's page with its scores and cast, the info card with the same scores, and the screen that orders the rating sites">
 </div>
 
 A release filename goes to TMDB and comes back as a title, year, rating, poster and synopsis. When
 the guess is wrong — and with a name like `Silo` it will be — the **search button on the info card
 row** asks again, and what you choose there is what sticks, for that file, from then on.
+
+Anime names are checked against AniList as well, which knows the romaji, Japanese and alternative
+titles TMDB often lacks. And when a match is unsure, a small **Which film is this?** chip shows while
+paused and opens the search already filled in.
 
 * **Titles pulled out of links, not just filenames.** Query strings and tokens are dropped, the last
   segment that looks like a name rather than an id is taken, percent-encoding is undone (twice,
@@ -218,7 +231,10 @@ row** asks again, and what you choose there is what sticks, for that file, from 
   the picture and sized to it, so on a letterboxed film it stops where the picture stops. It hides
   itself during seeking, menus, dialogs, PiP and lock, and the centre controls step aside into the
   time row while it is up. **How solid it sits over the picture is a slider**, from invisible to
-  opaque.
+  opaque. With a free [MDBList](https://mdblist.com) key it also carries the film's scores from
+  IMDb, Rotten Tomatoes (critics and audience), Metacritic, Trakt, Letterboxd and MyAnimeList, each
+  by its own logo. Every site has its own switch and its place in the order, and so does the card.
+  On an episode it can show that episode's own TMDB score instead of the whole show's.
 * **One title, or two.** The card and the subtitle search normally share a title, so correcting
   either corrects both. Turn that off and they are independent — the card can show one film while
   subtitles are searched for another.
@@ -228,8 +244,14 @@ row** asks again, and what you choose there is what sticks, for that file, from 
 * **A film handed over while the player is still open is the film described.** Another app sending a
   second video to a player already in memory used to leave the title, poster, synopsis and markers
   of the one before it on screen. Both ways in now do the same work.
-* **History with real titles** — the recently-played list and the "Play last video?" prompt show
-  the film's name, not a UUID from the URL.
+* **Recent, with real titles.** The home screen starts with what you played last, newest first, the
+  film's name rather than a UUID from the URL. Hold one, or hold OK on a remote, to pin it to the
+  top, play it from the start, open its page or remove it. A film gets its name there after 30
+  seconds of play (or whatever you set, from 10 seconds to 5 minutes), and until then its page asks
+  **Is this …?** so one tap names it straight away.
+* **A page for every film.** Poster, synopsis, the cast (a show's own, not one episode's), its
+  scores, where you stopped and the file it came from, with **Copy link** for a film from a link
+  and **Change it** for when the match is wrong. The new title follows it back to Recent.
 
 
 </details>
@@ -240,10 +262,20 @@ row** asks again, and what you choose there is what sticks, for that file, from 
 ## Subtitles
 
 <div align="center">
-  <img src="docs/screenshots/06-info-and-subtitles.jpg" alt="An info card over a paused film, and the subtitle search beside it">
+  <img src="docs/screenshots/06-info-and-subtitles.jpg" alt="An info card with the film's scores over a paused film, and subtitles found across several sources">
+  <img src="docs/screenshots/13-subtitle-style.jpg" alt="Subtitles in yellow over a film, with the subtitle panel open on its text colour">
 </div>
 
-* **Online search and download** from OpenSubtitles, SubDL and Wyzie, with the language you set.
+* **Online search and download** from OpenSubtitles, SubDL and Wyzie, in any of over 100 languages.
+  A source that has no subtitles in the chosen language is simply skipped.
+* **Every common format, inside the file or beside it.** SRT, ASS, WebVTT, TTML, SAMI, SubViewer,
+  MicroDVD and MPL2 on both engines, including VTT stored inside an MKV or WebM the way FFmpeg
+  writes it. Picture subtitles (PGS, VobSub) play inside a file on both, and as separate files on
+  mpv, which *Auto* switches to for them.
+* **Your pick is remembered.** For each film, on both engines, Off included, and it carries on to the
+  next episode. A subtitle you chose wins over the ones the launching app sends.
+* **Out of the way of the controls.** Subtitles move up while the controls show and back down when
+  they hide. One switch in Settings turns that off.
 * **Open one you already have** — a row in the subtitle picker opens the file picker, so a subtitle
   sitting on the device is two taps away rather than hidden behind a long press.
 * **Any number of folders** — the player can be given several places to read from, so a library
@@ -274,7 +306,8 @@ row** asks again, and what you choose there is what sticks, for that file, from 
   SRTs — and on mpv it pushed the text off the edge of the frame, where it was clipped away rather
   than moved. Both now place the line inside the picture and never in the letterbox, and a cue the
   file deliberately put at the top is left there.
-* **Styling works on both engines** — size, position, edge style and typeface are translated into
+* **Styling works on both engines** — size, position, edge style, typeface, eight text colours and
+  a font of your own are translated into
   mpv's own vocabulary (`sub-pos`, `sub-scale`, `sub-ass-override`…) so the sliders mean the same
   thing whichever engine is playing, including below the default position.
 * **Subtitles handed over by another app are kept.** Stremio, Nuvio and the rest each pass them in a
@@ -310,7 +343,7 @@ are exact.
 ## Everything to hand
 
 <div align="center">
-  <img src="docs/screenshots/05-quick-settings.jpg" alt="The quick settings panel and the playback settings behind it">
+  <img src="docs/screenshots/05-quick-settings.jpg" alt="The quick settings panel beside the picture">
 </div>
 
 One tap of the gear brings the quick panel in along the edge: speed, audio delay, subtitle delay,
@@ -331,9 +364,9 @@ what is on screen at that moment.
 * **Tracks described properly.** Resolution, channel layout, codec, sample rate, bit rate, and
   whether a track is forced, for the hard of hearing, or an audio description — in one fixed order,
   identically on both engines, so two English soundtracks are never two identical rows.
-* **A second line under the title** saying what is actually playing: `1920×804 · HEVC · 23.98 fps ·
-  E-AC-3 5.1 · mpv · 2.1 MB/s`, built from the tracks the player settled on rather than from the
-  file, ending with the engine — which on Auto is the only way to know which one a file landed on —
+* **A second line under the title** saying what is actually playing: `3840×2160 · HEVC · Dolby
+  Vision · 23.98 fps · E-AC-3 Atmos 5.1 · mpv · ↓ 2.1 MB/s`, the same on both engines, built from
+  the tracks the player settled on rather than from the file, ending with the engine — which on Auto is the only way to know which one a file landed on —
   and, for a stream, how fast it is arriving. The speed is counted from the bytes that actually
   come in rather than from a bandwidth estimate, and a file on the device is given none.
 * **Video track picker** — a stream served as a ladder of bitrates, or a file carrying more than one
@@ -350,7 +383,7 @@ what is on screen at that moment.
 ### Playback
 
 <div align="center">
-  <img src="docs/screenshots/04-playback.jpg" alt="A film playing on a phone, with the playback settings beside it">
+  <img src="docs/screenshots/04-playback.jpg" alt="A film playing on a phone, with the details line under its title">
 </div>
 
 * **Adaptive buffering** — the same device-aware profiles applied to *both* engines, so they buffer
@@ -365,14 +398,15 @@ what is on screen at that moment.
   opens at.
 * **Keep playing the sound** *(off by default)* — the screen can go off, or the player be put away,
   and the sound carries on. Picture-in-picture still wins on Home when it is enabled.
-* **Preview while seeking** *(on by default)* — dragging the bar shows the frame you are heading
-  for, decoded from the file itself. Local files only: doing it over a connection would mean
-  fetching the film twice.
+* **Preview while seeking** *(on by default)*. Dragging the bar, or holding an arrow on a remote,
+  shows the frame you are heading for in a bubble that follows along, and the film only jumps when
+  you let go. Streams too: it reads just the pictures it needs, not the film.
 * **A warning before a file stalls the device** — the decoders are measured against what is about to
   play, and a file beyond them offers *play anyway*, *try the other engine* where the other engine
   has a real chance, or *close*. Once per file, with a *do not warn me again*.
-* **Volume boost** — up to 150%, applied through a `LoudnessEnhancer` on Media3 and mpv's own
-  volume on mpv. No restart, and the scale stays 0–100 either way.
+* **Volume past 100%**, up to 150%, through a `LoudnessEnhancer` on Media3 and mpv's own volume on
+  mpv. Swipe or press past 100 and it carries on one step at a time, shown in red. The **Volume
+  boost** setting adds the gain quietly instead, and the scale stays 0–100.
 * **Picture-in-picture on Home** — pressing Home drops the film into PiP instead of pausing it.
 * **Double-tap seek step** is configurable, and the arrows on a remote use the same setting rather
   than a fixed ten seconds.
@@ -383,19 +417,22 @@ what is on screen at that moment.
   last thirty seconds rather than cutting it.
 * **Ask before resuming** — the last file is offered rather than started, and declining keeps it
   remembered.
-* **A clock on screen** while the controls are up, **keep screen on** while playing, and **volume
-  keys that change the film rather than the ringtone** when that is what you want.
+* **A clock and the battery** in the corner, with the controls or all the time, in 12 or 24 hours;
+  **keep screen on** while playing; and **volume keys that change the film rather than the
+  ringtone** when that is what you want.
 * **Check for updates** — an entry in settings that asks the releases page whether there is a newer
-  build and offers to fetch it. Never automatic; nothing reaches the network on its own.
+  build and opens its download in the browser. Never automatic; nothing reaches the network on its own.
 
-### Settings you can read
+### Settings you can search
 
 <div align="center">
-  <img src="docs/screenshots/10-backup-and-history.jpg" alt="History and backup, beside the subtitle sources and identification settings">
+  <img src="docs/screenshots/10-backup-and-history.jpg" alt="Settings in sections, the storage and backup page, and Settings in Arabic">
 </div>
 
-Sectioned and shorter, with every switch saying what it currently does rather than what it is
-called. **Test keys and addons** checks every service on demand rather than only as a key is typed
+Ten sections, each showing what it is set to before you open it, and a search box on every page
+that finds a setting by name. On a television the sections sit on the left and their settings on
+the right. Every switch says what it currently does rather than what it is called, and the few
+choices that are hard to picture show a small sketch of the result. **Test keys and addons** checks every service on demand rather than only as a key is typed
 in: one that stopped answering last week still looked fine until the evening it was needed.
 
 * **A green tick against everything already set** — a key is never shown back once entered, so
@@ -411,11 +448,15 @@ in: one that stopped answering last week still looked fine until the evening it 
 ### Make it yours
 
 <div align="center">
-  <img src="docs/screenshots/09-appearance.jpg" alt="The eleven accent colours, and the settings they colour">
+  <img src="docs/screenshots/09-appearance.jpg" alt="One frame in the Classic, Glass and Material You styles">
+  <img src="docs/screenshots/11-theme-and-colours.jpg" alt="The home screen in the dark and the light theme, the theme colour picker, and the home screen in green">
 </div>
 
-**Eleven accent colours**, orange by default. The chosen colour runs through the controls, the seek
-bar and every highlight. The launcher icon stays orange.
+**Three player styles**: Classic, Glass (frosted bands over the picture) and Material You. **Eleven
+accent colours**, orange by default, run through whichever style you pick: the controls, the seek
+bar and every highlight. The launcher icon stays orange. The first start asks for both, and the
+picture changes as you choose. Home, Settings and the film pages are dark by default and can be
+light, or follow the phone; the player itself always stays dark, and a TV stays dark throughout.
 
 * **Rebuilt bottom bar** — play/pause is the leftmost item in the time row, tapping the time
   toggles remaining-versus-total, and the button strip shares that line rather than sitting on top
@@ -430,7 +471,7 @@ bar and every highlight. The launcher icon stays orange.
 ### Set up from your phone
 
 <div align="center">
-  <img src="docs/screenshots/08-online-setup.jpg" alt="The key and addon settings, and the setup page open in a browser">
+  <img src="docs/screenshots/08-online-setup.jpg" alt="The setup page offered on a television, and the same page open on a phone">
 </div>
 
 Typing an API key with a remote is miserable, so settings offers a PIN-gated page on your local
@@ -584,6 +625,9 @@ Subtitles work with no key at all — a Stremio addon comes set up and ready. Op
 Wyzie keys are optional and simply add more to choose from. You can add up to five addons of your
 own under **Custom subtitle addons**; each is tested against a known film before it is saved.
 
+Scores from other sites need an **MDBList** key, also free: mdblist.com → Preferences → API. Turn
+on **MDBList ratings** in **Settings → Online**, paste the key, and it is tested as you save it.
+
 Two switches worth knowing:
 
 * **Identify files** — automatic by default, which is what fills the info card, the skip markers
@@ -661,8 +705,8 @@ is the window in front.
 ### Online features need keys
 
 TMDB is required for identification, and everything downstream of it — the info card, skip markers
-and subtitle search — depends on that. The key is free. OpenSubtitles, SubDL and Wyzie keys are
-optional and only enable those sources. All of them are entered in Settings → Online; none are
+and subtitle search — depends on that. The key is free. OpenSubtitles, SubDL, Wyzie and MDBList
+keys are optional and only enable those sources. All of them are entered in Settings → Online; none are
 compiled into the app.
 
 
@@ -698,9 +742,15 @@ Smaller borrowings — a parser's shape, the way one app or another hands subtit
 * [zxing](https://github.com/zxing/zxing) core, Apache 2.0 — the encoder behind the error code, and
   nothing else.
 * Skip markers from IntroDB, TheIntroDB, SkipDB and AniSkip. Titles and artwork from TMDB.
-  Subtitles from OpenSubtitles, SubDL, Wyzie and any Stremio addon you add.
+  Subtitles from OpenSubtitles, SubDL, Wyzie and any Stremio addon you add. Scores from other
+  sites through [MDBList](https://mdblist.com).
+* The rating icons on the info card come from [Nuvio](https://github.com/NuvioMedia/NuvioTV),
+  GPL-3.0. The logos are trademarks of their owners.
 
 This product uses the TMDB API but is not endorsed or certified by TMDB.
+
+The films in the screenshots are Blender's open movies (Big Buck Bunny, Sintel, Tears of Steel,
+Spring, Sprite Fright and others), © Blender Foundation, [CC BY](https://creativecommons.org/licenses/by/4.0/).
 
 
 </details>
@@ -739,6 +789,6 @@ not come from this project, whatever it is called:
 SHA-256  6d:c1:c9:16:44:76:06:b1:ce:ba:13:3e:1c:50:6f:a8:
          8e:11:25:9b:08:2c:d3:16:61:d0:c6:6c:12:42:dc:a6
 
-apksigner verify --print-certs just-player-pro-4.2.0-arm64-v8a.apk
+apksigner verify --print-certs just-player-pro-5.0.0-arm64-v8a.apk
 ```
 </details>

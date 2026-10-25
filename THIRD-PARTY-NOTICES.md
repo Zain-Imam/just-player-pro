@@ -68,6 +68,16 @@ needed something the published versions do not do.
 | `doubletapplayerview/` (resources) and `app/src/main/java/com/brouken/player/dtpv/` (the Java, translated from the original Kotlin) | [vkay94/DoubleTapPlayerView](https://github.com/vkay94/DoubleTapPlayerView) — Copyright (c) 2019 Viktor Krez | MIT, text in [`licenses/MIT-DoubleTapPlayerView.txt`](licenses/MIT-DoubleTapPlayerView.txt) |
 | `android-file-chooser/` | [hedzr/android-file-chooser](https://github.com/hedzr/android-file-chooser) | Apache-2.0, text in [`licenses/Apache-2.0.txt`](licenses/Apache-2.0.txt) |
 
+## Artwork
+
+| Artwork | Source | Licence |
+|---|---|---|
+| Rating icons on the pause card (`app/src/main/res/drawable-nodpi/rating_*.png`), rendered from Nuvio's icons | [NuvioMedia/NuvioTV](https://github.com/NuvioMedia/NuvioTV) | GPL-3.0 |
+
+The logos in those icons (IMDb, TMDB, Rotten Tomatoes, Metacritic, Trakt,
+Letterboxd, MyAnimeList) are trademarks of their owners and are used only to
+say which site a score comes from.
+
 ## The project this one is built on
 
 | Project | Licence |
@@ -80,6 +90,6 @@ needed something the published versions do not do.
 
 The app talks to these only when asked, and only with keys the user supplies.
 They are services rather than bundled code, and are listed for completeness:
-TMDB, OpenSubtitles, SubDL, Wyzie, and any Stremio subtitle addon the user adds.
+TMDB, OpenSubtitles, SubDL, Wyzie, MDBList, and any Stremio subtitle addon the user adds.
 Each has its own terms, and an API key is issued to the person using it rather
 than to this project.
