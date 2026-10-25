@@ -48,7 +48,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
 
     public YouTubeOverlay(@NonNull Context context) {
         this(context, null);
-        // Hide overlay initially when added programmatically
         setVisibility(View.INVISIBLE);
     }
 
@@ -331,18 +330,16 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
             return;
 
         long current = player.getCurrentPosition();
-        // Rewind and start of the video (+ 0.5 sec tolerance)
+        // rewind at the start, 0.5 s tolerance
         if (posX < playerView.getWidth() * 0.35 && current <= 500)
             return;
 
-        // Forward and end of the video (- 0.5 sec tolerance)
-        // Length is unknown under mpv until the file is open
+        // forward at the end, 0.5 s tolerance; mpv has no length until the file is open
         final long duration = player.getDuration();
         if (duration != C.TIME_UNSET
                 && posX > playerView.getWidth() * 0.65 && current >= (duration - 500))
             return;
 
-        // YouTube behavior: show overlay on MOTION_UP
         if (getVisibility() != View.VISIBLE) {
             if (posX < playerView.getWidth() * 0.35 || posX > playerView.getWidth() * 0.65) {
                 if (performListener != null)
@@ -356,7 +353,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
 
         if (posX < playerView.getWidth() * 0.35) {
 
-            // First time tap or switched
             SecondsView secondsView = findViewById(R.id.seconds_view);
             if (secondsView.isForward()) {
                 changeConstraints(false);
@@ -374,7 +370,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
             rewinding();
         } else if (posX > playerView.getWidth() * 0.65) {
 
-            // First time tap or switched
             SecondsView secondsView = findViewById(R.id.seconds_view);
             if (!secondsView.isForward()) {
                 changeConstraints(true);
@@ -391,7 +386,7 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
             });
             forwarding();
         } else {
-            // Middle area tapped: do nothing
+            // middle area tapped: do nothing
         }
     }
 
@@ -402,7 +397,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
         // otherwise mpv keeps the keyframe snapping of the last drag
         com.brouken.player.engine.SeekPrecision.exact(player);
 
-        // Start of the video reached
         if (newPosition <= 0) {
             player.seekTo(0);
 
@@ -411,7 +405,6 @@ public final class YouTubeOverlay extends ConstraintLayout implements PlayerDoub
             return;
         }
 
-        // End of the video reached, if the length is known
         long total = player.getDuration();
         if (total != C.TIME_UNSET && newPosition >= total) {
             player.seekTo(total);

@@ -12,7 +12,6 @@ public class SimpleOsdSettingsItem implements OsdSettingsItem {
     public final Drawable icon;
     public final Listener listener;
 
-    // optional second button at the end of the row
     @Nullable
     public final Drawable trailingIcon;
     @Nullable

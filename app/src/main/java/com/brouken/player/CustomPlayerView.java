@@ -185,7 +185,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         if (handleTouch)
             mDetector.onTouchEvent(ev);
 
-        // Handle all events to avoid conflict with internal handlers
+        // handle all events to avoid conflict with internal handlers
         return true;
     }
 
@@ -222,7 +222,8 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             return true;
         }
 
-        if (!PlayerActivity.controllerVisibleFully) {
+        // this view's own state, not the value cached when the controls began to show
+        if (!isControllerFullyVisible()) {
             showController();
             return true;
         } else if (PlayerActivity.haveMedia && PlayerActivity.player != null) {
@@ -239,7 +240,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         if (mScaleDetector.isInProgress() || PlayerActivity.player == null || PlayerActivity.locked)
             return false;
 
-        // Exclude edge areas
         if (motionEvent.getY() < IGNORE_BORDER || motionEvent.getX() < IGNORE_BORDER ||
                 motionEvent.getY() > getHeight() - IGNORE_BORDER || motionEvent.getX() > getWidth() - IGNORE_BORDER)
             return false;
@@ -253,7 +253,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         if (gestureOrientation == Orientation.HORIZONTAL || gestureOrientation == Orientation.UNKNOWN) {
             gestureScrollX += distanceX;
             if (Math.abs(gestureScrollX) > SCROLL_STEP || (gestureOrientation == Orientation.HORIZONTAL && Math.abs(gestureScrollX) > SCROLL_STEP_SEEK)) {
-                // Do not show controller if not already visible
                 setControllerAutoShow(false);
 
                 if (gestureOrientation == Orientation.UNKNOWN) {
@@ -308,7 +307,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             }
         }
 
-        // LEFT = Brightness  |  RIGHT = Volume
+        // left side brightness, right side volume
         if (gestureOrientation == Orientation.VERTICAL || gestureOrientation == Orientation.UNKNOWN) {
             gestureScrollY += distanceY;
             if (Math.abs(gestureScrollY) > SCROLL_STEP) {
@@ -321,7 +320,10 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                 if (motionEvent.getX() < (float)(getWidth() / 2)) {
                     brightnessControl.changeBrightness(this, gestureScrollY > 0, canSetAutoBrightness);
                 } else {
-                    Utils.adjustVolumeFine(getContext(), mAudioManager, this, gestureScrollY > 0, canBoostVolume);
+                    // a fast swipe moves further, up to four points for one move
+                    final int steps = Math.max(1, Math.min(4,
+                            Math.round(Math.abs(Utils.pxToDp(distanceY)) / 6f)));
+                    Utils.adjustVolumeFine(getContext(), mAudioManager, this, gestureScrollY > 0, canBoostVolume, steps);
                 }
 
                 gestureScrollY = 0.0001f;

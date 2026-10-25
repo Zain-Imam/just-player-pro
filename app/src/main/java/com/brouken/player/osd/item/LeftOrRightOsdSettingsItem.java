@@ -7,6 +7,8 @@ public class LeftOrRightOsdSettingsItem implements OsdSettingsItem {
     public final String title;
     public LeftOrRightOsdSettingsItem.Listener listener;
     public String summary;
+    // a dot of this colour before the summary, for a colour choice
+    public Integer summaryColor;
 
     public LeftOrRightOsdSettingsItem(String title, Listener listener) {
         this.title = title;

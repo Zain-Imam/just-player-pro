@@ -20,11 +20,13 @@ public class ChoiceOsdSettingsItem extends LeftOrRightOsdSettingsItem {
 
         this.currentElementIndex = elementIndex;
         summary = elements[elementIndex].name;
+        summaryColor = elements[elementIndex].color;
     }
 
     private void updateCurrentElementIndex(int position, int newElementIndex) {
         currentElementIndex = newElementIndex;
         summary = elements[newElementIndex].name;
+        summaryColor = elements[newElementIndex].color;
         adapter.notifyItemChanged(position);
         listener.onSettingChanged(position, newElementIndex);
     }
@@ -52,9 +54,15 @@ public class ChoiceOsdSettingsItem extends LeftOrRightOsdSettingsItem {
     public static class Element {
 
         private final String name;
+        private final Integer color;
 
         public Element(String name) {
+            this(name, null);
+        }
+
+        public Element(String name, Integer color) {
             this.name = name;
+            this.color = color;
         }
 
     }

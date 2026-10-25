@@ -97,7 +97,7 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
                     ? context.getString(R.string.osd_player_speed_normal)
                     : String.format(Locale.getDefault(), "%.2f×", SPEEDS[i])
                             .replace(".00", "").replace("0×", "×"));
-            // Nearest match, so a speed set by gesture still shows up here.
+            // nearest match, so a speed set by gesture still shows up here
             if (Math.abs(SPEEDS[i] - speed) < Math.abs(SPEEDS[selected] - speed)) {
                 selected = i;
             }
@@ -175,7 +175,8 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
         final Drawable icon = getDrawable(R.drawable.ic_info_card_24dp);
         return new SimpleOsdSettingsItem(context.getString(R.string.osd_info_card), icon,
                 position -> listener.onShowInfoCard(),
-                getDrawable(R.drawable.ic_search_24dp),
+                // looks the title up again; the plain magnifier means subtitles
+                getDrawable(R.drawable.ic_manage_search_24dp),
                 context.getString(R.string.osd_info_card_search_again),
                 position -> listener.onSearchAgain());
     }
@@ -202,7 +203,7 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
     private OsdSettingsItem createSubtitleDelayItem(final int delayMs) {
         final IntegerOsdSettingsItem.Listener itemListener =
                 (position, newValue) -> listener.onSubtitleDelayChange(newValue);
-        return new DelayOsdSettingsItem(context.getString(R.string.osd_subtitle_delay_full),
+        return new DelayOsdSettingsItem(context, context.getString(R.string.osd_subtitle_delay_full),
                 delayMs, itemListener, this);
     }
 

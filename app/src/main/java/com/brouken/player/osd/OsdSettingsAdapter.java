@@ -32,12 +32,19 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
     @Override
     public OsdSettingsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view;
+        final com.brouken.player.PlayerStyle style = com.brouken.player.PlayerStyle.of(context);
         switch (viewType) {
             case LeftOrRightOsdSettingsItem.VIEW_TYPE:
                 view = layoutInflater.inflate(R.layout.osd_settings_item_left_or_right, parent, false);
+                if (style != null) {
+                    style.dressOsdRow(view);
+                }
                 return new ValueOsdSettingsViewHolder(view);
             case SimpleOsdSettingsItem.VIEW_TYPE:
                 view = layoutInflater.inflate(R.layout.osd_settings_item_simple, parent, false);
+                if (style != null) {
+                    style.dressOsdRow(view);
+                }
                 return new SimpleOsdSettingsViewHolder(view);
             default:
                 throw new IllegalArgumentException("Unknown viewType: " + viewType);
@@ -84,7 +91,7 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
             super(itemView);
 
             if (Util.SDK_INT < 26) {
-                // Workaround for https://github.com/google/ExoPlayer/issues/9061.
+                // workaround for https://github.com/google/ExoPlayer/issues/9061
                 itemView.setFocusable(true);
             }
 
@@ -94,7 +101,6 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
             View button1 = itemView.findViewById(android.R.id.button1);
             View button2 = itemView.findViewById(android.R.id.button2);
 
-            // repeat while held, like a remote's key repeat
             repeatWhileHeld(button1, this::notifySettingLeftPressed);
             repeatWhileHeld(button2, this::notifySettingRightPressed);
 
@@ -139,6 +145,18 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
             } else {
                 summaryTextView.setText(valueItem.summary);
             }
+            android.graphics.drawable.GradientDrawable dot = null;
+            if (valueItem.summaryColor != null) {
+                final int size = Math.round(12 * itemView.getResources().getDisplayMetrics().density);
+                dot = new android.graphics.drawable.GradientDrawable();
+                dot.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                dot.setSize(size, size);
+                dot.setColor(valueItem.summaryColor);
+                // white would vanish on a light panel
+                dot.setStroke(Math.max(1, size / 12), 0x66808080);
+                summaryTextView.setCompoundDrawablePadding(size / 2);
+            }
+            summaryTextView.setCompoundDrawablesRelativeWithIntrinsicBounds(dot, null, null, null);
         }
 
         private void repeatWhileHeld(final View button, final Runnable press) {
@@ -202,7 +220,7 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
             super(itemView);
 
             if (Util.SDK_INT < 26) {
-                // Workaround for https://github.com/google/ExoPlayer/issues/9061.
+                // workaround for https://github.com/google/ExoPlayer/issues/9061
                 itemView.setFocusable(true);
             }
 
@@ -216,8 +234,7 @@ public class OsdSettingsAdapter extends RecyclerView.Adapter<OsdSettingsAdapter.
                 item.listener.onSettingClicked(position);
             });
 
-            // focus search can't reach a view inside the focused row, so name it;
-            // ids are generated because recycled rows share the layout id
+            // named for focus search, with generated ids as recycled rows share one
             if (trailingView != null) {
                 if (itemView.getId() == View.NO_ID) {
                     itemView.setId(View.generateViewId());

@@ -1,12 +1,14 @@
 package com.brouken.player;
 
 import android.content.Context;
+import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.ViewConfiguration;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.media3.ui.DefaultTimeBar;
 
@@ -21,6 +23,7 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
     Rect scrubberBar;
     private Rect seekBounds;
     private Rect progressBar;
+    private Rect bufferedBar;
 
     private boolean scrubbing;
     private boolean holdingBuffered;
@@ -41,6 +44,10 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
 
     // local files draw fully buffered; the player only reports its read-ahead
     private boolean wholeFileHere;
+
+    boolean isWholeFileHere() {
+        return wholeFileHere;
+    }
 
     void setWholeFileHere(final boolean here) {
         wholeFileHere = here;
@@ -78,6 +85,13 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
         final boolean forward = keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT;
 
         if (!back && !forward) {
+            // OK on a preview jumps there now rather than after the pause
+            if (keyScrubbing && previewing && isConfirmKey(keyCode)) {
+                removeCallbacks(commitKeyScrub);
+                Utils.log("Seek preview: jump by OK");
+                commitKeyScrub.run();
+                return true;
+            }
             // the activity ignores OK while the controls are up, so play/pause here
             if (!keyScrubbing && isConfirmKey(keyCode)) {
                 final androidx.media3.common.Player player = PlayerActivity.player;
@@ -128,25 +142,95 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
         return progressBar.left + (float) ms / durationMs * progressBar.width();
     }
 
-    // commit after the last press so a run of taps adds up
+    // knob position for a time, and the bar's top, in this view's coordinates
+    float knobX(final long ms) {
+        return xFor(Math.max(0, Math.min(durationMs, ms)));
+    }
+
+    int barTop() {
+        if (progressBar == null) {
+            return 0;
+        }
+        return progressBar.top - (track == null ? 0 : track.reachAbove());
+    }
+
+    // a player style's own drawing of the line; Classic keeps the stock one
+    interface Track {
+        // how far it draws above the line, so the preview clears it
+        int reachAbove();
+
+        void draw(@NonNull Canvas canvas, @NonNull Rect bar, int bufferedRight, int playedRight, boolean grown);
+    }
+
+    @Nullable
+    private Track track;
+
+    void setTrack(@Nullable final Track track) {
+        this.track = track;
+        invalidate();
+    }
+
+    @Override
+    public void onDraw(final Canvas canvas) {
+        if (track == null || progressBar == null || bufferedBar == null || scrubberBar == null) {
+            super.onDraw(canvas);
+            return;
+        }
+        // the stock bar keeps these up to date, scrubbing included
+        track.draw(canvas, progressBar, bufferedBar.right, scrubberBar.right,
+                scrubbing || keyScrubbing || isFocused());
+    }
+
+    // commits after the last press so taps add up; a preview waits for OK
     private static final long KEY_COMMIT_DELAY_MS = 350;
+    private boolean previewing;
+
+    void setPreviewing(final boolean previewing) {
+        this.previewing = previewing;
+    }
 
     private final Runnable commitKeyScrub = () -> {
         if (keyScrubbing) {
+            Utils.log("Seek preview: keys done");
             keyScrubbing = false;
             dispatchToSuper(MotionEvent.ACTION_UP, keyX);
         }
     };
+
+    // Back or a focus move during a preview cancels without seeking
+    boolean cancelKeyScrub() {
+        if (!keyScrubbing || !previewing) {
+            return false;
+        }
+        removeCallbacks(commitKeyScrub);
+        keyScrubbing = false;
+        keyTargetMs = -1;
+        Utils.log("Seek preview: dropped");
+        dispatchToSuper(MotionEvent.ACTION_CANCEL, keyX);
+        return true;
+    }
 
     @Override
     public boolean onKeyUp(final int keyCode, final android.view.KeyEvent event) {
         if (keyScrubbing && (keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT
                 || keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT)) {
             removeCallbacks(commitKeyScrub);
-            postDelayed(commitKeyScrub, KEY_COMMIT_DELAY_MS);
+            if (!previewing) {
+                postDelayed(commitKeyScrub, KEY_COMMIT_DELAY_MS);
+            }
             return true;
         }
         return super.onKeyUp(keyCode, event);
+    }
+
+    // cancel first: the stock bar treats losing focus as the end of a drag and seeks
+    @Override
+    protected void onFocusChanged(final boolean gainFocus, final int direction,
+                                  @Nullable final Rect previouslyFocusedRect) {
+        if (!gainFocus) {
+            cancelKeyScrub();
+        }
+        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
     }
 
     private static boolean isConfirmKey(final int keyCode) {
@@ -176,6 +260,7 @@ class CustomDefaultTimeBar extends DefaultTimeBar {
         scrubberBar = rect("scrubberBar");
         seekBounds = rect("seekBounds");
         progressBar = rect("progressBar");
+        bufferedBar = rect("bufferedBar");
     }
 
     @Nullable

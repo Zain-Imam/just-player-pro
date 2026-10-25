@@ -17,13 +17,17 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
-// position bar shown while locked; takes no touch or focus so a pocket can't scrub
+// takes no touch or focus, so a pocket can't scrub
 final class LockedTimeline {
 
     private final Context context;
     private final ViewGroup parent;
+    // null keeps Classic's look
+    @Nullable
+    private final PlayerStyle style;
 
     private LinearLayout root;
     private TextView elapsed;
@@ -31,9 +35,11 @@ final class LockedTimeline {
     private TextView total;
     private Bar bar;
 
-    LockedTimeline(@NonNull final Context context, @NonNull final ViewGroup parent) {
+    LockedTimeline(@NonNull final Context context, @NonNull final ViewGroup parent,
+                   @Nullable final PlayerStyle style) {
         this.context = context;
         this.parent = parent;
+        this.style = style;
     }
 
     boolean isShowing() {
@@ -55,16 +61,16 @@ final class LockedTimeline {
         }
     }
 
-    // share of the screen height, for lifting the subtitles clear
+    // the fade above the times counts too, so text sitting there isn't greyed
     float heightFraction() {
         if (root == null || parent.getHeight() <= 0) {
             return 0f;
         }
-        // fade included: text under it is dimmed
-        return Math.max(0f, root.getHeight() / (float) parent.getHeight());
+        final int clear = root.getHeight() - root.getPaddingTop() + Utils.dpToPx(14);
+        return Math.max(0f, clear / (float) parent.getHeight());
     }
 
-    void update(final long positionMs, final long durationMs) {
+    void update(final long positionMs, final long bufferedMs, final long durationMs) {
         if (root == null) {
             return;
         }
@@ -76,7 +82,8 @@ final class LockedTimeline {
             remaining.setVisibility(View.VISIBLE);
             total.setVisibility(View.VISIBLE);
             bar.setVisibility(View.VISIBLE);
-            bar.setProgress(Math.min(1f, position / (float) durationMs));
+            bar.setProgress(Math.min(1f, position / (float) durationMs),
+                    Math.min(1f, Math.max(position, bufferedMs) / (float) durationMs));
         } else {
             // live stream: no duration
             remaining.setVisibility(View.GONE);
@@ -88,9 +95,10 @@ final class LockedTimeline {
     private void build() {
         root = new LinearLayout(context);
         root.setOrientation(LinearLayout.VERTICAL);
-        // Times read left to right in every language, like the seek bar.
+        // times read left to right in every language, like the seek bar
         root.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-        root.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+        root.setBackground(style != null ? style.lockedBackground()
+                : new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                 new int[]{Color.argb(0, 0, 0, 0), Color.argb(0x8C, 0, 0, 0),
                         Color.argb(0xC8, 0, 0, 0)}));
         root.setClickable(false);
@@ -101,24 +109,26 @@ final class LockedTimeline {
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.BOTTOM);
 
-        elapsed = text(14, Typeface.create("sans-serif-medium", Typeface.NORMAL), Color.WHITE);
+        final int words = style != null ? style.textColour() : Color.WHITE;
+        elapsed = text(14, Typeface.create("sans-serif-medium", Typeface.NORMAL), words);
         row.addView(elapsed, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         final View spacer = new View(context);
         row.addView(spacer, new LinearLayout.LayoutParams(0, 1, 1f));
 
-        remaining = text(14, Typeface.create("sans-serif-medium", Typeface.NORMAL), Color.WHITE);
+        remaining = text(14, Typeface.create("sans-serif-medium", Typeface.NORMAL), words);
         row.addView(remaining, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        total = text(12, Typeface.DEFAULT, Color.argb(0xBD, 0xFF, 0xFF, 0xFF));
+        total = text(12, Typeface.DEFAULT, style != null ? style.textVariantColour()
+                : Color.argb(0xBD, 0xFF, 0xFF, 0xFF));
         row.addView(total, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         root.addView(row, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        bar = new Bar(context);
+        bar = new Bar(context, style);
         final LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, Utils.dpToPx(14));
         barParams.topMargin = Utils.dpToPx(4);
@@ -138,7 +148,10 @@ final class LockedTimeline {
         view.setTextSize(TypedValue.COMPLEX_UNIT_SP, sp);
         view.setTypeface(typeface);
         view.setTextColor(color);
-        view.setShadowLayer(Utils.dpToPx(3), 0, 0, Color.BLACK);
+        // Material's scrim is solid enough without one
+        if (style == null || style.isGlass()) {
+            view.setShadowLayer(Utils.dpToPx(3), 0, 0, Color.BLACK);
+        }
         // tabular figures so the times don't jitter
         view.setFontFeatureSettings("tnum");
         view.setIncludeFontPadding(false);
@@ -172,36 +185,68 @@ final class LockedTimeline {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final RectF rect = new RectF();
         private float progress;
+        private float buffered;
+        private final int bufferedColor;
+        private final int unplayedColor;
+        @Nullable
+        private final PlayerStyle style;
         int accent = Color.WHITE;
 
-        Bar(final Context context) {
+        Bar(final Context context, @Nullable final PlayerStyle style) {
             super(context);
             setClickable(false);
             setFocusable(false);
+            this.style = style;
+            bufferedColor = style != null ? style.bufferedColour()
+                    : androidx.core.content.ContextCompat.getColor(context, R.color.time_bar_buffered);
+            unplayedColor = style != null ? style.unplayedColour() : Color.argb(0x52, 0xFF, 0xFF, 0xFF);
         }
 
-        void setProgress(final float progress) {
+        void setProgress(final float progress, final float buffered) {
             this.progress = progress;
+            this.buffered = buffered;
             invalidate();
         }
 
         @Override
         protected void onDraw(@NonNull final Canvas canvas) {
-            final float knob = Utils.dpToPx(5);
-            final float track = Utils.dpToPx(3);
+            final boolean material = style != null && !style.isGlass();
+            final float knob = Utils.dpToPx(style != null && style.isGlass() ? 7 : 5);
+            final float track = Utils.dpToPx(material ? 4 : 3);
             final float left = knob;
             final float right = getWidth() - knob;
             final float centre = getHeight() / 2f;
             final float at = left + (right - left) * progress;
 
-            paint.setColor(Color.argb(0x52, 0xFF, 0xFF, 0xFF));
+            paint.setColor(unplayedColor);
             rect.set(left, centre - track / 2, right, centre + track / 2);
+            canvas.drawRoundRect(rect, track, track, paint);
+
+            // buffered under played, as on the seek bar
+            paint.setColor(bufferedColor);
+            rect.set(left, centre - track / 2, left + (right - left) * buffered, centre + track / 2);
             canvas.drawRoundRect(rect, track, track, paint);
 
             paint.setColor(accent);
             rect.set(left, centre - track / 2, at, centre + track / 2);
             canvas.drawRoundRect(rect, track, track, paint);
 
+            if (material) {
+                // Material's slider shows where it is by its colours alone here
+                return;
+            }
+            if (style != null) {
+                paint.setColor(0x38FFFFFF);
+                canvas.drawCircle(at, centre, knob, paint);
+                paint.setStyle(Paint.Style.STROKE);
+                final float edge = Math.max(1f, getResources().getDisplayMetrics().density * 1.5f);
+                paint.setStrokeWidth(edge);
+                paint.setColor(accent);
+                canvas.drawCircle(at, centre, knob - edge / 2f, paint);
+                paint.setStyle(Paint.Style.FILL);
+                canvas.drawCircle(at, centre, Utils.dpToPx(3), paint);
+                return;
+            }
             paint.setColor(Color.WHITE);
             canvas.drawCircle(at, centre, knob, paint);
         }

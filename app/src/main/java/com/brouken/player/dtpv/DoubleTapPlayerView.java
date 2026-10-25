@@ -109,18 +109,49 @@ public class DoubleTapPlayerView extends CustomPlayerView {
         gestureListener.cancelInDoubleTapMode();
     }
 
+    // all of a touch or none goes to the gestures, or they misread it as a swipe
+    private boolean doubleTapOwnsTouch;
+    private float downX;
+    private float downY;
+
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        if (isDoubleTapEnabled) {
-            boolean consumed = gestureDetector.onTouchEvent(ev);
-
-            // keeps the controller from flickering during a double tap
-            if (!consumed)
+        if (!isDoubleTapEnabled) {
+            return super.onTouchEvent(ev);
+        }
+        final int action = ev.getActionMasked();
+        if (action == MotionEvent.ACTION_DOWN) {
+            downX = ev.getX();
+            downY = ev.getY();
+            // taken here, it keeps the controller from flickering during a double tap
+            doubleTapOwnsTouch = gestureDetector.onTouchEvent(ev);
+            return doubleTapOwnsTouch || super.onTouchEvent(ev);
+        }
+        if (doubleTapOwnsTouch) {
+            if (action == MotionEvent.ACTION_MOVE
+                    && Math.hypot(ev.getX() - downX, ev.getY() - downY) > handOverDistance()) {
+                // a finger that travels was a swipe after all: hand it over as a new touch
+                doubleTapOwnsTouch = false;
+                final MotionEvent cancel = MotionEvent.obtain(ev);
+                cancel.setAction(MotionEvent.ACTION_CANCEL);
+                gestureDetector.onTouchEvent(cancel);
+                cancel.recycle();
+                cancelInDoubleTapMode();
+                final MotionEvent down = MotionEvent.obtain(ev);
+                down.setAction(MotionEvent.ACTION_DOWN);
+                super.onTouchEvent(down);
+                down.recycle();
                 return super.onTouchEvent(ev);
-
+            }
+            gestureDetector.onTouchEvent(ev);
             return true;
         }
+        gestureDetector.onTouchEvent(ev);
         return super.onTouchEvent(ev);
+    }
+
+    private float handOverDistance() {
+        return 3 * android.view.ViewConfiguration.get(getContext()).getScaledTouchSlop();
     }
 
     @Override
@@ -224,7 +255,6 @@ public class DoubleTapPlayerView extends CustomPlayerView {
 
         @Override
         public boolean onDoubleTap(MotionEvent e) {
-            // First tap (ACTION_DOWN) of both taps
             if (DEBUG)
                 Log.d(TAG, "onDoubleTap");
             if (!isDoubleTapping) {
@@ -238,7 +268,6 @@ public class DoubleTapPlayerView extends CustomPlayerView {
 
         @Override
         public boolean onDoubleTapEvent(MotionEvent e) {
-            // Second tap (ACTION_UP) of both taps
             if (e.getActionMasked() == MotionEvent.ACTION_UP && isDoubleTapping) {
                 if (DEBUG)
                     Log.d(TAG,"onDoubleTapEvent, ACTION_UP");

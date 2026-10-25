@@ -59,6 +59,7 @@ public class OsdSettingsController {
                 prefs.subtitleSize,
                 prefs.subtitleEdgeType,
                 prefs.subtitleTypeface,
+                com.brouken.player.SubtitleColors.indexOf(prefs.subtitleColor),
                 prefs.subtitleStyleEmbedded
         );
 
@@ -92,6 +93,13 @@ public class OsdSettingsController {
         playerSettingsWindow =
                 new PopupWindow(playerPanelView, com.brouken.player.Panels.width(context), FrameLayout.LayoutParams.MATCH_PARENT, true);
 
+        final com.brouken.player.PlayerStyle style = com.brouken.player.PlayerStyle.of(context);
+        if (style != null) {
+            style.dressPanel(settingsView);
+            style.dressPanel(audioPanelView);
+            style.dressPanel(playerPanelView);
+        }
+
         osdSettingsWindow.setAnimationStyle(R.style.PanelAnimation);
         audioSettingsWindow.setAnimationStyle(R.style.PanelAnimation);
         playerSettingsWindow.setAnimationStyle(R.style.PanelAnimation);
@@ -102,8 +110,7 @@ public class OsdSettingsController {
         playerSettingsWindow.setOnDismissListener(playerActivity::hideOverlayCardForNow);
 
         if (Util.SDK_INT < 23) {
-            // Work around issue where tapping outside of the menu area or pressing the back button
-            // doesn't dismiss the menu as expected. See: https://github.com/google/ExoPlayer/issues/8272.
+            // tapping outside or Back does not dismiss it otherwise, ExoPlayer issue 8272
             osdSettingsWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             audioSettingsWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             playerSettingsWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -115,7 +122,7 @@ public class OsdSettingsController {
         playerAdapter.setInitialValues(
                 prefs.speedForUri(prefs.mediaUri),
                 prefs.playbackEngine,
-                preferences().getBoolean("overlayOnPause", false),
+                preferences().getBoolean("overlayOnPause", true),
                 preferences().getBoolean("skipSegments", true),
                 prefs.adaptiveBuffering,
                 playerActivity.sleepMinutesLeft(),
@@ -266,6 +273,7 @@ public class OsdSettingsController {
                 prefs.subtitleSize,
                 prefs.subtitleEdgeType,
                 prefs.subtitleTypeface,
+                com.brouken.player.SubtitleColors.indexOf(prefs.subtitleColor),
                 prefs.subtitleStyleEmbedded
         );
         subtitleAdapter.notifyDataSetChanged();
@@ -280,8 +288,7 @@ public class OsdSettingsController {
         osdSettingsWindow.showAtLocation(playerActivity.playerView, Gravity.END | Gravity.TOP, 0, 0);
         focusFirstRow(osdSettingsWindow);
 
-        // Without delaying hide, controller's UI reappears when
-        // using physical button on a remote to open settings
+        // hide later, or a remote's settings key brings the controls back
         playerActivity.playerView.postDelayed(playerActivity.playerView::hideController, 100);
     }
 
@@ -318,6 +325,12 @@ public class OsdSettingsController {
             @Override
             public void onSubtitleTypefaceChange(SubtitleTypeface typeface) {
                 prefs.updateSubtitleTypeface(typeface);
+                playerActivity.updateSubtitleStyle(playerActivity);
+            }
+
+            @Override
+            public void onSubtitleColorChange(int colorIndex) {
+                prefs.updateSubtitleColor(com.brouken.player.SubtitleColors.keyAt(colorIndex));
                 playerActivity.updateSubtitleStyle(playerActivity);
             }
 
