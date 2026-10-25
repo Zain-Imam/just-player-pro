@@ -22,8 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-// Proves the skip undo offer expires on real time, on the main-thread Handler.
-// SettingsActivity only hosts the button; it opens without media.
+// SettingsActivity only hosts the button, as it opens without media
 @RunWith(AndroidJUnit4.class)
 public class SkipUndoDeviceTest {
 
@@ -80,7 +79,7 @@ public class SkipUndoDeviceTest {
                 controller.load(null);
             });
 
-            // The file's own chapters, so no lookup and no network.
+            // the file's own chapters, so no lookup and no network
             final Button skip = waitForButton(rootHeld, 5000);
             assertNotNull("the skip button never appeared for a named intro", skip);
             assertEquals("Skip intro", textOf(scenario, skip));
@@ -105,7 +104,6 @@ public class SkipUndoDeviceTest {
             assertTrue("undo should be gone three seconds after the skip",
                     !visible(scenario, skip));
 
-            // seeking back into the intro offers the skip again
             film.position = 10;
             film.playing = true;
             final Button again = waitForButton(rootHeld, 3000);

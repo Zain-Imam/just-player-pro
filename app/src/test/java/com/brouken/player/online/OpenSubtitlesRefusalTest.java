@@ -5,8 +5,7 @@ import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
 
-// The toast text when OpenSubtitles refuses a download.
-// The body is a real reply for an anonymous key that had used its five downloads.
+// the body is a real reply to an anonymous key past its five downloads
 public class OpenSubtitlesRefusalTest {
 
     private static final String OUT_OF_DOWNLOADS = "{\"requests\":6,\"remaining\":-1,"

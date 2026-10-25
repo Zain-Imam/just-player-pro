@@ -10,7 +10,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-// Skip segments from chapter names; no public sample file has named chapters.
 public class SkipFromChaptersTest {
 
     private static List<SkipSegments.ChapterMark> chapters(final Object... titleAndStart) {
@@ -37,13 +36,11 @@ public class SkipFromChaptersTest {
         final SkipSegments.Segment intro = found.get(0);
         assertEquals(SkipSegments.Kind.INTRO, intro.kind);
         assertEquals(0, intro.start, 0.001);
-        // A chapter runs until the next one starts.
         assertEquals(90, intro.end, 0.001);
 
         final SkipSegments.Segment credits = found.get(1);
         assertEquals(SkipSegments.Kind.CREDITS, credits.kind);
         assertEquals(1320, credits.start, 0.001);
-        // The last one runs to the end of the film.
         assertEquals(1400, credits.end, 0.001);
     }
 
@@ -85,7 +82,7 @@ public class SkipFromChaptersTest {
     public void noChaptersAtAll() {
         assertTrue(SkipSegments.fromChapters(null, 600).isEmpty());
         assertTrue(SkipSegments.fromChapters(new ArrayList<>(), 600).isEmpty());
-        // One chapter is not a division of anything.
+        // one chapter is not a division of anything
         assertTrue(SkipSegments.fromChapters(chapters("Intro", 0), 600).isEmpty());
     }
 }

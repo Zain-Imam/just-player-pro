@@ -26,8 +26,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
-// Proves a re-encoded subtitle keeps its file name, not the media store row id.
-// Saves a real Windows-1252 subtitle through MediaStore to get that kind of address.
+// a MediaStore address ends in a row id, which must never become the name
 @RunWith(AndroidJUnit4.class)
 public class SubtitleNamesDeviceTest {
 
@@ -45,7 +44,7 @@ public class SubtitleNamesDeviceTest {
         values.put(MediaStore.MediaColumns.MIME_TYPE, "application/x-subrip");
         final Uri uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
         assertNotNull("the media store took the file", uri);
-        // é and è as single Windows-1252 bytes: not UTF-8.
+        // é and è as single Windows-1252 bytes, not UTF-8
         final String text = "1\r\n00:00:01,000 --> 00:00:02,000\r\nCafé crème brûlée\r\n\r\n"
                 + "2\r\n00:00:03,000 --> 00:00:04,000\r\nDéjà vu, naïve façade\r\n";
         try (OutputStream out = resolver.openOutputStream(uri)) {
@@ -65,7 +64,6 @@ public class SubtitleNamesDeviceTest {
     public void aConvertedCopyKeepsTheFilesNameAndExtension() throws Exception {
         Assume.assumeTrue(Build.VERSION.SDK_INT >= 29);
         inserted = insertWindows1252Subtitle();
-        // a media store address ending in a row id
         assertTrue(inserted.getLastPathSegment().matches("[0-9]+"));
 
         final Uri converted;
@@ -97,7 +95,6 @@ public class SubtitleNamesDeviceTest {
             converted = Utils.convertInputStreamToUTF(context(), inserted, in);
         }
         assertEquals("Café crème.en", SubtitleNames.label(context(), converted, null, null));
-        // A name something gave it still wins.
         assertEquals("English (Addon)",
                 SubtitleNames.label(context(), converted, "English (Addon)", "en"));
     }
@@ -117,7 +114,6 @@ public class SubtitleNamesDeviceTest {
         assertNotNull(copy);
         assertEquals(NAME, new File(copy.getPath()).getName());
         assertTrue(SubtitleFiles.isOwnCopy(context(), copy));
-        // Copying an own copy again hands back the same file.
         assertEquals(copy, SubtitleFiles.copy(context(), copy, null));
     }
 }

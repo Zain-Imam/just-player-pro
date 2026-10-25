@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-// Headers in every shape launching apps send: pairs, whole lines, lists, maps.
 public class LaunchHeadersTest {
 
     private static Map<String, String> parse(final Object raw) {
@@ -46,7 +45,7 @@ public class LaunchHeadersTest {
 
     @Test
     public void aColonInAValueDoesNotSwitchShape() {
-        // Values hold URLs; only a name with a colon means whole headers.
+        // values hold URLs; only a name with a colon means whole headers
         final Map<String, String> headers = parse(new String[]{"Origin", "https://a.b:8443"});
         assertEquals("https://a.b:8443", headers.get("Origin"));
     }

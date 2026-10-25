@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-// The pure rules behind remembering a film and naming its subtitles.
 public class FilmMemoryTest {
 
     @Test
@@ -17,7 +16,7 @@ public class FilmMemoryTest {
 
     @Test
     public void genericNamesDoNot() {
-        // Every HLS stream ends in one of these, and a torrent server in a number.
+        // every HLS stream ends in one of these, and a torrent server in a number
         assertFalse(FilmKey.identifies("index.m3u8"));
         assertFalse(FilmKey.identifies("master.m3u8"));
         assertFalse(FilmKey.identifies("0"));
@@ -58,7 +57,7 @@ public class FilmMemoryTest {
 
     @Test
     public void mpvSubtitlesCanGoFurtherDownThanMedia3s() {
-        // mpv keeps a margin under its text, so its bottom edge is lower.
+        // mpv keeps a margin under its text, so its bottom edge is lower
         assertEquals(-13, Prefs.clampSubtitlePosition(-50, Prefs.SUBTITLE_POSITION_MIN_MPV));
         assertEquals(-10, Prefs.clampSubtitlePosition(-10, Prefs.SUBTITLE_POSITION_MIN_MPV));
         assertEquals(-8, Prefs.clampSubtitlePosition(-10, Prefs.SUBTITLE_POSITION_MIN));

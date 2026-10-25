@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-// Home screen sizes and sort orders, checked without a device.
 public class HomeListTest {
 
     private static Library.Folder folder(final String name, final int count,

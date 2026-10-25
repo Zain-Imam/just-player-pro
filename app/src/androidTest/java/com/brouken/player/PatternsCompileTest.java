@@ -13,8 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-// Android compiles regex with ICU, which rejects some patterns desktop Java accepts.
-// Loads each class and compiles its patterns; add new pattern classes here.
+// Android's ICU rejects some regex desktop Java takes; add pattern classes here
 @RunWith(AndroidJUnit4.class)
 public class PatternsCompileTest {
 

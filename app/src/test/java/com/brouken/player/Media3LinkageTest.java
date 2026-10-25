@@ -19,8 +19,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-// Proves the Media3 modules from Maven link against the patched aars in libs/.
-// A version mismatch builds fine and only fails at runtime with NoSuchMethodError.
+// a mismatch with the patched aars in libs/ builds fine and fails only at runtime
 public class Media3LinkageTest {
 
     private static final String[] MEDIA3 = {
@@ -89,8 +88,7 @@ public class Media3LinkageTest {
         return System.getProperty("java.class.path", "");
     }
 
-    // both directions are read: the modules call ExoPlayer and the aars call back out.
-    // gradle lists each jar twice in different shapes, so one is kept per module.
+    // gradle lists each jar twice in different shapes, so one is kept per module
     private static List<File> media3Jars() {
         final List<File> found = new ArrayList<>();
         final Set<String> seen = new LinkedHashSet<>();
@@ -111,8 +109,7 @@ public class Media3LinkageTest {
         return found;
     }
 
-    // gradle names jars like jetified-media3-exoplayer-hls-1.10.0-runtime.jar
-    // or .../jetified-media3-exoplayer-hls-1.10.0/jars/classes.jar
+    // e.g. jetified-media3-x-1.10.0-runtime.jar or .../jars/classes.jar
     private static String moduleOf(final String element) {
         String path = element.replace('\\', '/');
         if (path.endsWith("/jars/classes.jar")) {
@@ -207,7 +204,7 @@ public class Media3LinkageTest {
                 queue.add(here.getSuperclass());
                 queue.addAll(Arrays.asList(here.getInterfaces()));
             } catch (Throwable incomplete) {
-                // Leave the hierarchy as far as it could be read.
+                // keep the hierarchy as far as it could be read
             }
         }
         return all;
@@ -314,7 +311,7 @@ public class Media3LinkageTest {
                     in.readUnsignedShort();
                     break;
                 default:
-                    // A tag from a newer class file format than this knows.
+                    // a tag from a newer class file format
                     return calls;
             }
         }

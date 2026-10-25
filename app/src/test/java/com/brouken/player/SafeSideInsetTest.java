@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-// Both ends get the same side inset: the largest of the four reported values.
+// both ends get the same side inset: the largest of the four values
 public class SafeSideInsetTest {
 
     @Test

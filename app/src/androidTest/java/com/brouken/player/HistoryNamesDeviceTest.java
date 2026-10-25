@@ -18,7 +18,6 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
-// Proves the recent list keeps a file name once known. Uses its own prefs file.
 @RunWith(AndroidJUnit4.class)
 public class HistoryNamesDeviceTest {
 
@@ -58,7 +57,7 @@ public class HistoryNamesDeviceTest {
     public void aLinkEndingInARealFileNameIsTheFile() {
         History.record(preferences, NAMED, null);
         assertEquals(History.NAME_FILE, only().nameKind);
-        // A launcher's title does not replace it.
+        // a launcher's title does not replace it
         History.rename(preferences, NAMED, "Batman Begins", History.NAME_LAUNCHER);
         assertEquals("Batman.2005.1080p.BluRay.mkv", only().name);
     }
@@ -86,15 +85,16 @@ public class HistoryNamesDeviceTest {
         History.record(preferences, NUMBERS, null);
         History.markPlayed(preferences, NUMBERS);
         History.rename(preferences, NUMBERS, FILE, History.NAME_FILE);
-        History.setPoster(preferences, NUMBERS, "/poster.jpg");
+        History.setIdentified(preferences, NUMBERS, "/poster.jpg", "Numbers (2010)");
 
         // the expired link, opened from the list again
         History.record(preferences, NUMBERS, null);
         assertEquals(FILE, only().name);
         assertEquals("/poster.jpg", only().poster);
+        assertEquals("Numbers (2010)", only().title);
         assertTrue("still listed as played", only().played);
 
-        // A fresh token on the same file is the same entry.
+        // a fresh token on the same file is the same entry
         History.record(preferences, NUMBERS_NEW_TOKEN, null);
         assertEquals(FILE, only().name);
     }

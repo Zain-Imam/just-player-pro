@@ -10,7 +10,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-// The release name corpus again, on the device's own ICU regex engine.
+// the release name corpus again, on the device's own ICU regex engine
 @RunWith(AndroidJUnit4.class)
 public class ReleaseNameDeviceTest {
 

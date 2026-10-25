@@ -16,8 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-// Proves every shape of launch subtitle extra is read in order without a crash.
-// On a device: a real Bundle returns lists unchecked. Each goes through a Parcel.
+// each bundle goes through a Parcel, since a real Bundle returns lists unchecked
 @RunWith(AndroidJUnit4.class)
 public class LaunchSubtitlesDeviceTest {
 

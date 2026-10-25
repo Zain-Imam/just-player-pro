@@ -14,7 +14,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-// A backup must round-trip every value with its exact type.
 public class BackupTest {
 
     private static Map<String, Object> everything() {
@@ -34,7 +33,7 @@ public class BackupTest {
         languages.add("en");
         languages.add("ur");
         stored.put("languagesSubtitle", languages);
-        // Never exported, whatever is asked for.
+        // never exported, whatever is asked for
         stored.put("scopeUri", "content://tree/primary%3AMovies");
         stored.put("mediaUri", "content://media/external/video/media/1");
         return stored;
@@ -138,7 +137,6 @@ public class BackupTest {
         assertNull("a favourite is not a key", read.get("homePinnedFolders"));
     }
 
-    // restore writes only what the file holds, so old files keep home settings
     @Test
     public void aBackupFromBeforeTheHomeScreenStillReadsBack() {
         final String fromThree = "{\n"
@@ -176,7 +174,7 @@ public class BackupTest {
         Backup.movePre42MpvSize(current);
         assertEquals(30, current.get(Prefs.PREF_KEY_SUBTITLE_SIZE_MPV));
 
-        // The default stays the default.
+        // the default stays the default
         final Map<String, Object> untouched = new LinkedHashMap<>();
         untouched.put(Prefs.PREF_KEY_SUBTITLE_SIZE_MPV, 0);
         Backup.movePre42MpvSize(untouched);

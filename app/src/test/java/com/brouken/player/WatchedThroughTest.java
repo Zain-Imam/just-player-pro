@@ -5,7 +5,6 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-// When a film counts as finished, so it is not resumed on its last frame.
 public class WatchedThroughTest {
 
     private static final long HOUR = 60 * 60 * 1000L;
@@ -17,7 +16,7 @@ public class WatchedThroughTest {
 
     @Test
     public void aSecondShortOfTheEndIsStillFinished() {
-        // Engines disagree with containers about where the end is, by a little.
+        // engines and containers disagree a little about where the end is
         assertTrue(Prefs.watchedThrough(HOUR - 1000, HOUR));
         assertTrue(Prefs.watchedThrough(HOUR - 2999, HOUR));
     }

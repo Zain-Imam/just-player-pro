@@ -5,7 +5,6 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-// mpv subtitle size: the corrected scale, and moving sizes saved on the old one.
 public class MpvSubtitleScaleTest {
 
     // the old sub-scale formula, copied verbatim
@@ -28,7 +27,7 @@ public class MpvSubtitleScaleTest {
         final double oneStep = parity * (0.001 / 0.0533);
         for (int old = -10; old <= 50; old++) {
             final int moved = MpvSubtitleScale.stepDrawnLike41(old);
-            // Within half a step either way: the setting moves in whole steps.
+            // within half a step: the setting moves in whole steps
             assertEquals("step " + old, scale41(old), MpvSubtitleScale.scale(moved, parity),
                     oneStep / 2 + 1e-9);
         }
