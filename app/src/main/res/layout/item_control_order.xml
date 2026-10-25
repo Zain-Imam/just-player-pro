@@ -9,6 +9,15 @@
     android:paddingStart="20dp"
     android:paddingEnd="8dp">
 
+    <ImageView
+        android:id="@+id/row_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="20dp"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no"
+        android:tint="?android:attr/textColorSecondary" />
+
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"

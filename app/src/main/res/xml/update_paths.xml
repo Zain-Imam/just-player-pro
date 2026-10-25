@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- only the downloaded update is shared, with the system installer -->
-<paths>
-    <cache-path name="updates" path="." />
-</paths>

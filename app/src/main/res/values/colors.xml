@@ -5,7 +5,6 @@
     <!-- white so the badge's gradient edges stay readable under any launcher mask -->
     <color name="ic_launcher_background">#FFFFFFFF</color>
 
-    <!-- seek bar: buffered bright grey, unplayed faint, so they stay distinct -->
     <color name="time_bar_buffered">#E6FFFFFF</color>
     <color name="time_bar_unplayed">#40FFFFFF</color>
 
@@ -14,7 +13,6 @@
     <color name="shortcut_background">#F5F5F5</color>
 
     <color name="ui_controls_background">#98000000</color>
-    <!-- opaque enough to read a track list over a bright scene -->
     <color name="ui_panel_background">#E6101010</color>
     <color name="exo_bottom_bar_background" tools:keep="@color/exo_bottom_bar_background">@color/ui_controls_background</color>
     <color name="exo_black_opacity_70" tools:keep="@color/exo_black_opacity_70">@color/ui_controls_background</color>

@@ -1,0 +1,105 @@
+<!-- summaries are filled in with the current values at runtime -->
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <com.brouken.player.SettingsHeaderPreference
+        app:fragment="com.brouken.player.SettingsActivity$SettingsFragment"
+        app:icon="@drawable/ic_settings_appearance"
+        app:key="header_appearance"
+        app:title="@string/pref_appearance_header">
+        <extra
+            android:name="androidx.preference.PreferenceFragmentCompat.PREFERENCE_ROOT"
+            android:value="screen_appearance" />
+    </com.brouken.player.SettingsHeaderPreference>
+
+    <com.brouken.player.SettingsHeaderPreference
+        app:fragment="com.brouken.player.SettingsActivity$SettingsFragment"
+        app:icon="@drawable/ic_settings_home"
+        app:key="header_home"
+        app:title="@string/pref_home_header">
+        <extra
+            android:name="androidx.preference.PreferenceFragmentCompat.PREFERENCE_ROOT"
+            android:value="screen_home" />
+    </com.brouken.player.SettingsHeaderPreference>
+
+    <com.brouken.player.SettingsHeaderPreference
+        app:fragment="com.brouken.player.SettingsActivity$SettingsFragment"
+        app:icon="@drawable/ic_settings_playback"
+        app:key="header_playback"
+        app:title="@string/pref_playback_header">
+        <extra
+            android:name="androidx.preference.PreferenceFragmentCompat.PREFERENCE_ROOT"
+            android:value="screen_playback" />
+    </com.brouken.player.SettingsHeaderPreference>
+
+    <com.brouken.player.SettingsHeaderPreference
+        app:fragment="com.brouken.player.SettingsActivity$SettingsFragment"
+        app:icon="@drawable/ic_settings_audio"
+        app:key="header_audio"
+        app:title="@string/set_audio">
+        <extra
+            android:name="androidx.preference.PreferenceFragmentCompat.PREFERENCE_ROOT"
+            android:value="screen_audio" />
+    </com.brouken.player.SettingsHeaderPreference>
+
+    <com.brouken.player.SettingsHeaderPreference
+        app:fragment="com.brouken.player.SettingsActivity$SettingsFragment"
+        app:icon="@drawable/ic_settings_gestures"
+        app:key="header_gestures"
+        app:title="@string/pref_gestures_header">
+        <extra
+            android:name="androidx.preference.PreferenceFragmentCompat.PREFERENCE_ROOT"
+            android:value="screen_gestures" />
+    </com.brouken.player.SettingsHeaderPreference>
+
+    <com.brouken.player.SettingsHeaderPreference
+        app:fragment="com.brouken.player.SettingsActivity$SettingsFragment"
+        app:icon="@drawable/ic_settings_subtitles"
+        app:key="header_subtitles"
+        app:title="@string/pref_subtitle_header">
+        <extra
+            android:name="androidx.preference.PreferenceFragmentCompat.PREFERENCE_ROOT"
+            android:value="screen_subtitles" />
+    </com.brouken.player.SettingsHeaderPreference>
+
+    <com.brouken.player.SettingsHeaderPreference
+        app:fragment="com.brouken.player.SettingsActivity$SettingsFragment"
+        app:icon="@drawable/ic_settings_online"
+        app:key="header_online"
+        app:title="@string/pref_online_header">
+        <extra
+            android:name="androidx.preference.PreferenceFragmentCompat.PREFERENCE_ROOT"
+            android:value="screen_online" />
+    </com.brouken.player.SettingsHeaderPreference>
+
+    <com.brouken.player.SettingsHeaderPreference
+        app:fragment="com.brouken.player.SettingsActivity$SettingsFragment"
+        app:icon="@drawable/ic_settings_storage"
+        app:key="header_storage"
+        app:title="@string/set_storage">
+        <extra
+            android:name="androidx.preference.PreferenceFragmentCompat.PREFERENCE_ROOT"
+            android:value="screen_storage" />
+    </com.brouken.player.SettingsHeaderPreference>
+
+    <com.brouken.player.SettingsHeaderPreference
+        app:fragment="com.brouken.player.SettingsActivity$SettingsFragment"
+        app:icon="@drawable/ic_settings_advanced"
+        app:key="header_advanced"
+        app:title="@string/pref_dangerous_header">
+        <extra
+            android:name="androidx.preference.PreferenceFragmentCompat.PREFERENCE_ROOT"
+            android:value="screen_advanced" />
+    </com.brouken.player.SettingsHeaderPreference>
+
+    <com.brouken.player.SettingsHeaderPreference
+        app:fragment="com.brouken.player.SettingsActivity$SettingsFragment"
+        app:icon="@drawable/ic_settings_about"
+        app:key="header_about"
+        app:title="@string/pref_about_header">
+        <extra
+            android:name="androidx.preference.PreferenceFragmentCompat.PREFERENCE_ROOT"
+            android:value="screen_about" />
+    </com.brouken.player.SettingsHeaderPreference>
+
+</PreferenceScreen>

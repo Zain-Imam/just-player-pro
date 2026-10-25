@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Film info before its pictures arrive; the dark ones are in values-night -->
+    <color name="film_backdrop_empty">#C9D3DD</color>
+    <color name="film_poster_empty">#B2BFCC</color>
+</resources>

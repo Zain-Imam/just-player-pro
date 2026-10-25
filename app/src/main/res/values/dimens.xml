@@ -4,7 +4,6 @@
     <dimen name="exo_error_message_text_size" tools:keep="@dimen/exo_error_message_text_size">20sp</dimen>
     <dimen name="exo_error_message_text_padding_vertical" tools:keep="@dimen/exo_error_message_text_padding_vertical">6sp</dimen>
     <dimen name="exo_icon_size" tools:keep="@dimen/exo_icon_size">90dp</dimen>
-    <!-- gutter between the time row and the button strip -->
     <dimen name="controls_padding">8dp</dimen>
 
     <dimen name="exo_styled_progress_enabled_thumb_size" tools:keep="@dimen/exo_styled_progress_enabled_thumb_size">12dp</dimen>
@@ -12,6 +11,9 @@
     <dimen name="exo_styled_progress_margin_bottom" tools:keep="@dimen/exo_styled_progress_margin_bottom">51dp</dimen>
 
     <dimen name="marker_width">3dp</dimen>
+
+    <!-- half the gap between tiles; the list's padding adds the rest at the edges -->
+    <dimen name="home_tile_gap">6dp</dimen>
 
     <dimen name="osd_settings_title_text_size">20sp</dimen>
     <dimen name="osd_settings_item_min_width">152dp</dimen>

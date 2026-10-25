@@ -30,6 +30,7 @@
         <!-- one line: a middle cut over two lines renders blank on some devices -->
         <TextView
             android:id="@+id/video_name"
+            android:textAlignment="viewStart"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ellipsize="middle"
@@ -40,6 +41,7 @@
 
         <TextView
             android:id="@+id/video_meta"
+            android:textAlignment="viewStart"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ellipsize="end"

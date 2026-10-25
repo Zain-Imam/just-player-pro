@@ -2,4 +2,14 @@
 <resources>
     <!-- a theme attribute so an overlay can change the accent at runtime -->
     <attr name="accentColor" format="color" />
+
+    <!-- a choice in Settings shown as picture cards: one drawable and one line per entry -->
+    <declare-styleable name="PictureListPreference">
+        <attr name="choicePictures" format="reference" />
+        <attr name="choiceDescriptions" format="reference" />
+    </declare-styleable>
+
+    <declare-styleable name="SketchSwitchPreference">
+        <attr name="switchSketch" format="reference" />
+    </declare-styleable>
 </resources>

@@ -17,8 +17,7 @@
       android:background="@color/exo_bottom_bar_background"
       android:layoutDirection="ltr">
 
-    <!-- a row, so the button strip cannot cover the clock and take its touches;
-         the extra-controls scroller below overlaps on purpose (overflow mode) -->
+    <!-- a row so the buttons cannot cover the clock; the overflow overlaps on purpose -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"

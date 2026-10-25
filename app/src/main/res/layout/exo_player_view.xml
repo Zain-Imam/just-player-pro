@@ -9,7 +9,7 @@
         android:layout_height="match_parent"
         android:layout_gravity="center">
 
-        <!-- Video surface will be inserted as the first child of the content frame. -->
+        <!-- the video surface is inserted as the first child of the content frame -->
 
         <View android:id="@id/exo_shutter"
             android:layout_width="match_parent"
@@ -96,15 +96,7 @@
 
     </LinearLayout>
 
-    <!-- seek preview, outside the controller like the spinner above -->
-    <ImageView android:id="@+id/thumbnail_preview"
-        android:layout_width="180dp"
-        android:layout_height="101dp"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="64dp"
-        android:background="@android:color/black"
-        android:contentDescription="@string/pref_scrub_thumbnails"
-        android:scaleType="centerCrop"
-        android:visibility="gone"/>
+    <!-- seek preview: outside the controller and drawn over the spinner -->
+    <include layout="@layout/seek_bubble" />
 
 </merge>

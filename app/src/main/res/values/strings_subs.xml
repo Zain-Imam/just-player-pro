@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_color_title">Text colour</string>
+    <string name="subtitle_color_white">White</string>
+    <string name="subtitle_color_cream">Cream</string>
+    <string name="subtitle_color_yellow">Yellow</string>
+    <string name="subtitle_color_amber">Amber</string>
+    <string name="subtitle_color_green">Green</string>
+    <string name="subtitle_color_cyan">Cyan</string>
+    <string name="subtitle_color_sky">Sky blue</string>
+    <string name="subtitle_color_pink">Pink</string>
+    <string-array name="subtitle_color_entries">
+        <item>@string/subtitle_color_white</item>
+        <item>@string/subtitle_color_cream</item>
+        <item>@string/subtitle_color_yellow</item>
+        <item>@string/subtitle_color_amber</item>
+        <item>@string/subtitle_color_green</item>
+        <item>@string/subtitle_color_cyan</item>
+        <item>@string/subtitle_color_sky</item>
+        <item>@string/subtitle_color_pink</item>
+    </string-array>
+    <!-- the keys SubtitleColors knows, in the same order -->
+    <string-array name="subtitle_color_values" translatable="false">
+        <item>white</item>
+        <item>cream</item>
+        <item>yellow</item>
+        <item>amber</item>
+        <item>green</item>
+        <item>cyan</item>
+        <item>sky</item>
+        <item>pink</item>
+    </string-array>
+</resources>

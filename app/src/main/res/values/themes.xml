@@ -15,7 +15,11 @@
     <style name="Theme.Player" parent="BaseTheme.Player">
     </style>
 
-    <!-- DayNight, so the home screen follows the device between light and dark -->
+    <!-- screenshot mode: the highlight values-television gives a real TV -->
+    <style name="ShowcaseTv" parent="">
+        <item name="colorControlHighlight">@color/white</item>
+    </style>
+
     <style name="Theme.Player.Home" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="accentColor">@color/accent_orange</item>
         <item name="colorAccent">?attr/accentColor</item>
@@ -29,9 +33,47 @@
         <item name="accentColor">@color/accent_orange</item>
         <item name="colorAccent">?attr/accentColor</item>
         <item name="android:colorAccent">?attr/accentColor</item>
+        <item name="android:statusBarColor">?android:attr/colorBackground</item>
     </style>
 
-    <!-- slides in from the side so the film stays visible -->
+    <!-- Material's bottom sheet needs its own theme here -->
+    <style name="Theme.Player.RecentSheet" parent="Theme.MaterialComponents.DayNight.BottomSheetDialog">
+        <item name="accentColor">@color/accent_orange</item>
+        <item name="colorAccent">?attr/accentColor</item>
+    </style>
+
+    <style name="RecentMenuItem" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:drawablePadding">20dp</item>
+        <item name="android:drawableTint">?android:attr/textColorSecondary</item>
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:background">?android:attr/selectableItemBackground</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+    </style>
+
+    <!-- FilmInfoActivity gives each button its fill or outline -->
+    <style name="FilmInfoButton" parent="">
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+    </style>
+
+    <style name="HomeTileQuarter" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:contentDescription">@null</item>
+        <item name="android:scaleType">centerCrop</item>
+    </style>
+
     <style name="PanelAnimation" parent="">
         <item name="android:windowEnterAnimation">@anim/panel_in</item>
         <item name="android:windowExitAnimation">@anim/panel_out</item>
@@ -55,7 +97,7 @@
     <style name="MediaStoreChooserDialog" parent="@android:style/Theme.Material.Dialog.Alert">
         <item name="android:maxLines">1</item>
         <item name="android:ellipsize">end</item>
-        <item name="android:singleLine">true</item> <!-- When focused, line scrolls -->
+        <item name="android:singleLine">true</item> <!-- when focused, the line scrolls -->
     </style>
 
     <!-- accent overlays, applied at runtime with Theme.applyStyle -->

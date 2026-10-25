@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pref_app_theme">Light or dark</string>
+    <string name="pref_app_theme_dark">Dark</string>
+    <string name="pref_app_theme_light">Light</string>
+    <string name="pref_recent_name_delay">Name films in Recent after</string>
+    <string name="recent_delay_10s">10 s</string>
+    <string name="recent_delay_20s">20 s</string>
+    <string name="recent_delay_30s">30 s</string>
+    <string name="recent_delay_45s">45 s</string>
+    <string name="recent_delay_1m">1 min</string>
+    <string name="recent_delay_2m">2 min</string>
+    <string name="recent_delay_3m">3 min</string>
+    <string name="recent_delay_5m">5 min</string>
+
+    <!-- the player stays dark whatever is picked -->
+    <string-array name="app_theme_entries">
+        <item>@string/pref_app_theme_dark</item>
+        <item>@string/pref_app_theme_light</item>
+        <item>@string/set_clock_format_phone</item>
+    </string-array>
+
+    <string-array name="app_theme_values" translatable="false">
+        <item>dark</item>
+        <item>light</item>
+        <item>phone</item>
+    </string-array>
+
+    <!-- seconds of the film played before Recent names it -->
+    <string-array name="recent_name_delay_entries">
+        <item>@string/recent_delay_10s</item>
+        <item>@string/recent_delay_20s</item>
+        <item>@string/recent_delay_30s</item>
+        <item>@string/recent_delay_45s</item>
+        <item>@string/recent_delay_1m</item>
+        <item>@string/recent_delay_2m</item>
+        <item>@string/recent_delay_3m</item>
+        <item>@string/recent_delay_5m</item>
+    </string-array>
+
+    <string-array name="recent_name_delay_values" translatable="false">
+        <item>10</item>
+        <item>20</item>
+        <item>30</item>
+        <item>45</item>
+        <item>60</item>
+        <item>120</item>
+        <item>180</item>
+        <item>300</item>
+    </string-array>
+</resources>

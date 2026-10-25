@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">Copy link</string>
+    <string name="film_cast">Cast</string>
+    <string name="film_confirm_question">Is this %1$s?</string>
+    <string name="film_confirm_yes">Yes</string>
+    <string name="film_confirm_change">Change</string>
+    <string name="pref_mdblist_header">Ratings from other sites</string>
+    <string name="pref_mdblist">MDBList ratings</string>
+    <string name="pref_mdblist_summary">IMDb, Rotten Tomatoes and other scores on Film info. Needs your own free key from mdblist.com</string>
+    <string name="pref_key_mdblist">MDBList key</string>
+    <string name="pref_key_mdblist_dialog">Free from mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">Show ratings on the info card</string>
+    <string name="pref_mdblist_card_summary">A line of scores under the date when paused</string>
+    <string name="pref_mdblist_audience">Rotten Tomatoes users</string>
+    <string name="pref_mdblist_key_works">MDBList key works</string>
+    <string name="pref_mdblist_key_wrong">MDBList says this key is wrong</string>
+    <string name="pref_mdblist_key_unreachable">Couldn\'t reach MDBList to check the key. It\'s saved; ratings show once MDBList can be reached.</string>
+    <string name="pref_ratings_order">Ratings and their order</string>
+    <string name="pref_ratings_order_summary">Which sites show, and in what order</string>
+    <string name="pref_ratings_order_none">None shown</string>
+    <string name="ratings_order_hint">The top of this list comes first, on Film info and on the info card. Use the arrows to move a site, and the tick to show or hide it.</string>
+    <string name="pref_ratings_episodes">Ratings on episodes</string>
+    <string name="ratings_episodes_show">The whole show</string>
+    <string name="ratings_episodes_episode">This episode (TMDB)</string>
+    <string-array name="ratings_episodes_entries">
+        <item>@string/ratings_episodes_show</item>
+        <item>@string/ratings_episodes_episode</item>
+    </string-array>
+    <!-- MDBList rates whole shows; an episode's own score is TMDB's -->
+    <string-array name="ratings_episodes_values" translatable="false">
+        <item>show</item>
+        <item>episode</item>
+    </string-array>
+</resources>

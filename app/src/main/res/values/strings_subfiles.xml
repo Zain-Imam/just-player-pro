@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">This subtitle type plays on the mpv engine. Switch the engine to Auto or mpv.</string>
+    <string name="subfiles_picture_no_mpv">This subtitle type plays on the mpv engine, which needs Android 8.0 or newer.</string>
+    <string name="subfiles_picture_switching">Switched to mpv for this subtitle</string>
+</resources>

@@ -1,9 +1,26 @@
+<!-- keys must stay as they are, or saved settings are lost -->
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- ordered by how often each setting is changed -->
+    <PreferenceScreen
+        app:key="screen_appearance"
+        app:title="@string/pref_appearance_header">
 
-    <PreferenceCategory app:title="@string/pref_appearance_header">
+        <!-- the value is shown, not used, from Android 13: the phone keeps the language -->
+        <ListPreference
+            app:key="appLanguage"
+            app:defaultValue=""
+            app:entries="@array/app_language_entries"
+            app:entryValues="@array/app_language_values"
+            app:title="@string/pref_app_language" />
+
+        <ListPreference
+            app:key="appTheme"
+            app:defaultValue="dark"
+            app:entries="@array/app_theme_entries"
+            app:entryValues="@array/app_theme_values"
+            app:title="@string/pref_app_theme"
+            app:useSimpleSummaryProvider="true" />
 
         <ListPreference
             app:key="accentColor"
@@ -13,155 +30,216 @@
             app:title="@string/pref_accent"
             app:useSimpleSummaryProvider="true" />
 
-        <Preference
-            app:selectable="false"
-            app:summary="@string/pref_accent_note" />
+        <com.brouken.player.PictureListPreference
+            app:key="playerStyle"
+            app:choiceDescriptions="@array/player_style_descriptions"
+            app:choicePictures="@array/player_style_pictures"
+            app:defaultValue="classic"
+            app:entries="@array/player_style_entries"
+            app:entryValues="@array/player_style_values"
+            app:title="@string/pref_player_style"
+            app:useSimpleSummaryProvider="true" />
 
         <Preference
             app:key="controlsOrder"
-            app:summary="@string/pref_controls_order_summary"
             app:title="@string/pref_controls_order" />
 
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/pref_home_header">
+        <com.brouken.player.PictureListPreference
+            app:key="clockMode"
+            app:choiceDescriptions="@array/clock_mode_descriptions"
+            app:choicePictures="@array/clock_mode_pictures"
+            app:defaultValue="off"
+            app:entries="@array/corner_mode_entries"
+            app:entryValues="@array/corner_mode_values"
+            app:title="@string/set_clock"
+            app:useSimpleSummaryProvider="true" />
 
         <ListPreference
+            app:key="clockFormat"
+            app:defaultValue="phone"
+            app:entries="@array/clock_format_entries"
+            app:entryValues="@array/clock_format_values"
+            app:title="@string/set_clock_format"
+            app:useSimpleSummaryProvider="true" />
+
+        <com.brouken.player.PictureListPreference
+            app:key="batteryMode"
+            app:choiceDescriptions="@array/battery_mode_descriptions"
+            app:choicePictures="@array/battery_mode_pictures"
+            app:defaultValue="off"
+            app:entries="@array/corner_mode_entries"
+            app:entryValues="@array/corner_mode_values"
+            app:title="@string/set_battery"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceScreen>
+
+    <PreferenceScreen
+        app:key="screen_home"
+        app:title="@string/pref_home_header">
+
+        <com.brouken.player.PictureListPreference
             app:key="startOn"
+            app:choiceDescriptions="@array/start_on_descriptions"
+            app:choicePictures="@array/start_on_pictures"
             app:defaultValue="home"
             app:entries="@array/start_on_entries"
             app:entryValues="@array/start_on_values"
             app:title="@string/pref_start_on"
             app:useSimpleSummaryProvider="true" />
 
-        <Preference
-            app:selectable="false"
-            app:summary="@string/pref_start_on_note" />
+        <com.brouken.player.PictureListPreference
+            app:key="homeLayout"
+            app:choiceDescriptions="@array/home_layout_descriptions"
+            app:choicePictures="@array/home_layout_pictures"
+            app:defaultValue="list"
+            app:entries="@array/home_layout_entries"
+            app:entryValues="@array/home_layout_values"
+            app:title="@string/pref_home_layout"
+            app:useSimpleSummaryProvider="true" />
 
-        <SwitchPreferenceCompat
-            app:defaultValue="false"
+        <SeekBarPreference
+            app:key="recentCount"
+            app:defaultValue="10"
+            android:max="15"
+            app:min="1"
+            app:seekBarIncrement="1"
+            app:showSeekBarValue="true"
+            app:title="@string/set_recent_count" />
+
+        <com.brouken.player.SketchSwitchPreference
             app:key="recentPosters"
+            app:defaultValue="false"
             app:summary="@string/pref_recent_posters_summary"
+            app:switchSketch="@drawable/sketch_recent_posters"
             app:title="@string/pref_recent_posters" />
+
+        <ListPreference
+            app:key="recentNameDelay"
+            app:defaultValue="30"
+            app:entries="@array/recent_name_delay_entries"
+            app:entryValues="@array/recent_name_delay_values"
+            app:title="@string/pref_recent_name_delay"
+            app:useSimpleSummaryProvider="true" />
+
+        <Preference
+            app:key="clearImageCache"
+            app:title="@string/pref_image_cache" />
 
         <Preference
             app:key="showIntroAgain"
             app:summary="@string/pref_intro_again_summary"
             app:title="@string/pref_intro_again" />
 
-    </PreferenceCategory>
+    </PreferenceScreen>
 
-    <PreferenceCategory app:title="@string/pref_playback_header">
+    <PreferenceScreen
+        app:key="screen_playback"
+        app:title="@string/pref_playback_header">
 
-        <ListPreference
-            app:key="playbackEngine"
-            app:defaultValue="auto"
-            app:entries="@array/playback_engine_entries"
-            app:entryValues="@array/playback_engine_values"
-            app:title="@string/pref_playback_engine"
-            app:useSimpleSummaryProvider="true" />
+        <PreferenceCategory app:title="@string/set_group_engine">
 
-        <Preference
-            app:key="playbackEngineNote"
-            app:selectable="false"
-            app:summary="@string/pref_engine_note" />
+            <ListPreference
+                app:key="playbackEngine"
+                app:defaultValue="auto"
+                app:entries="@array/playback_engine_entries"
+                app:entryValues="@array/playback_engine_values"
+                app:title="@string/pref_playback_engine"
+                app:useSimpleSummaryProvider="true" />
 
-        <SwitchPreferenceCompat
-            app:key="adaptiveBuffering"
-            app:defaultValue="true"
-            app:summaryOn="@string/pref_adaptive_buffering_on"
-            app:summaryOff="@string/pref_adaptive_buffering_off"
-            app:title="@string/pref_adaptive_buffering" />
+            <Preference
+                app:key="playbackEngineNote"
+                app:selectable="false"
+                app:summary="@string/pref_engine_note" />
 
-        <SwitchPreferenceCompat
-            app:key="askResume"
-            app:defaultValue="true"
-            app:summaryOn="@string/pref_ask_resume_on"
-            app:summaryOff="@string/pref_ask_resume_off"
-            app:title="@string/pref_ask_resume" />
+            <com.brouken.player.PictureListPreference
+                app:key="seekPreview"
+                app:choiceDescriptions="@array/seek_preview_descriptions"
+                app:choicePictures="@array/seek_preview_pictures"
+                app:defaultValue="all"
+                app:entries="@array/seek_preview_entries"
+                app:entryValues="@array/seek_preview_values"
+                app:title="@string/pref_scrub_thumbnails"
+                app:useSimpleSummaryProvider="true" />
 
-        <SwitchPreferenceCompat
-            app:key="frameRateMatching"
-            app:defaultValue="false"
-            app:summaryOn="@string/pref_framerate_matching_on"
-            app:summaryOff="@string/pref_framerate_matching_off"
-            app:title="@string/pref_framerate_matching" />
+        </PreferenceCategory>
 
-        <SwitchPreferenceCompat
-            app:key="autoPlayNext"
-            app:defaultValue="false"
-            app:summaryOn="@string/pref_auto_next_on"
-            app:summaryOff="@string/pref_auto_next_off"
-            app:title="@string/pref_auto_next" />
+        <PreferenceCategory app:title="@string/set_group_open">
 
-        <SwitchPreferenceCompat
-            app:key="autoPiP"
-            app:defaultValue="false"
-            app:summaryOn="@string/pref_auto_pip_on"
-            app:summaryOff="@string/pref_auto_pip_off"
-            app:title="@string/pref_auto_pip" />
+            <com.brouken.player.SketchSwitchPreference
+                app:key="askResume"
+                app:defaultValue="true"
+                app:switchSketch="@drawable/sketch_resume"
+                app:summary="@string/pref_ask_resume_on"
+                app:title="@string/pref_ask_resume" />
 
-        <SwitchPreferenceCompat
-            app:key="backgroundAudio"
-            app:defaultValue="false"
-            app:summaryOn="@string/pref_background_audio_on"
-            app:summaryOff="@string/pref_background_audio_off"
-            app:title="@string/pref_background_audio" />
+            <SwitchPreferenceCompat
+                app:key="autoPlayNext"
+                app:defaultValue="false"
+                app:title="@string/pref_auto_next" />
 
-        <SwitchPreferenceCompat
-            app:key="warnCapability"
-            app:defaultValue="true"
-            app:summaryOn="@string/pref_warn_capability_on"
-            app:summaryOff="@string/pref_warn_capability_off"
-            app:title="@string/pref_warn_capability" />
+        </PreferenceCategory>
 
-        <SwitchPreferenceCompat
-            app:key="scrubThumbnails"
-            app:defaultValue="true"
-            app:summaryOn="@string/pref_scrub_thumbnails_on"
-            app:summaryOff="@string/pref_scrub_thumbnails_off"
-            app:title="@string/pref_scrub_thumbnails" />
+        <PreferenceCategory app:title="@string/set_group_playing">
 
-        <SwitchPreferenceCompat
-            app:key="volumeBoost"
-            app:defaultValue="false"
-            app:summaryOn="@string/pref_volume_boost_on"
-            app:summaryOff="@string/pref_volume_boost_off"
-            app:title="@string/pref_volume_boost" />
+            <com.brouken.player.SketchSwitchPreference
+                app:key="autoPiP"
+                app:defaultValue="false"
+                app:switchSketch="@drawable/sketch_pip"
+                app:title="@string/pref_auto_pip" />
 
-        <SwitchPreferenceCompat
-            app:key="alwaysOnClock"
-            app:defaultValue="false"
-            app:summaryOn="@string/pref_clock_on"
-            app:summaryOff="@string/pref_clock_off"
-            app:title="@string/pref_clock" />
+            <SwitchPreferenceCompat
+                app:key="backgroundAudio"
+                app:defaultValue="false"
+                app:title="@string/pref_background_audio" />
 
-        <SwitchPreferenceCompat
-            app:key="volumeKeysPlayerOnly"
-            app:defaultValue="false"
-            app:summaryOn="@string/pref_volume_keys_on"
-            app:summaryOff="@string/pref_volume_keys_off"
-            app:title="@string/pref_volume_keys" />
+            <SwitchPreferenceCompat
+                app:key="keepScreenOn"
+                app:defaultValue="false"
+                app:summary="@string/pref_keep_screen_on_on"
+                app:title="@string/pref_keep_screen_on" />
 
-        <SwitchPreferenceCompat
-            app:key="keepScreenOn"
-            app:defaultValue="false"
-            app:summaryOn="@string/pref_keep_screen_on_on"
-            app:summaryOff="@string/pref_keep_screen_on_off"
-            app:title="@string/pref_keep_screen_on" />
+            <SwitchPreferenceCompat
+                app:key="frameRateMatching"
+                app:defaultValue="false"
+                app:summary="@string/pref_framerate_matching_on"
+                app:title="@string/pref_framerate_matching" />
 
-        <SwitchPreferenceCompat
-            app:key="skipSilence"
-            app:defaultValue="false"
-            app:summaryOn="@string/pref_skip_silence_on"
-            app:summaryOff="@string/pref_skip_silence_off"
-            app:title="@string/pref_skip_silence" />
+            <SwitchPreferenceCompat
+                app:key="skipSilence"
+                app:defaultValue="false"
+                app:title="@string/pref_skip_silence" />
 
-        <SwitchPreferenceCompat
-            app:key="repeatToggle"
-            app:defaultValue="false"
-            app:summary="@string/pref_repeat_toggle_summary"
-            app:title="@string/pref_repeat_toggle" />
+        </PreferenceCategory>
+
+        <PreferenceCategory app:title="@string/set_group_more">
+
+            <com.brouken.player.SketchSwitchPreference
+                app:key="repeatToggle"
+                app:defaultValue="false"
+                app:switchSketch="@drawable/sketch_loop"
+                app:summary="@string/pref_repeat_toggle_summary"
+                app:title="@string/pref_repeat_toggle" />
+
+            <SwitchPreferenceCompat
+                app:key="warnCapability"
+                app:defaultValue="true"
+                app:summary="@string/pref_warn_capability_on"
+                app:title="@string/pref_warn_capability" />
+
+            <SwitchPreferenceCompat
+                app:key="adaptiveBuffering"
+                app:defaultValue="true"
+                app:summary="@string/pref_adaptive_buffering_on"
+                app:title="@string/pref_adaptive_buffering" />
+
+        </PreferenceCategory>
+
+    </PreferenceScreen>
+
+    <PreferenceScreen
+        app:key="screen_audio"
+        app:title="@string/set_audio">
 
         <ListPreference
             app:key="languageAudio"
@@ -172,13 +250,26 @@
         <EditTextPreference
             app:key="languageAudioPriority"
             app:defaultValue=""
-            app:title="@string/pref_language_audio_priority"
+            app:dialogMessage="@string/pref_language_priority_hint"
             app:summary="@string/pref_language_audio_priority_summary"
-            app:dialogMessage="@string/pref_language_priority_hint" />
+            app:title="@string/pref_language_audio_priority" />
 
-    </PreferenceCategory>
+        <SwitchPreferenceCompat
+            app:key="volumeBoost"
+            app:defaultValue="false"
+            app:summary="@string/pref_volume_boost_on"
+            app:title="@string/pref_volume_boost" />
 
-    <PreferenceCategory app:title="@string/pref_gestures_header">
+        <SwitchPreferenceCompat
+            app:key="volumeKeysPlayerOnly"
+            app:defaultValue="false"
+            app:title="@string/pref_volume_keys" />
+
+    </PreferenceScreen>
+
+    <PreferenceScreen
+        app:key="screen_gestures"
+        app:title="@string/pref_gestures_header">
 
         <SeekBarPreference
             app:key="doubleTapSeekSeconds"
@@ -190,13 +281,6 @@
             app:summary="@string/pref_double_tap_seconds_summary"
             app:title="@string/pref_double_tap_seconds" />
 
-        <SwitchPreferenceCompat
-            app:key="lockedTimeline"
-            app:defaultValue="false"
-            app:summaryOn="@string/pref_locked_timeline_on"
-            app:summaryOff="@string/pref_locked_timeline_off"
-            app:title="@string/pref_locked_timeline" />
-
         <SeekBarPreference
             app:key="controlsTimeoutSeconds"
             app:defaultValue="6"
@@ -207,17 +291,55 @@
             app:summary="@string/pref_controls_timeout_summary"
             app:title="@string/pref_controls_timeout" />
 
+        <com.brouken.player.SketchSwitchPreference
+            app:key="lockedTimeline"
+            app:defaultValue="false"
+            app:switchSketch="@drawable/sketch_locked_timeline"
+            app:title="@string/pref_locked_timeline" />
+
+        <com.brouken.player.SketchSwitchPreference
+            app:key="subtitlesAboveControls"
+            app:defaultValue="true"
+            app:switchSketch="@drawable/sketch_subs_above"
+            app:title="@string/set_subs_above" />
+
         <Preference
             app:selectable="false"
             app:summary="@string/pref_lock_hint" />
 
-    </PreferenceCategory>
+    </PreferenceScreen>
 
-    <PreferenceCategory app:title="@string/pref_subtitle_header">
+    <PreferenceScreen
+        app:key="screen_subtitles"
+        app:title="@string/pref_subtitle_header">
 
-        <Preference
-            app:selectable="false"
-            app:summary="@string/pref_subtitle_message" />
+        <ListPreference
+            app:key="subtitleLanguage"
+            app:defaultValue="en"
+            app:entries="@array/subtitle_language_entries"
+            app:entryValues="@array/subtitle_language_values"
+            app:title="@string/pref_subtitle_language"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:key="languageSubtitlePriority"
+            app:defaultValue=""
+            app:dialogMessage="@string/pref_language_priority_hint"
+            app:summary="@string/pref_language_subtitle_priority_summary"
+            app:title="@string/pref_language_subtitle_priority" />
+
+        <SwitchPreferenceCompat
+            app:key="subtitleAutoSearch"
+            app:defaultValue="false"
+            app:title="@string/pref_auto_search" />
+
+        <ListPreference
+            app:key="subtitleColor"
+            app:defaultValue="white"
+            app:entries="@array/subtitle_color_entries"
+            app:entryValues="@array/subtitle_color_values"
+            app:title="@string/subtitle_color_title"
+            app:useSimpleSummaryProvider="true" />
 
         <SwitchPreferenceCompat
             app:key="subtitleCustomFontEnabled"
@@ -234,33 +356,60 @@
             app:key="subtitleFolderChoose"
             app:title="@string/pref_subtitle_folder" />
 
-        <Preference
-            app:title="@string/pref_captioning_preferences">
+        <Preference app:title="@string/pref_captioning_preferences">
             <intent android:action="android.settings.CAPTIONING_SETTINGS" />
         </Preference>
 
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/pref_online_header">
-
         <Preference
-            app:key="setupFromPhone"
-            app:title="@string/pref_setup_phone"
-            app:summary="@string/pref_setup_phone_summary" />
+            app:selectable="false"
+            app:summary="@string/pref_subtitle_message" />
 
-        <Preference
-            app:key="checkEverything"
-            app:title="@string/pref_check_all"
-            app:summary="@string/pref_check_all_summary" />
+        <PreferenceCategory app:title="@string/pref_subtitle_sources_header">
+
+            <EditTextPreference
+                app:key="apiKeyOpenSubtitles"
+                app:dialogMessage="@string/pref_key_opensubtitles_dialog"
+                app:title="@string/pref_key_opensubtitles" />
+
+            <EditTextPreference
+                app:key="apiKeyOpenSubtitlesUser"
+                app:title="@string/pref_key_opensubtitles_user" />
+
+            <EditTextPreference
+                app:key="apiKeyOpenSubtitlesPassword"
+                app:title="@string/pref_key_opensubtitles_password" />
+
+            <EditTextPreference
+                app:key="apiKeySubdl"
+                app:dialogMessage="@string/pref_key_subdl_dialog"
+                app:title="@string/pref_key_subdl" />
+
+            <EditTextPreference
+                app:key="apiKeyWyzie"
+                app:dialogMessage="@string/pref_key_wyzie_dialog"
+                app:title="@string/pref_key_wyzie" />
+
+            <Preference
+                app:key="subtitleAddons"
+                app:summary="@string/pref_addons_summary"
+                app:title="@string/pref_addons" />
+
+        </PreferenceCategory>
+
+    </PreferenceScreen>
+
+    <PreferenceScreen
+        app:key="screen_online"
+        app:title="@string/pref_online_header">
+
+        <EditTextPreference
+            app:key="apiKeyTmdb"
+            app:dialogMessage="@string/pref_key_tmdb_dialog"
+            app:title="@string/pref_key_tmdb" />
 
         <Preference
             app:selectable="false"
             app:summary="@string/pref_online_note" />
-
-        <EditTextPreference
-            app:key="apiKeyTmdb"
-            app:title="@string/pref_key_tmdb"
-            app:dialogMessage="@string/pref_key_tmdb_dialog" />
 
         <ListPreference
             app:key="identifyMode"
@@ -270,51 +419,16 @@
             app:title="@string/pref_identify"
             app:useSimpleSummaryProvider="true" />
 
-        <Preference
-            app:selectable="false"
-            app:summary="@string/pref_identify_note" />
-
         <SwitchPreferenceCompat
-            app:key="subtitleAutoSearch"
-            app:defaultValue="false"
-            app:summaryOn="@string/pref_auto_search_on"
-            app:summaryOff="@string/pref_auto_search_off"
-            app:title="@string/pref_auto_search" />
-
-        <ListPreference
-            app:key="subtitleLanguage"
-            app:defaultValue="en"
-            app:entries="@array/subtitle_language_entries"
-            app:entryValues="@array/subtitle_language_values"
-            app:title="@string/pref_subtitle_language"
-            app:useSimpleSummaryProvider="true" />
-
-        <EditTextPreference
-            app:key="languageSubtitlePriority"
-            app:defaultValue=""
-            app:title="@string/pref_language_subtitle_priority"
-            app:summary="@string/pref_language_subtitle_priority_summary"
-            app:dialogMessage="@string/pref_language_priority_hint" />
-
-        <SwitchPreferenceCompat
-            app:key="prefillSearch"
+            app:key="aniListHelp"
             app:defaultValue="true"
-            app:summaryOn="@string/pref_prefill_on"
-            app:summaryOff="@string/pref_prefill_off"
-            app:title="@string/pref_prefill" />
+            app:summary="@string/set_anilist_summary"
+            app:title="@string/set_anilist" />
 
-        <SwitchPreferenceCompat
-            app:key="linkSubtitleAndInfo"
-            app:defaultValue="true"
-            app:summaryOn="@string/pref_link_titles_on"
-            app:summaryOff="@string/pref_link_titles_off"
-            app:title="@string/pref_link_titles" />
-
-        <SwitchPreferenceCompat
+        <com.brouken.player.SketchSwitchPreference
             app:key="overlayOnPause"
-            app:defaultValue="false"
-            app:summaryOn="@string/pref_overlay_on"
-            app:summaryOff="@string/pref_overlay_off"
+            app:defaultValue="true"
+            app:switchSketch="@drawable/sketch_info_card"
             app:title="@string/pref_overlay" />
 
         <SeekBarPreference
@@ -337,64 +451,80 @@
             app:summary="@string/pref_overlay_delay_summary"
             app:title="@string/pref_overlay_delay" />
 
-        <SwitchPreferenceCompat
+        <com.brouken.player.SketchSwitchPreference
             app:key="skipSegments"
             app:defaultValue="true"
-            app:summaryOn="@string/pref_skip_on"
-            app:summaryOff="@string/pref_skip_off"
+            app:switchSketch="@drawable/sketch_skip"
             app:title="@string/pref_skip" />
 
-    </PreferenceCategory>
+        <SwitchPreferenceCompat
+            app:key="prefillSearch"
+            app:defaultValue="true"
+            app:title="@string/pref_prefill" />
 
-    <PreferenceCategory app:title="@string/pref_subtitle_sources_header">
-
-        <Preference
-            app:selectable="false"
-            app:summary="@string/pref_sources_note" />
-
-        <EditTextPreference
-            app:key="apiKeyOpenSubtitles"
-            app:title="@string/pref_key_opensubtitles"
-            app:dialogMessage="@string/pref_key_opensubtitles_dialog" />
-
-        <EditTextPreference
-            app:key="apiKeyOpenSubtitlesUser"
-            app:title="@string/pref_key_opensubtitles_user" />
-
-        <EditTextPreference
-            app:key="apiKeyOpenSubtitlesPassword"
-            app:title="@string/pref_key_opensubtitles_password" />
-
-        <EditTextPreference
-            app:key="apiKeySubdl"
-            app:title="@string/pref_key_subdl"
-            app:dialogMessage="@string/pref_key_subdl_dialog" />
-
-        <EditTextPreference
-            app:key="apiKeyWyzie"
-            app:title="@string/pref_key_wyzie"
-            app:dialogMessage="@string/pref_key_wyzie_dialog" />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/pref_addons_header">
+        <SwitchPreferenceCompat
+            app:key="linkSubtitleAndInfo"
+            app:defaultValue="true"
+            app:summary="@string/pref_link_titles_on"
+            app:title="@string/pref_link_titles" />
 
         <Preference
-            app:key="subtitleAddons"
-            app:summary="@string/pref_addons_summary"
-            app:title="@string/pref_addons" />
+            app:key="setupFromPhone"
+            app:summary="@string/pref_setup_phone_summary"
+            app:title="@string/pref_setup_phone" />
 
-    </PreferenceCategory>
+        <Preference
+            app:key="checkEverything"
+            app:summary="@string/pref_check_all_summary"
+            app:title="@string/pref_check_all" />
 
-    <PreferenceCategory app:title="@string/pref_folders_header">
+        <PreferenceCategory app:title="@string/pref_mdblist_header">
+
+            <SwitchPreferenceCompat
+                app:key="mdblistEnabled"
+                app:defaultValue="false"
+                app:summary="@string/pref_mdblist_summary"
+                app:title="@string/pref_mdblist" />
+
+            <EditTextPreference
+                app:key="apiKeyMdblist"
+                app:dialogMessage="@string/pref_key_mdblist_dialog"
+                app:title="@string/pref_key_mdblist" />
+
+            <SwitchPreferenceCompat
+                app:key="mdblistOnCard"
+                app:defaultValue="true"
+                app:dependency="mdblistEnabled"
+                app:summary="@string/pref_mdblist_card_summary"
+                app:title="@string/pref_mdblist_card" />
+
+            <ListPreference
+                app:key="ratingsEpisodes"
+                app:defaultValue="show"
+                app:dependency="mdblistEnabled"
+                app:entries="@array/ratings_episodes_entries"
+                app:entryValues="@array/ratings_episodes_values"
+                app:title="@string/pref_ratings_episodes"
+                app:useSimpleSummaryProvider="true" />
+
+            <!-- which sites show and in what order; on/off stays in the mdblistShow_ prefs -->
+            <Preference
+                app:key="ratingsOrder"
+                app:dependency="mdblistEnabled"
+                app:summary="@string/pref_ratings_order_summary"
+                app:title="@string/pref_ratings_order" />
+
+        </PreferenceCategory>
+
+    </PreferenceScreen>
+
+    <PreferenceScreen
+        app:key="screen_storage"
+        app:title="@string/set_storage">
 
         <Preference
             app:key="foldersOpen"
             app:title="@string/pref_folders" />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/pref_history_header">
 
         <Preference
             app:key="historyOpen"
@@ -403,27 +533,23 @@
         <SwitchPreferenceCompat
             app:key="historyKeepFailed"
             app:defaultValue="false"
-            app:summaryOn="@string/pref_history_failed_on"
-            app:summaryOff="@string/pref_history_failed_off"
             app:title="@string/pref_history_failed" />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/pref_backup_header">
 
         <Preference
             app:key="backupExport"
-            app:title="@string/pref_backup_export"
-            app:summary="@string/pref_backup_export_summary" />
+            app:summary="@string/pref_backup_export_summary"
+            app:title="@string/pref_backup_export" />
 
         <Preference
             app:key="backupImport"
-            app:title="@string/pref_backup_import"
-            app:summary="@string/pref_backup_import_summary" />
+            app:summary="@string/pref_backup_import_summary"
+            app:title="@string/pref_backup_import" />
 
-    </PreferenceCategory>
+    </PreferenceScreen>
 
-    <PreferenceCategory app:title="@string/pref_dangerous_header">
+    <PreferenceScreen
+        app:key="screen_advanced"
+        app:title="@string/pref_dangerous_header">
 
         <Preference
             app:selectable="false"
@@ -454,13 +580,15 @@
         <SwitchPreferenceCompat
             app:key="mapDV7ToHevc"
             app:defaultValue="false"
-            app:summaryOn="@string/pref_map_dv7_on"
             app:summaryOff="@string/pref_map_dv7_off"
+            app:summaryOn="@string/pref_map_dv7_on"
             app:title="@string/pref_map_dv7" />
 
-    </PreferenceCategory>
+    </PreferenceScreen>
 
-    <PreferenceCategory app:title="@string/pref_about_header">
+    <PreferenceScreen
+        app:key="screen_about"
+        app:title="@string/pref_about_header">
 
         <Preference
             app:key="aboutVersion"
@@ -469,8 +597,8 @@
 
         <Preference
             app:key="checkUpdate"
-            app:title="@string/pref_update"
-            app:summary="@string/pref_update_summary" />
+            app:summary="@string/pref_update_summary"
+            app:title="@string/pref_update" />
 
         <Preference
             app:key="aboutProject"
@@ -482,6 +610,6 @@
             app:summary="@string/pref_licenses_summary"
             app:title="@string/pref_licenses" />
 
-    </PreferenceCategory>
+    </PreferenceScreen>
 
 </PreferenceScreen>

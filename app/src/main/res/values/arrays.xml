@@ -5,10 +5,10 @@
     <item>@string/pref_file_access_home</item>
     <item>Storage Access Framework</item>
     <item>MediaStore</item>
-    <item>Legacy</item>
+    <item>@string/pref_file_access_legacy</item>
   </string-array>
 
-  <string-array name="file_access_values">
+  <string-array name="file_access_values" translatable="false">
     <item>auto</item>
     <item>home</item>
     <item>saf</item>
@@ -22,7 +22,7 @@
     <item>@string/pref_decoder_priority_only_device</item>
   </string-array>
 
-  <string-array name="decoder_priority_values">
+  <string-array name="decoder_priority_values" translatable="false">
     <item>1</item>
     <item>2</item>
     <item>0</item>
@@ -55,6 +55,7 @@
     <string-array name="subtitle_language_values" translatable="false">
         <item>en</item>
         <item>ar</item>
+    <item>fa</item>
         <item>zh</item>
         <item>nl</item>
         <item>fr</item>
@@ -63,6 +64,7 @@
         <item>id</item>
         <item>it</item>
         <item>ja</item>
+    <item>ko</item>
         <item>ko</item>
         <item>pl</item>
         <item>pt</item>
@@ -97,7 +99,6 @@
         <item>mpv</item>
     </string-array>
 
-    <!-- Accent colours, in torbox-android's order. -->
     <string-array name="accent_entries">
         <item>@string/accent_red</item>
         <item>@string/accent_orange</item>
@@ -126,7 +127,40 @@
         <item>slate</item>
     </string-array>
 
-    <!-- Where the application opens. -->
+    <string-array name="seek_preview_entries">
+        <item>@string/seek_preview_off</item>
+        <item>@string/seek_preview_local</item>
+        <item>@string/seek_preview_all</item>
+    </string-array>
+
+    <string-array name="seek_preview_values" translatable="false">
+        <item>off</item>
+        <item>local</item>
+        <item>all</item>
+    </string-array>
+
+    <string-array name="player_style_entries">
+        <item>@string/player_style_classic</item>
+        <item>@string/player_style_glass</item>
+        <item>@string/player_style_material</item>
+    </string-array>
+
+    <string-array name="player_style_values" translatable="false">
+        <item>classic</item>
+        <item>glass</item>
+        <item>material</item>
+    </string-array>
+
+    <string-array name="home_layout_entries">
+        <item>@string/home_layout_list</item>
+        <item>@string/home_layout_wall</item>
+    </string-array>
+
+    <string-array name="home_layout_values" translatable="false">
+        <item>list</item>
+        <item>wall</item>
+    </string-array>
+
     <string-array name="start_on_entries">
         <item>@string/start_on_home</item>
         <item>@string/start_on_last</item>
@@ -136,4 +170,131 @@
         <item>home</item>
         <item>last</item>
     </string-array>
+
+    <!-- in the order of player_style_values -->
+    <array name="player_style_pictures">
+        <item>@drawable/sketch_style_classic</item>
+        <item>@drawable/sketch_style_glass</item>
+        <item>@drawable/sketch_style_material</item>
+    </array>
+    <string-array name="player_style_descriptions">
+        <item>@string/player_style_classic_desc</item>
+        <item>@string/player_style_glass_desc</item>
+        <item>@string/player_style_material_desc</item>
+    </string-array>
+    <array name="home_layout_pictures">
+        <item>@drawable/sketch_layout_list</item>
+        <item>@drawable/sketch_layout_wall</item>
+    </array>
+    <string-array name="home_layout_descriptions">
+        <item>@string/home_layout_list_desc</item>
+        <item>@string/home_layout_wall_desc</item>
+    </string-array>
+    <string-array name="corner_mode_entries">
+        <item>@string/set_corner_off</item>
+        <item>@string/set_corner_controls</item>
+        <item>@string/set_corner_always</item>
+    </string-array>
+    <string-array name="clock_format_entries">
+        <item>@string/set_clock_format_phone</item>
+        <item>@string/set_clock_format_12</item>
+        <item>@string/set_clock_format_24</item>
+    </string-array>
+
+    <string-array name="clock_format_values" translatable="false">
+        <item>phone</item>
+        <item>12</item>
+        <item>24</item>
+    </string-array>
+
+    <string-array name="corner_mode_values" translatable="false">
+        <item>off</item>
+        <item>controls</item>
+        <item>always</item>
+    </string-array>
+    <array name="clock_mode_pictures">
+        <item>@drawable/sketch_clock_off</item>
+        <item>@drawable/sketch_clock_controls</item>
+        <item>@drawable/sketch_clock_always</item>
+    </array>
+    <string-array name="clock_mode_descriptions">
+        <item>@string/set_clock_off_desc</item>
+        <item>@string/set_corner_controls_desc</item>
+        <item>@string/set_corner_always_desc</item>
+    </string-array>
+    <array name="battery_mode_pictures">
+        <item>@drawable/sketch_battery_off</item>
+        <item>@drawable/sketch_battery_controls</item>
+        <item>@drawable/sketch_battery_always</item>
+    </array>
+    <string-array name="battery_mode_descriptions">
+        <item>@string/set_battery_off_desc</item>
+        <item>@string/set_corner_controls_desc</item>
+        <item>@string/set_corner_always_desc</item>
+    </string-array>
+    <array name="start_on_pictures">
+        <item>@drawable/sketch_start_home</item>
+        <item>@drawable/sketch_start_last</item>
+    </array>
+    <string-array name="start_on_descriptions">
+        <item>@string/start_on_home_desc</item>
+        <item>@string/start_on_last_desc</item>
+    </string-array>
+    <array name="seek_preview_pictures">
+        <item>@drawable/sketch_seek_off</item>
+        <item>@drawable/sketch_seek_local</item>
+        <item>@drawable/sketch_seek_all</item>
+    </array>
+    <string-array name="seek_preview_descriptions">
+        <item>@string/seek_preview_off_desc</item>
+        <item>@string/seek_preview_local_desc</item>
+        <item>@string/seek_preview_all_desc</item>
+    </string-array>
+
+  <!-- keep in step with xml/locales_config.xml -->
+  <string-array name="app_language_entries" translatable="false">
+    <item>@string/pref_app_language_system</item>
+    <item>Bahasa Indonesia</item>
+    <item>Deutsch</item>
+    <item>English</item>
+    <item>Español</item>
+    <item>Français</item>
+    <item>Italiano</item>
+    <item>Polski</item>
+    <item>Português (Brasil)</item>
+    <item>Tiếng Việt</item>
+    <item>Türkçe</item>
+    <item>Русский</item>
+    <item>Українська</item>
+    <item>العربية</item>
+    <item>فارسی</item>
+    <item>हिन्दी</item>
+    <item>简体中文</item>
+    <item>繁體中文</item>
+    <item>日本語</item>
+    <item>한국어</item>
+  </string-array>
+
+  <string-array name="app_language_values" translatable="false">
+    <item></item>
+    <item>id</item>
+    <item>de</item>
+    <item>en</item>
+    <item>es</item>
+    <item>fr</item>
+    <item>it</item>
+    <item>pl</item>
+    <item>pt-BR</item>
+    <item>vi</item>
+    <item>tr</item>
+    <item>ru</item>
+    <item>uk</item>
+    <item>ar</item>
+    <item>fa</item>
+    <item>hi</item>
+    <item>zh-CN</item>
+    <item>zh-TW</item>
+    <item>ja</item>
+    <item>ko</item>
+  </string-array>
 </resources>

@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- one list for folders, files and search results -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/home_root"
     android:layout_width="match_parent"
@@ -31,6 +30,7 @@
 
         <TextView
             android:id="@+id/home_title"
+            android:textAlignment="viewStart"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -107,7 +107,6 @@
             android:paddingBottom="16dp"
             android:scrollbars="vertical" />
 
-        <!-- says why the list is empty: no permission, no files, or no matches -->
         <TextView
             android:id="@+id/home_empty"
             android:layout_width="match_parent"
