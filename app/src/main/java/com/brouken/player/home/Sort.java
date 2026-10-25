@@ -10,8 +10,6 @@ import java.text.Collator;
 import java.util.Collections;
 import java.util.List;
 
-// Saved sort orders for the folder and file lists. Names compare with a Collator
-// and break ties; unreversed puts A, the largest or the newest first.
 public final class Sort {
 
     private static final String PREF_KEY_FOLDERS = "homeFolderSort";
@@ -34,7 +32,6 @@ public final class Sort {
         RECENT(R.string.home_sort_date, R.string.home_order_newest, R.string.home_order_oldest);
 
         public final int label;
-        /** What this order puts first, and what reversing it puts first. */
         public final int first;
         public final int reversedFirst;
 
@@ -65,8 +62,6 @@ public final class Sort {
 
     private Sort() {
     }
-
-    // ------------------------------------------------------------ storage
 
     @NonNull
     public static Folders folders(@NonNull final SharedPreferences preferences) {
@@ -116,12 +111,10 @@ public final class Sort {
         try {
             return Enum.valueOf(type, stored);
         } catch (IllegalArgumentException error) {
-            // An order removed in a later version, or a hand-edited file.
+            // a removed order, or a hand-edited file
             return fallback;
         }
     }
-
-    // ------------------------------------------------------------ applying
 
     public static void apply(@NonNull final List<Library.Folder> folders,
                              @NonNull final Folders order) {

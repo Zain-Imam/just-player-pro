@@ -12,8 +12,7 @@ import org.json.JSONArray;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-// Folders pinned to the top of the home screen, kept by path in one preference
-// so Backup exports them. A missing folder stays pinned: its card may be out.
+// kept in one preference so Backup exports it; a missing folder stays pinned
 public final class Pinned {
 
     private static final String PREF_KEY = "homePinnedFolders";
@@ -47,7 +46,7 @@ public final class Pinned {
         return folderId != null && load(preferences).contains(folderId);
     }
 
-    /** Returns whether the folder is now pinned. */
+    // true when the folder is now pinned
     public static boolean toggle(@NonNull final SharedPreferences preferences,
                                  @NonNull final String folderId) {
         final Set<String> pinned = load(preferences);

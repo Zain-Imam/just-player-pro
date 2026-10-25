@@ -10,6 +10,7 @@ import android.provider.MediaStore;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.brouken.player.Showcase;
 import com.brouken.player.Utils;
 
 import java.util.ArrayList;
@@ -18,18 +19,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-// Videos on the device as folders and files. Grouped in code because
-// MediaStore's grouped query needs Android 11.
+// grouped in code: MediaStore's grouped query needs Android 11
 public final class Library {
 
     private Library() {
     }
 
-    /** A directory holding at least one playable file. */
     public static final class Folder {
-        /** Also the key a pin is stored against. */
+        // also the key pins are stored against
         public final String id;
-        /** Not final: disambiguate() extends names that clash. */
         public String name;
         public int count;
         public long size;
@@ -97,6 +95,7 @@ public final class Library {
                     ? cursor.getColumnIndex(MediaStore.MediaColumns.BUCKET_ID) : -1;
             final int columnBucketName = buckets
                     ? cursor.getColumnIndex(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME) : -1;
+            final String showcase = Showcase.folders(context);
 
             while (cursor.moveToNext()) {
                 final long id = columnId < 0 ? -1 : cursor.getLong(columnId);
@@ -104,6 +103,9 @@ public final class Library {
                     continue;
                 }
                 final String path = columnData < 0 ? null : cursor.getString(columnData);
+                if (showcase != null && (path == null || !path.startsWith(showcase))) {
+                    continue;
+                }
                 final String bucketId = columnBucketId < 0 ? null : cursor.getString(columnBucketId);
                 final String bucketName = columnBucketName < 0
                         ? null : cursor.getString(columnBucketName);
@@ -167,7 +169,6 @@ public final class Library {
     }
 
     // appends enough of the parent path to tell same-named folders apart;
-    // package-private for tests
     static void disambiguate(final List<Folder> folders) {
         final Map<String, List<Folder>> byName = new LinkedHashMap<>();
         for (final Folder folder : folders) {
@@ -241,7 +242,6 @@ public final class Library {
         return depth;
     }
 
-    /** The fewest levels above {@code common} that make this one unique. */
     @Nullable
     private static String shortestUnique(final List<List<String>> chains, final int index,
                                          final int common) {
@@ -266,7 +266,7 @@ public final class Library {
         return mine.size() > common ? joined(mine.subList(common, mine.size())) : null;
     }
 
-    /** A slice of the chain the way a path reads: outermost first. */
+    // outermost first, the way a path reads
     private static String joined(final List<String> slice) {
         final StringBuilder label = new StringBuilder();
         for (int i = slice.size() - 1; i >= 0; i--) {
@@ -278,7 +278,6 @@ public final class Library {
         return label.toString();
     }
 
-    /** Only the files in one folder, in the order they were scanned. */
     @NonNull
     public static List<Video> inFolder(@NonNull final List<Video> videos, final String folderId) {
         final List<Video> out = new ArrayList<>();
@@ -290,7 +289,6 @@ public final class Library {
         return out;
     }
 
-    /** Files whose name contains every word typed, in any order, ignoring case. */
     @NonNull
     public static List<Video> matching(@NonNull final List<Video> videos, final String query) {
         final String trimmed = query == null ? "" : query.trim();
@@ -314,8 +312,6 @@ public final class Library {
         }
         return out;
     }
-
-    // ------------------------------------------------------------- naming
 
     @Nullable
     private static String parentOf(@Nullable final String path) {

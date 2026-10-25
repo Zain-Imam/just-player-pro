@@ -2,14 +2,11 @@ package com.brouken.player;
 
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.documentfile.provider.DocumentFile;
@@ -18,8 +15,6 @@ import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceScreen;
 
-// Folders granted through the system folder picker, where the player looks for
-// the next file and for subtitles.
 public class FoldersFragment extends PreferenceFragmentCompat {
 
     private Prefs prefs;
@@ -41,21 +36,12 @@ public class FoldersFragment extends PreferenceFragmentCompat {
         populate();
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        if (Build.VERSION.SDK_INT >= 29) {
-            SettingsActivity.recyclerView = getListView();
-        }
-    }
 
     private void populate() {
         screen.removeAll();
 
-        // no action bar in settings, so the category header names the screen
         final PreferenceCategory category = new PreferenceCategory(requireContext());
         category.setIconSpaceReserved(false);
-        category.setTitle(R.string.pref_folders);
         screen.addPreference(category);
 
         final Preference note = new Preference(requireContext());
@@ -134,7 +120,6 @@ public class FoldersFragment extends PreferenceFragmentCompat {
                 .show();
     }
 
-    /** The folder's display name, or the last part of the tree URI. */
     private CharSequence describe(final Uri uri) {
         try {
             final DocumentFile folder = DocumentFile.fromTreeUri(requireContext(), uri);

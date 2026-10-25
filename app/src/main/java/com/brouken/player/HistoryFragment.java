@@ -2,10 +2,8 @@ package com.brouken.player;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.format.DateUtils;
-import android.view.View;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -28,21 +26,12 @@ public class HistoryFragment extends PreferenceFragmentCompat {
         populate(screen);
     }
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        if (Build.VERSION.SDK_INT >= 29) {
-            SettingsActivity.recyclerView = getListView();
-        }
-    }
 
     private void populate(final PreferenceScreen screen) {
         screen.removeAll();
 
-        // no action bar in settings, so the category header names the screen
         final PreferenceCategory category = new PreferenceCategory(requireContext());
         category.setIconSpaceReserved(false);
-        category.setTitle(R.string.pref_history);
         screen.addPreference(category);
 
         final android.content.SharedPreferences preferences =

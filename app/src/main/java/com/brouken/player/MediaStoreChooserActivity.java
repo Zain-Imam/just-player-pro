@@ -31,6 +31,16 @@ public class MediaStoreChooserActivity extends Activity {
 
     final int REQUEST_PERMISSION_STORAGE = 0;
 
+    // not AppCompat, so before Android 13 the app's language is handed over here
+    @Override
+    protected void attachBaseContext(final android.content.Context base) {
+        super.attachBaseContext(base);
+        final android.content.res.Configuration language = AppLanguage.override(base);
+        if (language != null) {
+            applyOverrideConfiguration(language);
+        }
+    }
+
     Integer bucketId;
     boolean subtitles;
     String title;
@@ -123,7 +133,6 @@ public class MediaStoreChooserActivity extends Activity {
         } catch (Exception x) {
             x.printStackTrace();
         }
-        // Sort map by value
         List<Map.Entry<Integer, String>> list = new LinkedList<>(hashMap.entrySet());
         Collections.sort(list, (o1, o2) -> o1.getValue().compareToIgnoreCase(o2.getValue()));
         HashMap<Integer, String> sortedMap = new LinkedHashMap<>();

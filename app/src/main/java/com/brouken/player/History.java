@@ -23,18 +23,20 @@ final class History {
     private static final String KEY_TYPE = "type";
     private static final String KEY_TIME = "time";
 
-    // set once a frame renders; missing on old entries, which count as played
+    // set once a frame renders; entries without it count as played
     private static final String KEY_PLAYED = "played";
 
-    // how good an entry's name is, worst first; a name is only replaced by a
-    // better kind, and a file name never
+    // worst first; a name is replaced only by a better kind, a file name never
     static final int NAME_RAW = 0;
     static final int NAME_LAUNCHER = 1;
     static final int NAME_FILE = 2;
     private static final String KEY_NAME_KIND = "nameKind";
 
-    // poster path of the identified film
     private static final String KEY_POSTER = "poster";
+    private static final String KEY_TITLE = "title";
+    // held at the top of Recent, outside its count, never trimmed
+    private static final String KEY_PINNED = "pinned";
+    static final int MAX_PINS = 3;
 
     private static final int MAX_ENTRIES = 100;
 
@@ -55,16 +57,21 @@ final class History {
         @Nullable
         final String type;
         final long time;
-        /** Whether this one ever actually played. See KEY_PLAYED. */
         final boolean played;
-        /** NAME_RAW, NAME_LAUNCHER or NAME_FILE. */
         final int nameKind;
-        /** The confirmed film's poster path, or null. See KEY_POSTER. */
         @Nullable
         final String poster;
+        @Nullable
+        final String title;
+        final boolean pinned;
 
         Entry(Uri uri, String name, @Nullable String type, long time, boolean played,
-              int nameKind, @Nullable String poster) {
+              int nameKind, @Nullable String poster, @Nullable String title) {
+            this(uri, name, type, time, played, nameKind, poster, title, false);
+        }
+
+        Entry(Uri uri, String name, @Nullable String type, long time, boolean played,
+              int nameKind, @Nullable String poster, @Nullable String title, boolean pinned) {
             this.uri = uri;
             this.name = name;
             this.type = type;
@@ -72,32 +79,36 @@ final class History {
             this.played = played;
             this.nameKind = nameKind;
             this.poster = poster;
+            this.title = title;
+            this.pinned = pinned;
         }
 
         Entry withPlayed() {
-            return new Entry(uri, name, type, time, true, nameKind, poster);
+            return new Entry(uri, name, type, time, true, nameKind, poster, title, pinned);
         }
 
         Entry withName(final String newName, final int kind) {
-            return new Entry(uri, newName, type, time, played, kind, poster);
+            return new Entry(uri, newName, type, time, played, kind, poster, title, pinned);
         }
 
-        Entry withPoster(@Nullable final String path) {
-            return new Entry(uri, name, type, time, played, nameKind, path);
+        Entry withIdentified(@Nullable final String path, @Nullable final String heading) {
+            return new Entry(uri, name, type, time, played, nameKind, path, heading, pinned);
+        }
+
+        Entry withPinned(final boolean pin) {
+            return new Entry(uri, name, type, time, played, nameKind, poster, title, pin);
         }
     }
 
-    /** How good the name on the end of the link is on its own. */
     static int rawKind(@NonNull final Uri uri) {
         return FilmKey.identifies(displayName(uri)) ? NAME_FILE : NAME_RAW;
     }
 
-    /** Whether a name, from wherever it came, is a real file name. */
     static boolean isFileName(@Nullable final String name) {
         return name != null && FilmKey.identifies(name);
     }
 
-    /** The kind of name this link's entry has, or -1 if there is no entry. */
+    // -1 when there is no entry
     static int nameKindFor(final SharedPreferences preferences, @Nullable final Uri uri) {
         if (uri == null) {
             return -1;
@@ -157,8 +168,10 @@ final class History {
         String name = displayName(uri);
         int kind = rawKind(uri);
         String poster = null;
+        String title = null;
         // ever played, so an expired link today does not hide yesterday's film
         boolean played = false;
+        boolean pinned = false;
         for (int i = entries.size() - 1; i >= 0; i--) {
             final Entry existing = entries.get(i);
             if (key.equals(existing.uri.toString()) || place.equals(withoutQuery(existing.uri))) {
@@ -167,21 +180,87 @@ final class History {
                     name = existing.name;
                     kind = existing.nameKind;
                 }
-                if (existing.poster != null) {
+                if (existing.poster != null || existing.title != null) {
                     poster = existing.poster;
+                    title = existing.title;
                 }
                 played |= existing.played;
+                pinned |= existing.pinned;
                 entries.remove(i);
             }
         }
 
-        entries.add(0, new Entry(uri, name, type, System.currentTimeMillis(), played, kind, poster));
-
-        while (entries.size() > MAX_ENTRIES) {
-            entries.remove(entries.size() - 1);
-        }
+        entries.add(0, new Entry(uri, name, type, System.currentTimeMillis(), played, kind, poster, title, pinned));
+        trim(entries);
 
         save(preferences, entries);
+    }
+
+    // the oldest go first, but never a pinned one
+    private static void trim(final List<Entry> entries) {
+        for (int i = entries.size() - 1; i >= 0 && entries.size() > MAX_ENTRIES; i--) {
+            if (!entries.get(i).pinned) {
+                entries.remove(i);
+            }
+        }
+    }
+
+    // false when a fourth pin is asked for
+    static boolean setPinned(final SharedPreferences preferences, @NonNull final Uri uri,
+                             final boolean pin) {
+        final List<Entry> entries = load(preferences);
+        if (pin) {
+            int pins = 0;
+            for (final Entry entry : entries) {
+                if (entry.pinned && !samePlace(entry.uri, uri)) {
+                    pins++;
+                }
+            }
+            if (pins >= MAX_PINS) {
+                return false;
+            }
+        }
+        boolean changed = false;
+        for (int i = 0; i < entries.size(); i++) {
+            if (samePlace(entries.get(i).uri, uri) && entries.get(i).pinned != pin) {
+                entries.set(i, entries.get(i).withPinned(pin));
+                changed = true;
+            }
+        }
+        if (changed) {
+            save(preferences, entries);
+        }
+        return true;
+    }
+
+    @Nullable
+    static Entry find(final SharedPreferences preferences, @Nullable final Uri uri) {
+        if (uri == null) {
+            return null;
+        }
+        for (final Entry entry : load(preferences)) {
+            if (samePlace(entry.uri, uri)) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    static void restore(final SharedPreferences preferences, @NonNull final Entry entry,
+                        final int index) {
+        final List<Entry> entries = load(preferences);
+        for (final Entry existing : entries) {
+            if (samePlace(existing.uri, entry.uri)) {
+                return;
+            }
+        }
+        entries.add(Math.max(0, Math.min(index, entries.size())), entry);
+        save(preferences, entries);
+    }
+
+    // the same film, its link's token aside
+    private static boolean samePlace(@NonNull final Uri a, @NonNull final Uri b) {
+        return a.toString().equals(b.toString()) || withoutQuery(a).equals(withoutQuery(b));
     }
 
 
@@ -237,7 +316,6 @@ final class History {
         return scheme + "://" + authority + (uri.getPath() == null ? "" : uri.getPath());
     }
 
-    /** Renames unless the new kind is worse or the entry has a file name. */
     static void rename(final SharedPreferences preferences, @Nullable final Uri uri,
                        @Nullable final String name, final int kind) {
         if (uri == null || name == null || name.trim().isEmpty()) {
@@ -264,25 +342,27 @@ final class History {
             save(preferences, entries);
         }
     }
-    static void remove(final SharedPreferences preferences, @NonNull final Uri uri) {
+    // its link with a new token too; returns where it was, or -1
+    static int remove(final SharedPreferences preferences, @NonNull final Uri uri) {
         final List<Entry> entries = load(preferences);
-        final String key = uri.toString();
-        boolean changed = false;
+        int at = -1;
         for (int i = entries.size() - 1; i >= 0; i--) {
-            if (key.equals(entries.get(i).uri.toString())) {
+            if (samePlace(entries.get(i).uri, uri)) {
                 entries.remove(i);
-                changed = true;
+                at = i;
             }
         }
-        if (changed) {
+        if (at >= 0) {
             save(preferences, entries);
         }
+        return at;
     }
 
-    /** Give the entry for this link the confirmed film's poster. See KEY_POSTER. */
-    static void setPoster(final SharedPreferences preferences, @Nullable final Uri uri,
-                          @Nullable final String posterPath) {
-        if (uri == null || posterPath == null || posterPath.isEmpty()) {
+    static void setIdentified(final SharedPreferences preferences, @Nullable final Uri uri,
+                              @Nullable final String posterPath, @Nullable final String heading) {
+        final String poster = posterPath == null || posterPath.isEmpty() ? null : posterPath;
+        final String title = heading == null || heading.trim().isEmpty() ? null : heading.trim();
+        if (uri == null || (poster == null && title == null)) {
             return;
         }
         final List<Entry> entries = load(preferences);
@@ -290,8 +370,10 @@ final class History {
         boolean changed = false;
         for (int i = 0; i < entries.size(); i++) {
             final Entry entry = entries.get(i);
-            if (place.equals(withoutQuery(entry.uri)) && !posterPath.equals(entry.poster)) {
-                entries.set(i, entry.withPoster(posterPath));
+            if (place.equals(withoutQuery(entry.uri))
+                    && (!java.util.Objects.equals(poster, entry.poster)
+                    || !java.util.Objects.equals(title, entry.title))) {
+                entries.set(i, entry.withIdentified(poster, title));
                 changed = true;
             }
         }
@@ -356,11 +438,13 @@ final class History {
                         : name.equals(displayName(uri)) ? rawKind(uri) : NAME_LAUNCHER;
                 final String poster = object.has(KEY_POSTER) && !object.isNull(KEY_POSTER)
                         ? object.optString(KEY_POSTER, null) : null;
+                final String title = object.has(KEY_TITLE) && !object.isNull(KEY_TITLE)
+                        ? object.optString(KEY_TITLE, null) : null;
                 entries.add(new Entry(uri, name, type, object.optLong(KEY_TIME, 0L),
-                        object.optBoolean(KEY_PLAYED, true), kind, poster));
+                        object.optBoolean(KEY_PLAYED, true), kind, poster, title,
+                        object.optBoolean(KEY_PINNED, false)));
             }
         } catch (JSONException e) {
-            // a corrupt list just starts empty
             Utils.log("Discarding unreadable history: " + e);
             return new ArrayList<>();
         }
@@ -381,8 +465,14 @@ final class History {
                 object.put(KEY_TIME, entry.time);
                 object.put(KEY_PLAYED, entry.played);
                 object.put(KEY_NAME_KIND, entry.nameKind);
+                if (entry.pinned) {
+                    object.put(KEY_PINNED, true);
+                }
                 if (entry.poster != null) {
                     object.put(KEY_POSTER, entry.poster);
+                }
+                if (entry.title != null) {
+                    object.put(KEY_TITLE, entry.title);
                 }
                 array.put(object);
             }

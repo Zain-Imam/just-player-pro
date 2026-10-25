@@ -21,11 +21,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
-// Thumbnail frames for local videos: the media store's own thumbnail on
-// Android 10+, otherwise a decoded frame on a small background pool.
 public final class Frames {
 
-    // 12 MB or an eighth of the heap, whichever is smaller
     private static final int CACHE_BYTES =
             (int) Math.min(12L * 1024 * 1024, Runtime.getRuntime().maxMemory() / 8);
 
@@ -42,7 +39,6 @@ public final class Frames {
         }
     };
 
-    /** Files that had no frame to give, so they are not opened again. */
     private final Map<String, Boolean> hopeless = new ConcurrentHashMap<>();
 
     // the tag drops late frames meant for a row that has since been recycled
@@ -65,7 +61,7 @@ public final class Frames {
         }
 
         worker.execute(Background.safely(() -> {
-            final Bitmap frame = load(context, uri);
+            final Bitmap frame = kept(context, uri);
             if (frame == null) {
                 hopeless.put(key, Boolean.TRUE);
                 return;
@@ -107,6 +103,44 @@ public final class Frames {
     public void close() {
         worker.shutdownNow();
         cache.evictAll();
+    }
+
+    @Nullable
+    private static Bitmap kept(final Context context, final Uri uri) {
+        final String key = diskKey(context, uri);
+        final byte[] bytes = com.brouken.player.ImageCache.read(key);
+        if (bytes != null) {
+            final Bitmap known = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            if (known != null) {
+                return known;
+            }
+            com.brouken.player.ImageCache.remove(key);
+        }
+        final Bitmap frame = load(context, uri);
+        if (frame != null) {
+            final java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            if (frame.compress(Bitmap.CompressFormat.JPEG, 85, out)) {
+                com.brouken.player.ImageCache.write(key, out.toByteArray());
+            }
+        }
+        return frame;
+    }
+
+    // the file's size and date, so a changed file gets a new frame
+    private static String diskKey(final Context context, final Uri uri) {
+        long size = -1;
+        long modified = -1;
+        try (android.database.Cursor cursor = context.getContentResolver().query(uri,
+                new String[]{android.provider.MediaStore.MediaColumns.SIZE,
+                        android.provider.MediaStore.MediaColumns.DATE_MODIFIED}, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                size = cursor.getLong(0);
+                modified = cursor.getLong(1);
+            }
+        } catch (Exception ignored) {
+            // not a media store entry: the address alone
+        }
+        return "frame:" + TARGET_PX + ":" + size + ":" + modified + ":" + uri;
     }
 
     @Nullable

@@ -10,8 +10,7 @@ import androidx.preference.PreferenceManager;
 
 import java.util.List;
 
-// Previous and next file in the folder a video was opened from, in the order
-// the home screen shows it. Queried fresh: a file list is too big for an intent.
+// queried fresh, since a whole file list is too big for an intent
 public final class Neighbours {
 
     public static final class Either {
