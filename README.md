@@ -18,6 +18,12 @@ driven by a finger on a phone or by a D-pad from across the room, and behaves th
 [![Decoders](https://img.shields.io/badge/mpv%20decoders-501-9C6ADE?style=flat-square)](#about-the-claim)
 [![Licence](https://img.shields.io/badge/licence-GPL--3.0-8A8A8A?style=flat-square)](LICENSE)
 
+
+
+https://github.com/user-attachments/assets/d1f6a8dc-6e96-478b-a5c7-84876f8998a8
+
+
+
 <img src="docs/screenshots/01-touch-and-tv.jpg" alt="The same build on a television and on a phone: a paused film with its info card on the TV, the poster wall on the phone">
 
 <table>
