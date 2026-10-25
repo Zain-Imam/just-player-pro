@@ -29,13 +29,27 @@ import java.util.List;
 public class SubtitleUtils {
 
     public static String getSubtitleMime(Uri uri) {
-        final String path = uri.getPath();
+        return getSubtitleMime(uri.getPath());
+    }
+
+    // by real name; .sub, .txt and .mpl stay SubRip, the parsers tell them apart
+    public static String getSubtitleMime(Context context, Uri uri) {
+        if (PictureSubtitles.isPicture(context, uri)) {
+            return PictureSubtitles.MIME;
+        }
+        return getSubtitleMime(PictureSubtitles.name(context, uri));
+    }
+
+    private static String getSubtitleMime(String path) {
         if (path.endsWith(".ssa") || path.endsWith(".ass")) {
             return MimeTypes.TEXT_SSA;
         } else if (path.endsWith(".vtt")) {
             return MimeTypes.TEXT_VTT;
         } else if (path.endsWith(".ttml") || path.endsWith(".xml") || path.endsWith(".dfxp")) {
             return MimeTypes.APPLICATION_TTML;
+        } else if (path.toLowerCase(java.util.Locale.ROOT).endsWith(".smi")
+                || path.toLowerCase(java.util.Locale.ROOT).endsWith(".sami")) {
+            return com.brouken.player.subtitle.parser.SamiParser.MIME;
         } else {
             return MimeTypes.APPLICATION_SUBRIP;
         }
@@ -57,7 +71,6 @@ public class SubtitleUtils {
             int len = last - prev;
 
             if (len >= 2 && len <= 6) {
-                // TODO: Validate lang
                 return path.substring(prev + 1, last);
             }
         }
@@ -296,11 +309,11 @@ public class SubtitleUtils {
 
     // language from the launching app when given; cache file names carry none
     public static MediaItem.SubtitleConfiguration buildSubtitle(Context context, Uri uri, String subtitleName, String language, boolean selected) {
-        final String subtitleMime = SubtitleUtils.getSubtitleMime(uri);
+        final String subtitleMime = SubtitleUtils.getSubtitleMime(context, uri);
         final String subtitleLanguage = language == null || language.trim().isEmpty()
                 ? SubtitleUtils.getSubtitleLanguage(uri)
                 : language.trim();
-        // always labelled by the rule both engines share (see SubtitleNames)
+        // labelled by the rule both engines share
         subtitleName = SubtitleNames.label(context, uri, subtitleName, subtitleLanguage);
 
         MediaItem.SubtitleConfiguration.Builder subtitleConfigurationBuilder = new MediaItem.SubtitleConfiguration.Builder(uri)

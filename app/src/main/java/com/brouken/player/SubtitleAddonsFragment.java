@@ -30,7 +30,6 @@ public class SubtitleAddonsFragment extends PreferenceFragmentCompat {
 
         final PreferenceCategory about = new PreferenceCategory(requireContext());
         about.setIconSpaceReserved(false);
-        about.setTitle(R.string.pref_addons_header);
         screen.addPreference(about);
 
         final Preference note = new Preference(requireContext());
@@ -68,7 +67,6 @@ public class SubtitleAddonsFragment extends PreferenceFragmentCompat {
         preference.setOnPreferenceChangeListener((changed, value) -> {
             final String raw = value == null ? "" : value.toString().trim();
             if (raw.isEmpty()) {
-                // Clearing a slot is always allowed and needs no checking.
                 main.post(() -> ((EditTextPreference) changed).setText(""));
                 return true;
             }
@@ -98,56 +96,18 @@ public class SubtitleAddonsFragment extends PreferenceFragmentCompat {
                     preference.setText(normalized);
                     Toast.makeText(requireContext(), accepted(probe), Toast.LENGTH_LONG).show();
                 } else {
-                    Toast.makeText(requireContext(), rejected(probe), Toast.LENGTH_LONG).show();
+                    Toast.makeText(requireContext(), probe.reason(requireContext()), Toast.LENGTH_LONG).show();
                 }
             });
         });
     }
 
     private String accepted(final SubtitleAddons.Probe probe) {
-        final String name = probe.name == null
-                ? getString(R.string.pref_addon_unnamed)
-                : probe.name;
-        final String message = getString(R.string.pref_addon_ok, name,
+        final String message = getString(R.string.pref_addon_ok, probe.name(requireContext()),
                 probe.subtitles, probe.languages);
         return probe.downloadVerified
                 ? message
                 : message + " " + getString(R.string.pref_addon_ok_unverified);
-    }
-
-    private String rejected(final SubtitleAddons.Probe probe) {
-        final int reason;
-        switch (probe.verdict) {
-            case INVALID_URL:
-                reason = R.string.pref_addon_invalid;
-                break;
-            case UNREACHABLE:
-                reason = R.string.pref_addon_unreachable;
-                break;
-            case NOT_AN_ADDON:
-                reason = R.string.pref_addon_not_an_addon;
-                break;
-            case NO_SUBTITLE_RESOURCE:
-                reason = R.string.pref_addon_no_subtitles_resource;
-                break;
-            case NEEDS_CONFIGURATION:
-                reason = R.string.pref_addon_needs_configuration;
-                break;
-            case SUBTITLE_FETCH_FAILED:
-                reason = R.string.pref_addon_fetch_failed;
-                break;
-            case NO_SUBTITLES:
-                reason = R.string.pref_addon_no_subtitles;
-                break;
-            case NO_USABLE_URL:
-                reason = R.string.pref_addon_no_usable_url;
-                break;
-            case NOT_DOWNLOADABLE:
-            default:
-                reason = R.string.pref_addon_not_downloadable;
-                break;
-        }
-        return getString(reason);
     }
 
     @Override

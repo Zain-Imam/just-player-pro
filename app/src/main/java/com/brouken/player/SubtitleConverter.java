@@ -45,6 +45,12 @@ public class SubtitleConverter {
     private void convertSubtitle(Context context, CountDownLatch countDownLatch, Uri[] results, int positionOnResults, Uri sourceUri) {
         String scheme = sourceUri.getScheme();
         if (scheme != null && (scheme.equals("http") || scheme.equals("https"))) {
+            // picture subtitles aren't text; mpv, which shows them, reads the link itself
+            if (PictureSubtitles.isPictureName(PictureSubtitles.name(context, sourceUri))) {
+                results[positionOnResults] = sourceUri;
+                countDownLatch.countDown();
+                return;
+            }
             convertSubtitleFromHttp(context, countDownLatch, results, positionOnResults, sourceUri);
             return;
         }

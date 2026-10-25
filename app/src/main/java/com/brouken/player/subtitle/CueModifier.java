@@ -28,8 +28,7 @@ public class CueModifier {
     private Typeface italicTypeface;
     private SubtitleEdgeType subtitleEdgeType;
 
-    // bottom cues get an explicit line inside the picture: the view's bottom padding
-    // ignores positioned cues and would put text in the letterbox
+    // bottom padding ignores positioned cues, so bottom cues get an explicit line
     private float bottomFraction = 0.08f;
     private float pictureTop;
     private float pictureBottom = 1f;
@@ -39,7 +38,7 @@ public class CueModifier {
         bottomFraction = Math.max(0f, Math.min(0.9f, 0.08f + position * 0.01f));
     }
 
-    // extra room under the subtitles, as a share of the picture (locked timeline)
+    // extra room under the subtitles, as a share of the picture
     private float lift;
 
     public void setLift(final float fraction) {
@@ -95,7 +94,6 @@ public class CueModifier {
         return modifiedCues;
     }
 
-    // TODO(Wasky) Create documentation for this method
     private Cue modifyCue(Cue cue) {
         SpannableString spannableString;
         if (cue.text == null) {
@@ -121,9 +119,7 @@ public class CueModifier {
             return;
         }
 
-        // a cue placed in the top half is a sign; leave it where the file put it
-        if (cue.line != Cue.DIMEN_UNSET
-                && (cue.lineType != Cue.LINE_TYPE_FRACTION || cue.line < 0.5f)) {
+        if (isSign(cue)) {
             return;
         }
 
@@ -134,6 +130,17 @@ public class CueModifier {
         if (cue.position == Cue.DIMEN_UNSET) {
             builder.setPosition(0.5f).setPositionAnchor(Cue.ANCHOR_TYPE_MIDDLE);
         }
+    }
+
+    // a cue in the top half is a sign; negative lines count up from the bottom
+    static boolean isSign(final Cue cue) {
+        if (cue.line == Cue.DIMEN_UNSET) {
+            return false;
+        }
+        if (cue.lineType == Cue.LINE_TYPE_FRACTION) {
+            return cue.line < 0.5f;
+        }
+        return cue.line >= 0;
     }
 
     private boolean addTextPaintModifier(SpannableString spannableString) {

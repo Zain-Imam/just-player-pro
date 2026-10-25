@@ -22,23 +22,28 @@ public final class EnhancedSubtitleParserFactory implements SubtitleParser.Facto
 
     @Override
     public boolean supportsFormat(@NonNull Format format) {
-        return defaultFactory.supportsFormat(format);
+        return SamiParser.MIME.equals(format.sampleMimeType) || defaultFactory.supportsFormat(format);
     }
 
     @Override
     public int getCueReplacementBehavior(@NonNull Format format) {
+        if (SamiParser.MIME.equals(format.sampleMimeType)) {
+            return Format.CUE_REPLACEMENT_BEHAVIOR_MERGE;
+        }
         return defaultFactory.getCueReplacementBehavior(format);
     }
 
-    @SuppressWarnings("SwitchStatementWithTooFewBranches")
     @NonNull
     @Override
     public SubtitleParser create(@NonNull Format format) {
         SubtitleParser fallbackParser;
         String mimeType = format.sampleMimeType != null ? format.sampleMimeType : "";
         switch (mimeType) {
+            case SamiParser.MIME:
+                return new SamiParser();
             case MimeTypes.APPLICATION_SUBRIP:
-                fallbackParser = new EnhancedSubripParser();
+                // .sub and .txt come here as well, and may be SubViewer
+                fallbackParser = new SubViewerParser(new EnhancedSubripParser());
                 break;
             default:
                 fallbackParser = defaultFactory.create(format);

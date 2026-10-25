@@ -29,34 +29,36 @@ public class SubtitleOsdSettingsAdapter extends OsdSettingsAdapter {
         this.listener = listener;
     }
 
-    public void setInitialValues(int subtitlePosition, int subtitleDelay, int size, SubtitleEdgeType edgeType, SubtitleTypeface typeface, boolean embeddedStyles) {
-        this.items = createSubtitleSettingsArray(subtitlePosition, subtitleDelay, size, edgeType, typeface, embeddedStyles);
+    public void setInitialValues(int subtitlePosition, int subtitleDelay, int size, SubtitleEdgeType edgeType, SubtitleTypeface typeface, int colorIndex, boolean embeddedStyles) {
+        this.items = createSubtitleSettingsArray(subtitlePosition, subtitleDelay, size, edgeType, typeface, colorIndex, embeddedStyles);
     }
+
+    // rows in the order of createSubtitleSettingsArray
+    private static final int POSITION_ROW = 0;
+    private static final int DELAY_ROW = 1;
 
     public void setSubtitlePosition(int subtitlePosition) {
-        // index 2: the search and change-title rows come first
-        this.items[2] = createPositionItem(subtitlePosition);
-        notifyItemChanged(2);
+        this.items[POSITION_ROW] = createPositionItem(subtitlePosition);
+        notifyItemChanged(POSITION_ROW);
     }
 
-    // for when the quick panel changes the delay
     public void setSubtitleDelay(int subtitleDelay) {
-        // index 3: under the position row
-        this.items[3] = createDelayItem(subtitleDelay);
-        notifyItemChanged(3);
+        this.items[DELAY_ROW] = createDelayItem(subtitleDelay);
+        notifyItemChanged(DELAY_ROW);
     }
 
-    private OsdSettingsItem[] createSubtitleSettingsArray(int subtitlePosition, int subtitleDelay, int size, SubtitleEdgeType edgeType, SubtitleTypeface typeface, boolean embeddedStyles) {
+    private OsdSettingsItem[] createSubtitleSettingsArray(int subtitlePosition, int subtitleDelay, int size, SubtitleEdgeType edgeType, SubtitleTypeface typeface, int colorIndex, boolean embeddedStyles) {
         return new OsdSettingsItem[]{
-                createOnlineSearchItem(),
-                createChangeTitleItem(),
                 createPositionItem(subtitlePosition),
                 createDelayItem(subtitleDelay),
                 createSizeItem(size),
                 createEdgeTypeItem(edgeType),
                 createTypefaceItem(typeface),
+                createColorItem(colorIndex),
                 createEmbeddedStylesItem(embeddedStyles),
-                createCaptioningPreferenceItem()
+                createCaptioningPreferenceItem(),
+                createOnlineSearchItem(),
+                createChangeTitleItem()
         };
     }
 
@@ -159,6 +161,20 @@ public class SubtitleOsdSettingsAdapter extends OsdSettingsAdapter {
         return new ChoiceOsdSettingsItem(title, elements, typeface.ordinal(), itemListener, this);
     }
 
+    private OsdSettingsItem createColorItem(int colorIndex) {
+        String title = context.getString(R.string.subtitle_color_title);
+        String[] names = context.getResources().getStringArray(R.array.subtitle_color_entries);
+
+        ChoiceOsdSettingsItem.Element[] elements = new ChoiceOsdSettingsItem.Element[names.length];
+        for (int i = 0; i < names.length; i++) {
+            elements[i] = new ChoiceOsdSettingsItem.Element(names[i],
+                    com.brouken.player.SubtitleColors.argb(com.brouken.player.SubtitleColors.keyAt(i)));
+        }
+
+        ChoiceOsdSettingsItem.Listener itemListener = (position, newValueIndex) -> listener.onSubtitleColorChange(newValueIndex);
+        return new ChoiceOsdSettingsItem(title, elements, Math.max(0, Math.min(colorIndex, elements.length - 1)), itemListener, this);
+    }
+
     private OsdSettingsItem createEmbeddedStylesItem(boolean embeddedStyles) {
         String title = context.getString(R.string.osd_subtitle_embedded_styles_title);
         String labelTrue = context.getString(R.string.osd_item_boolean_true);
@@ -170,16 +186,14 @@ public class SubtitleOsdSettingsAdapter extends OsdSettingsAdapter {
 
     private OsdSettingsItem createOnlineSearchItem() {
         String title = context.getString(R.string.online_search_subtitles);
-        @SuppressLint("PrivateResource")
-        Drawable icon = getDrawable(context, androidx.media3.ui.R.drawable.exo_styled_controls_subtitle_on);
+        Drawable icon = getDrawable(context, R.drawable.ic_search_24dp);
         SimpleOsdSettingsItem.Listener itemListener = position -> listener.onSearchOnlineSubtitles();
         return new SimpleOsdSettingsItem(title, icon, itemListener);
     }
 
     private OsdSettingsItem createChangeTitleItem() {
         String title = context.getString(R.string.online_change_title);
-        @SuppressLint("PrivateResource")
-        Drawable icon = getDrawable(context, androidx.media3.ui.R.drawable.exo_ic_check);
+        Drawable icon = getDrawable(context, R.drawable.ic_manage_search_24dp);
         SimpleOsdSettingsItem.Listener itemListener = position -> listener.onChangeTitle();
         return new SimpleOsdSettingsItem(title, icon, itemListener);
     }
@@ -203,6 +217,8 @@ public class SubtitleOsdSettingsAdapter extends OsdSettingsAdapter {
         void onSubtitleEdgeTypeChange(SubtitleEdgeType edgeType);
 
         void onSubtitleTypefaceChange(SubtitleTypeface typeface);
+
+        void onSubtitleColorChange(int colorIndex);
 
         void onSubtitleEmbeddedStylesChange(boolean embeddedStyles);
 

@@ -18,8 +18,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
-// subtitle copies, one folder per source URI, stored under the real file name
-// content URIs often end in a row id (msf:123), which makes a poor file name
+// stored under the real name: a content URI often ends in a row id (msf:123)
 public final class SubtitleFiles {
 
     private static final String TAG = "SubtitleFiles";
@@ -67,7 +66,6 @@ public final class SubtitleFiles {
                 sink.write(chunk, 0, read);
                 total += read;
                 if (total > 10_000_000) {
-                    // Nothing that size is a subtitle.
                     throw new java.io.IOException("too large for a subtitle");
                 }
             }
@@ -139,7 +137,8 @@ public final class SubtitleFiles {
     }
 
     private static final String[] EXTENSIONS = {
-            ".srt", ".ass", ".ssa", ".vtt", ".ttml", ".dfxp", ".xml", ".sub", ".smi", ".txt"};
+            ".srt", ".ass", ".ssa", ".vtt", ".ttml", ".dfxp", ".xml", ".sub", ".smi", ".sami",
+            ".mpl", ".txt", ".sup", ".idx"};
 
     static boolean hasSubtitleExtension(@NonNull final String name) {
         final String lower = name.toLowerCase(Locale.ROOT);
@@ -158,7 +157,7 @@ public final class SubtitleFiles {
                 mime = context.getContentResolver().getType(source);
             }
         } catch (Exception ignored) {
-            // A provider that will not say; the format is guessed below.
+            // a provider that will not say; the format is guessed below
         }
         if (mime != null) {
             mime = mime.toLowerCase(Locale.ROOT);

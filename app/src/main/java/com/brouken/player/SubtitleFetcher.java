@@ -91,8 +91,7 @@ class SubtitleFetcher {
 
             Utils.log(subtitleUri.toString());
 
-            // ProtocolException when reusing client:
-            // java.net.ProtocolException: Unexpected status line: 1
+            // a reused client fails with ProtocolException: Unexpected status line
             client = new OkHttpClient.Builder()
                     .build();
 

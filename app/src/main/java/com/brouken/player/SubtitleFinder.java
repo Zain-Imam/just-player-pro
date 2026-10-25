@@ -43,7 +43,7 @@ public class SubtitleFinder {
     }
 
     public void start() {
-        // Prevent IllegalArgumentException in okhttp3.Request.Builder
+        // prevents IllegalArgumentException in okhttp3.Request.Builder
         if (HttpUrl.parse(baseUri.toString()) == null) {
             return;
         }
