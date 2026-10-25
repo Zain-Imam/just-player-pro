@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_color_title">글자 색상</string>
+    <string name="subtitle_color_white">흰색</string>
+    <string name="subtitle_color_cream">크림색</string>
+    <string name="subtitle_color_yellow">노란색</string>
+    <string name="subtitle_color_amber">호박색</string>
+    <string name="subtitle_color_green">초록색</string>
+    <string name="subtitle_color_cyan">청록색</string>
+    <string name="subtitle_color_sky">하늘색</string>
+    <string name="subtitle_color_pink">분홍색</string>
+</resources>

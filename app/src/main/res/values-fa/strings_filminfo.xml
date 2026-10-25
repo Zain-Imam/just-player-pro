@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">کپی پیوند</string>
+    <string name="film_cast">بازیگران</string>
+    <string name="film_confirm_question">آیا این %1$s است؟</string>
+    <string name="film_confirm_yes">بله</string>
+    <string name="film_confirm_change">تغییر</string>
+    <string name="pref_mdblist_header">امتیاز از سایت‌های دیگر</string>
+    <string name="pref_mdblist">امتیازهای MDBList</string>
+    <string name="pref_mdblist_summary">امتیازهای IMDb، Rotten Tomatoes و دیگران در اطلاعات فیلم. به کلید رایگان خودتان از mdblist.com نیاز دارد</string>
+    <string name="pref_key_mdblist">کلید MDBList</string>
+    <string name="pref_key_mdblist_dialog">رایگان از mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">نمایش امتیازها روی کارت اطلاعات</string>
+    <string name="pref_mdblist_card_summary">یک خط امتیاز زیر تاریخ هنگام مکث</string>
+    <string name="pref_mdblist_audience">کاربران Rotten Tomatoes</string>
+    <string name="pref_mdblist_key_works">کلید MDBList کار می‌کند</string>
+    <string name="pref_mdblist_key_wrong">MDBList می‌گوید این کلید نادرست است</string>
+    <string name="pref_mdblist_key_unreachable">دسترسی به MDBList برای بررسی کلید ممکن نشد. کلید ذخیره شد؛ امتیازها وقتی MDBList در دسترس باشد نمایش داده می‌شوند.</string>
+    <string name="pref_ratings_order">امتیازها و ترتیبشان</string>
+    <string name="pref_ratings_order_summary">کدام سایت‌ها و به چه ترتیبی نمایش داده شوند</string>
+    <string name="pref_ratings_order_none">هیچ‌کدام</string>
+    <string name="ratings_order_hint">مورد بالای این فهرست، در اطلاعات فیلم و روی کارت اطلاعات اول می‌آید. با پیکان‌ها سایت را جابه‌جا کنید و با علامت تیک آن را نمایش دهید یا پنهان کنید.</string>
+    <string name="pref_ratings_episodes">امتیازها در قسمت‌ها</string>
+    <string name="ratings_episodes_show">کل سریال</string>
+    <string name="ratings_episodes_episode">همین قسمت (TMDB)</string>
+</resources>

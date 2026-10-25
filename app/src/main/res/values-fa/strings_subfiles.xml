@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">این نوع زیرنویس با موتور mpv پخش می‌شود. موتور را روی خودکار یا mpv بگذارید.</string>
+    <string name="subfiles_picture_no_mpv">این نوع زیرنویس با موتور mpv پخش می‌شود و mpv به Android 8.0 یا جدیدتر نیاز دارد.</string>
+    <string name="subfiles_picture_switching">برای این زیرنویس به mpv تغییر یافت</string>
+</resources>

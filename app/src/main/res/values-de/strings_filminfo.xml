@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">Link kopieren</string>
+    <string name="film_cast">Besetzung</string>
+    <string name="film_confirm_question">Ist das %1$s?</string>
+    <string name="film_confirm_yes">Ja</string>
+    <string name="film_confirm_change">Ändern</string>
+    <string name="pref_mdblist_header">Bewertungen anderer Seiten</string>
+    <string name="pref_mdblist">MDBList-Bewertungen</string>
+    <string name="pref_mdblist_summary">Wertungen von IMDb, Rotten Tomatoes und mehr in den Infos zum Film. Braucht einen eigenen kostenlosen Schlüssel von mdblist.com</string>
+    <string name="pref_key_mdblist">MDBList-Schlüssel</string>
+    <string name="pref_key_mdblist_dialog">Kostenlos bei mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">Bewertungen auf der Infokarte</string>
+    <string name="pref_mdblist_card_summary">Eine Zeile mit Wertungen unter dem Datum bei Pause</string>
+    <string name="pref_mdblist_audience">Rotten-Tomatoes-Nutzer</string>
+    <string name="pref_mdblist_key_works">MDBList-Schlüssel funktioniert</string>
+    <string name="pref_mdblist_key_wrong">Laut MDBList ist dieser Schlüssel falsch</string>
+    <string name="pref_mdblist_key_unreachable">MDBList war zum Prüfen des Schlüssels nicht erreichbar. Er ist gespeichert; Bewertungen erscheinen, sobald MDBList erreichbar ist.</string>
+    <string name="pref_ratings_order">Bewertungen und ihre Reihenfolge</string>
+    <string name="pref_ratings_order_summary">Welche Seiten erscheinen, und in welcher Reihenfolge</string>
+    <string name="pref_ratings_order_none">Keine</string>
+    <string name="ratings_order_hint">Oben in der Liste steht, was in den Infos zum Film und auf der Infokarte zuerst kommt. Mit den Pfeilen verschiebst du eine Seite, mit dem Haken blendest du sie ein oder aus.</string>
+    <string name="pref_ratings_episodes">Bewertungen bei Folgen</string>
+    <string name="ratings_episodes_show">Die ganze Serie</string>
+    <string name="ratings_episodes_episode">Diese Folge (TMDB)</string>
+</resources>

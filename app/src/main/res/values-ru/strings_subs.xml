@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_color_title">Цвет текста</string>
+    <string name="subtitle_color_white">Белый</string>
+    <string name="subtitle_color_cream">Кремовый</string>
+    <string name="subtitle_color_yellow">Жёлтый</string>
+    <string name="subtitle_color_amber">Янтарный</string>
+    <string name="subtitle_color_green">Зелёный</string>
+    <string name="subtitle_color_cyan">Бирюзовый</string>
+    <string name="subtitle_color_sky">Голубой</string>
+    <string name="subtitle_color_pink">Розовый</string>
+</resources>

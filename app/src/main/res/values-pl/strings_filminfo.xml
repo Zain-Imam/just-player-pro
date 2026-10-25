@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">Kopiuj link</string>
+    <string name="film_cast">Obsada</string>
+    <string name="film_confirm_question">Czy to %1$s?</string>
+    <string name="film_confirm_yes">Tak</string>
+    <string name="film_confirm_change">Zmień</string>
+    <string name="pref_mdblist_header">Oceny z innych serwisów</string>
+    <string name="pref_mdblist">Oceny z MDBList</string>
+    <string name="pref_mdblist_summary">Oceny z IMDb, Rotten Tomatoes i innych w informacjach o filmie. Wymaga własnego darmowego klucza z mdblist.com</string>
+    <string name="pref_key_mdblist">Klucz MDBList</string>
+    <string name="pref_key_mdblist_dialog">Za darmo na mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">Oceny na karcie filmu</string>
+    <string name="pref_mdblist_card_summary">Wiersz ocen pod datą przy pauzie</string>
+    <string name="pref_mdblist_audience">Użytkownicy Rotten Tomatoes</string>
+    <string name="pref_mdblist_key_works">Klucz MDBList działa</string>
+    <string name="pref_mdblist_key_wrong">Według MDBList ten klucz jest nieprawidłowy</string>
+    <string name="pref_mdblist_key_unreachable">Nie udało się połączyć z MDBList, aby sprawdzić klucz. Klucz jest zapisany; oceny pojawią się, gdy MDBList będzie dostępny.</string>
+    <string name="pref_ratings_order">Oceny i ich kolejność</string>
+    <string name="pref_ratings_order_summary">Które serwisy są pokazywane i w jakiej kolejności</string>
+    <string name="pref_ratings_order_none">Żadne</string>
+    <string name="ratings_order_hint">Góra tej listy pojawia się pierwsza w informacjach o filmie i na karcie filmu. Strzałkami przesuwasz serwis, a znacznikiem go pokazujesz lub ukrywasz.</string>
+    <string name="pref_ratings_episodes">Oceny odcinków</string>
+    <string name="ratings_episodes_show">Cały serial</string>
+    <string name="ratings_episodes_episode">Ten odcinek (TMDB)</string>
+</resources>

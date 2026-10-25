@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_color_title">Колір тексту</string>
+    <string name="subtitle_color_white">Білий</string>
+    <string name="subtitle_color_cream">Кремовий</string>
+    <string name="subtitle_color_yellow">Жовтий</string>
+    <string name="subtitle_color_amber">Бурштиновий</string>
+    <string name="subtitle_color_green">Зелений</string>
+    <string name="subtitle_color_cyan">Бірюзовий</string>
+    <string name="subtitle_color_sky">Блакитний</string>
+    <string name="subtitle_color_pink">Рожевий</string>
+</resources>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">Copiar link</string>
+    <string name="film_cast">Elenco</string>
+    <string name="film_confirm_question">É %1$s?</string>
+    <string name="film_confirm_yes">Sim</string>
+    <string name="film_confirm_change">Trocar</string>
+    <string name="pref_mdblist_header">Notas de outros sites</string>
+    <string name="pref_mdblist">Notas do MDBList</string>
+    <string name="pref_mdblist_summary">Notas do IMDb, Rotten Tomatoes e outros na ficha do filme. Precisa de uma chave própria e gratuita do mdblist.com</string>
+    <string name="pref_key_mdblist">Chave do MDBList</string>
+    <string name="pref_key_mdblist_dialog">Grátis em mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">Mostrar notas na ficha</string>
+    <string name="pref_mdblist_card_summary">Uma linha de notas abaixo da data ao pausar</string>
+    <string name="pref_mdblist_audience">Usuários do Rotten Tomatoes</string>
+    <string name="pref_mdblist_key_works">A chave do MDBList funciona</string>
+    <string name="pref_mdblist_key_wrong">O MDBList diz que esta chave está errada</string>
+    <string name="pref_mdblist_key_unreachable">Não foi possível acessar o MDBList para verificar a chave. Ela foi salva; as notas aparecem assim que o MDBList estiver acessível.</string>
+    <string name="pref_ratings_order">Notas e sua ordem</string>
+    <string name="pref_ratings_order_summary">Quais sites aparecem, e em que ordem</string>
+    <string name="pref_ratings_order_none">Nenhum</string>
+    <string name="ratings_order_hint">O topo desta lista vem primeiro, na ficha do filme e na ficha ao pausar. Use as setas para mover um site, e a marca para mostrar ou ocultar.</string>
+    <string name="pref_ratings_episodes">Notas nos episódios</string>
+    <string name="ratings_episodes_show">A série inteira</string>
+    <string name="ratings_episodes_episode">Este episódio (TMDB)</string>
+</resources>

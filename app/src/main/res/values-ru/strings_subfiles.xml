@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">Этот тип субтитров работает в движке mpv. Выберите движок «Авто» или mpv.</string>
+    <string name="subfiles_picture_no_mpv">Этот тип субтитров работает в движке mpv, а для mpv нужен Android 8.0 или новее.</string>
+    <string name="subfiles_picture_switching">Для этих субтитров включён mpv</string>
+</resources>

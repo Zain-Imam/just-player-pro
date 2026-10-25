@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">Копіювати посилання</string>
+    <string name="film_cast">У ролях</string>
+    <string name="film_confirm_question">Це %1$s?</string>
+    <string name="film_confirm_yes">Так</string>
+    <string name="film_confirm_change">Змінити</string>
+    <string name="pref_mdblist_header">Оцінки інших сайтів</string>
+    <string name="pref_mdblist">Оцінки MDBList</string>
+    <string name="pref_mdblist_summary">Оцінки IMDb, Rotten Tomatoes та інших на сторінці «Про фільм». Потрібен власний безплатний ключ з mdblist.com</string>
+    <string name="pref_key_mdblist">Ключ MDBList</string>
+    <string name="pref_key_mdblist_dialog">Безплатно на mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">Оцінки на картці</string>
+    <string name="pref_mdblist_card_summary">Рядок оцінок під датою на паузі</string>
+    <string name="pref_mdblist_audience">Глядачі Rotten Tomatoes</string>
+    <string name="pref_mdblist_key_works">Ключ MDBList працює</string>
+    <string name="pref_mdblist_key_wrong">MDBList повідомляє, що ключ неправильний</string>
+    <string name="pref_mdblist_key_unreachable">Не вдалося з’єднатися з MDBList, щоб перевірити ключ. Його збережено; оцінки з’являться, щойно MDBList стане доступним.</string>
+    <string name="pref_ratings_order">Оцінки та їх порядок</string>
+    <string name="pref_ratings_order_summary">Які сайти показувати й у якому порядку</string>
+    <string name="pref_ratings_order_none">Жодного</string>
+    <string name="ratings_order_hint">Верх списку йде першим на сторінці «Про фільм» і на картці. Стрілки переміщують сайт, а позначка показує чи ховає його.</string>
+    <string name="pref_ratings_episodes">Оцінки серій</string>
+    <string name="ratings_episodes_show">Весь серіал</string>
+    <string name="ratings_episodes_episode">Ця серія (TMDB)</string>
+</resources>

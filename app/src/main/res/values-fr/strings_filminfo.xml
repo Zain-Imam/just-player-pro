@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">Copier le lien</string>
+    <string name="film_cast">Distribution</string>
+    <string name="film_confirm_question">Est-ce %1$s ?</string>
+    <string name="film_confirm_yes">Oui</string>
+    <string name="film_confirm_change">Changer</string>
+    <string name="pref_mdblist_header">Notes des autres sites</string>
+    <string name="pref_mdblist">Notes MDBList</string>
+    <string name="pref_mdblist_summary">Les notes IMDb, Rotten Tomatoes et autres dans les infos sur le film. Demande votre propre clé gratuite de mdblist.com</string>
+    <string name="pref_key_mdblist">Clé MDBList</string>
+    <string name="pref_key_mdblist_dialog">Gratuite sur mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">Notes sur la fiche info</string>
+    <string name="pref_mdblist_card_summary">Une ligne de notes sous la date en pause</string>
+    <string name="pref_mdblist_audience">Utilisateurs Rotten Tomatoes</string>
+    <string name="pref_mdblist_key_works">La clé MDBList fonctionne</string>
+    <string name="pref_mdblist_key_wrong">MDBList indique que cette clé est incorrecte</string>
+    <string name="pref_mdblist_key_unreachable">Impossible de joindre MDBList pour vérifier la clé. Elle est enregistrée ; les notes s\'afficheront dès que MDBList sera accessible.</string>
+    <string name="pref_ratings_order">Notes et leur ordre</string>
+    <string name="pref_ratings_order_summary">Quels sites s\'affichent, et dans quel ordre</string>
+    <string name="pref_ratings_order_none">Aucune</string>
+    <string name="ratings_order_hint">Le haut de la liste vient en premier, dans les infos sur le film et sur la fiche info. Utilisez les flèches pour déplacer un site, et la coche pour l\'afficher ou le masquer.</string>
+    <string name="pref_ratings_episodes">Notes des épisodes</string>
+    <string name="ratings_episodes_show">La série entière</string>
+    <string name="ratings_episodes_episode">Cet épisode (TMDB)</string>
+</resources>

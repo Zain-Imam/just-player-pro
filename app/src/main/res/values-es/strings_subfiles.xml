@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">Este tipo de subtítulo funciona con el motor mpv. Cambia el motor a Auto o mpv.</string>
+    <string name="subfiles_picture_no_mpv">Este tipo de subtítulo funciona con el motor mpv, que requiere Android 8.0 o superior.</string>
+    <string name="subfiles_picture_switching">Cambiado a mpv para estos subtítulos</string>
+</resources>

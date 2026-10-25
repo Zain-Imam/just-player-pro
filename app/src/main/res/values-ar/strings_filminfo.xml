@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">نسخ الرابط</string>
+    <string name="film_cast">طاقم التمثيل</string>
+    <string name="film_confirm_question">هل هذا %1$s؟</string>
+    <string name="film_confirm_yes">نعم</string>
+    <string name="film_confirm_change">تغيير</string>
+    <string name="pref_mdblist_header">تقييمات من مواقع أخرى</string>
+    <string name="pref_mdblist">تقييمات MDBList</string>
+    <string name="pref_mdblist_summary">درجات IMDb وRotten Tomatoes وغيرها في معلومات الفيلم. يتطلب مفتاحًا مجانيًا خاصًا بك من mdblist.com</string>
+    <string name="pref_key_mdblist">مفتاح MDBList</string>
+    <string name="pref_key_mdblist_dialog">مجاني من mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">إظهار التقييمات على بطاقة المعلومات</string>
+    <string name="pref_mdblist_card_summary">سطر من الدرجات تحت التاريخ عند الإيقاف</string>
+    <string name="pref_mdblist_audience">مستخدمو Rotten Tomatoes</string>
+    <string name="pref_mdblist_key_works">مفتاح MDBList يعمل</string>
+    <string name="pref_mdblist_key_wrong">يقول MDBList إن هذا المفتاح غير صحيح</string>
+    <string name="pref_mdblist_key_unreachable">تعذّر الوصول إلى MDBList للتحقق من المفتاح. تم حفظه، وستظهر التقييمات عندما يصبح الوصول إلى MDBList ممكنًا.</string>
+    <string name="pref_ratings_order">التقييمات وترتيبها</string>
+    <string name="pref_ratings_order_summary">المواقع التي تظهر وبأي ترتيب</string>
+    <string name="pref_ratings_order_none">لا يظهر أي منها</string>
+    <string name="ratings_order_hint">أعلى هذه القائمة يظهر أولًا، في معلومات الفيلم وعلى بطاقة المعلومات. استخدم الأسهم لنقل موقع، وعلامة الاختيار لإظهاره أو إخفائه.</string>
+    <string name="pref_ratings_episodes">التقييمات في الحلقات</string>
+    <string name="ratings_episodes_show">المسلسل كله</string>
+    <string name="ratings_episodes_episode">هذه الحلقة (TMDB)</string>
+</resources>

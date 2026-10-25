@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">此類字幕需在 mpv 引擎上播放。請將引擎切換為「自動」或 mpv。</string>
+    <string name="subfiles_picture_no_mpv">此類字幕需在 mpv 引擎上播放，而 mpv 需要 Android 8.0 以上版本。</string>
+    <string name="subfiles_picture_switching">已為此字幕切換至 mpv</string>
+</resources>

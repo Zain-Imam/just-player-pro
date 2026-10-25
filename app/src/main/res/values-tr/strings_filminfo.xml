@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">Bağlantıyı kopyala</string>
+    <string name="film_cast">Oyuncular</string>
+    <string name="film_confirm_question">Bu %1$s mi?</string>
+    <string name="film_confirm_yes">Evet</string>
+    <string name="film_confirm_change">Değiştir</string>
+    <string name="pref_mdblist_header">Diğer sitelerin puanları</string>
+    <string name="pref_mdblist">MDBList puanları</string>
+    <string name="pref_mdblist_summary">IMDb, Rotten Tomatoes ve diğer puanlar film bilgisinde. mdblist.com adresinden size ait ücretsiz bir anahtar gerekir</string>
+    <string name="pref_key_mdblist">MDBList anahtarı</string>
+    <string name="pref_key_mdblist_dialog">Ücretsiz: mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">Puanları bilgi kartında göster</string>
+    <string name="pref_mdblist_card_summary">Duraklatınca tarihin altında bir satır puan</string>
+    <string name="pref_mdblist_audience">Rotten Tomatoes kullanıcıları</string>
+    <string name="pref_mdblist_key_works">MDBList anahtarı çalışıyor</string>
+    <string name="pref_mdblist_key_wrong">MDBList bu anahtarın yanlış olduğunu söylüyor</string>
+    <string name="pref_mdblist_key_unreachable">Anahtarı denetlemek için MDBList bağlantısı kurulamadı. Anahtar kaydedildi; MDBList erişilebilir olduğunda puanlar görünür.</string>
+    <string name="pref_ratings_order">Puanlar ve sıraları</string>
+    <string name="pref_ratings_order_summary">Hangi sitelerin hangi sırayla görüneceği</string>
+    <string name="pref_ratings_order_none">Hiçbiri</string>
+    <string name="ratings_order_hint">Listenin en üstündeki, film bilgisinde ve bilgi kartında ilk gelir. Taşımak için okları, göstermek veya gizlemek için onay işaretini kullanın.</string>
+    <string name="pref_ratings_episodes">Bölümlerde puanlar</string>
+    <string name="ratings_episodes_show">Dizinin tamamı</string>
+    <string name="ratings_episodes_episode">Bu bölüm (TMDB)</string>
+</resources>

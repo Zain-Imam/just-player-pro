@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">Jenis subtitel ini diputar di mesin mpv. Ubah mesin ke Otomatis atau mpv.</string>
+    <string name="subfiles_picture_no_mpv">Jenis subtitel ini diputar di mesin mpv, yang perlu Android 8.0 ke atas.</string>
+    <string name="subfiles_picture_switching">Beralih ke mpv untuk subtitel ini</string>
+</resources>

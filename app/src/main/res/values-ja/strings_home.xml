@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pref_app_theme">ライト / ダーク</string>
+    <string name="pref_app_theme_dark">ダーク</string>
+    <string name="pref_app_theme_light">ライト</string>
+    <string name="pref_recent_name_delay">最近の動画に作品名を付けるまで</string>
+    <string name="recent_delay_10s">10秒</string>
+    <string name="recent_delay_20s">20秒</string>
+    <string name="recent_delay_30s">30秒</string>
+    <string name="recent_delay_45s">45秒</string>
+    <string name="recent_delay_1m">1分</string>
+    <string name="recent_delay_2m">2分</string>
+    <string name="recent_delay_3m">3分</string>
+    <string name="recent_delay_5m">5分</string>
+</resources>

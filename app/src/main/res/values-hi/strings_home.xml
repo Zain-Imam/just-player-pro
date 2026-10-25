@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pref_app_theme">लाइट या डार्क</string>
+    <string name="pref_app_theme_dark">डार्क</string>
+    <string name="pref_app_theme_light">लाइट</string>
+    <string name="pref_recent_name_delay">‘हालिया’ में फ़िल्मों का नाम इतनी देर बाद</string>
+    <string name="recent_delay_10s">10 सेकंड</string>
+    <string name="recent_delay_20s">20 सेकंड</string>
+    <string name="recent_delay_30s">30 सेकंड</string>
+    <string name="recent_delay_45s">45 सेकंड</string>
+    <string name="recent_delay_1m">1 मिनट</string>
+    <string name="recent_delay_2m">2 मिनट</string>
+    <string name="recent_delay_3m">3 मिनट</string>
+    <string name="recent_delay_5m">5 मिनट</string>
+</resources>

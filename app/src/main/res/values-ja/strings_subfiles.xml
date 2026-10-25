@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">この種類の字幕はmpvエンジンで再生されます。エンジンを自動またはmpvに切り替えてください。</string>
+    <string name="subfiles_picture_no_mpv">この種類の字幕はmpvエンジンで再生されますが、mpvにはAndroid 8.0以降が必要です。</string>
+    <string name="subfiles_picture_switching">この字幕のためにmpvに切り替えました</string>
+</resources>

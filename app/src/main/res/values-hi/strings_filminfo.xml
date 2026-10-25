@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">लिंक कॉपी करें</string>
+    <string name="film_cast">कलाकार</string>
+    <string name="film_confirm_question">क्या यह %1$s है?</string>
+    <string name="film_confirm_yes">हाँ</string>
+    <string name="film_confirm_change">बदलें</string>
+    <string name="pref_mdblist_header">दूसरी साइटों की रेटिंग</string>
+    <string name="pref_mdblist">MDBList रेटिंग</string>
+    <string name="pref_mdblist_summary">फ़िल्म की जानकारी में IMDb, Rotten Tomatoes और दूसरी रेटिंग। mdblist.com से आपकी अपनी मुफ़्त कुंजी चाहिए</string>
+    <string name="pref_key_mdblist">MDBList कुंजी</string>
+    <string name="pref_key_mdblist_dialog">mdblist.com → Preferences → API key पर मुफ़्त मिलती है।</string>
+    <string name="pref_mdblist_card">जानकारी कार्ड पर रेटिंग दिखाएं</string>
+    <string name="pref_mdblist_card_summary">पॉज़ होने पर तारीख के नीचे रेटिंग की एक लाइन</string>
+    <string name="pref_mdblist_audience">Rotten Tomatoes उपयोगकर्ता</string>
+    <string name="pref_mdblist_key_works">MDBList कुंजी काम कर रही है</string>
+    <string name="pref_mdblist_key_wrong">MDBList के अनुसार यह कुंजी गलत है</string>
+    <string name="pref_mdblist_key_unreachable">कुंजी जाँचने के लिए MDBList तक नहीं पहुँच सके। कुंजी सहेज ली गई है; MDBList तक पहुँच होते ही रेटिंग दिखेंगी।</string>
+    <string name="pref_ratings_order">रेटिंग और उनका क्रम</string>
+    <string name="pref_ratings_order_summary">कौन-सी साइटें दिखें, और किस क्रम में</string>
+    <string name="pref_ratings_order_none">कोई नहीं</string>
+    <string name="ratings_order_hint">इस सूची में सबसे ऊपर वाली साइट फ़िल्म की जानकारी और जानकारी कार्ड पर सबसे पहले आती है। किसी साइट को खिसकाने के लिए तीर, और दिखाने या छिपाने के लिए टिक इस्तेमाल करें।</string>
+    <string name="pref_ratings_episodes">एपिसोड पर रेटिंग</string>
+    <string name="ratings_episodes_show">पूरी सीरीज़</string>
+    <string name="ratings_episodes_episode">यही एपिसोड (TMDB)</string>
+</resources>

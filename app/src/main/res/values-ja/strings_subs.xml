@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_color_title">文字の色</string>
+    <string name="subtitle_color_white">白</string>
+    <string name="subtitle_color_cream">クリーム</string>
+    <string name="subtitle_color_yellow">黄</string>
+    <string name="subtitle_color_amber">アンバー</string>
+    <string name="subtitle_color_green">緑</string>
+    <string name="subtitle_color_cyan">シアン</string>
+    <string name="subtitle_color_sky">空色</string>
+    <string name="subtitle_color_pink">ピンク</string>
+</resources>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">Copiar enlace</string>
+    <string name="film_cast">Reparto</string>
+    <string name="film_confirm_question">¿Es %1$s?</string>
+    <string name="film_confirm_yes">Sí</string>
+    <string name="film_confirm_change">Cambiar</string>
+    <string name="pref_mdblist_header">Valoraciones de otros sitios</string>
+    <string name="pref_mdblist">Valoraciones de MDBList</string>
+    <string name="pref_mdblist_summary">Notas de IMDb, Rotten Tomatoes y otros en la ficha de la película. Necesita una clave propia y gratuita de mdblist.com</string>
+    <string name="pref_key_mdblist">Clave de MDBList</string>
+    <string name="pref_key_mdblist_dialog">Gratis en mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">Mostrar valoraciones en la ficha</string>
+    <string name="pref_mdblist_card_summary">Una línea de notas bajo la fecha al pausar</string>
+    <string name="pref_mdblist_audience">Usuarios de Rotten Tomatoes</string>
+    <string name="pref_mdblist_key_works">La clave de MDBList funciona</string>
+    <string name="pref_mdblist_key_wrong">MDBList dice que esta clave no es válida</string>
+    <string name="pref_mdblist_key_unreachable">No se pudo contactar con MDBList para comprobar la clave. Está guardada; las valoraciones aparecerán cuando se pueda acceder a MDBList.</string>
+    <string name="pref_ratings_order">Valoraciones y su orden</string>
+    <string name="pref_ratings_order_summary">Qué sitios se muestran y en qué orden</string>
+    <string name="pref_ratings_order_none">Ninguno</string>
+    <string name="ratings_order_hint">Lo primero de la lista sale primero, en la ficha de la película y en la ficha al pausar. Usa las flechas para mover un sitio y la marca para mostrarlo u ocultarlo.</string>
+    <string name="pref_ratings_episodes">Valoraciones en episodios</string>
+    <string name="ratings_episodes_show">La serie entera</string>
+    <string name="ratings_episodes_episode">Este episodio (TMDB)</string>
+</resources>

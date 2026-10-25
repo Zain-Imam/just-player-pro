@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">Bu altyazı türü mpv motorunda oynatılır. Motoru Otomatik veya mpv yapın.</string>
+    <string name="subfiles_picture_no_mpv">Bu altyazı türü mpv motorunda oynatılır; mpv, Android 8.0 veya üstü ister.</string>
+    <string name="subfiles_picture_switching">Bu altyazı için mpv\'ye geçildi</string>
+</resources>

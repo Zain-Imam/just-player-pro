@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">リンクをコピー</string>
+    <string name="film_cast">キャスト</string>
+    <string name="film_confirm_question">%1$s で合っていますか？</string>
+    <string name="film_confirm_yes">はい</string>
+    <string name="film_confirm_change">変更</string>
+    <string name="pref_mdblist_header">他サイトの評価</string>
+    <string name="pref_mdblist">MDBList の評価</string>
+    <string name="pref_mdblist_summary">IMDb や Rotten Tomatoes などの評価を作品情報に表示します。mdblist.com で無料の自分用キーが必要です</string>
+    <string name="pref_key_mdblist">MDBListキー</string>
+    <string name="pref_key_mdblist_dialog">mdblist.com → Preferences → API key で無料で取得できます。</string>
+    <string name="pref_mdblist_card">情報カードに評価を表示</string>
+    <string name="pref_mdblist_card_summary">一時停止時に日付の下へ評価を1行で表示</string>
+    <string name="pref_mdblist_audience">Rotten Tomatoes ユーザー</string>
+    <string name="pref_mdblist_key_works">MDBListキーは有効です</string>
+    <string name="pref_mdblist_key_wrong">MDBList によるとこのキーは正しくありません</string>
+    <string name="pref_mdblist_key_unreachable">キーを確認するために MDBList に接続できませんでした。キーは保存済みです。MDBList に接続できるようになると評価が表示されます。</string>
+    <string name="pref_ratings_order">評価と並び順</string>
+    <string name="pref_ratings_order_summary">表示するサイトとその順番</string>
+    <string name="pref_ratings_order_none">表示なし</string>
+    <string name="ratings_order_hint">このリストの一番上が、作品情報と情報カードで最初に表示されます。矢印でサイトを移動し、チェックマークで表示/非表示を切り替えます。</string>
+    <string name="pref_ratings_episodes">エピソードの評価</string>
+    <string name="ratings_episodes_show">シリーズ全体</string>
+    <string name="ratings_episodes_episode">このエピソード (TMDB)</string>
+</resources>

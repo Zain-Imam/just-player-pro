@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_color_title">Yazı rengi</string>
+    <string name="subtitle_color_white">Beyaz</string>
+    <string name="subtitle_color_cream">Krem</string>
+    <string name="subtitle_color_yellow">Sarı</string>
+    <string name="subtitle_color_amber">Kehribar</string>
+    <string name="subtitle_color_green">Yeşil</string>
+    <string name="subtitle_color_cyan">Camgöbeği</string>
+    <string name="subtitle_color_sky">Gök mavisi</string>
+    <string name="subtitle_color_pink">Pembe</string>
+</resources>

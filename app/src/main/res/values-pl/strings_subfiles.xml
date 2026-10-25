@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">Ten rodzaj napisów działa w silniku mpv. Ustaw silnik na Auto lub mpv.</string>
+    <string name="subfiles_picture_no_mpv">Ten rodzaj napisów działa w silniku mpv, który wymaga Androida 8.0 lub nowszego.</string>
+    <string name="subfiles_picture_switching">Przełączono na mpv dla tych napisów</string>
+</resources>

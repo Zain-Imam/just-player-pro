@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">Sao chép liên kết</string>
+    <string name="film_cast">Diễn viên</string>
+    <string name="film_confirm_question">Đây có phải %1$s?</string>
+    <string name="film_confirm_yes">Đúng</string>
+    <string name="film_confirm_change">Đổi</string>
+    <string name="pref_mdblist_header">Điểm từ các trang khác</string>
+    <string name="pref_mdblist">Điểm MDBList</string>
+    <string name="pref_mdblist_summary">Điểm IMDb, Rotten Tomatoes và các trang khác trong thông tin phim. Cần khóa miễn phí của riêng bạn từ mdblist.com</string>
+    <string name="pref_key_mdblist">Khóa MDBList</string>
+    <string name="pref_key_mdblist_dialog">Miễn phí tại mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">Hiện điểm trên thẻ thông tin</string>
+    <string name="pref_mdblist_card_summary">Một dòng điểm dưới ngày khi tạm dừng</string>
+    <string name="pref_mdblist_audience">Người dùng Rotten Tomatoes</string>
+    <string name="pref_mdblist_key_works">Khóa MDBList hoạt động</string>
+    <string name="pref_mdblist_key_wrong">MDBList cho biết khóa này không đúng</string>
+    <string name="pref_mdblist_key_unreachable">Không kết nối được MDBList để kiểm tra khóa. Khóa đã được lưu; điểm sẽ hiện khi kết nối được MDBList.</string>
+    <string name="pref_ratings_order">Điểm và thứ tự</string>
+    <string name="pref_ratings_order_summary">Trang nào hiện, và theo thứ tự nào</string>
+    <string name="pref_ratings_order_none">Không hiện trang nào</string>
+    <string name="ratings_order_hint">Đầu danh sách hiện trước, trong thông tin phim và trên thẻ thông tin. Dùng mũi tên để di chuyển trang, và dấu tích để hiện hoặc ẩn trang.</string>
+    <string name="pref_ratings_episodes">Điểm của tập phim</string>
+    <string name="ratings_episodes_show">Cả bộ phim</string>
+    <string name="ratings_episodes_episode">Tập này (TMDB)</string>
+</resources>

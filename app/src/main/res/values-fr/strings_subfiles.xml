@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">Ce type de sous-titres passe par le moteur mpv. Choisissez le moteur Auto ou mpv.</string>
+    <string name="subfiles_picture_no_mpv">Ce type de sous-titres passe par le moteur mpv, qui requiert Android 8.0 ou plus.</string>
+    <string name="subfiles_picture_switching">Passage à mpv pour ces sous-titres</string>
+</resources>

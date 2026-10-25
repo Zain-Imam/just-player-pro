@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pref_app_theme">Açık veya koyu</string>
+    <string name="pref_app_theme_dark">Koyu</string>
+    <string name="pref_app_theme_light">Açık</string>
+    <string name="pref_recent_name_delay">Geçmişteki filmlere ad verme süresi</string>
+    <string name="recent_delay_10s">10 sn</string>
+    <string name="recent_delay_20s">20 sn</string>
+    <string name="recent_delay_30s">30 sn</string>
+    <string name="recent_delay_45s">45 sn</string>
+    <string name="recent_delay_1m">1 dk</string>
+    <string name="recent_delay_2m">2 dk</string>
+    <string name="recent_delay_3m">3 dk</string>
+    <string name="recent_delay_5m">5 dk</string>
+</resources>

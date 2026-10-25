@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_color_title">Màu chữ</string>
+    <string name="subtitle_color_white">Trắng</string>
+    <string name="subtitle_color_cream">Kem</string>
+    <string name="subtitle_color_yellow">Vàng</string>
+    <string name="subtitle_color_amber">Hổ phách</string>
+    <string name="subtitle_color_green">Xanh lá</string>
+    <string name="subtitle_color_cyan">Xanh lơ</string>
+    <string name="subtitle_color_sky">Xanh da trời</string>
+    <string name="subtitle_color_pink">Hồng</string>
+</resources>

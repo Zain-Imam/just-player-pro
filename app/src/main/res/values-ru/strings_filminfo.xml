@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">Копировать ссылку</string>
+    <string name="film_cast">В ролях</string>
+    <string name="film_confirm_question">Это %1$s?</string>
+    <string name="film_confirm_yes">Да</string>
+    <string name="film_confirm_change">Изменить</string>
+    <string name="pref_mdblist_header">Оценки других сайтов</string>
+    <string name="pref_mdblist">Оценки MDBList</string>
+    <string name="pref_mdblist_summary">Оценки IMDb, Rotten Tomatoes и других на странице «О фильме». Нужен собственный бесплатный ключ с mdblist.com</string>
+    <string name="pref_key_mdblist">Ключ MDBList</string>
+    <string name="pref_key_mdblist_dialog">Бесплатно на mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">Оценки на карточке</string>
+    <string name="pref_mdblist_card_summary">Строка оценок под датой на паузе</string>
+    <string name="pref_mdblist_audience">Зрители Rotten Tomatoes</string>
+    <string name="pref_mdblist_key_works">Ключ MDBList работает</string>
+    <string name="pref_mdblist_key_wrong">MDBList сообщает, что ключ неверный</string>
+    <string name="pref_mdblist_key_unreachable">Не удалось связаться с MDBList, чтобы проверить ключ. Он сохранён; оценки появятся, когда MDBList станет доступен.</string>
+    <string name="pref_ratings_order">Оценки и их порядок</string>
+    <string name="pref_ratings_order_summary">Какие сайты показывать и в каком порядке</string>
+    <string name="pref_ratings_order_none">Ничего</string>
+    <string name="ratings_order_hint">Верх списка идёт первым на странице «О фильме» и на карточке. Стрелки перемещают сайт, а галочка показывает или скрывает его.</string>
+    <string name="pref_ratings_episodes">Оценки серий</string>
+    <string name="ratings_episodes_show">Весь сериал</string>
+    <string name="ratings_episodes_episode">Эта серия (TMDB)</string>
+</resources>

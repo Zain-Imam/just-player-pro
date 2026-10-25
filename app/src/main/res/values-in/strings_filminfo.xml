@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">Salin link</string>
+    <string name="film_cast">Pemeran</string>
+    <string name="film_confirm_question">Apakah ini %1$s?</string>
+    <string name="film_confirm_yes">Ya</string>
+    <string name="film_confirm_change">Ganti</string>
+    <string name="pref_mdblist_header">Rating dari situs lain</string>
+    <string name="pref_mdblist">Rating MDBList</string>
+    <string name="pref_mdblist_summary">Skor IMDb, Rotten Tomatoes, dan lainnya di info film. Perlu kunci gratis milik Anda sendiri dari mdblist.com</string>
+    <string name="pref_key_mdblist">Kunci MDBList</string>
+    <string name="pref_key_mdblist_dialog">Gratis dari mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">Tampilkan rating di kartu info</string>
+    <string name="pref_mdblist_card_summary">Satu baris skor di bawah tanggal saat dijeda</string>
+    <string name="pref_mdblist_audience">Pengguna Rotten Tomatoes</string>
+    <string name="pref_mdblist_key_works">Kunci MDBList berfungsi</string>
+    <string name="pref_mdblist_key_wrong">Menurut MDBList, kunci ini salah</string>
+    <string name="pref_mdblist_key_unreachable">Tidak dapat menghubungi MDBList untuk memeriksa kunci. Kunci sudah disimpan; rating akan muncul setelah MDBList bisa dijangkau.</string>
+    <string name="pref_ratings_order">Rating dan urutannya</string>
+    <string name="pref_ratings_order_summary">Situs mana yang tampil, dan urutannya</string>
+    <string name="pref_ratings_order_none">Tidak ada</string>
+    <string name="ratings_order_hint">Bagian atas daftar ini tampil lebih dulu, di info film dan di kartu info. Gunakan panah untuk memindahkan situs, dan centang untuk menampilkan atau menyembunyikannya.</string>
+    <string name="pref_ratings_episodes">Rating di episode</string>
+    <string name="ratings_episodes_show">Seluruh serial</string>
+    <string name="ratings_episodes_episode">Episode ini (TMDB)</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">이 형식의 자막은 mpv 엔진에서 재생됩니다. 엔진을 자동 또는 mpv로 바꿔 주세요.</string>
+    <string name="subfiles_picture_no_mpv">이 형식의 자막은 mpv 엔진에서 재생되며, mpv는 Android 8.0 이상이 필요합니다.</string>
+    <string name="subfiles_picture_switching">이 자막을 위해 mpv로 전환했습니다</string>
+</resources>

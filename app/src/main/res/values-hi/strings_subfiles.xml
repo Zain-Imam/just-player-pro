@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">इस तरह का सबटाइटल mpv इंजन पर चलता है। इंजन को ऑटो या mpv पर करें।</string>
+    <string name="subfiles_picture_no_mpv">इस तरह का सबटाइटल mpv इंजन पर चलता है, जिसके लिए Android 8.0 या नया वर्शन चाहिए।</string>
+    <string name="subfiles_picture_switching">इस सबटाइटल के लिए mpv पर स्विच किया गया</string>
+</resources>

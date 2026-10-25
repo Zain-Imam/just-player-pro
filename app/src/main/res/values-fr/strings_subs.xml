@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_color_title">Couleur du texte</string>
+    <string name="subtitle_color_white">Blanc</string>
+    <string name="subtitle_color_cream">Crème</string>
+    <string name="subtitle_color_yellow">Jaune</string>
+    <string name="subtitle_color_amber">Ambre</string>
+    <string name="subtitle_color_green">Vert</string>
+    <string name="subtitle_color_cyan">Cyan</string>
+    <string name="subtitle_color_sky">Bleu ciel</string>
+    <string name="subtitle_color_pink">Rose</string>
+</resources>

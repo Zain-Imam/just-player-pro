@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">هذا النوع من الترجمة يعمل على محرّك mpv. غيّر المحرّك إلى تلقائي أو mpv.</string>
+    <string name="subfiles_picture_no_mpv">هذا النوع من الترجمة يعمل على محرّك mpv الذي يحتاج إلى Android 8.0 أو أحدث.</string>
+    <string name="subfiles_picture_switching">تم التبديل إلى mpv لعرض هذه الترجمة</string>
+</resources>

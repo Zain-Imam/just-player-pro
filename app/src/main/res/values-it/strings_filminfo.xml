@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">Copia link</string>
+    <string name="film_cast">Cast</string>
+    <string name="film_confirm_question">È %1$s?</string>
+    <string name="film_confirm_yes">Sì</string>
+    <string name="film_confirm_change">Cambia</string>
+    <string name="pref_mdblist_header">Voti da altri siti</string>
+    <string name="pref_mdblist">Voti MDBList</string>
+    <string name="pref_mdblist_summary">Voti di IMDb, Rotten Tomatoes e altri nelle informazioni sul film. Richiede una chiave gratuita personale di mdblist.com</string>
+    <string name="pref_key_mdblist">Chiave MDBList</string>
+    <string name="pref_key_mdblist_dialog">Gratis su mdblist.com → Preferences → API key.</string>
+    <string name="pref_mdblist_card">Voti sulla scheda info</string>
+    <string name="pref_mdblist_card_summary">Una riga di voti sotto la data in pausa</string>
+    <string name="pref_mdblist_audience">Utenti di Rotten Tomatoes</string>
+    <string name="pref_mdblist_key_works">La chiave MDBList funziona</string>
+    <string name="pref_mdblist_key_wrong">Secondo MDBList questa chiave non è valida</string>
+    <string name="pref_mdblist_key_unreachable">Impossibile raggiungere MDBList per verificare la chiave. È salvata; i voti compariranno quando MDBList sarà raggiungibile.</string>
+    <string name="pref_ratings_order">Voti e il loro ordine</string>
+    <string name="pref_ratings_order_summary">Quali siti mostrare, e in che ordine</string>
+    <string name="pref_ratings_order_none">Nessuno</string>
+    <string name="ratings_order_hint">Ciò che è in cima alla lista viene prima, nelle informazioni sul film e sulla scheda info. Usa le frecce per spostare un sito e la spunta per mostrarlo o nasconderlo.</string>
+    <string name="pref_ratings_episodes">Voti sugli episodi</string>
+    <string name="ratings_episodes_show">L\'intera serie</string>
+    <string name="ratings_episodes_episode">Questo episodio (TMDB)</string>
+</resources>

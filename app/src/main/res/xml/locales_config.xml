@@ -1,26 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- keep in step with app_language_values in values/arrays.xml -->
 <locale-config xmlns:android="http://schemas.android.com/apk/res/android">
-    <locale android:name="ar"/>
-    <locale android:name="cs"/>
-    <locale android:name="de"/>
-    <locale android:name="el"/>
-    <locale android:name="es"/>
-    <locale android:name="fr"/>
-    <locale android:name="hu"/>
-    <locale android:name="in"/>
-    <locale android:name="it"/>
-    <locale android:name="ja"/>
-    <locale android:name="ms"/>
-    <locale android:name="nb-rNO"/>
-    <locale android:name="pl"/>
-    <locale android:name="pt"/>
-    <locale android:name="pt-rBR"/>
-    <locale android:name="ru"/>
-    <locale android:name="sr"/>
-    <locale android:name="ta"/>
-    <locale android:name="th"/>
-    <locale android:name="tr"/>
-    <locale android:name="uk"/>
-    <locale android:name="vi"/>
-    <locale android:name="zh-rCN"/>
+    <locale android:name="en" />
+    <locale android:name="ar" />
+    <locale android:name="de" />
+    <locale android:name="es" />
+    <locale android:name="fa" />
+    <locale android:name="fr" />
+    <locale android:name="hi" />
+    <locale android:name="id" />
+    <locale android:name="it" />
+    <locale android:name="ja" />
+    <locale android:name="ko" />
+    <locale android:name="pl" />
+    <locale android:name="pt-BR" />
+    <locale android:name="ru" />
+    <locale android:name="tr" />
+    <locale android:name="uk" />
+    <locale android:name="vi" />
+    <locale android:name="zh-CN" />
+    <locale android:name="zh-TW" />
 </locale-config>

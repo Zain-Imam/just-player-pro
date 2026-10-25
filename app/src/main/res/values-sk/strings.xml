@@ -31,14 +31,9 @@
     <string name="pref_decoder_priority_only_device">Len dekodéry zariadenia</string>
     <string name="pref_language_audio">Predvolená zvuková stopa</string>
     <string name="pref_framerate_matching">Automatické prispôsobenie snímkovej frekvencie</string>
-    <string name="pref_skip_silence_off">Prehrať obsah tak, ako je</string>
     <string name="mediastore_empty">Nenašli sa žiadne video súbory</string>
     <string name="pref_decoder_priority_prefer_device">Preferovať dekodéry zariadenia (predvolené)</string>
     <string name="pref_map_dv7">Záložná kompatibilita s Dolby Vision profile 7</string>
-    <string name="pref_framerate_matching_off">Nemeniť obnovovaciu frekvenciu displeja</string>
-    <string name="pref_auto_pip_off">Neprepínať automaticky na režim obrazu v obraze</string>
-    <string name="pref_auto_pip_on">Prepnúť do režimu obrazu v obraze pri opustení aplikácie</string>
-    <string name="pref_skip_silence_on">Preskakovať časti s tichom vo zvukovej stope</string>
     <string name="pref_framerate_matching_on">Prepínať obnovovaciu frekvenciu displeja podľa snímkovej frekvencie videa</string>
     <string name="pref_map_dv7_on">Prehrávať obsah s Dolby Vision 7 profilom na HDR displejoch</string>
     <string name="pref_map_dv7_off">Prehrávať UHD Blu-ray obsah obsahujúci Dolby Vision tak, ako je</string>

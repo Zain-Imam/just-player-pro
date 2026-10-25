@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">Diese Untertitelart läuft nur mit der mpv-Engine. Stelle die Engine auf Auto oder mpv.</string>
+    <string name="subfiles_picture_no_mpv">Diese Untertitelart läuft nur mit der mpv-Engine, und mpv braucht Android 8.0 oder neuer.</string>
+    <string name="subfiles_picture_switching">Für diese Untertitel zu mpv gewechselt</string>
+</resources>

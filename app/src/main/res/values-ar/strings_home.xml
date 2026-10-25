@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pref_app_theme">فاتح أو داكن</string>
+    <string name="pref_app_theme_dark">داكن</string>
+    <string name="pref_app_theme_light">فاتح</string>
+    <string name="pref_recent_name_delay">تسمية الأفلام في الأخيرة بعد</string>
+    <string name="recent_delay_10s">10 ثوانٍ</string>
+    <string name="recent_delay_20s">20 ثانية</string>
+    <string name="recent_delay_30s">30 ثانية</string>
+    <string name="recent_delay_45s">45 ثانية</string>
+    <string name="recent_delay_1m">دقيقة واحدة</string>
+    <string name="recent_delay_2m">دقيقتان</string>
+    <string name="recent_delay_3m">3 دقائق</string>
+    <string name="recent_delay_5m">5 دقائق</string>
+</resources>

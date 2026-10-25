@@ -12,14 +12,9 @@
     <string name="pref_title">Tənzimləmələr</string>
     <string name="pref_framerate_matching">Avtomatik kadr sürəti uyğunluğu</string>
     <string name="pref_framerate_matching_on">Video kadr sürətinə uyğunlaşdırmaq üçün ekran yenilənmə sürətini dəyişdir</string>
-    <string name="pref_framerate_matching_off">Ekran yenilənmə sürətini dəyişdirmə</string>
     <string name="pref_tunneling">Tunelli oynatma</string>
     <string name="pref_auto_pip">Avtomatik şəkil içində şəkil</string>
-    <string name="pref_auto_pip_on">Tətbiqdən çıxarkən PiP-ə keçid et</string>
-    <string name="pref_auto_pip_off">Avtomatik olaraq PiP-ə keçid etmə</string>
     <string name="pref_skip_silence">Səssizliyi ötür</string>
-    <string name="pref_skip_silence_on">Səs axınında səssizlik hissələrin ötür</string>
-    <string name="pref_skip_silence_off">Məzmunu olduğu kimi oynat</string>
     <string name="onboarding_open_description">Video faylı açmaq üçün toxun.Xarici altyazıları yükləmək üçün uzun bas.</string>
     <string name="request_scope">Xarici altyazıları avtomatik yükləmək və ya kataloqda növbəti fayla keçidi aktivləşdirmək üçün videolarınızı ehtiva edən ən üst qovluğa (məsələn, Filmlər) %s giriş icazəsi verin.</string>
     <string name="pref_tunneling_summary">Tunelləmə 4K/HDR məzmunu üçün daha yaxşı dəstək verir, lakin bütün cihazlarda işləməyə bilər</string>

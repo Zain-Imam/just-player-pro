@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="film_backdrop_empty">#2C3A4A</color>
+    <color name="film_poster_empty">#3E4C5E</color>
+</resources>

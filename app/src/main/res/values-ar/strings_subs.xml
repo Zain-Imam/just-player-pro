@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_color_title">لون النص</string>
+    <string name="subtitle_color_white">أبيض</string>
+    <string name="subtitle_color_cream">كريمي</string>
+    <string name="subtitle_color_yellow">أصفر</string>
+    <string name="subtitle_color_amber">كهرماني</string>
+    <string name="subtitle_color_green">أخضر</string>
+    <string name="subtitle_color_cyan">فيروزي</string>
+    <string name="subtitle_color_sky">أزرق سماوي</string>
+    <string name="subtitle_color_pink">وردي</string>
+</resources>

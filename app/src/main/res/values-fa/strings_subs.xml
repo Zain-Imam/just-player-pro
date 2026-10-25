@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_color_title">رنگ متن</string>
+    <string name="subtitle_color_white">سفید</string>
+    <string name="subtitle_color_cream">کرم</string>
+    <string name="subtitle_color_yellow">زرد</string>
+    <string name="subtitle_color_amber">کهربایی</string>
+    <string name="subtitle_color_green">سبز</string>
+    <string name="subtitle_color_cyan">فیروزه‌ای</string>
+    <string name="subtitle_color_sky">آبی آسمانی</string>
+    <string name="subtitle_color_pink">صورتی</string>
+</resources>

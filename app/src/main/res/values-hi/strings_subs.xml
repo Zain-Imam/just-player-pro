@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subtitle_color_title">टेक्स्ट का रंग</string>
+    <string name="subtitle_color_white">सफ़ेद</string>
+    <string name="subtitle_color_cream">क्रीम</string>
+    <string name="subtitle_color_yellow">पीला</string>
+    <string name="subtitle_color_amber">एम्बर</string>
+    <string name="subtitle_color_green">हरा</string>
+    <string name="subtitle_color_cyan">सियान</string>
+    <string name="subtitle_color_sky">आसमानी नीला</string>
+    <string name="subtitle_color_pink">गुलाबी</string>
+</resources>

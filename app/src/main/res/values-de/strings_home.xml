@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pref_app_theme">Hell oder dunkel</string>
+    <string name="pref_app_theme_dark">Dunkel</string>
+    <string name="pref_app_theme_light">Hell</string>
+    <string name="pref_recent_name_delay">Filme im Verlauf benennen nach</string>
+    <string name="recent_delay_10s">10 Sek.</string>
+    <string name="recent_delay_20s">20 Sek.</string>
+    <string name="recent_delay_30s">30 Sek.</string>
+    <string name="recent_delay_45s">45 Sek.</string>
+    <string name="recent_delay_1m">1 Min.</string>
+    <string name="recent_delay_2m">2 Min.</string>
+    <string name="recent_delay_3m">3 Min.</string>
+    <string name="recent_delay_5m">5 Min.</string>
+</resources>

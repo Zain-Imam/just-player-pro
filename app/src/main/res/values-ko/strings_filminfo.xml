@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">링크 복사</string>
+    <string name="film_cast">출연진</string>
+    <string name="film_confirm_question">%1$s 맞나요?</string>
+    <string name="film_confirm_yes">예</string>
+    <string name="film_confirm_change">변경</string>
+    <string name="pref_mdblist_header">다른 사이트 평점</string>
+    <string name="pref_mdblist">MDBList 평점</string>
+    <string name="pref_mdblist_summary">IMDb, Rotten Tomatoes 등의 평점을 작품 정보에 표시합니다. mdblist.com에서 받은 본인의 무료 키가 필요합니다</string>
+    <string name="pref_key_mdblist">MDBList 키</string>
+    <string name="pref_key_mdblist_dialog">mdblist.com → Preferences → API key에서 무료로 받을 수 있습니다.</string>
+    <string name="pref_mdblist_card">정보 카드에 평점 표시</string>
+    <string name="pref_mdblist_card_summary">일시중지 시 날짜 아래에 평점 한 줄</string>
+    <string name="pref_mdblist_audience">Rotten Tomatoes 사용자</string>
+    <string name="pref_mdblist_key_works">MDBList 키가 작동합니다</string>
+    <string name="pref_mdblist_key_wrong">MDBList에서 이 키가 올바르지 않다고 합니다</string>
+    <string name="pref_mdblist_key_unreachable">키를 확인하려고 MDBList에 연결하지 못했습니다. 키는 저장되었으며, MDBList에 연결되면 평점이 표시됩니다.</string>
+    <string name="pref_ratings_order">평점 및 순서</string>
+    <string name="pref_ratings_order_summary">표시할 사이트와 순서</string>
+    <string name="pref_ratings_order_none">표시 안 함</string>
+    <string name="ratings_order_hint">이 목록의 맨 위가 작품 정보와 정보 카드에서 먼저 표시됩니다. 화살표로 사이트를 이동하고, 체크 표시로 표시하거나 숨기세요.</string>
+    <string name="pref_ratings_episodes">에피소드 평점</string>
+    <string name="ratings_episodes_show">시리즈 전체</string>
+    <string name="ratings_episodes_episode">이 에피소드 (TMDB)</string>
+</resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="subfiles_picture_needs_mpv">Loại phụ đề này phát bằng công cụ mpv. Hãy đổi công cụ sang Tự động hoặc mpv.</string>
+    <string name="subfiles_picture_no_mpv">Loại phụ đề này phát bằng công cụ mpv, vốn cần Android 8.0 trở lên.</string>
+    <string name="subfiles_picture_switching">Đã chuyển sang mpv cho phụ đề này</string>
+</resources>

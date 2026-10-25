@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="film_copy_link">複製連結</string>
+    <string name="film_cast">演員</string>
+    <string name="film_confirm_question">是《%1$s》嗎？</string>
+    <string name="film_confirm_yes">是</string>
+    <string name="film_confirm_change">變更</string>
+    <string name="pref_mdblist_header">其他網站的評分</string>
+    <string name="pref_mdblist">MDBList 評分</string>
+    <string name="pref_mdblist_summary">在影片資訊中顯示 IMDb、Rotten Tomatoes 等評分。需要你自己從 mdblist.com 免費取得的金鑰</string>
+    <string name="pref_key_mdblist">MDBList 金鑰</string>
+    <string name="pref_key_mdblist_dialog">可在 mdblist.com → Preferences → API key 免費取得。</string>
+    <string name="pref_mdblist_card">在資訊卡上顯示評分</string>
+    <string name="pref_mdblist_card_summary">暫停時在日期下方顯示一行評分</string>
+    <string name="pref_mdblist_audience">Rotten Tomatoes 使用者</string>
+    <string name="pref_mdblist_key_works">MDBList 金鑰可用</string>
+    <string name="pref_mdblist_key_wrong">MDBList 表示此金鑰有誤</string>
+    <string name="pref_mdblist_key_unreachable">無法連線 MDBList 來檢查金鑰。金鑰已儲存；能連線 MDBList 後就會顯示評分。</string>
+    <string name="pref_ratings_order">評分及其順序</string>
+    <string name="pref_ratings_order_summary">顯示哪些網站，以及顯示順序</string>
+    <string name="pref_ratings_order_none">都不顯示</string>
+    <string name="ratings_order_hint">清單最上方的網站在影片資訊和資訊卡中最先顯示。使用箭頭移動網站，使用勾號顯示或隱藏網站。</string>
+    <string name="pref_ratings_episodes">劇集評分</string>
+    <string name="ratings_episodes_show">整部劇</string>
+    <string name="ratings_episodes_episode">本集 (TMDB)</string>
+</resources>
