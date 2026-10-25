@@ -61,7 +61,6 @@ fi
 
 echo
 echo "--- and the film is untouched ---"
-# the skip offer only shows while playing
 adb shell "input keyevent KEYCODE_MEDIA_PLAY" >/dev/null 2>&1
 sleep 2
 if wait_for "Skip intro" 10; then

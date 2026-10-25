@@ -15,7 +15,6 @@ setpref boolean overlayOnPause false
 SNAP="$WORK/snap-subfix.txt"
 snap() { local n; for n in 1 2 3; do dump > "$SNAP"; [ -s "$SNAP" ] && grep -q 'bounds=' "$SNAP" && return 0; sleep 2; done; }
 texts() { snap; grep -oE 'text="[^"]+"' "$SNAP" | sed 's/text=//;s/"//g'; }
-# A dump can fail while video plays; ask twice.
 at() { local n c; for n in 1 2; do c="$(centre "$@")"; [ -n "$c" ] && { echo "$c"; return 0; }; sleep 2; done; }
 said() { adb logcat -d 2>/dev/null | tr -d '\r' | grep JustPlayer | grep -cE "$1"; }
 
@@ -24,20 +23,23 @@ open_subtitles() {
   tap_control 'Disable subtitles' 'Enable subtitles' Subtitles Subtitle >/dev/null
   sleep 2
 }
-# The rows of the subtitle picker down to its actions, then closed again.
 playing_row() {
   open_subtitles
   texts | awk '/^(Load a subtitle file…|Search online subtitles…)$/{exit} {print}' \
     | grep -v '^Subtitles$' > "$WORK/subfix-rows.txt"
   adb shell input keyevent KEYCODE_BACK; sleep 1
 }
-open_search() {
-  open_subtitles
+scroll_to_row() {
   local s i
   for i in 1 2 3 4; do
-    s="$(at text 'Search online subtitles…')"; [ -n "$s" ] && break
+    s="$(at text "$1")"; [ -n "$s" ] && break
     adb shell "input swipe $((SCREEN_W * 3 / 4)) $((SCREEN_H * 3 / 4)) $((SCREEN_W * 3 / 4)) $((SCREEN_H / 3)) 400"; sleep 2
   done
+  echo "$s"
+}
+open_search() {
+  open_subtitles
+  local s; s="$(scroll_to_row 'Search online subtitles…')"
   [ -z "$s" ] && return 1
   adb shell input tap $s; sleep 4
   if texts | grep -qE '(Wyzie|OpenSubtitles|SubDL)'; then return 0; fi
@@ -49,7 +51,6 @@ open_search() {
   local p; p="$(at text 'Inception')"; [ -n "$p" ] && { adb shell input tap $p; sleep 12; }
   texts | grep -qE '(Wyzie|OpenSubtitles|SubDL)'
 }
-# The first Wyzie result, scrolling the list until one shows.
 download_wyzie() {
   local i name x
   for i in $(seq 1 70); do
@@ -80,7 +81,6 @@ done
 playing_row
 ROWS="$(cat "$WORK/subfix-rows.txt")"
 COPIES="$(grep -cxF "$WANTED" "$WORK/subfix-rows.txt")"
-# The row after the playing one's title is its "Playing now" line.
 LAST_PLAYING="$(awk -v w="$WANTED" '$0 == w { n++ } /^Playing now/ { if (prev == w) p = n } { prev = $0 } END { print p + 0 }' "$WORK/subfix-rows.txt")"
 echo "  rows: $(echo "$ROWS" | tr '\n' '|')"
 [ "$COPIES" -ge 2 ] && [ "$LAST_PLAYING" = "$COPIES" ] \
@@ -94,7 +94,7 @@ adb shell "am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file
 adb shell input keyevent KEYCODE_MEDIA_PLAY >/dev/null; sleep 6
 open_subtitles
 adb logcat -c
-L="$(at text 'Load a subtitle file…')"
+L="$(scroll_to_row 'Load a subtitle file…')"
 [ -z "$L" ] && { fail "B: the picker offers to load a file"; exit 1; }
 adb shell input tap $L; sleep 5
 C="$(at text 'CANCEL')"; [ -n "$C" ] && { adb shell input tap $C; sleep 4; }

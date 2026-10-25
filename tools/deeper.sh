@@ -22,10 +22,6 @@ focused_row() {
   if [ -n "$named" ]; then echo "$named"; else echo "$node" | grep -oE 'bounds="[^"]+"' | head -1; fi
 }
 
-# --- the decoder extensions
-
-# The samples, fetched once and kept.
-# not in the repository: they come from the MPlayer sample archive
 fetch_samples() {
   mkdir -p "$MEDIA_DIR"
   local base="https://samples.mplayerhq.hu/A-codecs"
@@ -48,7 +44,6 @@ sample.opus|https://filesamples.com/samples/audio/opus/sample1.opus
 FETCH
 }
 
-# push a fetched file and open it by whatever URI the system gives
 stage_and_open() {   # stage_and_open <local name> <mime>
   local name="$1" mime="$2" remote="/sdcard/Movies/$1"
   [ -s "$MEDIA_DIR/$name" ] || return 1
@@ -61,7 +56,6 @@ stage_and_open() {   # stage_and_open <local name> <mime>
           | grep -oE '_id=[0-9]+' | head -1 | cut -d= -f2 | tr -d '\r')"
     if [ -n "$id" ]; then uri="content://media/external/$store/media/$id"; break; fi
   done
-  # A codec the scanner does not index at all still has a path.
   [ -z "$uri" ] && uri="file://$remote"
 
   adb shell "am force-stop $PKG" >/dev/null 2>&1
@@ -111,8 +105,6 @@ sample.opus|audio/opus|Opus
 FILES
 }
 
-# --- the pickers, driven by keys
-
 reach_by_keys() {   # reach_by_keys <name...> — walk the control row and press it
   local tries=0 focus=""
   while [ $tries -lt 16 ]; do
@@ -136,7 +128,6 @@ pickers_by_keys() {
     local label="${which%%:*}" rest="${which#*:}"
     local a="${rest%%:*}" b="${rest##*:}"
 
-    # show_controls, not OK: with the controls up, OK presses whatever has focus
     show_controls
     if ! reach_by_keys "$a" "$b"; then
       fail "the arrows reach the $label button"
@@ -165,9 +156,6 @@ pickers_by_keys() {
   check "nothing crashed driving the pickers" "$(crashed)"
 }
 
-# --- picture-in-picture
-
-# the flag this Android version reports
 in_pip() { adb shell "dumpsys activity $PKG | grep -c 'mIsInPictureInPictureMode=true'" 2>/dev/null | tr -d '\r'; }
 
 pip_check() {
@@ -187,7 +175,6 @@ pip_check() {
   [ -n "$(alive)" ] && pass "it is still running in picture-in-picture" \
                     || fail "it is still running in picture-in-picture"
 
-  # Back to full screen the only way a test may: by starting this app's screen.
   adb shell "am start -n $ACT" >/dev/null 2>&1
   sleep 4
   [ -n "$(alive)" ] && pass "and it comes back out again" \
@@ -195,10 +182,6 @@ pip_check() {
   check "nothing crashed around picture-in-picture" "$(crashed)"
 }
 
-# --- resuming where it left off
-
-# Open the film the way a file manager does: no extras at all.
-# extras such as open_film's subtitle make the launcher own the position
 open_film_plainly() {
   adb shell "am force-stop $PKG" >/dev/null 2>&1
   adb logcat -c >/dev/null 2>&1
@@ -225,8 +208,6 @@ resume_check() {
   fi
   pass "played to $before ms"
 
-  # Leave the way a person leaves.
-  # Back runs onStop, which saves the position; a force-stop does not.
   key KEYCODE_BACK
   sleep 3
   adb shell "am force-stop $PKG" >/dev/null 2>&1
@@ -241,7 +222,6 @@ resume_check() {
   done
   sleep 5
 
-  # it either resumes or asks; both are the setting working
   local asked after
   asked="$(dump | grep -oE 'text="[^"]*(Resume|resume)[^"]*"' | head -1)"
   after="$(position_ms)"
@@ -255,8 +235,6 @@ resume_check() {
   fi
   check "nothing crashed reopening" "$(crashed)"
 }
-
-# --- landscape
 
 landscape_check() {
   section "landscape"
@@ -275,15 +253,12 @@ landscape_check() {
   w="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | tail -1)"
   echo "        screen now: $w, rotation $now"
 
-  # The panel must still reach the trailing edge and not run off it.
   if tap_control Settings; then
     if onscreen text "Quick settings"; then
       pass "the quick panel opens in landscape"
     else
       fail "the quick panel opens in landscape"
     fi
-    # the window width once turned: wm size reports the panel as built (1080x2400)
-    # whichever way up, so the root view's bounds are used
     local right screen_w
     screen_w="$(dump | grep -oE 'bounds="\[0,0\]\[[0-9]+,[0-9]+\]"' | head -1 | grep -oE '[0-9]+,[0-9]+\]"$' | cut -d, -f1)"
     [ -z "$screen_w" ] && screen_w="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | tail -1 | tr x '\n' | sort -n | tail -1)"
@@ -301,7 +276,6 @@ landscape_check() {
   [ -n "$(alive)" ] && pass "still running in landscape" || fail "still running in landscape"
   check "nothing crashed in landscape" "$(crashed)"
 
-  # Put the orientation back.
   show_controls
   tap_control Rotate >/dev/null 2>&1
   sleep 3

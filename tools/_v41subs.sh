@@ -6,7 +6,6 @@ trap cleanup EXIT
 
 SUB_A="/sdcard/Movies/jpp-first.srt"
 SUB_B="/sdcard/Movies/jpp-second.srt"
-# real files: mpv lists only what it could load, Media3 lists missing ones too
 adb push "$(hostpath "$WORK/first.srt")" "$SUB_A" >/dev/null 2>&1
 adb push "$(hostpath "$WORK/second.srt")" "$SUB_B" >/dev/null 2>&1
 trap 'adb shell "rm -f $SUB_A $SUB_B" >/dev/null 2>&1; cleanup' EXIT
@@ -61,7 +60,6 @@ sleep 2
 
 echo
 echo "=== the position holds after a seek ==="
-# Far enough in that a jump back to the start is unmistakable.
 require_player
 adb shell "input keyevent KEYCODE_MEDIA_PLAY" >/dev/null 2>&1
 sleep 2
@@ -79,8 +77,6 @@ fi
 echo
 echo "=== the aspect-ratio button still cycles ==="
 show_controls >/dev/null
-# read the saved state: the announcement is gone before a dump finishes.
-# aspectMap keeps the mode per film; no entry means step 0.
 aspect_step() {
   local step
   step="$(adb shell "run-as $PKG cat /data/data/$PKG/shared_prefs/${PKG}_preferences.xml" 2>/dev/null \

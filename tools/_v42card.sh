@@ -11,7 +11,6 @@ ENGINE="${ENGINE:-mpv}"
 setpref string playbackEngine "$ENGINE"
 setpref boolean overlayOnPause true
 setpref int overlayDelaySeconds 0
-# a stored identity, as if the film had been looked up online
 setpref string onlineIdentities "{&quot;$SERVER/clip.ts&quot;:{&quot;isSeries&quot;:false,&quot;tmdbId&quot;:10378,&quot;title&quot;:&quot;Big Buck Bunny&quot;,&quot;year&quot;:&quot;2008&quot;,&quot;overview&quot;:&quot;A large and lovable rabbit deals with three tiny bullies.&quot;,&quot;rating&quot;:6.5}}"
 echo "== $ENGINE"
 

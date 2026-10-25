@@ -39,7 +39,6 @@ open_on() {   # open_on <engine> <id>
 said() { adb logcat -d 2>/dev/null | tr -d '\r' | grep -E "JustPlayer" | grep -oE "$1" | head -1; }
 
 echo "-- A: Media3 chosen, profile 5, by remote"
-# a key takes the new window out of touch mode, so Try can hold focus for OK
 open_on media3 "$ID5"
 sleep 1
 adb shell "input keyevent KEYCODE_DPAD_UP" >/dev/null 2>&1

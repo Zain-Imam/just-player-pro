@@ -10,6 +10,7 @@ prepare
 open_film
 for try in 1 2 3; do tap_control Settings && break; echo "  (retry  for the settings button)"; sleep 2; done
 sleep 2
+panel_row "Show info card" >/dev/null
 AT="$(centre content-desc 'Search again')"
 [ -z "$AT" ] && { echo "no search icon on the info card row"; exit 1; }
 echo "search icon at $AT"
@@ -37,7 +38,6 @@ dump | grep -oE 'text="[^"]+"' | head -8
 echo
 echo "--- and after closing and opening the file again ---"
 open_film
-# show_controls pauses, which brings up the card
 show_controls >/dev/null
 sleep 4
 shot card-after-reopen

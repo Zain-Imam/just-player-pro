@@ -9,7 +9,6 @@ OUT="$WORK/shots"; mkdir -p "$OUT"
 item() { echo; echo "-------- $*"; }
 shot() { adb shell screencap -p /sdcard/s.png >/dev/null 2>&1; adb pull /sdcard/s.png "$(hostpath "$OUT/$1.png")" >/dev/null 2>&1; }
 
-# opening with no file offers to resume, and that dialog covers the controls
 dismiss_resume() {
   if dump | grep -q 'Play last video'; then
     local at; at="$(centre text 'NOT NOW')"

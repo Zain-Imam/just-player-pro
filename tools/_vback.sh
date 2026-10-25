@@ -91,7 +91,6 @@ fi
 
 echo
 echo "--- from another application, leaving goes back to that application ---"
-# the device's Settings stands in for Stremio: an app in another task
 adb shell "am force-stop $PKG" >/dev/null 2>&1
 sleep 1
 adb shell "am start -a android.settings.SETTINGS" >/dev/null 2>&1

@@ -6,9 +6,6 @@ trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE "[0-9]+x[0-9]+" | head -1 | cut -dx -f1)"
 SCREEN_H="$(adb shell wm size 2>/dev/null | grep -oE "[0-9]+x[0-9]+" | head -1 | cut -dx -f2 | tr -d "\r")"
 
-# How many of this app's players the system is actually holding.
-# counted from the task history entries ("* Hist #0:") for this package only:
-# dumpsys mentions the class elsewhere, and debug and release builds share it
 players() {
   adb shell "dumpsys activity activities" 2>/dev/null \
     | grep -E '\* Hist +#' \
@@ -27,7 +24,6 @@ pref() {   # pref <key> <true|false>
   adb shell "run-as $PKG sh -c 'cat > $file'" < "$tmp"
 }
 
-# Playing, given a moment to get there.
 playing_soon() {
   local n
   for n in $(seq 1 12); do
@@ -45,9 +41,6 @@ session_state() {
 prepare
 
 echo "=== 33. a second film started from the home screen while the first is away ==="
-# picture-in-picture is off: with a film in a corner the launcher has focus
-# and the interlock refuses to press anything, so that case is left for a person
-# set explicitly: an earlier run may have left it on
 pref autoPiP false || { fail "could not settle picture-in-picture"; exit 1; }
 open_film
 sleep 4
@@ -62,11 +55,8 @@ adb shell "am start -n $HOME_ACT" >/dev/null 2>&1
 sleep 6
 decline_resume
 
-# tapped: am start carries NEW_TASK, which brings the old task forward instead
-# of starting a second player; a tap starts it from inside the task
 tap_row() {   # tap_row <label>
   local at n
-  # re-measure: the home screen is portrait, the size was taken in landscape
   refresh_screen
   for n in $(seq 1 10); do
     at="$(centre text "$1")"
@@ -96,7 +86,6 @@ if [ "$(current_activity)" = "PlayerActivity" ]; then
 else
   fail "the player did not come forward" "$(current_activity)"
 fi
-# told to play: whether a film starts by itself depends on how it was left
 key KEYCODE_MEDIA_PLAY
 sleep 2
 if playing_soon; then
@@ -113,12 +102,10 @@ key KEYCODE_MEDIA_PLAY
 sleep 3
 [ -n "$(playing)" ] && pass "the first film is playing" || fail "the first film is not playing"
 
-# Put away, so the sound is the thing being kept.
 adb shell "input keyevent KEYCODE_HOME" >/dev/null 2>&1
 sleep 5
 echo "  still sounding with the window gone: $([ -n "$(playing)" ] && echo yes || echo no)"
 
-# the device's Settings stands in for another app; nothing in it is pressed
 adb shell "am start -a android.settings.SETTINGS" >/dev/null 2>&1
 sleep 4
 CURRENT_SCREEN="$ACT"

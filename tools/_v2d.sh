@@ -14,7 +14,6 @@ controls_up() {
 prepare
 open_film
 
-# tap_control scrolls the strip to the button; after that its position is known
 controls_up >/dev/null 2>&1
 if ! tap_control Rotate; then
   fail "the rotate button can be reached at all"
@@ -31,7 +30,6 @@ for n in 1 2 3 4; do
     continue
   fi
   tap $AT
-  # no sleep: read the announcement while it is up
   T="$(dump | grep -oE 'text="[^"]*(orientation|Auto-rotate)[^"]*"' | head -1)"
   echo "        pass $n: ${T:-nothing announced}"
   [ -n "$T" ] && SEEN="$SEEN

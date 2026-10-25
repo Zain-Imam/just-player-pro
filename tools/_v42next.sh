@@ -26,7 +26,6 @@ echo "  first film: $T1"
 [ "$T1" = "FirstFilm" ] && pass "the first film has the title it was given" \
   || fail "the first film has the title it was given" "$T1"
 
-# The same player, handed a different film as a shared link.
 NEXT="$SERVER/side/second$RANDOM.ts"
 adb shell "am start -a android.intent.action.SEND -t text/plain --es android.intent.extra.TEXT '$NEXT' -n $ACT" >/dev/null 2>&1
 sleep 10

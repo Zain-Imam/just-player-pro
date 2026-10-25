@@ -16,7 +16,6 @@ controls_up() {
 prepare
 
 item "11: the rotate control cycles three ways"
-# the announcement lasts 2.5s, so read it straight away
 open_film
 SEEN=""
 for n in 1 2 3 4; do
@@ -38,7 +37,6 @@ else
 fi
 
 item "15: buffering says so"
-# the label only shows while refilling, so poll a big network file fast
 adb shell "am force-stop $PKG" >/dev/null 2>&1
 CURRENT_SCREEN="$ACT"
 adb shell "am start -a android.intent.action.VIEW -n $ACT -t video/mp4 \
@@ -49,7 +47,6 @@ for i in $(seq 1 25); do
 done
 check "the word Buffering appears while loading" "$FOUND" "not seen across 25 looks"
 
-# was the spinner ever up: tells "no label" from "no wait"
 adb shell "am force-stop $PKG" >/dev/null 2>&1
 adb shell "am start -a android.intent.action.VIEW -n $ACT -t video/mp4 \
   -d 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_30MB.mp4'" >/dev/null 2>&1

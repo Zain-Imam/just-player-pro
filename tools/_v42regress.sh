@@ -3,8 +3,8 @@
 # one log each, and a summary line per script.
 export PATH="$PATH:$HOME/AppData/Local/Android/Sdk/platform-tools"
 export PKG=app.justplayerpro.android.debug
-TOOLS="/c/Users/SC/Downloads/Just Player Pro/tools"
-OUT="/c/Users/SC/Downloads/Just Player Pro/.smoke-media/regress"
+TOOLS="$(cd "$(dirname "$0")" && pwd)"
+OUT="$TOOLS/../.smoke-media/regress"
 mkdir -p "$OUT"
 ENGINE="$1"; shift
 export ENGINE
@@ -16,7 +16,7 @@ for s in "$@"; do
   adb logcat -b crash -c >/dev/null 2>&1
   log="$OUT/$ENGINE-$s.log"
   start=$(date +%s)
-  timeout 600 bash "./$s.sh" > "$log" 2>&1
+  timeout "${SCRIPT_TIMEOUT:-600}" bash "./$s.sh" > "$log" 2>&1
   code=$?
   p=$(grep -c "^PASS" "$log"); f=$(grep -c "^FAIL" "$log")
   crash=$(adb logcat -b crash -d 2>/dev/null | grep -c "FATAL\|AndroidRuntime")

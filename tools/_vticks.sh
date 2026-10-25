@@ -17,7 +17,6 @@ snap() {
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1
          adb pull /sdcard/jpp-shot.png "$(hostpath "$WORK/shots/$1.png")" >/dev/null 2>&1; }
 
-# the summary line under a row's title
 summary_under() {
   snap
   grep -A6 -F "text=\"$1" "$SNAP" | grep -oE 'text="(✓[^"]*|Not set)"' | head -1 \
@@ -52,7 +51,6 @@ for row in "TMDB key" "Wyzie key"; do
 done
 shot ticks-set
 
-# read from the app: the .env test keys may set every one of them
 key_set() { adb shell "run-as $PKG cat shared_prefs/${PKG}_preferences.xml" 2>/dev/null   | tr -d '' | grep -E "name=\"$1\">[^<]+<" >/dev/null; }
 echo "--- the others, ticked exactly when they have a key ---"
 for pair in "SubDL key:apiKeySubdl" "OpenSubtitles key:apiKeyOpenSubtitles"; do

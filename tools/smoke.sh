@@ -6,8 +6,6 @@ HERE_SCRIPT="$(cd "$(dirname "$0")" && pwd)"
 . "$HERE_SCRIPT/lib.sh"
 trap cleanup EXIT
 
-# --- checks
-
 prepare
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
 SCREEN_H="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f2)"
@@ -215,7 +213,6 @@ echo
 echo "== the run left the settings as it found them"
 adb shell "run-as $PKG cat shared_prefs/${PKG}_preferences.xml" 2>/dev/null > "$WORK/prefs-after.xml"
 if [ -s "$WORK/prefs-before.xml" ]; then
-  # sorted: Android writes the file in its own order
   DRIFT="$(diff <(sort "$WORK/prefs-before.xml") <(sort "$WORK/prefs-after.xml") 2>/dev/null \
            | grep -E '^[<>]' | grep -oE 'name="[^"]+"' | sort -u \
            | grep -vE 'mediaUri|mediaType|position|urlHistory|onlineIdentities|subtitleUri|subtitleTrackId|resizeMode|aspectStep|aspectMap|launchMemory|brightness|scale|speed' \

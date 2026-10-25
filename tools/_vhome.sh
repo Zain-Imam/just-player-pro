@@ -37,9 +37,7 @@ shot home-root
 echo "--- the test folder is listed, with a count ---"
 snap
 echo "  rows: $(grep -oE 'text="[^"]+"' "$SNAP" | sed 's/text=//;s/"//g' | tr '\n' '|' | cut -c1-300)"
-# scrolled for: folders late in the alphabet can be below the fold
 SEEN=0
-# 25 steps: a full Recent list and many folders need more than 10 to pass M
 for n in $(seq 1 25); do
   grep -qF 'text="Movies"' "$SNAP" && { SEEN=1; break; }
   key KEYCODE_DPAD_DOWN
@@ -92,7 +90,6 @@ else
   fail "Back from a folder did nothing" \
        "still showing: $(grep -oE 'text="[^"]+"' "$SNAP" | head -1)"
 fi
-# Back into the folder for the checks that follow.
 focus_row_by_dpad "$SNAP" Movies 14 >/dev/null
 key KEYCODE_DPAD_CENTER
 sleep 3
@@ -114,9 +111,6 @@ else
 fi
 
 echo "--- Back returns to the home screen, not out of the app ---"
-# Back once, and again only if the controls ate that press: two Backs after
-# the controls have faded would leave the home screen too.
-# the interlock guards the home screen from here, or it restarts the player
 CURRENT_SCREEN="$HOME_ACT"
 adb shell "input keyevent KEYCODE_BACK" >/dev/null 2>&1
 if ! wait_for_activity HomeActivity 10; then
@@ -140,13 +134,11 @@ for n in $(seq 1 12); do
   sleep 1
 done
 echo "  on the row: $(grep 'focused="true"' "$SNAP" | tail -1 | grep -oE 'content-desc="[^"]*"')"
-# right off the row onto the star
 key KEYCODE_DPAD_RIGHT
 sleep 1
 snap
 echo "  after right: $(grep 'focused="true"' "$SNAP" | tail -1 | grep -oE 'content-desc="[^"]*"')"
 
-# a favourite outlives the run, so read the star's state first
 if grep 'focused="true"' "$SNAP" | tail -1 | grep -qF 'content-desc="Remove from favourites"'; then
   echo "  (already a favourite from an earlier run; clearing it first)"
   key KEYCODE_DPAD_CENTER
@@ -158,14 +150,12 @@ key KEYCODE_DPAD_CENTER
 sleep 2
 snap
 shot home-pinned
-# lowercased: headers are drawn in capitals, and grep -qiF aborts under Git Bash
 if tr 'A-Z' 'a-z' < "$SNAP" | grep -qF 'text="favourites"'; then
   pass "a favourited folder gets its own section"
 else
   fail "no favourites section appeared" "visible: $(grep -oE 'text="[^"]+"' "$SNAP" | sed 's/text=//;s/"//g' | tr '
 ' '|' | cut -c1-220)"
 fi
-# And again, to leave the device as it was found.
 key KEYCODE_DPAD_CENTER
 sleep 2
 
@@ -173,7 +163,6 @@ echo "--- sorting changes the order ---"
 open_home
 snap
 BEFORE="$(grep -oE 'text="[^"]+"' "$SNAP" | sed 's/text=//;s/"//g' | tr '\n' '|')"
-# Up from the list into the bar, then across to the sort button.
 key KEYCODE_DPAD_UP
 sleep 1
 for n in 1 2 3 4 5 6; do
@@ -185,7 +174,6 @@ done
 key KEYCODE_DPAD_CENTER
 sleep 2
 snap
-# lowercased: the dialog headings are drawn in capitals
 if tr 'A-Z' 'a-z' < "$SNAP" | grep -qF 'text="sort by"' \
    && tr 'A-Z' 'a-z' < "$SNAP" | grep -qF 'text="order"'; then
   pass "the sort menu opens from the remote, with both sections"

@@ -10,7 +10,6 @@ seen() { dump | grep -q "$1"; }
 
 prepare
 
-# a second file, so the two differ in address and name
 SECOND="/sdcard/Movies/jpp-second.ts"
 adb shell "cp $MEDIA $SECOND" >/dev/null 2>&1
 adb shell "am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file://$SECOND" >/dev/null 2>&1
@@ -52,7 +51,6 @@ else
   pass "nothing of the first film is left on the title"
 fi
 
-# a film keeps the title its launching app sent, so its own one shows here
 echo "--- and the first film again, with no title, so its own remembered one shows ---"
 adb shell "am start -a android.intent.action.VIEW -d $URI -t video/mp2t -n $ACT --grant-read-uri-permission" >/dev/null 2>&1
 sleep 8

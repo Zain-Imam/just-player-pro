@@ -69,7 +69,6 @@ else
   exit 1
 fi
 
-# the other-engine offer is Media3 only: from mpv there is nowhere better to go
 ENGINE="$(adb shell "run-as $PKG cat shared_prefs/${PKG}_preferences.xml" 2>/dev/null \
   | grep -oE 'name="playbackEngine">[a-z0-9]+' | cut -d'>' -f2 | tr -d '\r')"
 ENGINE="${ENGINE:-auto}"
@@ -85,10 +84,8 @@ else
   WANTED="$WANTED|Try mpv"
 fi
 
-# Case-insensitively: the dialog theme puts its buttons in capitals.
 for want in $(echo "$WANTED" | tr '|' '\n' | tr ' ' '_'); do
   want="$(echo "$want" | tr '_' ' ')"
-  # Both sides folded by hand: grep -i on this shell dies on the dump.
   if tr 'A-Z' 'a-z' < "$SNAP" | grep -qF "$(echo "$want" | tr 'A-Z' 'a-z')"; then
     pass "it offers: $want"
   else

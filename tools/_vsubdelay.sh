@@ -95,7 +95,6 @@ AFTER="$(position)"
 echo "  position after: ${AFTER}ms   state: $(state)"
 shot subdelay-after
 
-# the player logs each reopen; read only this app's tag
 RESTARTS="$(adb logcat -d -s JustPlayer 2>/dev/null | grep -c 'Restarting playback')"
 echo "  reopens logged: $RESTARTS"
 if [ "$RESTARTS" = "0" ]; then

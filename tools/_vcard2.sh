@@ -22,7 +22,6 @@ open_film
 echo "--- telling it the first film is Inception ---"
 for try in 1 2 3; do tap_control Settings && break; sleep 2; done
 sleep 2
-# in landscape the panel scrolls; reach the card row first
 panel_row "Show info card" >/dev/null
 sleep 2
 AT="$(centre content-desc 'Search again')"

@@ -35,7 +35,6 @@ play_on() { [ -z "$(playing)" ] && tap_control Play Pause >/dev/null 2>&1; sleep
 prepare
 adb push "$(hostpath "$WORK/first.srt")" /sdcard/Movies/first.srt >/dev/null 2>&1
 
-# --- subtitle size parity
 for ENGINE in Media3 mpv; do
   item "17 size: $ENGINE, fit then crop"
   set_engine "$ENGINE" >/dev/null 2>&1
@@ -47,7 +46,6 @@ for ENGINE in Media3 mpv; do
   for i in $(seq 1 25); do sleep 1; case "$(focused)" in *"$PKG"*) break ;; esac; done
   play_on
   shot "size-$ENGINE-fit"
-  # One press of the frame button moves off fit.
   controls_up >/dev/null 2>&1
   tap_control Resize >/dev/null 2>&1
   play_on
@@ -55,7 +53,6 @@ for ENGINE in Media3 mpv; do
   pass "$ENGINE: captured fit and crop for comparison"
 done
 
-# --- the HD mark
 item "21: the quality row carries an HD mark"
 set_engine Auto >/dev/null 2>&1
 adb shell "am force-stop $PKG" >/dev/null 2>&1
@@ -76,9 +73,7 @@ else
   fail "the quick panel opened"
 fi
 
-# --- a subtitle track that fails on use
 item "18: a subtitle that loads as a track and then fails"
-# without storage permission the track is seen but its file cannot be read
 adb shell "pm revoke $PKG android.permission.READ_MEDIA_VIDEO" >/dev/null 2>&1
 adb shell "appops set $PKG MANAGE_EXTERNAL_STORAGE ignore" >/dev/null 2>&1
 sleep 2
@@ -121,7 +116,6 @@ else
   fail "the subtitle picker opened"
 fi
 
-# Put the permissions back, whatever happened above.
 adb shell "pm grant $PKG android.permission.READ_MEDIA_VIDEO" >/dev/null 2>&1
 adb shell "appops set $PKG MANAGE_EXTERNAL_STORAGE allow" >/dev/null 2>&1
 echo "        (storage permission restored)"

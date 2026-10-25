@@ -63,7 +63,6 @@ echo "--- what came back ---"
 shot subname-results
 LIST="$(texts)"
 echo "$LIST" | head -12 | sed 's/^/    /'
-# first real result: a title whose next line has its source and language
 FIRST="$(echo "$LIST" | awk '
   NR > 1 && $0 ~ /·/ && $0 ~ /(Wyzie|OpenSubtitles|SubDL|addon)/ { print previous; exit }
   { previous = $0 }')"
@@ -97,7 +96,6 @@ else
   pass "no bare file id in the picker"
 fi
 
-# the release name, or its start: the picker row may be shortened
 STEM="$(echo "$FIRST" | cut -c1-12)"
 if echo "$NOW" | grep -qF "$STEM"; then
   pass "the track is called what the subtitle was called: $STEM…"

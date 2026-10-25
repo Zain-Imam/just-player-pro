@@ -23,7 +23,6 @@ texts() { grep -oE 'text="[^"]+"' "$SNAP" | sed 's/text=//;s/"//g' | tr '\n' '|'
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1
          adb pull /sdcard/jpp-shot.png "$(hostpath "$WORK/shots/$1.png")" >/dev/null 2>&1; }
 
-# Whether either of the two working dialogs shows up in the next few seconds.
 saw_working() {
   local n
   for n in 1 2 3 4 5 6; do
@@ -60,7 +59,6 @@ fi
 sleep 4
 snap
 
-# the test file has no film name, so the player asks once
 if grep -qF 'text="Which is this?"' "$SNAP"; then
   pass "an unrecognisable name is asked about rather than guessed at"
   FIELD="$(centre class android.widget.EditText)"
@@ -76,7 +74,6 @@ if grep -qF 'text="Which is this?"' "$SNAP"; then
   tap $SEARCH
   sleep 10
   snap
-  # A grid of posters to choose the right release from.
   POSTER="$(dump | grep -m1 -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' >/dev/null; centre text "$FILM")"
   if [ -n "$POSTER" ]; then
     tap $POSTER
@@ -125,8 +122,6 @@ else
 fi
 
 echo "--- and it is the same list, not a new one ---"
-# not timed: each dump costs seconds of uiautomator. The network path always
-# shows a dialog (checked above); this checks the list is the same one.
 FIRST_COUNT="$(echo "$FIRST" | grep -oE '[0-9]+ subtitles' | head -1)"
 SECOND_COUNT="$(echo "$SECOND" | grep -oE '[0-9]+ subtitles' | head -1)"
 FIRST_TOP="$(echo "$FIRST" | cut -d'|' -f4)"

@@ -24,7 +24,6 @@ for n in $(seq 1 14); do
 done
 [ -z "$AT" ] && { fail "no background slider on the settings screen"; exit 1; }
 
-# drag the slider to the value
 set -- $(bounds_of class android.widget.SeekBar)
 if [ $# -ne 4 ]; then
   set -- $(dump | grep -F 'SeekBar' | tail -1 \

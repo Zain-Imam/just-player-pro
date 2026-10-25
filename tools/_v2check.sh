@@ -29,7 +29,6 @@ open_panel() {
 
 prepare
 
-# --- settings
 item "7: Check for updates sits next to Built by"
 open_settings
 if scroll_to "Built by" >/dev/null; then
@@ -89,7 +88,6 @@ else
   fail "found Recently played URLs"
 fi
 
-# --- the player
 item "6: with nothing open, the controls stay"
 adb shell "am force-stop $PKG" >/dev/null 2>&1
 CURRENT_SCREEN="$ACT"
@@ -97,7 +95,6 @@ adb shell "am start -n $ACT" >/dev/null 2>&1
 sleep 5
 if onscreen content-desc Open; then
   pass "controls are up with no file"
-  # open the quick panel and come back
   if open_panel; then
     key KEYCODE_BACK; sleep 3
     if onscreen content-desc Open; then
@@ -136,7 +133,6 @@ else
   fail "found the Open button"
 fi
 
-# --- with a film
 item "2 and 4: search again, and copy link, in the quick panel"
 open_film
 if open_panel; then

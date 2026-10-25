@@ -83,8 +83,6 @@ fi
 key KEYCODE_BACK
 sleep 2
 
-# measured at half speed: 1.5x of this 1080p60 clip is 90fps, which mpv
-# caps at what the hardware draws; 30fps measures the speed control instead
 echo "--- set it to half speed ---"
 open_panel || { fail "the quick settings panel did not open"; exit 1; }
 focus_speed || { fail "could not reach the speed row"; exit 1; }

@@ -15,7 +15,6 @@ centre_like() {
     | awk 'NF==4 {print int(($1+$3)/2), int(($2+$4)/2)}'
 }
 
-# the switch's state, read from the summary under its title
 setting_state() {
   local summary
   summary="$(dump | grep -A6 -F "$SETTING" | grep -oE 'text="(The screen may go off[^"]*|Playback stops[^"]*)"' | head -1)"
@@ -29,7 +28,6 @@ setting_state() {
 reach_setting() {
   local n at
   open_settings
-  # re-measure: the size was taken in landscape with the film up
   refresh_screen
   for n in $(seq 1 16); do
     at="$(centre_like "$SETTING")"
@@ -45,8 +43,6 @@ set_background_audio() {
   local want="$1" at state
   at="$(reach_setting)"
   [ -z "$at" ] && { fail "no '$SETTING' row in settings"; exit 1; }
-  # scroll into full view: the summary that holds the state is below the edge;
-  # refresh_screen again here, since reach_setting ran in a subshell
   refresh_screen
   swipe $((SCREEN_W / 2)) $((SCREEN_H * 60 / 100)) $((SCREEN_W / 2)) $((SCREEN_H * 45 / 100)) 700
   sleep 1
@@ -65,7 +61,6 @@ set_background_audio() {
   fi
 }
 
-# press Home and stay away for a while
 go_home() {
   key KEYCODE_HOME
   sleep "${1:-5}"

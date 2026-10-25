@@ -1,7 +1,10 @@
 #!/bin/bash
 # The chosen title survives reopening; the player's undo offer goes after 3s.
 . "$(dirname "$0")/lib.sh"
+. "$(dirname "$0")/_v42lib.sh"
 trap cleanup EXIT
+setpref boolean overlayOnPause true
+setpref boolean skipSegments true
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1
          adb pull /sdcard/jpp-shot.png "$(hostpath "$WORK/shots/$1.png")" >/dev/null 2>&1; }
@@ -24,7 +27,6 @@ echo
 echo "--- 2. the undo offer in the player itself ---"
 play_player 2>/dev/null || tap_control "Play" >/dev/null 2>&1
 sleep 1
-# the skip button only shows over a playing film
 adb shell "input keyevent KEYCODE_MEDIA_PLAY" >/dev/null 2>&1
 sleep 3
 for n in $(seq 1 12); do
@@ -45,7 +47,6 @@ else
   else
     fail "no undo offer after skipping"
   fi
-  # look again once the undo window is over
   while [ $(( ($(date +%s%N) - START) / 1000000 )) -lt 4200 ]; do sleep 0.3; done
   shot undo-late
   T=$(( ($(date +%s%N) - START) / 1000000 ))

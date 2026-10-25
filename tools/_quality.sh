@@ -27,7 +27,6 @@ controls_up() {
   onscreen content-desc Settings
 }
 
-# What the header says the picture is, e.g. 1920×1080.
 resolution() { dump | grep -oE 'text="[0-9]+×[0-9]+[^"]*"' | head -1; }
 
 open_panel() {
@@ -79,7 +78,6 @@ for ENGINE in Media3 mpv; do
   echo "        rungs: $LADDER"
   shot "$ENGINE-quality-list"
 
-  # the lowest rung offered is the likeliest to differ from Auto
   PICK=""
   for P in 234p 270p 360p 396p 480p 540p; do
     if echo "$LADDER" | grep -q "\"$P\""; then PICK="$P"; break; fi
@@ -95,7 +93,6 @@ for ENGINE in Media3 mpv; do
     key KEYCODE_BACK; sleep 2; continue
   fi
   tap $C; sleep 6
-  # let it switch, then read the header again
   controls_up >/dev/null 2>&1
   AFTER="$(resolution)"
   echo "        header after choosing $PICK: ${AFTER:-none}"

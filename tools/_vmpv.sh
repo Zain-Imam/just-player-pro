@@ -26,7 +26,6 @@ for n in $(seq 1 10); do
 done
 
 echo "--- 3: through the settings screen and back, on 4:3 ---"
-# back to Default, then four presses to 4:3
 for n in 1 2 3 4; do
   show_controls >/dev/null
   AT="$(find_control Resize)"

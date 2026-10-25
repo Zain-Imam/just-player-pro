@@ -17,7 +17,6 @@ set_engine() {
   tap $c; sleep 2
 }
 
-# the info card can hide the controls again, so one press may not do
 controls_up() {
   show_controls
   local n
@@ -74,11 +73,9 @@ choose() {   # choose <row text>
 try() {   # try <row text>
   echo
   echo "== choosing $1"
-  # close the previous picker first: it covers the controls
   if dump | grep -q 'text="Subtitles"'; then key KEYCODE_BACK; sleep 2; fi
   open_picker >/dev/null 2>&1 || { echo "   picker would not open"; return; }
   choose "$1" || return
-  # let it play so a cue is on screen
   key KEYCODE_DPAD_CENTER >/dev/null 2>&1
   sleep 5
   local c; c="$(cues)"; echo "   showing: ${c:-nothing}"

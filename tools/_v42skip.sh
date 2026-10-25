@@ -14,7 +14,6 @@ setpref boolean overlayOnPause false
 setpref boolean skipSegments true
 setpref boolean backgroundAudio false
 
-# The renamed copy, made once.
 if [ ! -s "$WORK/skip.mkv" ]; then
   echo "making the chaptered copy"
   node -e '
@@ -49,7 +48,6 @@ open_at() {   # open_at <ms> [remote]
   CURRENT_SCREEN="$ACT"
   adb shell "am start -a android.intent.action.VIEW -d $SKIP_URI -t video/x-matroska -n $ACT --grant-read-uri-permission --ei position $1" >/dev/null 2>&1
   if [ "${2:-}" = "remote" ]; then
-    # a new window starts in touch mode; a key at once, before the offer, leaves it
     sleep 0.8
     adb shell "input keyevent KEYCODE_DPAD_UP" >/dev/null 2>&1
   fi
@@ -57,7 +55,6 @@ open_at() {   # open_at <ms> [remote]
 }
 
 remote_mode() {
-  # Any key leaves touch mode; on the home screen it moves nothing that matters.
   adb shell "input keyevent KEYCODE_DPAD_UP" >/dev/null 2>&1
   sleep 1
 }
@@ -67,7 +64,6 @@ press_skip() {
   sleep 4
 }
 
-# Where the button sits on this phone: bottom right, above the controls.
 tap_skip() {
   local w h
   w="$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f2 | tr -d '')"

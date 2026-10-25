@@ -19,7 +19,6 @@ measure() {   # measure <seconds>
   sleep 6
   adb logcat -c >/dev/null 2>&1
   require_player
-  # High on the picture: the middle is play/pause and the bottom is the bar.
   adb shell input tap $((SCREEN_W / 2)) $((SCREEN_H / 5)) >/dev/null 2>&1
   sleep $(( $1 + 12 ))
   adb logcat -d -v epoch -s JustPlayer 2>/dev/null | grep 'Controls ' > "$WORK/ctl.log"
@@ -32,7 +31,6 @@ measure() {   # measure <seconds>
     fail "asked for ${1}s, but the controls never hid" "$(tail -3 "$WORK/ctl.log")"
     return
   fi
-  # within 0.75s of the setting; the fade is a fixed cost
   local ok
   ok="$(awk -v g="$got" -v w="$1" 'BEGIN { d = g - w; if (d < 0) d = -d; print (d <= 0.75) ? "y" : "n" }')"
   if [ "$ok" = "y" ]; then

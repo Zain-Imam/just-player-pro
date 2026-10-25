@@ -12,15 +12,10 @@ ENV_FILE="$HERE_SCRIPT/../.env"
 
 section() { echo; echo "======== $*"; }
 
-# --- settings
-
-# read a preference from the app (debuggable builds only)
 pref() {
   adb shell "run-as $PKG cat shared_prefs/${PKG}_preferences.xml" 2>/dev/null \
     | tr '<' '\n' | grep -F "name=\"$1\"" | head -1
 }
-
-# --- configure from .env
 
 configure_from_env() {
   section "configuring the app from .env, through its own setup page"
@@ -29,8 +24,6 @@ configure_from_env() {
     fail "found .env" "no $ENV_FILE"
     return 1
   fi
-  # Read, never sourced and never echoed.
-  # sourcing "NAME:value" lines would run them and print the secrets in errors
   local line name value count=0
   while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in ''|'#'*) continue ;; esac
@@ -53,7 +46,6 @@ configure_from_env() {
   tap $at
   sleep 5
 
-  # The dialog prints the address and the PIN.
   local body port pin
   body="$(dump | grep -oE 'text="[^"]*[0-9]{4,}[^"]*"' | head -3 | tr '\n' ' ')"
   port="$(echo "$body" | grep -oE ':[0-9]{4,5}' | head -1 | tr -d ':')"
@@ -65,7 +57,6 @@ configure_from_env() {
   fi
   pass "the setup page is listening on port $port"
 
-  # Reach the device's own server from here rather than over the network.
   adb forward "tcp:$port" "tcp:$port" >/dev/null 2>&1
   local base="http://127.0.0.1:$port"
 
@@ -84,7 +75,6 @@ configure_from_env() {
   if [ -z "$token" ]; then fail "the page issued a token"; return 1; fi
   pass "the page issued a token"
 
-  # Save every key that .env carries.
   local saved
   saved="$(curl -s --max-time 180 -b "$jar" -X POST \
     --data-urlencode "token=$token" \
@@ -111,7 +101,6 @@ configure_from_env() {
   rejected="$(echo "$saved" | grep -oE 'Not saved: [^<]*' | head -1)"
   [ -n "$rejected" ] && echo "        note: $rejected"
 
-  # Test each key through the page, which is the same check settings runs.
   local field
   for field in apiKeyTmdb apiKeyOpenSubtitles apiKeySubdl apiKeyWyzie; do
     local answer
@@ -126,7 +115,6 @@ configure_from_env() {
     esac
   done
 
-  # Addon 1 ships configured; the page must be able to test it too.
   local addon
   addon="$(curl -s --max-time 90 -b "$jar" -X POST \
     --data-urlencode "token=$token" --data-urlencode "field=subtitleAddon1" \
@@ -137,7 +125,6 @@ configure_from_env() {
     *) pass "the built-in addon answers: $addon" ;;
   esac
 
-  # Put the page away.
   local stop
   stop="$(centre text 'Stop the page')"
   [ -z "$stop" ] && stop="$(centre text 'STOP THE PAGE')"
@@ -147,25 +134,18 @@ configure_from_env() {
   adb forward --remove "tcp:$port" >/dev/null 2>&1
 }
 
-# --- run it
-
 prepare
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
 SCREEN_H="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f2)"
 
 configure_from_env
 
-# --- every setting
-
-# Back skips the interlock, only to leave a system picker this test opened
 back_anywhere() { adb shell "input keyevent KEYCODE_BACK" >/dev/null 2>&1; }
 
 sweep_settings() {
   section "every setting: found, pressed, and survived"
 
   local line type title at
-  # Read from a descriptor of its own.
-  # adb reads stdin, so a loop fed on stdin would lose its list to the first adb
   while IFS='|' read -r type title <&3; do
     [ -z "$title" ] && continue
 
@@ -179,7 +159,6 @@ sweep_settings() {
 
     case "$title" in
       "Set up from your phone")
-        # Already driven end to end above, and its dialog cannot be cancelled.
         continue ;;
       "Choose custom font"|"Subtitle download folder")
         tap $at
@@ -193,7 +172,6 @@ sweep_settings() {
         fi
         continue ;;
       "Built by")
-        # not pressed: it opens another app; ask the system which app would answer
         if adb shell "cmd package query-activities -a android.intent.action.VIEW \
                       -d https://github.com/Zain-Imam" 2>/dev/null \
              | grep -qE "packageName=(com.github.android|com.android.chrome|.*browser.*)"; then
@@ -224,7 +202,6 @@ sweep_settings() {
 
     case "$type" in
       SwitchPreferenceCompat)
-        # Pressed once it flipped; press it again so the run changes nothing.
         at="$(centre text "$title")"
         [ -n "$at" ] && { tap $at; sleep 1; }
         pass "toggled and restored: $title" ;;
@@ -237,8 +214,6 @@ sweep_settings() {
       *)
         pass "opened: $title" ;;
     esac
-
-    # no Back here: on a screen with no dialog it would leave settings
 
     if [ -z "$(alive)" ]; then fail "still alive after: $title"; fi
   done 3<<'ROWS'
@@ -285,8 +260,6 @@ Preference|Licences
 ROWS
 }
 
-# --- both engines
-
 set_engine() {   # set_engine Media3 | mpv | Auto
   open_settings
   local at
@@ -323,7 +296,6 @@ engine_matrix() {
       *)           fail "$engine: the header names a different engine" "$meta" ;;
     esac
 
-    # The subtitle the launcher handed over must be listed on either engine.
     if tap_control "Disable subtitles" "Enable subtitles"; then
       if onscreen text "Smoke"; then
         pass "$engine: the launcher's subtitle is listed"
@@ -335,7 +307,6 @@ engine_matrix() {
       fail "$engine: found the subtitle button"
     fi
 
-    # The audio track must be described, not numbered.
     if tap_control "Audio track"; then
       if dump | grep -qE 'Stereo|Mono|5\.1|7\.1|[0-9]ch'; then
         pass "$engine: the audio track is described"
@@ -347,8 +318,6 @@ engine_matrix() {
       fail "$engine: found the audio button"
     fi
 
-    # Seeking, with the controls away.
-    # with the controls up the arrows move focus instead of seeking
     local before after i
     for i in 1 2 3; do
       onscreen content-desc Settings || break
@@ -365,7 +334,6 @@ engine_matrix() {
       fail "$engine: the arrows seek forward" "was [$before] now [$after]"
     fi
 
-    # Every scaling mode, on this engine.
     local broke=0 i
     for i in 1 2 3 4 5 6 7 8 9 10 11; do
       tap_control Resize >/dev/null 2>&1 || broke=1
@@ -373,9 +341,6 @@ engine_matrix() {
     done
     check "$engine: every scaling mode" "$broke"
 
-    # And a stream, on this engine.
-    # the engines differ most over the network: mpv does its own TLS, and Media3
-    # needs an HLS module that matches its ExoPlayer
     play_url "$engine: an HLS stream over https" \
       "https://d2zihajmogu5jn.cloudfront.net/bipbop-advanced/bipbop_16x9_variant.m3u8" \
       "application/x-mpegURL"
@@ -385,8 +350,6 @@ engine_matrix() {
 
   set_engine Auto && pass "the engine is back on Auto"
 }
-
-# --- playing off the web
 
 play_url() {  # play_url <name> <url> <mime>
   adb shell "am force-stop $PKG" >/dev/null 2>&1
@@ -403,7 +366,6 @@ play_url() {  # play_url <name> <url> <mime>
   esac
   pass "$1: the player opened"
 
-  # Give the network a fair chance before deciding.
   local i
   for i in $(seq 1 20); do
     sleep 2
@@ -427,11 +389,6 @@ from_the_web() {
     "application/x-mpegURL"
 }
 
-# --- driving it with a remote
-
-# everything reachable by finger must be reachable by arrows and OK
-# Whatever holds the focus now. A panel row has no text of its own, so its
-# bounds stand in where there is no text or description.
 focused_row() {
   local node
   node="$(dump | grep -F 'focused="true"' | head -1)"
@@ -459,7 +416,6 @@ by_remote_only() {
     return
   fi
 
-  # Walk right along the button row and see the focus move.
   local seen="" at n
   for n in $(seq 1 12); do
     at="$(dump | grep -F 'focused="true"' | grep -oE 'content-desc="[^"]+"' | head -1)"
@@ -475,8 +431,6 @@ by_remote_only() {
     fail "the arrows move focus along the controls" "only $count stops: $seen"
   fi
 
-  # Arrow onto the settings button and press it.
-  # look both ways: pressing right to the end overshoots the settings button
   local tries=0 focus
   while [ $tries -lt 14 ]; do
     focus="$(dump | grep -F 'focused="true"' | grep -oE 'content-desc="[^"]+"' | head -1)"
@@ -505,8 +459,6 @@ by_remote_only() {
       else
         fail "OK opens the quick panel"
       fi
-      # the panel must hold focus when it opens and an arrow must move it;
-      # a panel with the focus nowhere swallows every arrow press
       local first second
       first="$(focused_row)"
       if [ -n "$first" ]; then
@@ -539,10 +491,6 @@ by_remote_only() {
   check "nothing crashed while driving with keys" "$(crashed)"
 }
 
-# --- identifying a real film
-
-# Back, but only when there is something for it to close.
-# at a bare player Back leaves it, and the harness must not press at a launcher
 back_if_something_is_open() {
   if dump | grep -qE 'Which is this|Search online|CANCEL|Cancel|Quick settings'; then
     key KEYCODE_BACK
@@ -553,7 +501,6 @@ back_if_something_is_open() {
 online_features() {
   section "identifying a real film, and finding subtitles for it"
 
-  # A name the databases actually know.
   local real="/sdcard/Movies/The Big Buck Bunny (2008).ts"
   adb shell "cp '$MEDIA' '$real'" >/dev/null 2>&1
   adb shell "am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d 'file://$real'" >/dev/null 2>&1
@@ -577,7 +524,6 @@ online_features() {
   done
   sleep 6
 
-  # Ask for the card: with a key configured this goes to TMDB for real.
   if tap_control Settings; then
     local card
     card="$(panel_row 'Show info card')"
@@ -589,7 +535,6 @@ online_features() {
         if [ "$(dump | grep -c 'Identifying')" = "0" ]; then settled=0; break; fi
       done
       check "identifying finished" "$settled" "still identifying after 30s"
-      # Either a card, or the search box it falls back to. Never nothing.
       if dump | grep -qE 'Which is this|overlay_heading|Search online'; then
         pass "it showed either the card or the search box"
       else
@@ -598,12 +543,10 @@ online_features() {
       back_if_something_is_open
     else
       fail "found Show info card"
-      # close it either way: left open, the panel covers the subtitle button
       back_if_something_is_open
     fi
   fi
 
-  # And a real subtitle search, against the keys just configured.
   if tap_control "Enable subtitles" "Disable subtitles"; then
     local search
     search="$(centre text 'Search online subtitles…')"
@@ -631,11 +574,6 @@ online_features() {
   adb shell "content delete --uri content://media/external/video/media/$rid" >/dev/null 2>&1
 }
 
-# --- the names R8 is not allowed to change
-
-# Media3 private fields reached by reflection (DefaultTimeBar.seekBounds,
-# .progressBar, .scrubberBar; PlayerControlView.trackNameProvider) must keep
-# their names under R8; the mapping file says what R8 did.
 keep_rules_held() {
   section "the names R8 was told to leave alone"
 
@@ -654,7 +592,6 @@ keep_rules_held() {
       "androidx.media3.ui.PlayerControlView:trackNameProvider"; do
     owner="${pair%%:*}"
     name="${pair##*:}"
-    # a kept member maps to itself or is absent; a renamed one points elsewhere
     renamed="$(awk -v owner="$owner" -v field="$name" '
           $0 ~ "^"owner" ->"  { inside = 1; next }
           /^[^ ]/             { inside = 0 }
@@ -668,7 +605,6 @@ keep_rules_held() {
            "R8 renamed it to '$renamed', so looking it up by name finds nothing"
     fi
 
-    # and the rule itself: without it the next build renames the field
     if grep -q "$name" app/proguard-rules.pro; then
       pass "the rule for it is still in proguard-rules.pro: $name"
     else
@@ -678,10 +614,6 @@ keep_rules_held() {
   done
 }
 
-
-# --- rotation, and a link that does not work
-
-# Where the film has got to, in milliseconds, or nothing if it cannot be read.
 position_ms() {
   adb shell "dumpsys media_session | grep -oE 'position=[0-9]+' | head -1" 2>/dev/null \
     | tr -d '\r' | cut -d= -f2
@@ -690,14 +622,10 @@ position_ms() {
 rotation_and_dead_links() {
   section "rotating, and a link that does not work"
 
-  # rotation uses the app's button only; the phone's own setting is left alone
   open_film
-  # dump() splits the tree on "<", so the hierarchy tag arrives without it.
   local was now before after
   was="$(dump | grep -oE 'rotation="[0-9]"' | head -1 | grep -oE '[0-9]')"
 
-  # the position before turning: show_controls pauses, so the place in the
-  # film is what must survive the turn
   before="$(position_ms)"
 
   if tap_control Rotate; then
@@ -717,8 +645,6 @@ rotation_and_dead_links() {
       fail "the place in the film survived rotating" "was $before, now $after"
     fi
 
-    # it still plays when told to: Play is pressed by name, since OK would press
-    # the focused rotate button
     tap_control Play Pause >/dev/null 2>&1
     sleep 3
     if [ -n "$(playing)" ]; then
@@ -727,7 +653,6 @@ rotation_and_dead_links() {
       fail "and it plays again after rotating" "the play control did not start it"
     fi
 
-    # Twice puts the setting back: it is a two-state cycle.
     show_controls
     tap_control Rotate >/dev/null 2>&1
     sleep 3
@@ -740,7 +665,6 @@ rotation_and_dead_links() {
     fail "found the rotate button"
   fi
 
-  # a link that answers without a file, as an expired debrid link does
   adb shell "am force-stop $PKG" >/dev/null 2>&1
   adb logcat -c >/dev/null 2>&1
   CURRENT_SCREEN=""

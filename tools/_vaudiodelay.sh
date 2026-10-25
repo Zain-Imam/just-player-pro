@@ -10,7 +10,6 @@ snap() { dump > "$SNAP"; }
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1
          adb pull /sdcard/jpp-shot.png "$(hostpath "$WORK/shots/$1.png")" >/dev/null 2>&1; }
 
-# The value sits in the row under the "Audio delay" title.
 delay_now() { snap; grep -A4 '"Audio delay"' "$SNAP" | grep -oE 'text="[-+0-9. ]+s"' | head -1 | sed 's/text=//;s/"//g'; }
 bounds_of_text() {
   grep -F "text=\"$1\"" "$SNAP" | head -1 \
@@ -22,10 +21,8 @@ focus_bounds() {
     | grep -oE 'bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' \
     | sed -E 's/bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"/\1 \2 \3 \4/'
 }
-# signed tenths, so checks measure movement: the delay is kept per file
 tenths() { echo "$1" | tr -d ' s' | awk -F. '{ v = ($1 < 0 || $0 ~ /^-/) ? -1 : 1; gsub(/[-+]/, "", $1); print v * ($1 * 10 + $2) }'; }
 
-# uiautomator sometimes returns an empty dump, so ask again
 snap() {
   local n
   for n in 1 2 3; do
@@ -47,7 +44,6 @@ open_panel() {
   grep -q '"Quick settings"' "$SNAP"
 }
 
-# d-pad down the panel, as a TV does; it also scrolls the row into view
 focus_row() {
   local n ry
   for n in $(seq 1 16); do
@@ -143,8 +139,6 @@ else
   fail "the delay ran past five seconds" "$LIMIT"
 fi
 
-# a debug build logs what mpv holds for audio-delay;
-# "-> null" means mpv has no such property
 echo "--- what the engine did with the number ---"
 READBACK="$(adb logcat -d 2>/dev/null | grep -oE 'mpv audio-delay = [-0-9.]+ -> [^ ]+' | tail -1 | tr -d '\r')"
 if [ -n "$READBACK" ]; then
@@ -186,7 +180,6 @@ key KEYCODE_BACK
 sleep 2
 open_film
 open_panel >/dev/null
-# on a phone the row starts below the fold
 focus_row >/dev/null
 AGAIN="$(delay_now)"
 echo "  on reopening:    $AGAIN"

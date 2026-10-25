@@ -6,7 +6,6 @@
 set -u
 export MSYS_NO_PATHCONV=1
 
-# find adb: PATH, then the SDK from the environment, then default SDK locations
 if ! command -v adb >/dev/null 2>&1; then
   for sdk in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}" \
              "$HOME/AppData/Local/Android/Sdk" \
@@ -35,8 +34,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 WORK="$HERE/../.smoke-media"
 mkdir -p "$WORK"
 
-# adb is a Windows program under Git Bash and MSYS_NO_PATHCONV is set, so host
-# paths are converted by hand; a no-op elsewhere
 hostpath() {
   if command -v cygpath >/dev/null 2>&1; then cygpath -w "$1"; else echo "$1"; fi
 }
@@ -47,8 +44,6 @@ pass() { echo "PASS  $1"; PASSED=$((PASSED + 1)); }
 fail() { echo "FAIL  $1"; [ -n "${2:-}" ] && echo "        $2"; FAILED=$((FAILED + 1)); }
 check() { if [ "$2" = "0" ]; then pass "$1"; else fail "$1" "${3:-}"; fi; }
 
-# One dump at a time, with a pause after each: back-to-back dumps can hit
-# "UiAutomationService already registered" and crash the accessibility menu.
 dump() {
   local lock="${WORK:-/tmp}/dump.lock" waited=0
   while [ -e "$lock" ] && [ $waited -lt 30 ]; do
@@ -71,7 +66,6 @@ onscreen() { [ -n "$(centre "$@")" ]; }
 
 alive()   { adb shell "pidof $PKG" 2>/dev/null | tr -d '\r'; }
 playing() { adb shell "dumpsys media_session | grep -o 'state=PLAYING' | head -1" 2>/dev/null | tr -d '\r'; }
-# crashes of the app under test only; uiautomator crashes too when dumps overlap
 crashed() {
   adb logcat -b crash -d 2>/dev/null | grep -A3 "FATAL EXCEPTION" \
     | grep -c "Process: $PKG"
@@ -79,11 +73,6 @@ crashed() {
 focused()     { adb shell "dumpsys window | grep -m1 mCurrentFocus" 2>/dev/null | tr -d '\r'; }
 focused_app() { adb shell "dumpsys window | grep -m1 mFocusedApp" 2>/dev/null | tr -d '\r'; }
 
-# --- the safety interlock
-
-# in_front: mFocusedApp must be ours, and mCurrentFocus must not be another
-# package's window (the app's own panels show as PopupWindow:...).
-# Which of this app's screens the test is working on, so it can be brought back.
 CURRENT_SCREEN="${CURRENT_SCREEN:-}"
 
 in_front() {
@@ -103,9 +92,6 @@ in_front() {
   esac
 }
 
-# The phone's own security page, not the player's.
-# Motorola's Security Hub covers the app on unknown hosts. It is only ever
-# declined ("Cancel and exit"); this is the one press outside the player.
 dismiss_security_prompt() {
   case "$(focused)" in
     *securityhub*|*PhishingDetection*) ;;
@@ -127,14 +113,12 @@ require_player() {
   in_front && return 0
   dismiss_security_prompt >/dev/null 2>&1 && in_front && return 0
 
-  # wait for anything the phone put in front unasked to go
   for n in 1 2 3 4 5 6 7 8 9 10; do
     sleep 2
     dismiss_security_prompt
     in_front && return 0
   done
 
-  # still not there: restart this app's own screen, which can only start this app
   if [ -n "$CURRENT_SCREEN" ]; then
     adb shell "am start -n $CURRENT_SCREEN" >/dev/null 2>&1
     for n in 1 2 3 4 5 6 7 8 9 10; do
@@ -160,9 +144,6 @@ key()   { require_player; adb shell "input keyevent $1" >/dev/null 2>&1; }
 hold()  { require_player; adb shell "input keyevent --longpress $1" >/dev/null 2>&1; }
 swipe() { require_player; adb shell "input swipe $1 $2 $3 $4 $5" >/dev/null 2>&1; }
 
-# The window as it is held right now, not the panel the phone was built with.
-# wm size never turns; scripts set SCREEN_W/H at the top and this corrects
-# them from the root node once a window is up.
 refresh_screen() {
   local wh
   wh="$(dump | grep -m1 -oE 'bounds="\[0,0\]\[[0-9]+,[0-9]+\]"' \
@@ -175,10 +156,7 @@ refresh_screen() {
   return 0
 }
 
-# --- test media
-
 prepare() {
-  # a missing package fails quietly enough to look like a player bug
   local installed
   installed="$(adb shell 'pm list packages' 2>/dev/null | tr -d '\r')"
   if ! echo "$installed" | grep -qx "package:$PKG"; then
@@ -214,8 +192,20 @@ prepare() {
   URI="content://media/external/video/media/$ID"
   echo "test media at $URI"
 
-  # What the settings looked like before any of this, so drift is visible.
   adb shell "run-as $PKG cat shared_prefs/${PKG}_preferences.xml" 2>/dev/null > "$WORK/prefs-before.xml"
+}
+
+density_reset() {
+  local scale
+  adb shell wm density reset >/dev/null 2>&1
+  scale="$(adb shell settings get system font_scale | tr -d '\r')"
+  adb shell settings put system font_scale "$(awk -v s="${scale/null/1.0}" 'BEGIN { printf "%.2f", s + 0.01 }')" >/dev/null 2>&1
+  sleep 2
+  if [ "$scale" = "null" ] || [ -z "$scale" ]; then
+    adb shell settings delete system font_scale >/dev/null 2>&1
+  else
+    adb shell settings put system font_scale "$scale" >/dev/null 2>&1
+  fi
 }
 
 cleanup() {
@@ -230,7 +220,6 @@ cleanup() {
 open_film() {
   adb shell "am force-stop $PKG" >/dev/null 2>&1
   adb logcat -c >/dev/null 2>&1
-  # something for the interlock to bring back; it can only start this app
   CURRENT_SCREEN="$ACT"
   adb shell "am start -a android.intent.action.VIEW -d $URI -t video/mp2t -n $ACT --grant-read-uri-permission --esa subs file://$SUBS --esa subs.name Smoke" >/dev/null 2>&1
   local waited=0
@@ -246,13 +235,11 @@ open_film() {
 }
 
 open_settings() {
-  # force-stopped so the list starts at the top, not wherever it was scrolled
   adb shell "am force-stop $PKG" >/dev/null 2>&1
   sleep 1
   CURRENT_SCREEN="$SETTINGS"
   adb shell "am start -n $SETTINGS" >/dev/null 2>&1
 
-  # wait for something only settings has; a closing window keeps the name briefly
   local waited=0
   while [ $waited -lt 25 ]; do
     case "$(focused)" in
@@ -271,9 +258,6 @@ open_settings() {
   exit 3
 }
 
-# Pause, and make sure of it.
-# A paused player keeps its controls up, so a slow dump still finds them.
-# The pause key is not a toggle: sending it twice still pauses.
 pause_player() {
   local n
   for n in 1 2 3 4 5; do
@@ -284,8 +268,6 @@ pause_player() {
   return 0
 }
 
-# Up, judged by the strip itself: buttons at its far end are off-screen until
-# it is dragged.
 show_controls() {
   pause_player
   if ! onscreen resource-id "$PKG:id/controls_scroll_view"; then
@@ -295,8 +277,6 @@ show_controls() {
   return 0
 }
 
-# Centre of the first of these names on screen: a toggle has two (Enable or
-# Disable subtitles). tap_control drags the strip, which scrolls in portrait.
 find_control() {
   local name at
   for name in "$@"; do
@@ -332,16 +312,12 @@ tap_control() {
   return 0
 }
 
-# A row in the quick panel.
-# The panel is its own list down one side, so it is dragged there; in
-# landscape its bottom rows are off the end.
 panel_row() {
   local want at n px from to
   want="$1"
   at="$(centre text "$want")"
   [ -n "$at" ] && { echo "$at"; return 0; }
 
-  # The panel's list is the framework's id, not one of this app's.
   set -- $(bounds_of resource-id "android:id/list")
   if [ $# -ne 4 ]; then
     set -- $(bounds_of resource-id "$PKG:id/list")
@@ -363,11 +339,8 @@ panel_row() {
   return 1
 }
 
-# The screen as it is now, from the window manager: wm size never turns, and
-# a dump would register yet another automation service.
 screen_now() {   # echoes "<width> <height>"
   local size
-  # cur= is the display as it stands, already the right way round
   size="$(adb shell dumpsys window displays 2>/dev/null \
         | grep -m1 -oE 'cur=[0-9]+x[0-9]+' | cut -d= -f2 | tr -d '\r')"
   [ -z "$size" ] && size="$(adb shell wm size 2>/dev/null \
@@ -376,9 +349,6 @@ screen_now() {   # echoes "<width> <height>"
   echo "${size%x*} ${size#*x}"
 }
 
-# A row in the quick settings panel, scrolling the panel to reach it.
-# Only a few rows are in view at once. Scrolled at the panel's own x, since
-# the middle of the screen is beside it.
 panel_row() {   # panel_row <row text>
   local at n anchor px w h
   at="$(centre text "$1")"
@@ -402,13 +372,26 @@ panel_row() {   # panel_row <row text>
   return 1
 }
 
+settings_page_of() {
+  local list="$WORK/settings-list.tsv"
+  [ -s "$list" ] || node "$(hostpath "$HERE/_settings_list.js")" "$(hostpath "$HERE/../app/src/main/res")" > "$list" 2>/dev/null
+  awk -F'\t' -v t="$1" '$4 == t {print $1; exit}' "$list"
+}
+
 scroll_to() {
-  local at n from to w h
+  local at n from to w h page
   at="$(centre text "$1")"
   [ -n "$at" ] && { echo "$at"; return 0; }
+  if [ "${CURRENT_SCREEN:-}" = "$SETTINGS" ] && onscreen text "Storage and backup"; then
+    page="$(settings_page_of "$1")"
+    if [ -n "$page" ]; then
+      adb shell "am start -n $SETTINGS --es com.brouken.player.SETTINGS_PAGE $page" >/dev/null 2>&1
+      sleep 2
+      at="$(centre text "$1")"
+      [ -n "$at" ] && { echo "$at"; return 0; }
+    fi
+  fi
 
-  # Most of the window, but never all of it.
-  # two thirds is under a screenful, so no row can slip past between looks
   set -- $(screen_now) "$1"
   w="$1"; h="$2"; shift 2
   from=$(( (h * 85) / 100 ))
@@ -423,9 +406,6 @@ scroll_to() {
   return 1
 }
 
-
-# The home screen, from a cold start.
-# force-stopped first: a resumed activity would show the last folder opened
 open_home() {
   adb shell "am force-stop $PKG" >/dev/null 2>&1
   adb logcat -c >/dev/null 2>&1
@@ -443,8 +423,6 @@ open_home() {
   exit 3
 }
 
-# Which activity of ours is in front, by class name alone.
-# filtered here: the phone's grep lacks this alternation, and -m1 breaks dumpsys
 current_activity() {
   adb shell "dumpsys activity activities" 2>/dev/null \
     | grep -m1 "topResumedActivity" \
@@ -452,9 +430,6 @@ current_activity() {
     | sed 's/.*\.//'
 }
 
-# Whether the focused thing is the row for this name.
-# matched on the row's "<name>, <details>" description, since the star
-# beside it shares the line
 focused_row_is() {   # focused_row_is <snapshot> <name>
   local line
   line="$(grep 'focused="true"' "$1" | tail -1)"
@@ -465,15 +440,10 @@ focused_row_is() {   # focused_row_is <snapshot> <name>
   esac
 }
 
-# Whether the focused thing is the button described this way. Buttons are
-# focused directly, so unlike a row their own node carries the description.
 focused_desc_is() {  # focused_desc_is <snapshot> <content-desc>
   grep 'focused="true"' "$1" | tail -1 | grep -qF "content-desc=\"$2\""
 }
 
-# Say "not now" to the offer of the last video.
-# The offer covers the folder list on every open. Back keeps the window out of
-# touch mode, where list rows cannot take focus; a tap would not.
 decline_resume() {
   local at
   at="$(centre text 'NOT NOW')"
@@ -484,8 +454,6 @@ decline_resume() {
   return 0
 }
 
-# Wait for one of this app's screens to settle in front.
-# a fixed sleep is not enough: releasing the decoder takes as long as it takes
 wait_for_activity() {   # wait_for_activity <ClassName> [seconds]
   local want="$1" limit="${2:-15}" n=0
   while [ $n -lt "$limit" ]; do
@@ -496,8 +464,6 @@ wait_for_activity() {   # wait_for_activity <ClassName> [seconds]
   return 1
 }
 
-# Walk the remote down a list until the named row has focus.
-# left first: in the star column, down moves star to star and never hits a row
 focus_row_by_dpad() {   # focus_row_by_dpad <snapshot> <name> [presses]
   local file="$1" want="$2" limit="${3:-16}" n=0
   adb shell "input keyevent KEYCODE_DPAD_LEFT" >/dev/null 2>&1

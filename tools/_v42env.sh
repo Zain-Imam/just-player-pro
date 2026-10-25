@@ -3,10 +3,9 @@
 # intro and pointers seen, permissions granted. Prints names only, never values.
 export PATH="$PATH:$HOME/AppData/Local/Android/Sdk/platform-tools"
 export PKG=app.justplayerpro.android.debug
-ROOT="/c/Users/SC/Downloads/Just Player Pro"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT/tools" || exit 1
 . ./lib.sh >/dev/null 2>&1
-# lib.sh derives WORK from $0, which is wrong after a cd from a relative path
 WORK="$ROOT/.smoke-media"
 V42_SCRATCH="$WORK"
 . ./_v42lib.sh

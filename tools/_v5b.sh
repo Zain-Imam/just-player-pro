@@ -28,7 +28,6 @@ for n in 1 2 3; do
   tap $AT
   sleep 1
   shot "label-$n"
-  # the label is a normal view, so the dump catches it while it is up
   echo "press $n: $(dump | grep -oE 'text="(Landscape|Portrait|Auto-rotate)"' | head -1)"
   sleep 3
 done

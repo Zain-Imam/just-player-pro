@@ -32,7 +32,6 @@ advancing() {
 
 has() { case " $WANT " in *" $1 "*) return 0 ;; esac; return 1; }
 
-# --- A
 if has A; then
   echo; echo "-- A: a film from another app while an older player screen is in memory"
   server "reset=1"
@@ -42,7 +41,6 @@ if has A; then
   sleep 8
   adb shell "input keyevent KEYCODE_HOME" >/dev/null 2>&1
   sleep 3
-  # A second task, as another app's launch makes one.
   adb shell "am start -a android.intent.action.VIEW -d '$SERVER/clip.ts' -n $ACT -f 0x18000000 --es title Clip" >/dev/null 2>&1
   sleep 12
   STATE="$(playing_now)"
@@ -54,7 +52,6 @@ if has A; then
   check "no crash" "$(crashed)"
 fi
 
-# --- B
 if has B; then
   echo; echo "-- B: headers as whole \"Name: value\" strings, and as pairs"
   server "reset=1"
@@ -79,8 +76,6 @@ if has B; then
   else
     fail "name/value pairs still work"
   fi
-  # a browser User-Agent has commas; it is sent with --es, since in an --esa list
-  # an escaped comma reaches the app with its backslash
   UA='Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36'
   server "reset=1"
   curl -s -G "$SERVER/ctl" --data-urlencode "needHeader=User-Agent" --data-urlencode "needValue=$UA" >/dev/null
@@ -94,7 +89,6 @@ if has B; then
   server "reset=1"
 fi
 
-# --- C
 if has C && [ $DEBUG_BUILD -eq 1 ]; then
   echo; echo "-- C: opened again from inside the app, with what came with it"
   server "reset=1"
@@ -105,7 +99,6 @@ if has C && [ $DEBUG_BUILD -eq 1 ]; then
   adb shell "am force-stop $PKG" >/dev/null 2>&1
   sleep 1
   adb logcat -c >/dev/null 2>&1
-  # The way the home screen and Recents open a film: no extras at all.
   adb shell "am start -n $ACT -d '$SERVER/secure/clip.ts?token=one' $FROM_HOME" >/dev/null 2>&1
   sleep 12
   if advancing; then
@@ -126,7 +119,6 @@ if has C && [ $DEBUG_BUILD -eq 1 ]; then
   server "reset=1"
 fi
 
-# --- D
 if has D && [ $DEBUG_BUILD -eq 1 ]; then
   echo; echo "-- D: the shape chosen for a film, on a link with a new token"
   setpref string aspectMap "[]"
@@ -166,19 +158,16 @@ if has D && [ $DEBUG_BUILD -eq 1 ]; then
   fi
 fi
 
-# --- E
 if has E && [ $DEBUG_BUILD -eq 1 ]; then
   echo; echo "-- E: play again at the end"
   server "reset=1"
   adb shell "am force-stop $PKG" >/dev/null 2>&1
   adb logcat -c >/dev/null 2>&1
   CURRENT_SCREEN="$ACT"
-  # From inside the app: a film another app sent closes at its end instead.
   adb shell "am start -n $ACT -d '$SERVER/clip.ts' $FROM_HOME" >/dev/null 2>&1
   sleep 8
   adb shell "input keyevent KEYCODE_DPAD_UP" >/dev/null 2>&1
   sleep 1
-  # The very end of the seek bar on this phone.
   adb shell "input tap 2250 926" >/dev/null 2>&1
   sleep 15
   echo "  state at the end: $(playing_now) at $(position_ms)ms"

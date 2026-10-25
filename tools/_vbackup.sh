@@ -26,7 +26,6 @@ centre_like() {
 }
 reach() {
   local n at
-  # the screen size as it is held now
   refresh_screen
   for n in $(seq 1 30); do
     at="$(centre_like "$1")"
@@ -49,7 +48,6 @@ else
   fail "no export row in settings"
   exit 1
 fi
-# with Export on the last screen line, Import is just below it
 if [ -n "$(reach 'Import from a file')" ]; then
   pass "settings offers an import"
 else
@@ -57,7 +55,6 @@ else
 fi
 
 echo "--- and the export asks what goes in the file ---"
-# Where it is now: finding Import may have moved the list.
 EXPORT_AT="$(centre_like 'Export to a file')"
 if [ -z "$EXPORT_AT" ]; then
   swipe $((SCREEN_W / 2)) $((SCREEN_H * 40 / 100)) $((SCREEN_W / 2)) $((SCREEN_H * 60 / 100)) 700

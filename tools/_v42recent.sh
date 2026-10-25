@@ -11,7 +11,6 @@ ENGINE="${ENGINE:-mpv}"
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE "[0-9]+x[0-9]+" | head -1 | cut -dx -f1)"
 SCREEN_H="$(adb shell wm size 2>/dev/null | grep -oE "[0-9]+x[0-9]+" | head -1 | cut -dx -f2 | tr -d "")"
 setpref string playbackEngine "$ENGINE"
-# the switch is put back as it was when the script ends
 POSTERS_BEFORE="$(prefs_read | grep -oE 'name="recentPosters" value="[a-z]+"' | grep -oE '(true|false)')"
 setpref boolean recentPosters false
 setpref boolean overlayOnPause true
@@ -50,7 +49,6 @@ echo "  first Recent row: $FIRST"
   || fail "A: Recent names the file" "shows '$FIRST'"
 
 echo "-- C: lined up with the folders"
-# show both kinds of row: in landscape five Recent rows fill the screen
 refresh_screen
 for n in 1 2 3 4; do
   [ -n "$(first_of video_icon bounds)" ] && [ -n "$(first_of folder_icon bounds)" ] && break
@@ -70,7 +68,6 @@ fi
 
 echo "-- B: the link has expired, and is opened again from Recent"
 server "expireNamed=1"
-# from the top again: the list was scrolled, so the first row is not the newest
 open_home
 B="$(first_of video_name bounds | sed -E 's/\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]/\1 \2 \3 \4/' | awk '{print int(($1+$3)/2), int(($2+$4)/2)}')"
 CURRENT_SCREEN="$ACT"
@@ -88,7 +85,6 @@ curl -s -G "$SERVER/ctl" --data-urlencode "dispositionName=$FILE_D" >/dev/null
 ID_D="5151$RANDOM"
 launch_url "$SERVER/named/$ID_D" || { fail "opened"; exit 1; }
 sleep 10
-# pause so the card comes up, then play on
 adb shell "input keyevent KEYCODE_MEDIA_PAUSE" >/dev/null 2>&1
 sleep 8
 CARD="$(dump | grep -oE 'text="Sintel[^"]*"' | head -1)"

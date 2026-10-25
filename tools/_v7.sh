@@ -20,7 +20,6 @@ done
 sleep 4
 shot "$WAY-1"
 
-# the circle is centred on the button; "away" taps the far top corner
 if [ "$WAY" = press ]; then
   set -- $(bounds_of content-desc "Open file")
   if [ $# -ne 4 ]; then set -- $(bounds_of content-desc "Open"); fi

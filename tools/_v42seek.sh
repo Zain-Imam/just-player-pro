@@ -16,7 +16,6 @@ setpref boolean lockedTimeline false
 
 seeks() { adb logcat -d 2>/dev/null | tr -d '\r' | grep -oE "MpvPlayer.*: seek [0-9]+ [a-z+]+" | sed -E 's/.*: seek //'; }
 
-# Open paused at a minute in, measure the seek bar, leave the controls up.
 open_paused() {
   server "reset=1"
   server "rate=${1:-2500000}"
@@ -51,7 +50,6 @@ drag() {
   adb shell "input motionevent UP $(share_x $to) $BY" >/dev/null 2>&1
 }
 
-# Two taps close enough together to be a double tap, on the right of the picture.
 double_tap_right() {
   double_tap_at $(( SW * 80 / 100 )) $(( SH * 45 / 100 )) "${1:-2}"
 }
@@ -71,11 +69,9 @@ case " $CASES " in *" F "*|*" G "*)
     [ "$DURING" -ge 3 ] && pass "F: the picture follows the drag (each frame asks for the next)" \
       || fail "F: the picture follows the drag" "only $DURING seek(s) sent before the finger lifted"
   fi
-  # Let the controls go so the taps reach the picture.
   sleep 8
   BEFORE="$(position_ms)"
   adb logcat -c >/dev/null 2>&1
-  # adb double taps sometimes miss; retry until one registers
   for attempt in 1 2 3; do
     double_tap_right 2
     sleep 4
@@ -106,7 +102,6 @@ case " $CASES " in *" H "*)
     echo
     echo "-- H: a double tap while a far seek is still loading"
     open_paused
-    # Every new request is held five seconds, so the far seek stays in flight.
     server "holdFrom=0.0001&holdMs=5000"
     adb logcat -c >/dev/null 2>&1
     adb shell "input tap $(share_x 500) $BY" >/dev/null 2>&1
@@ -133,9 +128,7 @@ case " $CASES " in *" I "*)
     sleep 6
     P0="$(position_ms)"
     echo "  playing at ${P0}ms"
-    # One far request fails (it times out); the server is otherwise fine.
     server "holdFrom=0.85&holdMs=600000&holdCount=1"
-    # The tap has to reach the bar: checked by the far request arriving.
     for attempt in 1 2 3; do
       adb shell "input keyevent KEYCODE_DPAD_UP" >/dev/null 2>&1
       sleep 0.8
@@ -150,7 +143,6 @@ case " $CASES " in *" I "*)
     done
     adb logcat -d 2>/dev/null | tr -d '\r' | grep -m1 "Source error, rebuilding once" | sed 's/^.*Source/  Source/'
     server "holdFrom=0&holdMs=0&refuseWhileHeld=0"
-    # a rebuild during the refusals may have read from the start; allow a minute
     P1=""; P2=""
     for i in $(seq 1 15); do
       sleep 4

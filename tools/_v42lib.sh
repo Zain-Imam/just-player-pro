@@ -11,7 +11,6 @@ prefs_read() {
   adb shell "run-as $PKG cat $PREFS_FILE" 2>/dev/null | tr -d '\r'
 }
 
-# setpref <string|boolean|int|float> <name> <value>
 setpref() {
   local type="$1" name="$2" value="$3" current tmp
   adb shell "am force-stop $PKG" >/dev/null 2>&1
@@ -23,7 +22,6 @@ setpref() {
 </map>" ;;
   esac
   tmp="$V42_SCRATCH/prefs.xml"
-  # Drop any line for this name, then add the new one before </map>.
   echo "$current" | grep -v "name=\"$name\"" | grep -v '^<map />$' | sed '/<\/map>/d' > "$tmp"
   grep -q '<map>' "$tmp" || echo "<map>" >> "$tmp"
   if [ "$type" = "string" ]; then
@@ -39,7 +37,6 @@ getpref() {
   prefs_read | grep -F "name=\"$1\"" | head -1
 }
 
-# launch_url <url> [extra am arguments...]: as another app would hand it over
 launch_url() {
   local url="$1"
   shift
@@ -56,8 +53,6 @@ launch_url() {
   return 1
 }
 
-# playback position in ms from the media session, moved on by the time since
-# it was reported when playing
 position_ms() {
   local now
   now="$(adb shell 'cat /proc/uptime' | tr -d '\r' | awk '{print int($1*1000)}')"
@@ -81,7 +76,6 @@ server() {
   curl -s "$SERVER/ctl?$1" >/dev/null
 }
 
-# The seek bar's row, so a tap can land at a share of its width.
 timebar_bounds() {
   bounds_of resource-id "$PKG:id/exo_progress"
 }
@@ -96,9 +90,6 @@ tap_timebar_at() {
   adb shell "input tap $x $y" >/dev/null 2>&1
 }
 
-# A double tap the system cannot mistake for two single taps.
-# each input tap takes a few hundred ms to start, longer than the double-tap
-# window, so two are started 150 ms apart in parallel; raw touch is refused.
 double_tap_at() {   # double_tap_at <x> <y> [taps]
   local x="$1" y="$2" n="${3:-2}" cmd="" i
   for i in $(seq 1 $((n - 1))); do cmd="$cmd input tap $x $y & sleep 0.15;"; done

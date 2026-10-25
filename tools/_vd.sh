@@ -9,7 +9,6 @@ shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1
 
 prepare
 open_film
-# no dump between finding and pressing: the label lasts about a second
 tap_control Resize >/dev/null 2>&1
 sleep 2
 for n in 2 3 4 5 6 7 8 9 10; do

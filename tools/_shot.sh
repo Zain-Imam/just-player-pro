@@ -62,9 +62,7 @@ pick() {   # pick <row> <shot name>
   local at; at="$(centre text "$1")"
   [ -z "$at" ] && { echo "   no row $1"; return; }
   tap $at; sleep 3
-  # play by name: with the controls up, OK presses whatever has focus
   if [ -z "$(playing)" ]; then tap_control Play Pause >/dev/null 2>&1; fi
-  # let the controls fade so they are not over the cue
   sleep 9
   echo "   playing now: [$(playing)]"
   shot "$2"

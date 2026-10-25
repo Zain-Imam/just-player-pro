@@ -60,7 +60,6 @@ if grep -qF 'text="Choose a video"' "$SNAP" || grep -qF 'text="Choose a file"' "
 else
   fail "the chooser is not titled as one"
 fi
-# no address box or settings cog while choosing a file
 if grep -q 'content-desc="Settings"' "$SNAP"; then
   fail "the settings button is still there while choosing a file"
 else
@@ -68,11 +67,9 @@ else
 fi
 
 echo "--- choosing a file reaches the player ---"
-# tapped: remote navigation of this screen is covered by _vhome.sh
 snap
 AT="$(centre text 'Movies')"
 if [ -z "$AT" ]; then
-  # Scroll until it is on screen; a phone has more folders than fit.
   for n in $(seq 1 8); do
     swipe $((SCREEN_W / 2)) $((SCREEN_H * 70 / 100)) $((SCREEN_W / 2)) $((SCREEN_H * 35 / 100)) 500
     sleep 1
@@ -93,7 +90,6 @@ if [ -z "$AT" ]; then
   exit 1
 fi
 tap $AT
-# waited for: the chooser finishes before the player resumes
 wait_for_activity PlayerActivity 20
 WHERE="$(current_activity)"
 echo "  in front: $WHERE"
@@ -112,7 +108,6 @@ else
   fail "the chosen file is not playing" \
        "$(grep -oE 'text="[^"]+"' "$SNAP" | sed 's/text=//;s/"//g' | tr '\n' '|' | cut -c1-200)"
 fi
-
 
 if [ "$(crashed)" = 0 ]; then
   pass "nothing crashed"

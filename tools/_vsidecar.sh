@@ -28,25 +28,20 @@ sleep 2
 adb shell "am force-stop $PKG" >/dev/null 2>&1
 adb logcat -c >/dev/null 2>&1
 CURRENT_SCREEN="$ACT"
-# a missing path, as a dead hand-off looks
 adb shell "am start -a android.intent.action.VIEW -d $URI -t video/mp2t -n $ACT --grant-read-uri-permission --esa subs file:///sdcard/Movies/jpp-nothing-here.srt --esa subs.name Missing" >/dev/null 2>&1
 for n in $(seq 1 15); do
   case "$(focused)" in *"$PKG"*) break ;; esac
   sleep 1
 done
-# pause first: uiautomator cannot dump a screen that never stops moving;
-# the message comes later and stays up either way
 sleep 1
 adb shell "input keyevent KEYCODE_MEDIA_PAUSE" >/dev/null 2>&1
 sleep 2
 shot sidecar-missing
-# read more than once: a moving picture often gives an empty dump
 SAID=""
 for n in 1 2 3; do
   SAID="$SAID|$(dump | grep -oE 'text="[^"]+"' | sed 's/text=//;s/"//g' | tr '\n' '|')"
 done
 echo "  on screen: $SAID"
-# the message lasts 3.5s and a dump 2s, so the app's log line is checked too
 LOGGED="$(adb logcat -d -s JustPlayer 2>/dev/null | grep -c 'Subtitle would not load')"
 echo "  the player logged it: $LOGGED time(s)"
 if echo "$SAID" | grep -q 'would not load' || [ "${LOGGED:-0}" -gt 0 ]; then

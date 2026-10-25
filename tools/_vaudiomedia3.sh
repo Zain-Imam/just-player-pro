@@ -18,7 +18,6 @@ snap() {
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1
          adb pull /sdcard/jpp-shot.png "$(hostpath "$WORK/shots/$1.png")" >/dev/null 2>&1; }
 
-# The elapsed time, in seconds.
 position() {
   show_controls >/dev/null
   snap
@@ -96,7 +95,6 @@ shot audiodelay-media3-clock
 
 MOVED=$(( AFTER - BEFORE ))
 echo "  the clock moved ${MOVED}s over about four seconds of playing"
-# 4s of playing plus 5s of delay, less the pauses; 7 is past what 4s gives
 if [ "$MOVED" -ge 7 ]; then
   pass "the delay reached the audio clock: ${MOVED}s where playing alone gives about 4"
 else

@@ -12,13 +12,11 @@ setpref string playbackEngine "$ENGINE"
 setpref boolean overlayOnPause false
 
 mkdir -p "$WORK/side"
-# a fresh name each run, so earlier server log lines do not count
 NAME="film$RANDOM"
 rm -f "$WORK"/side/film*.srt
 awk 'BEGIN{for(i=0;i<60;i++){s=i*2; printf "%d\n", i+1;
   printf "00:%02d:%02d,000 --> 00:%02d:%02d,900\n", int(s/60), s%60, int((s+1)/60), (s+1)%60;
   printf "Beside line %d — café ♪\n\n", i+1}}' > "$WORK/side/$NAME.srt"
-# the cues above hold real UTF-8: plain ASCII is not detected as UTF-8
 
 echo "== $ENGINE"
 server "reset=1"
@@ -28,7 +26,6 @@ sleep 25
 GETS="$(curl -s "$SERVER/log" | grep -c "200 /side/$NAME.srt")"
 echo "  downloads of $NAME.srt: $GETS"
 curl -s "$SERVER/log" | grep "/side/$NAME.srt" | tail -4 | sed 's/^/    /'
-# One to find it among the guesses, one to fetch it.
 if [ "$GETS" -ge 1 ] && [ "$GETS" -le 2 ]; then
   pass "the subtitle beside the stream was downloaded once, not over and over"
 else

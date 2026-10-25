@@ -34,7 +34,6 @@ open_panel() {
   sleep 2
 }
 
-# The summary under the row titled $1, and the row's bounds.
 row_summary() {
   dump > "$WORK/panel.txt"
   awk -v t="text=\"$1\"" '
@@ -59,7 +58,6 @@ else
   fail "the panel shows this engine's size" "it shows '$SIZE'"
 fi
 
-# the minus half of the row: from the panel's left edge to the title
 B="$(row_bounds Size)"
 set -- $B
 Y=$(( ($2 + $4) / 2 ))
@@ -71,7 +69,6 @@ sleep 1.5
 V="$(getpref "$OWN" | grep -oE 'value="-?[0-9]+"' | grep -oE -- '-?[0-9]+')"
 [ "$V" = "1" ] && pass "one press goes from 2 to 1" || fail "one press goes from 2 to 1" "stored $V"
 
-# Six quick presses: one step each, never five or ten.
 for n in 1 2 3 4 5 6; do adb shell "input tap $MINUS_X $Y" >/dev/null 2>&1; done
 sleep 1.5
 V="$(getpref "$OWN" | grep -oE 'value="-?[0-9]+"' | grep -oE -- '-?[0-9]+')"
@@ -79,7 +76,6 @@ V="$(getpref "$OWN" | grep -oE 'value="-?[0-9]+"' | grep -oE -- '-?[0-9]+')"
 O="$(getpref "$OTHER" | grep -oE 'value="-?[0-9]+"' | grep -oE -- '-?[0-9]+')"
 [ "$O" = "-9" ] && pass "the other engine's size is untouched" || fail "the other engine's size is untouched" "stored $O"
 
-# Out to the settings screen and back: the size must stay this engine's.
 adb shell "input keyevent KEYCODE_BACK" >/dev/null 2>&1
 sleep 1
 adb logcat -c >/dev/null 2>&1

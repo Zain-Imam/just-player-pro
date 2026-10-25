@@ -29,7 +29,6 @@ focus_bounds() {
     | sed -E 's/bounds="\[([0-9]+),([0-9]+)\]\[([0-9]+),([0-9]+)\]"/\1 \2 \3 \4/'
 }
 focus_row() {
-  # own variable: the "set --" below replaces $1
   local want="$1" n ry
   for n in $(seq 1 16); do
     snap

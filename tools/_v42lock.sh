@@ -27,14 +27,12 @@ sleep 1
 adb shell "input keyevent KEYCODE_MEDIA_PLAY" >/dev/null 2>&1
 sleep 3
 
-# tap a locked screen: the padlock, and the timeline if enabled
 adb shell "input tap 1200 400" >/dev/null 2>&1
 sleep 1.2
 adb exec-out screencap -p > "$WORK/shots/locked-$ENGINE.png"
 echo "  screenshot: $WORK/shots/locked-$ENGINE.png"
 pass "locked and tapped (see the screenshot)"
 
-# starve the stream so it buffers, then check the lock held
 server "rate=150000"
 sleep 25
 adb shell "input tap 1200 400" >/dev/null 2>&1

@@ -17,7 +17,6 @@ snap() {
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1
          adb pull /sdcard/jpp-shot.png "$(hostpath "$WORK/shots/$1.png")" >/dev/null 2>&1; }
 
-# The line under the title: "1920x1080 · H.264 · ... · Media3 · 2.1 MB/s".
 meta_line() {
   snap
   grep -oE 'text="[0-9]+×[0-9]+[^"]*"' "$SNAP" | head -1 | sed 's/text=//;s/"//g'
@@ -51,18 +50,13 @@ for n in $(seq 1 20); do
 done
 sleep 5
 refresh_screen
-# read while playing: a paused film with a full buffer downloads nothing;
-# the d-pad brings up the controls without pausing
 STREAM=""
 for n in $(seq 1 16); do
-  # the controls hide sooner than a dump takes, so ask for them each time
   key KEYCODE_DPAD_UP
   STREAM="$(meta_line)"
   [ -n "$STREAM" ] && echo "  the line reads: $STREAM"
   echo "$STREAM" | grep -qE '[0-9]+(\.[0-9])? *(B|KB|MB)/s' && break
   if [ "$n" = 3 ]; then
-    # uiautomator cannot dump a screen that never stops moving (a live stream
-    # here); paused, the cache still fills, so the speed can still be read
     echo "  (pausing so the screen can be read)"
     key KEYCODE_MEDIA_PAUSE
     sleep 2

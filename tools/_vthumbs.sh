@@ -1,5 +1,6 @@
 #!/bin/bash
 # Dragging the bar over a local file previews the frame being sought.
+# Up to 4.2 only: 5.0 replaced this preview box with the bubble, see _v50seek.sh.
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 SCREEN_W="$(adb shell wm size 2>/dev/null | grep -oE '[0-9]+x[0-9]+' | head -1 | cut -dx -f1)"
@@ -17,7 +18,6 @@ snap() {
 shot() { adb shell screencap -p /sdcard/jpp-shot.png >/dev/null 2>&1
          adb pull /sdcard/jpp-shot.png "$(hostpath "$WORK/shots/$1.png")" >/dev/null 2>&1; }
 
-# an mp4: MediaMetadataRetriever often fails on a raw .ts like the smoke clip
 SAMPLE="/sdcard/Movies/jpp-thumbs.mp4"
 prepare
 if [ ! -f "$WORK/slow.mp4" ]; then
@@ -42,7 +42,6 @@ for n in $(seq 1 15); do
   sleep 1
 done
 sleep 4
-# paused first: the 10s sample could end, or the controls hide, before the drag
 adb shell "input keyevent KEYCODE_MEDIA_PAUSE" >/dev/null 2>&1
 sleep 1
 show_controls >/dev/null
@@ -51,7 +50,6 @@ refresh_screen
 BAR="$(bounds_of resource-id "$PKG:id/exo_progress")"
 [ -z "$BAR" ] && { fail "no seek bar"; exit 1; }
 set -- $BAR
-# the bar's touch target is the line itself, 26px above the view's bottom here
 BAR_Y=$(( $4 - 26 ))
 FROM=$(( $1 + ($3 - $1) / 6 ))
 TO=$(( $1 + ($3 - $1) * 3 / 4 ))
@@ -60,8 +58,6 @@ echo "  dragging the bar from $FROM to $TO at y=$BAR_Y"
 position() { adb shell "dumpsys media_session | grep -m1 -oE 'position=[0-9]+'" 2>/dev/null | tr -d '\r' | cut -d= -f2; }
 echo "  position before: $(position)"
 
-# finger down, moved and held while the screen is read: a long input swipe
-# did not keep the bar held on this phone
 require_player
 adb shell "input motionevent DOWN $FROM $BAR_Y" >/dev/null 2>&1
 for x in $(( FROM + (TO - FROM) / 4 )) $(( FROM + (TO - FROM) / 2 )) $(( FROM + (TO - FROM) * 3 / 4 )) $TO; do
@@ -71,8 +67,6 @@ done
 shot thumbs-dragging
 echo "  position during: $(position)"
 
-# the preview is a decorative image uiautomator never reports; the view
-# hierarchy has it, with V for visible and G for gone
 hierarchy() { adb shell "dumpsys activity top" 2>/dev/null | grep -F 'id/thumbnail_preview' | tail -1 | tr -d '\r'; }
 DURING="$(hierarchy)"
 echo "  the preview view: $DURING"

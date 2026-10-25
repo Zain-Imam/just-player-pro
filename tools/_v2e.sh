@@ -30,7 +30,6 @@ item "19: changing the shape while paused, on mpv"
 set_engine mpv || fail "mpv could be selected"
 open_film
 sleep 3
-# show_controls pauses, which is the case under test
 controls_up >/dev/null 2>&1
 echo "        playing while shape is changed: [$(playing)]  (empty means paused, which is the case under test)"
 shot "19-paused-before"
@@ -50,7 +49,6 @@ check "nothing crashed changing shape" "$(crashed)"
 echo "        (the shots show whether the picture is drawn correctly at once)"
 
 item "18: a subtitle that will not load says so"
-# a missing path: the track is offered and fails on use
 adb shell "rm -f /sdcard/Movies/missing.srt" >/dev/null 2>&1
 adb shell "am force-stop $PKG" >/dev/null 2>&1
 adb logcat -c >/dev/null 2>&1

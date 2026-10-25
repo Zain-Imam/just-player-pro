@@ -26,8 +26,6 @@ centre_like() {
     | awk 'NF==4 {print int(($1+$3)/2), int(($2+$4)/2)}'
 }
 
-# into settings via the quick panel: once the controls hide, a remembered cog
-# position lands on the Skip intro button
 into_settings() {
   local at row n
   show_controls >/dev/null
@@ -98,8 +96,6 @@ done
 if [ -z "$AT" ]; then
   fail "no adaptive buffering row"
 else
-  # a fresh dump, and the warning looked for anywhere on screen: node offsets
-  # shift whenever a category is added above
   WARNED=""
   for n in 1 2 3 4 5 6; do
     WARNED="$(dump | grep -m1 'reopens whatever is playing')"

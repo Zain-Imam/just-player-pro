@@ -17,7 +17,6 @@ prepare
 open_film
 echo "opened: $(held)"
 
-# no dump between finding and pressing: the label is gone in ~2s
 AT="$(find_control Rotate)"
 if [ -z "$AT" ]; then
   show_controls
