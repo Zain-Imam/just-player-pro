@@ -65,7 +65,7 @@ public final class BufferProfile {
 
     static Tier deviceTier(final Context context) {
         final long memoryMb = totalMemoryMb(context);
-        // Unreadable memory takes the safest tier, as the Lua does.
+        // unreadable memory takes the safest tier
         if (memoryMb < 0 || memoryMb < LOW_MEMORY_LIMIT_MB) {
             return Tier.LOW;
         }
@@ -97,7 +97,7 @@ public final class BufferProfile {
         }
     }
 
-    static boolean looksLive(@Nullable final Uri uri) {
+    public static boolean looksLive(@Nullable final Uri uri) {
         if (uri == null || uri.getScheme() == null) {
             return false;
         }
@@ -154,7 +154,6 @@ public final class BufferProfile {
             Utils.log("Could not read the heap limit: " + e);
         }
         if (heapMb <= 0) {
-            // heap limit unknown: cap at 32 MB
             return Math.min(tier.targetBufferMb, 32);
         }
         return Math.max(8, Math.min(tier.targetBufferMb, heapMb / 2));

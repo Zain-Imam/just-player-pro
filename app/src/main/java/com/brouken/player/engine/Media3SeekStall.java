@@ -9,8 +9,7 @@ import androidx.media3.common.Player;
 
 import com.brouken.player.net.NetworkSpeed;
 
-// After a failed range request Media3 can retry from its old read position and read
-// through to the seek target. Megabytes arriving with nothing buffered means that.
+// megabytes with nothing buffered: Media3 is rereading up to the seek target
 public final class Media3SeekStall {
 
     public interface Host {
@@ -61,6 +60,13 @@ public final class Media3SeekStall {
             }
             // data for the target arrived: just a slow server
             if (player.getBufferedPosition() > player.getCurrentPosition() + 500) {
+                stop();
+                return;
+            }
+            // the end is loaded: near it there is no half second more to wait for
+            final long duration = player.getDuration();
+            if (duration != androidx.media3.common.C.TIME_UNSET
+                    && player.getBufferedPosition() >= duration - 1000) {
                 stop();
                 return;
             }

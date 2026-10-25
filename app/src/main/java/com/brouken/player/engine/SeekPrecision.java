@@ -7,7 +7,7 @@ import androidx.media3.exoplayer.SeekParameters;
 
 import com.brouken.player.mpv.MpvPlayer;
 
-// Every seek sets its precision right before seeking; the setting is sticky.
+// set right before every seek, as the setting is sticky
 public final class SeekPrecision {
 
     private SeekPrecision() {

@@ -1,6 +1,6 @@
 package com.brouken.player.mpv;
 
-// Kept apart from MpvPlayer so settings can use it without starting mpv.
+// kept apart from MpvPlayer so settings can use it without starting mpv
 public final class MpvSubtitleScale {
 
     // Media3's default text size, as a fraction of the view height
@@ -29,7 +29,7 @@ public final class MpvSubtitleScale {
         return Math.max(0.2, (1.0 + step * (SUB_SIZE_STEP / SUB_SIZE_DEFAULT)) * parity);
     }
 
-    /** Converts a size step saved under the old scale to one that draws the same size now. */
+    // converts a step saved under the old scale to one that draws the same size
     public static int stepDrawnLike41(final int step41) {
         final double perStep = SUB_SIZE_STEP / SUB_SIZE_DEFAULT;
         final double drawn = (1.0 + step41 * perStep) * PARITY_4_1;

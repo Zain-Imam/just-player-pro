@@ -19,6 +19,7 @@ import androidx.media3.ui.SubtitleView;
 
 import com.brouken.player.CustomPlayerView;
 import com.brouken.player.Prefs;
+import com.brouken.player.SubtitleColors;
 import com.brouken.player.SubtitleUtils;
 import com.brouken.player.subtitle.CueModifier;
 
@@ -56,8 +57,12 @@ public final class Media3EngineUi implements EngineUi {
         final Typeface customTypeface = SubtitleUtils.loadCustomSubtitleTypeface(context, prefs);
         final Typeface typeface = SubtitleUtils.getSubtitleTypeface(prefs.subtitleTypeface,
                 userStyleCompat, customTypeface);
+        // file colours are spans over this, so embedded styles still win
+        final int foreground = !SubtitleColors.isDefault(prefs.subtitleColor)
+                ? SubtitleColors.argb(prefs.subtitleColor)
+                : userStyle.hasForegroundColor() ? userStyleCompat.foregroundColor : Color.WHITE;
         final CaptionStyleCompat captionStyle = new CaptionStyleCompat(
-                userStyle.hasForegroundColor() ? userStyleCompat.foregroundColor : Color.WHITE,
+                foreground,
                 userStyle.hasBackgroundColor() ? userStyleCompat.backgroundColor : Color.TRANSPARENT,
                 userStyle.hasWindowColor() ? userStyleCompat.windowColor : Color.TRANSPARENT,
                 SubtitleUtils.getSubtitleEdgeType(prefs.subtitleEdgeType, userStyle),

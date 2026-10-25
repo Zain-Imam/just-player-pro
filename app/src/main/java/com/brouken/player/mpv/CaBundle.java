@@ -9,8 +9,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-// mpv's TLS (FFmpeg + gnutls) ignores Android's trust store and needs a single PEM
-// bundle. Built from the system store; rebuilt when the store gains certificates.
+// mpv's TLS ignores Android's trust store and needs one PEM bundle
 public final class CaBundle {
 
     private static final String[] STORES = {
@@ -25,8 +24,7 @@ public final class CaBundle {
     @Nullable
     public static String path(final Context context) {
         try {
-            // not in the cache dir: mpv rereads it on every connection (each seek), and
-            // the cache can be cleared during playback
+            // not the cache dir: mpv rereads it on each seek, and the cache can be cleared
             final File bundle = new File(context.getNoBackupFilesDir(), "cacert.pem");
             final File old = new File(context.getCacheDir(), "cacert.pem");
             if (old.exists()) {

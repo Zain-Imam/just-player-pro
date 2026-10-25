@@ -12,7 +12,11 @@ import androidx.media3.ui.AspectRatioFrameLayout;
 
 import com.brouken.player.CustomPlayerView;
 import com.brouken.player.Prefs;
+import com.brouken.player.SubtitleColors;
+import com.brouken.player.mpv.FontFamilyName;
 import com.brouken.player.mpv.MpvPlayer;
+
+import java.io.File;
 
 // mpv's surface covers the whole player; mpv letterboxes and draws subtitles itself
 public final class MpvEngineUi implements EngineUi {
@@ -36,7 +40,30 @@ public final class MpvEngineUi implements EngineUi {
                 prefs.subtitleSize,
                 prefs.subtitleEdgeType == null ? null : prefs.subtitleEdgeType.name(),
                 prefs.subtitleTypeface == null ? null : prefs.subtitleTypeface.name(),
-                prefs.subtitleStyleEmbedded);
+                prefs.subtitleStyleEmbedded,
+                customFontFamily(),
+                SubtitleColors.hex(prefs.subtitleColor));
+    }
+
+    // read again only when the file changes; this runs on every layout change
+    private String fontFamily;
+    private long fontStamp = -1;
+
+    @Nullable
+    private String customFontFamily() {
+        if (!prefs.subtitleCustomFontEnabled) {
+            return null;
+        }
+        final File file = Prefs.subtitleCustomFontFile(playerView.getContext());
+        final long stamp = file.isFile() ? file.lastModified() * 31 + file.length() : 0;
+        if (stamp == 0) {
+            return null;
+        }
+        if (stamp != fontStamp) {
+            fontStamp = stamp;
+            fontFamily = FontFamilyName.read(file);
+        }
+        return fontFamily;
     }
 
     @Override

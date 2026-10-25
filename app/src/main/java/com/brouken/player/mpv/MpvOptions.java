@@ -25,6 +25,10 @@ public final class MpvOptions {
         return com.brouken.player.Utils.isSupportedNetworkUri(uri);
     }
 
+    public boolean isLive() {
+        return BufferProfile.looksLive(uri);
+    }
+
     public MpvOptions withHeaders(final java.util.Map<String, String> extra) {
         headers.clear();
         if (extra != null) {
@@ -34,8 +38,7 @@ public final class MpvOptions {
     }
 
     public void applyTo(final MPVLib mpv, final Context context) {
-        // mpv splits this list at commas, so commas inside values are escaped;
-        // the -append form doesn't work as an option name here
+        // commas in values are escaped; the -append name doesn't work for this option
         if (!headers.isEmpty()) {
             final StringBuilder fields = new StringBuilder();
             for (final java.util.Map.Entry<String, String> header : headers.entrySet()) {
@@ -61,8 +64,7 @@ public final class MpvOptions {
         final int priority = Integer.parseInt(PreferenceManager
                 .getDefaultSharedPreferences(context)
                 .getString("decoderPriority", "1"));
-        // zero-copy mediacodec first; auto-safe only offers mediacodec-copy, which
-        // costs about twice the CPU
+        // zero-copy mediacodec first: auto-safe's mediacodec-copy costs twice the CPU
         final String hwdec;
         switch (priority) {
             case 2:  // prefer app decoders
@@ -95,12 +97,17 @@ public final class MpvOptions {
         mpv.setOptionString("gpu-context", "android");
         mpv.setOptionString("ao", "audiotrack");
 
-        // subtitles
         mpv.setOptionString("sub-auto", "fuzzy");
         mpv.setOptionString("sub-file-paths", "Subs:subs:Subtitles:subtitles");
         mpv.setOptionString("sub-fix-timing", "yes");
         mpv.setOptionString("sub-ass-override", "scale");
         mpv.setOptionString("embeddedfonts", "yes");
+        // libass reads the folder per subtitle track, so a font picked later works
+        final java.io.File customFonts =
+                com.brouken.player.Prefs.subtitleCustomFontFile(context).getParentFile();
+        if (customFonts != null && customFonts.isDirectory()) {
+            mpv.setOptionString("sub-fonts-dir", customFonts.getAbsolutePath());
+        }
 
         // same language order as Media3
         final String slang = com.brouken.player.Languages.forMpv(
@@ -118,7 +125,7 @@ public final class MpvOptions {
         // otherwise mpv picks the first subtitle track when no language matches
         mpv.setOptionString("subs-fallback", "no");
 
-        // network: mpv's TLS needs its own CA file for https
+        // mpv's TLS needs its own CA file for https
         final String certificates = CaBundle.path(context);
         if (certificates != null) {
             mpv.setOptionString("tls-verify", "yes");
@@ -128,8 +135,7 @@ public final class MpvOptions {
         // no youtube-dl here; looking for it delays the error by a second
         mpv.setOptionString("ytdl", "no");
 
-        // a failed reconnect after a seek makes FFmpeg keep reading the old position,
-        // so retry connect and 5xx errors too, with short waits
+        // FFmpeg keeps the old position after a failed reconnect, so retry more errors
         mpv.setOptionString("network-timeout", "20");
         mpv.setOptionString("stream-lavf-o-append", "reconnect=1");
         mpv.setOptionString("stream-lavf-o-append", "reconnect_streamed=1");

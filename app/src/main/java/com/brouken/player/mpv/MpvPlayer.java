@@ -55,6 +55,8 @@ public final class MpvPlayer extends BasePlayer
     private static final String PROP_DURATION = "duration";
     private static final String PROP_PAUSE = "pause";
     private static final String PROP_EOF = "eof-reached";
+    // stopped on the last frame (keep-open); only a seek or a new file moves on
+    private boolean atEnd;
     private static final String PROP_CACHE_BUFFERING = "paused-for-cache";
     private static final String PROP_WIDTH = "width";
     private static final String PROP_HEIGHT = "height";
@@ -114,9 +116,33 @@ public final class MpvPlayer extends BasePlayer
     private boolean renderedFirstFrame;
 
     private final boolean network;
+    // a live stream wants to stay close to live, not to wait longer each time
+    private final boolean patient;
 
-    // until PLAYBACK_RESTART the position is the seek target, as in Media3;
-    // older time-pos reports must not overwrite it
+    // mpv resumes once cache-pause-wait seconds are in; a seek keeps the MpvOptions value
+    private final com.brouken.player.engine.StallPatience patience =
+            new com.brouken.player.engine.StallPatience();
+    private double basePauseWait = -1;
+
+    private void holdLongerAfterStops() {
+        if (!patient) {
+            return;
+        }
+        if (basePauseWait < 0) {
+            final Double base = mpv.getPropertyDouble("cache-pause-wait");
+            basePauseWait = base == null ? 1 : base;
+        }
+        final boolean afterSeek = seekPending || System.nanoTime() - seekIssuedAtNs < 2_000_000_000L;
+        final double wait = afterSeek ? basePauseWait : Math.max(basePauseWait,
+                patience.onStall(android.os.SystemClock.elapsedRealtime()) / 1000.0);
+        mpv.setPropertyDouble("cache-pause-wait", wait);
+        if (!afterSeek) {
+            Log.i(com.brouken.player.Utils.TAG, "Buffering stopped play: on again with "
+                    + Math.round(wait) + " s held");
+        }
+    }
+
+    // until PLAYBACK_RESTART the position is the seek target; older time-pos is ignored
     private boolean seekPending;
     private long seekTargetMs = C.TIME_UNSET;
     private long seekIssuedAtNs;
@@ -132,11 +158,13 @@ public final class MpvPlayer extends BasePlayer
         this.listeners = new ListenerSet<>(Looper.getMainLooper(), Clock.DEFAULT,
                 (listener, flags) -> listener.onEvents(this, new Player.Events(flags)));
         this.network = options.isNetwork();
+        this.patient = network && !options.isLive();
 
         mpv = MPVLib.create(this.context);
         options.applyTo(mpv, this.context);
         mpv.init();
-        subtitleParity = measureSubtitleParity();
+        subtitleFontSize = measureSubtitleFontSize();
+        subtitleParity = MpvSubtitleScale.parity(subtitleFontSize);
 
         observe(PROP_TIME_POS, MPVLib.MpvFormat.MPV_FORMAT_DOUBLE);
         observe(PROP_DURATION, MPVLib.MpvFormat.MPV_FORMAT_DOUBLE);
@@ -150,7 +178,6 @@ public final class MpvPlayer extends BasePlayer
         observe(PROP_VID, MPVLib.MpvFormat.MPV_FORMAT_STRING);
         observe(PROP_AID, MPVLib.MpvFormat.MPV_FORMAT_STRING);
         observe(PROP_SID, MPVLib.MpvFormat.MPV_FORMAT_STRING);
-        // picture position inside the surface, see pictureMargins()
         for (final String edge : PICTURE_EDGES) {
             observe("osd-dimensions/" + edge, MPVLib.MpvFormat.MPV_FORMAT_INT64);
         }
@@ -165,8 +192,6 @@ public final class MpvPlayer extends BasePlayer
             mpv.observeProperty(property, format);
         }
     }
-
-    // playback
 
     @Override
     public void setMediaItems(@NonNull List<MediaItem> items, boolean resetPosition) {
@@ -183,8 +208,14 @@ public final class MpvPlayer extends BasePlayer
             final MediaItem.LocalConfiguration local = items.get(0).localConfiguration;
             if (local != null) {
                 for (final MediaItem.SubtitleConfiguration subtitle : local.subtitleConfigurations) {
-                    if (!addedSubtitles.contains(subtitle.uri.toString())) {
+                    if (addedSubtitles.contains(subtitle.uri.toString()) || isPending(subtitle.uri)) {
+                        continue;
+                    }
+                    // behind any still going in after ready, to keep the order
+                    if (pendingSubtitles.isEmpty()) {
                         addSubtitleConfiguration(subtitle);
+                    } else {
+                        pendingSubtitles.add(subtitle);
                     }
                 }
             }
@@ -235,6 +266,38 @@ public final class MpvPlayer extends BasePlayer
     // sub-add before FILE_LOADED is lost, so sidecar subtitles wait here
     private final List<MediaItem.SubtitleConfiguration> pendingSubtitles = new ArrayList<>();
 
+    // each sub-add blocks while playing, so the rest go in after ready, one per message
+    private static final int SUBTITLES_BEFORE_READY = 3;
+
+    private final Runnable addNextSubtitle = new Runnable() {
+        @Override
+        public void run() {
+            if (released || mpv == null || pendingSubtitles.isEmpty()) {
+                return;
+            }
+            addSubtitleConfiguration(pendingSubtitles.remove(0));
+            if (!pendingSubtitles.isEmpty()) {
+                handler.post(this);
+            }
+        }
+    };
+
+    public boolean isAddingSubtitles() {
+        return fileOpened && !pendingSubtitles.isEmpty();
+    }
+
+    private boolean isPending(final android.net.Uri uri) {
+        for (final MediaItem.SubtitleConfiguration subtitle : pendingSubtitles) {
+            if (subtitle.uri.equals(uri)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // one rebuild per burst of adds; one per add grows with the square of the count
+    private final Runnable tracksChanged = this::updateTracks;
+
     private void addPendingSubtitles() {
         if (mpv == null || pendingSubtitles.isEmpty()) {
             return;
@@ -264,6 +327,7 @@ public final class MpvPlayer extends BasePlayer
 
         final String uri = item.localConfiguration.uri.toString();
         fileOpened = false;
+        handler.removeCallbacks(addNextSubtitle);
         addedSubtitles.clear();
         clearSeek();
         synchronized (complaints) {
@@ -341,12 +405,10 @@ public final class MpvPlayer extends BasePlayer
         if (mpv == null) {
             return;
         }
-        // C.TIME_UNSET means the default position, the start
         final long target = positionMs == C.TIME_UNSET ? 0 : Math.max(0, positionMs);
         final long from = this.positionMs;
 
-        // during an uncached seek, a failed reconnect can append the first target's
-        // data to the cached range; drop the cache unless this target is held
+        // a failed reconnect mid-seek can append the old target's data to the cache
         final boolean held = network && isCached(target);
         if (network && seekPending && seekTargetUncached && !held
                 && Math.abs(target - seekTargetMs) > 1_000) {
@@ -372,6 +434,8 @@ public final class MpvPlayer extends BasePlayer
         if (mpv == null) {
             return;
         }
+        // a seek leaves the end; mpv says so too, but only after the seek's own events
+        atEnd = false;
         positionMs = targetMs;
         // a keyframe seek may land either side of the target
         guard.anchor(targetMs, LANDING_TOLERANCE_MS);
@@ -397,8 +461,7 @@ public final class MpvPlayer extends BasePlayer
 
     private long seekAfterOpenMs = C.TIME_UNSET;
 
-    // commands return nothing, so a refused seek never restarts playback;
-    // poll mpv's "seeking" instead
+    // a refused seek never restarts playback, so poll mpv's "seeking" instead
     private static final long SEEK_WATCHDOG_MS = 1_000;
     private final Runnable seekWatchdog = new Runnable() {
         @Override
@@ -437,7 +500,6 @@ public final class MpvPlayer extends BasePlayer
         guard.reset();
     }
 
-    // from demuxer-cache-state seekable-ranges; unreadable counts as not cached
     private boolean isCached(final long positionMs) {
         if (mpv == null) {
             return false;
@@ -496,7 +558,6 @@ public final class MpvPlayer extends BasePlayer
         return true;
     }
 
-    // after a wrong landing, stay paused and retry with backoff until it lands
     private static final long MAX_RETRY_DELAY_MS = 8_000;
     private boolean holding;
     private final Runnable landingRetry = () -> {
@@ -532,8 +593,7 @@ public final class MpvPlayer extends BasePlayer
         guard.anchor(positionMs, SeamGuard.JUMP_MS);
     }
 
-    // Detects an unrequested forward jump (a badly joined cache), drops the cache and
-    // refetches. A repeat jump from the same place is in the file itself and allowed.
+    // an unrequested forward jump means a badly joined cache; a repeat one is in the file
     private final SeamGuard guard = new SeamGuard();
 
     private final class SeamGuard {
@@ -586,7 +646,6 @@ public final class MpvPlayer extends BasePlayer
         }
     }
 
-    // set by SeekPrecision, mirrors Media3's SeekParameters
     private boolean keyframeSeeking;
 
     public void setKeyframeSeeking(final boolean keyframes) {
@@ -606,8 +665,6 @@ public final class MpvPlayer extends BasePlayer
                 /* adIndexInAdGroup= */ C.INDEX_UNSET);
     }
 
-    // events
-
     @Override
     public void eventProperty(@NonNull String property) {
     }
@@ -621,7 +678,8 @@ public final class MpvPlayer extends BasePlayer
                     updateVideoSize();
                     break;
                 case PROP_TRACK_LIST_COUNT:
-                    updateTracks();
+                    handler.removeCallbacks(tracksChanged);
+                    handler.post(tracksChanged);
                     break;
                 default:
                     if (property.startsWith("osd-dimensions/")) {
@@ -686,12 +744,16 @@ public final class MpvPlayer extends BasePlayer
                     }
                     break;
                 case PROP_EOF:
+                    atEnd = value;
                     if (value) {
                         setPlaybackState(Player.STATE_ENDED);
                     }
                     break;
                 case PROP_CACHE_BUFFERING:
                     isBuffering = value;
+                    if (value) {
+                        holdLongerAfterStops();
+                    }
                     setPlaybackState(value || seekPending
                             ? Player.STATE_BUFFERING : Player.STATE_READY);
                     break;
@@ -736,7 +798,10 @@ public final class MpvPlayer extends BasePlayer
             }
             if (eventId == MPVLib.MpvEvent.MPV_EVENT_FILE_LOADED) {
                 fileOpened = true;
-                addPendingSubtitles();
+                atEnd = false;
+                if (pendingSubtitles.size() <= SUBTITLES_BEFORE_READY) {
+                    addPendingSubtitles();
+                }
                 updateTracks();
                 updateVideoSize();
                 setPlaybackState(Player.STATE_READY);
@@ -744,6 +809,9 @@ public final class MpvPlayer extends BasePlayer
                     final long target = seekAfterOpenMs;
                     seekAfterOpenMs = C.TIME_UNSET;
                     sendSeek(target, keyframeSeeking ? "absolute+keyframes" : "absolute");
+                }
+                if (!pendingSubtitles.isEmpty()) {
+                    handler.post(addNextSubtitle);
                 }
             } else if (eventId == MPVLib.MpvEvent.MPV_EVENT_END_FILE) {
                 // END_FILE before FILE_LOADED: the file failed to open
@@ -760,13 +828,14 @@ public final class MpvPlayer extends BasePlayer
                 notifyFirstFrame();
             } else if (eventId == MPVLib.MpvEvent.MPV_EVENT_VIDEO_RECONFIG) {
                 updateVideoSize();
+                // HDR is known only from the decoded picture
+                updateTracks();
                 notifyFirstFrame();
             }
         });
     }
 
-    // Warnings and errors from mpv's log since loadfile; all are kept because the
-    // specific reason is often neither first nor last. Written on mpv's thread.
+    // all warnings since loadfile: the real cause is often neither first nor last
     private static final int COMPLAINTS_LIMIT = 4000;
     private final StringBuilder complaints = new StringBuilder();
 
@@ -788,7 +857,6 @@ public final class MpvPlayer extends BasePlayer
         }
     }
 
-    // maps mpv's log text to a PlaybackException code for the error message
     private void reportFailedToOpen() {
         if (error != null) {
             return;
@@ -825,7 +893,8 @@ public final class MpvPlayer extends BasePlayer
     }
 
     private void notifyFirstFrame() {
-        if (renderedFirstFrame) {
+        // a link that never opened sends these events too, and would count as played
+        if (renderedFirstFrame || !fileOpened) {
             return;
         }
         renderedFirstFrame = true;
@@ -834,6 +903,10 @@ public final class MpvPlayer extends BasePlayer
 
     private void setPlaybackState(final int state) {
         if (playbackState == state) {
+            return;
+        }
+        // a late cache or restart event would otherwise undo the end
+        if (atEnd && (state == Player.STATE_READY || state == Player.STATE_BUFFERING)) {
             return;
         }
         playbackState = state;
@@ -885,7 +958,6 @@ public final class MpvPlayer extends BasePlayer
             return;
         }
 
-        // HDR comes from the decoded video, reported in the Format as Media3 does
         final String gamma = mpv.getPropertyString("video-params/gamma");
 
         final Integer currentVideo = currentTrackId("video", "vid");
@@ -907,6 +979,8 @@ public final class MpvPlayer extends BasePlayer
             info.id = mpv.getPropertyInt("track-list/" + i + "/id");
 
             info.codec = mpv.getPropertyString("track-list/" + i + "/codec");
+            info.profile = mpv.getPropertyString("track-list/" + i + "/codec-profile");
+            info.dolbyVisionProfile = mpv.getPropertyInt("track-list/" + i + "/dolby-vision-profile");
             info.channels = mpv.getPropertyInt("track-list/" + i + "/demux-channel-count");
             info.sampleRate = mpv.getPropertyInt("track-list/" + i + "/demux-samplerate");
             info.fps = mpv.getPropertyDouble("track-list/" + i + "/demux-fps");
@@ -975,7 +1049,7 @@ public final class MpvPlayer extends BasePlayer
                     .setSelectionFlags(selectionFlags)
                     .setRoleFlags(roleFlags);
             if (info.codec != null && !info.codec.isEmpty()) {
-                builder.setCodecs(info.codec);
+                builder.setCodecs(codecString(info, MpvCodecs.mimeFor(info.type, info.codec) != null));
             }
             if (info.channels != null && info.channels > 0) {
                 builder.setChannelCount(info.channels);
@@ -1014,12 +1088,27 @@ public final class MpvPlayer extends BasePlayer
                 listener.onTracksChanged(built));
     }
 
+    // the profile or a Dolby Vision code; the mime type stays the base codec
+    private static String codecString(final TrackInfo info, final boolean known) {
+        if ("video".equals(info.type) && info.dolbyVisionProfile != null && info.dolbyVisionProfile > 0) {
+            final String base = "h264".equals(info.codec) ? "dvav"
+                    : "av1".equals(info.codec) ? "dav1" : "dvhe";
+            return String.format(java.util.Locale.US, "%s.%02d", base, info.dolbyVisionProfile);
+        }
+        if (known && info.profile != null && !info.profile.isEmpty()) {
+            return info.profile;
+        }
+        return info.codec;
+    }
+
     private static final class TrackInfo {
         int index;
         String type;
         String title;
         String language;
         String codec;
+        String profile;
+        Integer dolbyVisionProfile;
         Integer id;
         Integer channels;
         Integer sampleRate;
@@ -1077,8 +1166,6 @@ public final class MpvPlayer extends BasePlayer
         }
         first.selected = true;
     }
-
-    // surface
 
     @Override
     public void setVideoSurface(@Nullable Surface surface) {
@@ -1178,8 +1265,6 @@ public final class MpvPlayer extends BasePlayer
             clearVideoSurface();
         }
     }
-
-    // properties
 
     @NonNull
     @Override
@@ -1338,35 +1423,31 @@ public final class MpvPlayer extends BasePlayer
 
     private int subtitleSizeStep;
 
-    // sub-scale matching Media3's text size, from mpv's actual sub-font-size;
     // constant so subtitles don't resize with the picture's aspect or zoom
+    private final double subtitleFontSize;
     private final double subtitleParity;
 
-    private double measureSubtitleParity() {
+    private double measureSubtitleFontSize() {
         Double fontSize = null;
         try {
             fontSize = mpv == null ? null : mpv.getPropertyDouble("sub-font-size");
         } catch (Exception e) {
             Log.w(TAG, "could not read sub-font-size: " + e);
         }
-        final double size = fontSize == null || fontSize <= 0
-                ? MpvSubtitleScale.DEFAULT_FONT_SIZE : fontSize;
-        return MpvSubtitleScale.parity(size);
+        return fontSize == null || fontSize <= 0 ? MpvSubtitleScale.DEFAULT_FONT_SIZE : fontSize;
     }
 
+    // parity goes in the font size so styled (ASS) subtitles don't grow by it too
     private void applySubtitleScale() {
         if (mpv == null) {
             return;
         }
-        set("sub-scale", String.valueOf(MpvSubtitleScale.scale(subtitleSizeStep, subtitleParity)));
+        set("sub-font-size", String.valueOf(subtitleFontSize * subtitleParity));
+        set("sub-scale", String.valueOf(MpvSubtitleScale.scale(subtitleSizeStep, 1.0)));
     }
 
 
-    /**
-     * @param keepAspect     false stretches the picture to the window
-     * @param panscan        0 letterboxes, 1 crops to fill
-     * @param aspectOverride a forced ratio such as 1.777, or 0 for the video's own
-     */
+    // panscan 0 letterboxes, 1 crops to fill; aspectOverride 0 keeps the video's own
     public void setAspect(final boolean keepAspect, final double panscan,
                           final double aspectOverride) {
         if (mpv == null) {
@@ -1397,9 +1478,11 @@ public final class MpvPlayer extends BasePlayer
         applySubtitleScale();
     }
 
+    // customFontFamily is found by libass in sub-fonts-dir; color is #RRGGBB
     public void setSubtitleStyle(final int verticalPosition, final int sizeStep,
                                  final String edgeType, final String typeface,
-                                 final boolean embeddedStyles) {
+                                 final boolean embeddedStyles,
+                                 @Nullable final String customFontFamily, final String color) {
         if (mpv == null) {
             return;
         }
@@ -1443,9 +1526,16 @@ public final class MpvPlayer extends BasePlayer
 
         final boolean bold = "Bold".equals(typeface);
         set("sub-bold", bold ? "yes" : "no");
-        set("sub-font", "Medium".equals(typeface) ? "sans-serif-medium" : "sans-serif");
+        if (customFontFamily != null) {
+            set("sub-font", customFontFamily);
+        } else {
+            set("sub-font", "Medium".equals(typeface) ? "sans-serif-medium" : "sans-serif");
+        }
+        // with "scale", styled (ASS) subtitles keep their own colours
+        set("sub-color", color);
 
-        set("sub-ass-override", embeddedStyles ? "scale" : "force");
+        // not "force": it keeps in-line colour tags, which an SRT's <font> becomes
+        set("sub-ass-override", embeddedStyles ? "scale" : "strip");
     }
 
 
@@ -1866,7 +1956,7 @@ public final class MpvPlayer extends BasePlayer
                 .build();
     }
 
-    // unsupported playlist
+    // single item only: playlist edits are ignored
 
     @Override
     public void addMediaItems(int index, @NonNull List<MediaItem> mediaItems) {

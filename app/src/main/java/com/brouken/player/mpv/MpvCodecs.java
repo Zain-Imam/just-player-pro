@@ -5,7 +5,6 @@ import androidx.media3.common.MimeTypes;
 
 import java.util.Locale;
 
-// Maps FFmpeg codec names reported by mpv to Media3 mime types for track labels.
 final class MpvCodecs {
 
     private MpvCodecs() {
@@ -17,7 +16,6 @@ final class MpvCodecs {
             return null;
         }
         switch (codec.toLowerCase(Locale.US)) {
-            // audio
             case "aac":
             case "aac_latm":
                 return MimeTypes.AUDIO_AAC;
@@ -51,7 +49,6 @@ final class MpvCodecs {
             case "amrwb":
                 return MimeTypes.AUDIO_AMR_WB;
 
-            // video
             case "h264":
                 return MimeTypes.VIDEO_H264;
             case "hevc":
@@ -69,7 +66,6 @@ final class MpvCodecs {
             case "vc1":
                 return MimeTypes.VIDEO_VC1;
 
-            // subtitles
             case "subrip":
             case "srt":
                 return MimeTypes.APPLICATION_SUBRIP;
