@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="controls_name_quality">画质</string>
+    <string name="controls_quality_note">仅用于网站视频</string>
+    <string name="controls_name_queue">播放队列</string>
+    <string name="controls_queue_note">仅用于 YouTube 播放列表</string>
+    <string name="web_getting">正在从 %1$s 获取视频…</string>
+    <string name="web_audio_only">仅音频</string>
+    <string name="web_audio_original">%1$s（原声）</string>
+    <string name="web_audio_dubbed">%1$s（配音）</string>
+    <string name="web_subtitle_auto">%1$s（自动）</string>
+    <string name="web_queue_unavailable">视频不可用</string>
+    <string name="web_queue_skipped">已跳过无法播放的视频</string>
+    <string name="web_subtitle_failed">现在无法获取字幕</string>
+    <string name="web_failed_title">现在无法播放</string>
+    <string name="web_failed_later">请几分钟后重试。</string>
+    <string name="web_failed_never">此视频无法播放</string>
+    <string name="web_try_again">重试</string>
+    <string name="web_close">关闭</string>
+    <string name="web_needs_download_title">网站播放需要下载组件</string>
+    <string name="web_needs_download">要播放 YouTube 和其他网站，请在 设置 → 集成 中下载 yt-dlp，约 13 MB。</string>
+    <string name="web_open_settings">打开设置</string>
+    <string name="pref_websites_header">网站</string>
+    <string name="ytdlp_title">YouTube 和其他网站</string>
+    <string name="ytdlp_offer">播放 YouTube 和约 1800 个其他网站的视频。将下载 yt-dlp 和 Python，约 13 MB。点按即可下载。</string>
+    <string name="ytdlp_installed">已就绪：yt-dlp %1$s。点按可删除。</string>
+    <string name="ytdlp_starting">正在开始…</string>
+    <string name="ytdlp_getting_python">正在下载 Python… %1$d%%</string>
+    <string name="ytdlp_getting_ytdlp">正在下载 yt-dlp… %1$d%%</string>
+    <string name="ytdlp_checking">正在检查新版本…</string>
+    <string name="ytdlp_updated">已更新到 yt-dlp %1$s</string>
+    <string name="ytdlp_up_to_date">yt-dlp 已是最新版本</string>
+    <string name="ytdlp_failed">下载失败。请重试。</string>
+    <string name="ytdlp_remove_title">要删除 yt-dlp 吗？</string>
+    <string name="ytdlp_remove_message">在重新下载之前，网站链接将无法播放。</string>
+    <string name="ytdlp_remove">删除</string>
+    <string name="ytdlp_updates">更新</string>
+    <string name="ytdlp_updates_auto">自动</string>
+    <string name="ytdlp_updates_ask">通知我</string>
+    <string name="ytdlp_updates_manual">仅在我点按“立即更新”时</string>
+    <string name="ytdlp_update_now">立即更新</string>
+    <string name="ytdlp_new_version">yt-dlp %1$s · %2$s 已发布，点按即可更新</string>
+    <string name="ytdlp_waiting_note">yt-dlp 有新版本。请在 设置 → 集成 中更新。</string>
+    <string name="ytdlp_quality">起始画质</string>
+    <string name="ytdlp_quality_screen">最适合此屏幕</string>
+    <string name="ytdlp_quality_best">最高</string>
+</resources>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="controls_name_quality">Chất lượng</string>
+    <string name="controls_quality_note">Chỉ cho video từ trang web</string>
+    <string name="controls_name_queue">Hàng chờ</string>
+    <string name="controls_queue_note">Chỉ cho danh sách phát YouTube</string>
+    <string name="web_getting">Đang lấy video từ %1$s…</string>
+    <string name="web_audio_only">Chỉ âm thanh</string>
+    <string name="web_audio_original">%1$s (gốc)</string>
+    <string name="web_audio_dubbed">%1$s (lồng tiếng)</string>
+    <string name="web_subtitle_auto">%1$s (tự động)</string>
+    <string name="web_queue_unavailable">Video không khả dụng</string>
+    <string name="web_queue_skipped">Đã bỏ qua một video không phát được</string>
+    <string name="web_subtitle_failed">Hiện không có phụ đề</string>
+    <string name="web_failed_title">Hiện không phát được</string>
+    <string name="web_failed_later">Hãy thử lại sau vài phút.</string>
+    <string name="web_failed_never">Video này không phát được</string>
+    <string name="web_try_again">Thử lại</string>
+    <string name="web_close">Đóng</string>
+    <string name="web_needs_download_title">Trang web cần tải thêm</string>
+    <string name="web_needs_download">Để phát YouTube và các trang khác, hãy tải yt-dlp trong Cài đặt → Tích hợp. Khoảng 13 MB.</string>
+    <string name="web_open_settings">Mở Cài đặt</string>
+    <string name="pref_websites_header">Trang web</string>
+    <string name="ytdlp_title">YouTube và các trang khác</string>
+    <string name="ytdlp_offer">Phát video từ YouTube và khoảng 1.800 trang khác. Tải yt-dlp và Python, khoảng 13 MB. Nhấn để tải.</string>
+    <string name="ytdlp_installed">Sẵn sàng: yt-dlp %1$s. Nhấn để gỡ.</string>
+    <string name="ytdlp_starting">Đang bắt đầu…</string>
+    <string name="ytdlp_getting_python">Đang tải Python… %1$d%%</string>
+    <string name="ytdlp_getting_ytdlp">Đang tải yt-dlp… %1$d%%</string>
+    <string name="ytdlp_checking">Đang tìm phiên bản mới…</string>
+    <string name="ytdlp_updated">Đã cập nhật lên yt-dlp %1$s</string>
+    <string name="ytdlp_up_to_date">yt-dlp đã mới nhất</string>
+    <string name="ytdlp_failed">Tải xuống thất bại. Hãy thử lại.</string>
+    <string name="ytdlp_remove_title">Gỡ yt-dlp?</string>
+    <string name="ytdlp_remove_message">Liên kết trang web sẽ không phát được cho đến khi bạn tải lại.</string>
+    <string name="ytdlp_remove">Gỡ</string>
+    <string name="ytdlp_updates">Cập nhật</string>
+    <string name="ytdlp_updates_auto">Tự động</string>
+    <string name="ytdlp_updates_ask">Báo cho tôi</string>
+    <string name="ytdlp_updates_manual">Chỉ khi tôi nhấn Cập nhật ngay</string>
+    <string name="ytdlp_update_now">Cập nhật ngay</string>
+    <string name="ytdlp_new_version">yt-dlp %1$s · đã có %2$s, nhấn để cập nhật</string>
+    <string name="ytdlp_waiting_note">Đã có yt-dlp mới. Hãy cập nhật trong Cài đặt → Tích hợp.</string>
+    <string name="ytdlp_quality">Chất lượng ban đầu</string>
+    <string name="ytdlp_quality_screen">Tốt nhất cho màn hình này</string>
+    <string name="ytdlp_quality_best">Cao nhất</string>
+</resources>

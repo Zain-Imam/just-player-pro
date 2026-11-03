@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="controls_name_quality">क्वालिटी</string>
+    <string name="controls_quality_note">सिर्फ़ वेबसाइटों के वीडियो के लिए</string>
+    <string name="controls_name_queue">कतार</string>
+    <string name="controls_queue_note">सिर्फ़ YouTube प्लेलिस्ट के लिए</string>
+    <string name="web_getting">%1$s से वीडियो लाया जा रहा है…</string>
+    <string name="web_audio_only">सिर्फ़ ऑडियो</string>
+    <string name="web_audio_original">%1$s (मूल)</string>
+    <string name="web_audio_dubbed">%1$s (डब किया गया)</string>
+    <string name="web_subtitle_auto">%1$s (अपने-आप)</string>
+    <string name="web_queue_unavailable">वीडियो उपलब्ध नहीं</string>
+    <string name="web_queue_skipped">न चलने वाला एक वीडियो छोड़ दिया गया</string>
+    <string name="web_subtitle_failed">अभी कैप्शन उपलब्ध नहीं</string>
+    <string name="web_failed_title">अभी नहीं चल सकता</string>
+    <string name="web_failed_later">कुछ मिनट बाद फिर कोशिश करें।</string>
+    <string name="web_failed_never">यह वीडियो नहीं चल सकता</string>
+    <string name="web_try_again">फिर से कोशिश करें</string>
+    <string name="web_close">बंद करें</string>
+    <string name="web_needs_download_title">वेबसाइटों के लिए डाउनलोड ज़रूरी है</string>
+    <string name="web_needs_download">YouTube और दूसरी साइटें चलाने के लिए सेटिंग → इंटीग्रेशन में yt-dlp डाउनलोड करें। यह लगभग 13 MB है।</string>
+    <string name="web_open_settings">सेटिंग खोलें</string>
+    <string name="pref_websites_header">वेबसाइटें</string>
+    <string name="ytdlp_title">YouTube और दूसरी साइटें</string>
+    <string name="ytdlp_offer">YouTube और लगभग 1,800 दूसरी साइटों के वीडियो चलाता है। yt-dlp और Python डाउनलोड होते हैं, लगभग 13 MB। डाउनलोड करने के लिए टैप करें।</string>
+    <string name="ytdlp_installed">तैयार: yt-dlp %1$s. हटाने के लिए टैप करें।</string>
+    <string name="ytdlp_starting">शुरू हो रहा है…</string>
+    <string name="ytdlp_getting_python">Python डाउनलोड हो रहा है… %1$d%%</string>
+    <string name="ytdlp_getting_ytdlp">yt-dlp डाउनलोड हो रहा है… %1$d%%</string>
+    <string name="ytdlp_checking">नया वर्शन देखा जा रहा है…</string>
+    <string name="ytdlp_updated">yt-dlp %1$s पर अपडेट हो गया</string>
+    <string name="ytdlp_up_to_date">yt-dlp अप-टू-डेट है</string>
+    <string name="ytdlp_failed">डाउनलोड नहीं हुआ। फिर से कोशिश करें।</string>
+    <string name="ytdlp_remove_title">yt-dlp हटाएँ?</string>
+    <string name="ytdlp_remove_message">जब तक आप इसे फिर से डाउनलोड नहीं करते, वेबसाइट के लिंक नहीं चलेंगे।</string>
+    <string name="ytdlp_remove">हटाएँ</string>
+    <string name="ytdlp_updates">अपडेट</string>
+    <string name="ytdlp_updates_auto">अपने-आप</string>
+    <string name="ytdlp_updates_ask">मुझे बताएँ</string>
+    <string name="ytdlp_updates_manual">सिर्फ़ तब जब मैं अभी अपडेट करें पर टैप करूँ</string>
+    <string name="ytdlp_update_now">अभी अपडेट करें</string>
+    <string name="ytdlp_new_version">yt-dlp %1$s · %2$s आ गया है, अपडेट करने के लिए टैप करें</string>
+    <string name="ytdlp_waiting_note">yt-dlp का नया वर्शन आ गया है। इसे सेटिंग → इंटीग्रेशन में अपडेट करें।</string>
+    <string name="ytdlp_quality">शुरुआती क्वालिटी</string>
+    <string name="ytdlp_quality_screen">इस स्क्रीन के लिए सबसे अच्छी</string>
+    <string name="ytdlp_quality_best">सबसे ऊँची</string>
+</resources>

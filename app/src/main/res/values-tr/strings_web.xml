@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="controls_name_quality">Kalite</string>
+    <string name="controls_quality_note">Yalnızca web sitelerindeki videolar için</string>
+    <string name="controls_name_queue">Sıra</string>
+    <string name="controls_queue_note">Yalnızca YouTube oynatma listeleri için</string>
+    <string name="web_getting">Video %1$s üzerinden alınıyor…</string>
+    <string name="web_audio_only">Yalnızca ses</string>
+    <string name="web_audio_original">%1$s (orijinal)</string>
+    <string name="web_audio_dubbed">%1$s (dublaj)</string>
+    <string name="web_subtitle_auto">%1$s (otomatik)</string>
+    <string name="web_queue_unavailable">Video kullanılamıyor</string>
+    <string name="web_queue_skipped">Oynatılamayan bir video atlandı</string>
+    <string name="web_subtitle_failed">Altyazılar şu an kullanılamıyor</string>
+    <string name="web_failed_title">Şu an oynatılamıyor</string>
+    <string name="web_failed_later">Birkaç dakika sonra tekrar deneyin.</string>
+    <string name="web_failed_never">Bu video oynatılamaz</string>
+    <string name="web_try_again">Yeniden dene</string>
+    <string name="web_close">Kapat</string>
+    <string name="web_needs_download_title">Web siteleri için indirme gerekiyor</string>
+    <string name="web_needs_download">YouTube ve diğer siteleri oynatmak için Ayarlar → Entegrasyonlar bölümünden yt-dlp\'yi indirin. Yaklaşık 13 MB.</string>
+    <string name="web_open_settings">Ayarları aç</string>
+    <string name="pref_websites_header">Web siteleri</string>
+    <string name="ytdlp_title">YouTube ve diğer siteler</string>
+    <string name="ytdlp_offer">YouTube ve yaklaşık 1.800 başka siteden video oynatır. yt-dlp ve Python indirilir, yaklaşık 13 MB. İndirmek için dokunun.</string>
+    <string name="ytdlp_installed">Hazır: yt-dlp %1$s. Kaldırmak için dokunun.</string>
+    <string name="ytdlp_starting">Başlatılıyor…</string>
+    <string name="ytdlp_getting_python">Python indiriliyor… %%%1$d</string>
+    <string name="ytdlp_getting_ytdlp">yt-dlp indiriliyor… %%%1$d</string>
+    <string name="ytdlp_checking">Yeni sürüm aranıyor…</string>
+    <string name="ytdlp_updated">yt-dlp %1$s sürümüne güncellendi</string>
+    <string name="ytdlp_up_to_date">yt-dlp güncel</string>
+    <string name="ytdlp_failed">İndirme başarısız. Tekrar deneyin.</string>
+    <string name="ytdlp_remove_title">yt-dlp kaldırılsın mı?</string>
+    <string name="ytdlp_remove_message">Siz yeniden indirene kadar web sitesi bağlantıları oynatılmayacak.</string>
+    <string name="ytdlp_remove">Kaldır</string>
+    <string name="ytdlp_updates">Güncellemeler</string>
+    <string name="ytdlp_updates_auto">Otomatik</string>
+    <string name="ytdlp_updates_ask">Bana haber ver</string>
+    <string name="ytdlp_updates_manual">Yalnızca Şimdi güncelle\'ye dokunduğumda</string>
+    <string name="ytdlp_update_now">Şimdi güncelle</string>
+    <string name="ytdlp_new_version">yt-dlp %1$s · %2$s çıktı, güncellemek için dokunun</string>
+    <string name="ytdlp_waiting_note">Yeni bir yt-dlp çıktı. Ayarlar → Entegrasyonlar bölümünden güncelleyin.</string>
+    <string name="ytdlp_quality">Başlangıç kalitesi</string>
+    <string name="ytdlp_quality_screen">Bu ekran için en iyisi</string>
+    <string name="ytdlp_quality_best">En yüksek</string>
+</resources>

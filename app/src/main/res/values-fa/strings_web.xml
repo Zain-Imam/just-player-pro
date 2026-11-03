@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="controls_name_quality">کیفیت</string>
+    <string name="controls_quality_note">فقط برای ویدیوهای وب‌سایت‌ها</string>
+    <string name="controls_name_queue">صف پخش</string>
+    <string name="controls_queue_note">فقط برای فهرست‌های پخش YouTube</string>
+    <string name="web_getting">در حال گرفتن ویدیو از %1$s…</string>
+    <string name="web_audio_only">فقط صدا</string>
+    <string name="web_audio_original">%1$s (اصلی)</string>
+    <string name="web_audio_dubbed">%1$s (دوبله)</string>
+    <string name="web_subtitle_auto">%1$s (خودکار)</string>
+    <string name="web_queue_unavailable">ویدیو در دسترس نیست</string>
+    <string name="web_queue_skipped">از ویدیویی که پخش نمی‌شود رد شد</string>
+    <string name="web_subtitle_failed">زیرنویس الان در دسترس نیست</string>
+    <string name="web_failed_title">الان پخش نمی‌شود</string>
+    <string name="web_failed_later">چند دقیقهٔ دیگر دوباره امتحان کنید.</string>
+    <string name="web_failed_never">این ویدیو پخش نمی‌شود</string>
+    <string name="web_try_again">تلاش دوباره</string>
+    <string name="web_close">بستن</string>
+    <string name="web_needs_download_title">وب‌سایت‌ها به دانلود نیاز دارند</string>
+    <string name="web_needs_download">برای پخش YouTube و سایت‌های دیگر، yt-dlp را از تنظیمات ← یکپارچه‌سازی‌ها دانلود کنید. حدود ۱۳ مگابایت است.</string>
+    <string name="web_open_settings">باز کردن تنظیمات</string>
+    <string name="pref_websites_header">وب‌سایت‌ها</string>
+    <string name="ytdlp_title">YouTube و سایت‌های دیگر</string>
+    <string name="ytdlp_offer">ویدیوهای YouTube و حدود ۱۸۰۰ سایت دیگر را پخش می‌کند. yt-dlp و Python را دانلود می‌کند، حدود ۱۳ مگابایت. برای دانلود ضربه بزنید.</string>
+    <string name="ytdlp_installed">آماده: yt-dlp %1$s. برای حذف ضربه بزنید.</string>
+    <string name="ytdlp_starting">در حال شروع…</string>
+    <string name="ytdlp_getting_python">در حال دانلود Python… %1$d%%</string>
+    <string name="ytdlp_getting_ytdlp">در حال دانلود yt-dlp… %1$d%%</string>
+    <string name="ytdlp_checking">در حال بررسی نسخهٔ جدید…</string>
+    <string name="ytdlp_updated">به yt-dlp %1$s به‌روز شد</string>
+    <string name="ytdlp_up_to_date">yt-dlp به‌روز است</string>
+    <string name="ytdlp_failed">دانلود ناموفق بود. دوباره امتحان کنید.</string>
+    <string name="ytdlp_remove_title">yt-dlp حذف شود؟</string>
+    <string name="ytdlp_remove_message">تا وقتی دوباره دانلودش نکنید، پیوندهای وب‌سایت‌ها پخش نمی‌شوند.</string>
+    <string name="ytdlp_remove">حذف</string>
+    <string name="ytdlp_updates">به‌روزرسانی‌ها</string>
+    <string name="ytdlp_updates_auto">خودکار</string>
+    <string name="ytdlp_updates_ask">به من خبر بده</string>
+    <string name="ytdlp_updates_manual">فقط وقتی روی «الان به‌روزرسانی کن» ضربه بزنم</string>
+    <string name="ytdlp_update_now">الان به‌روزرسانی کن</string>
+    <string name="ytdlp_new_version">yt-dlp %1$s · نسخهٔ %2$s آمده، برای به‌روزرسانی ضربه بزنید</string>
+    <string name="ytdlp_waiting_note">نسخهٔ جدید yt-dlp آمده است. آن را در تنظیمات ← یکپارچه‌سازی‌ها به‌روز کنید.</string>
+    <string name="ytdlp_quality">کیفیت شروع</string>
+    <string name="ytdlp_quality_screen">بهترین برای این صفحه</string>
+    <string name="ytdlp_quality_best">بالاترین</string>
+</resources>

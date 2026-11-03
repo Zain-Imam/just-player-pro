@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="controls_name_quality">Kualitas</string>
+    <string name="controls_quality_note">Hanya untuk video dari situs web</string>
+    <string name="controls_name_queue">Antrean</string>
+    <string name="controls_queue_note">Hanya untuk playlist YouTube</string>
+    <string name="web_getting">Mengambil video dari %1$s…</string>
+    <string name="web_audio_only">Hanya audio</string>
+    <string name="web_audio_original">%1$s (asli)</string>
+    <string name="web_audio_dubbed">%1$s (sulih suara)</string>
+    <string name="web_subtitle_auto">%1$s (otomatis)</string>
+    <string name="web_queue_unavailable">Video tidak tersedia</string>
+    <string name="web_queue_skipped">Video yang tidak bisa diputar dilewati</string>
+    <string name="web_subtitle_failed">Teks tidak tersedia sekarang</string>
+    <string name="web_failed_title">Tidak bisa diputar sekarang</string>
+    <string name="web_failed_later">Coba lagi beberapa menit lagi.</string>
+    <string name="web_failed_never">Video ini tidak bisa diputar</string>
+    <string name="web_try_again">Coba lagi</string>
+    <string name="web_close">Tutup</string>
+    <string name="web_needs_download_title">Situs web perlu unduhan</string>
+    <string name="web_needs_download">Untuk memutar YouTube dan situs lain, unduh yt-dlp di Setelan → Integrasi. Sekitar 13 MB.</string>
+    <string name="web_open_settings">Buka Setelan</string>
+    <string name="pref_websites_header">Situs web</string>
+    <string name="ytdlp_title">YouTube dan situs lain</string>
+    <string name="ytdlp_offer">Memutar video dari YouTube dan sekitar 1.800 situs lain. Mengunduh yt-dlp dan Python, sekitar 13 MB. Ketuk untuk mengunduh.</string>
+    <string name="ytdlp_installed">Siap: yt-dlp %1$s. Ketuk untuk menghapus.</string>
+    <string name="ytdlp_starting">Memulai…</string>
+    <string name="ytdlp_getting_python">Mengunduh Python… %1$d%%</string>
+    <string name="ytdlp_getting_ytdlp">Mengunduh yt-dlp… %1$d%%</string>
+    <string name="ytdlp_checking">Mencari versi baru…</string>
+    <string name="ytdlp_updated">Diperbarui ke yt-dlp %1$s</string>
+    <string name="ytdlp_up_to_date">yt-dlp sudah terbaru</string>
+    <string name="ytdlp_failed">Unduhan gagal. Coba lagi.</string>
+    <string name="ytdlp_remove_title">Hapus yt-dlp?</string>
+    <string name="ytdlp_remove_message">Link situs web tidak akan bisa diputar sampai Anda mengunduhnya lagi.</string>
+    <string name="ytdlp_remove">Hapus</string>
+    <string name="ytdlp_updates">Pembaruan</string>
+    <string name="ytdlp_updates_auto">Otomatis</string>
+    <string name="ytdlp_updates_ask">Beri tahu saya</string>
+    <string name="ytdlp_updates_manual">Hanya saat saya mengetuk Perbarui sekarang</string>
+    <string name="ytdlp_update_now">Perbarui sekarang</string>
+    <string name="ytdlp_new_version">yt-dlp %1$s · %2$s sudah keluar, ketuk untuk memperbarui</string>
+    <string name="ytdlp_waiting_note">yt-dlp versi baru sudah keluar. Perbarui di Setelan → Integrasi.</string>
+    <string name="ytdlp_quality">Kualitas awal</string>
+    <string name="ytdlp_quality_screen">Terbaik untuk layar ini</string>
+    <string name="ytdlp_quality_best">Tertinggi</string>
+</resources>

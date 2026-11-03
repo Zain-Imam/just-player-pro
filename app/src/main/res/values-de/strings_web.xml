@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="controls_name_quality">Qualität</string>
+    <string name="controls_quality_note">Nur für Videos von Websites</string>
+    <string name="controls_name_queue">Warteschlange</string>
+    <string name="controls_queue_note">Nur für YouTube-Playlists</string>
+    <string name="web_getting">Video wird von %1$s geholt…</string>
+    <string name="web_audio_only">Nur Ton</string>
+    <string name="web_audio_original">%1$s (Original)</string>
+    <string name="web_audio_dubbed">%1$s (synchronisiert)</string>
+    <string name="web_subtitle_auto">%1$s (automatisch)</string>
+    <string name="web_queue_unavailable">Video nicht verfügbar</string>
+    <string name="web_queue_skipped">Ein Video, das sich nicht abspielen lässt, wurde übersprungen</string>
+    <string name="web_subtitle_failed">Untertitel gerade nicht verfügbar</string>
+    <string name="web_failed_title">Gerade nicht abspielbar</string>
+    <string name="web_failed_later">Versuche es in ein paar Minuten erneut.</string>
+    <string name="web_failed_never">Dieses Video kann nicht abgespielt werden</string>
+    <string name="web_try_again">Erneut versuchen</string>
+    <string name="web_close">Schließen</string>
+    <string name="web_needs_download_title">Websites brauchen einen Download</string>
+    <string name="web_needs_download">Um YouTube und andere Websites abzuspielen, lade yt-dlp unter Einstellungen → Integrationen herunter. Das sind etwa 13 MB.</string>
+    <string name="web_open_settings">Einstellungen öffnen</string>
+    <string name="pref_websites_header">Websites</string>
+    <string name="ytdlp_title">YouTube und andere Websites</string>
+    <string name="ytdlp_offer">Spielt Videos von YouTube und rund 1.800 weiteren Websites ab. Lädt yt-dlp und Python herunter, etwa 13 MB. Zum Herunterladen tippen.</string>
+    <string name="ytdlp_installed">Bereit: yt-dlp %1$s. Zum Entfernen tippen.</string>
+    <string name="ytdlp_starting">Wird gestartet…</string>
+    <string name="ytdlp_getting_python">Python wird geladen… %1$d %%</string>
+    <string name="ytdlp_getting_ytdlp">yt-dlp wird geladen… %1$d %%</string>
+    <string name="ytdlp_checking">Suche nach neuer Version…</string>
+    <string name="ytdlp_updated">Auf yt-dlp %1$s aktualisiert</string>
+    <string name="ytdlp_up_to_date">yt-dlp ist aktuell</string>
+    <string name="ytdlp_failed">Download fehlgeschlagen. Versuche es erneut.</string>
+    <string name="ytdlp_remove_title">yt-dlp entfernen?</string>
+    <string name="ytdlp_remove_message">Links von Websites werden nicht mehr abgespielt, bis du es erneut herunterlädst.</string>
+    <string name="ytdlp_remove">Entfernen</string>
+    <string name="ytdlp_updates">Updates</string>
+    <string name="ytdlp_updates_auto">Automatisch</string>
+    <string name="ytdlp_updates_ask">Mir Bescheid geben</string>
+    <string name="ytdlp_updates_manual">Nur wenn ich auf „Jetzt aktualisieren“ tippe</string>
+    <string name="ytdlp_update_now">Jetzt aktualisieren</string>
+    <string name="ytdlp_new_version">yt-dlp %1$s · %2$s ist erschienen, zum Aktualisieren tippen</string>
+    <string name="ytdlp_waiting_note">Ein neues yt-dlp ist erschienen. Aktualisiere es unter Einstellungen → Integrationen.</string>
+    <string name="ytdlp_quality">Anfangsqualität</string>
+    <string name="ytdlp_quality_screen">Am besten für diesen Bildschirm</string>
+    <string name="ytdlp_quality_best">Höchste</string>
+</resources>

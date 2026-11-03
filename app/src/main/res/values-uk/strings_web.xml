@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="controls_name_quality">Якість</string>
+    <string name="controls_quality_note">Лише для відео із сайтів</string>
+    <string name="controls_name_queue">Черга</string>
+    <string name="controls_queue_note">Лише для плейлистів YouTube</string>
+    <string name="web_getting">Отримую відео з %1$s…</string>
+    <string name="web_audio_only">Лише звук</string>
+    <string name="web_audio_original">%1$s (оригінал)</string>
+    <string name="web_audio_dubbed">%1$s (дубляж)</string>
+    <string name="web_subtitle_auto">%1$s (авто)</string>
+    <string name="web_queue_unavailable">Відео недоступне</string>
+    <string name="web_queue_skipped">Пропущено відео, яке не можна відтворити</string>
+    <string name="web_subtitle_failed">Субтитри зараз недоступні</string>
+    <string name="web_failed_title">Зараз не відтворюється</string>
+    <string name="web_failed_later">Спробуйте за кілька хвилин.</string>
+    <string name="web_failed_never">Це відео не можна відтворити</string>
+    <string name="web_try_again">Повторити</string>
+    <string name="web_close">Закрити</string>
+    <string name="web_needs_download_title">Для сайтів потрібне завантаження</string>
+    <string name="web_needs_download">Щоб дивитися YouTube та інші сайти, завантажте yt-dlp у розділі Налаштування → Інтеграції. Це близько 13 МБ.</string>
+    <string name="web_open_settings">Відкрити налаштування</string>
+    <string name="pref_websites_header">Сайти</string>
+    <string name="ytdlp_title">YouTube та інші сайти</string>
+    <string name="ytdlp_offer">Відтворює відео з YouTube і ще приблизно 1800 сайтів. Завантажує yt-dlp і Python, близько 13 МБ. Торкніться, щоб завантажити.</string>
+    <string name="ytdlp_installed">Готово: yt-dlp %1$s. Торкніться, щоб видалити.</string>
+    <string name="ytdlp_starting">Запуск…</string>
+    <string name="ytdlp_getting_python">Завантаження Python… %1$d%%</string>
+    <string name="ytdlp_getting_ytdlp">Завантаження yt-dlp… %1$d%%</string>
+    <string name="ytdlp_checking">Пошук нової версії…</string>
+    <string name="ytdlp_updated">Оновлено до yt-dlp %1$s</string>
+    <string name="ytdlp_up_to_date">yt-dlp оновлений</string>
+    <string name="ytdlp_failed">Помилка завантаження. Спробуйте ще раз.</string>
+    <string name="ytdlp_remove_title">Видалити yt-dlp?</string>
+    <string name="ytdlp_remove_message">Посилання на сайти перестануть відтворюватися, доки ви не завантажите його знову.</string>
+    <string name="ytdlp_remove">Видалити</string>
+    <string name="ytdlp_updates">Оновлення</string>
+    <string name="ytdlp_updates_auto">Автоматично</string>
+    <string name="ytdlp_updates_ask">Повідомляти мене</string>
+    <string name="ytdlp_updates_manual">Лише коли я торкнуся «Оновити зараз»</string>
+    <string name="ytdlp_update_now">Оновити зараз</string>
+    <string name="ytdlp_new_version">yt-dlp %1$s · вийшла версія %2$s, торкніться, щоб оновити</string>
+    <string name="ytdlp_waiting_note">Вийшла нова версія yt-dlp. Оновіть її в розділі Налаштування → Інтеграції.</string>
+    <string name="ytdlp_quality">Початкова якість</string>
+    <string name="ytdlp_quality_screen">Найкраща для цього екрана</string>
+    <string name="ytdlp_quality_best">Найвища</string>
+</resources>

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="controls_name_quality">画質</string>
+    <string name="controls_quality_note">ウェブサイトの動画のみ</string>
+    <string name="controls_name_queue">キュー</string>
+    <string name="controls_queue_note">YouTube の再生リストのみ</string>
+    <string name="web_getting">%1$s から動画を取得中…</string>
+    <string name="web_audio_only">音声のみ</string>
+    <string name="web_audio_original">%1$s (オリジナル)</string>
+    <string name="web_audio_dubbed">%1$s (吹き替え)</string>
+    <string name="web_subtitle_auto">%1$s (自動)</string>
+    <string name="web_queue_unavailable">利用できない動画</string>
+    <string name="web_queue_skipped">再生できない動画をスキップしました</string>
+    <string name="web_subtitle_failed">今は字幕を利用できません</string>
+    <string name="web_failed_title">今は再生できません</string>
+    <string name="web_failed_later">数分後にもう一度お試しください。</string>
+    <string name="web_failed_never">この動画は再生できません</string>
+    <string name="web_try_again">再試行</string>
+    <string name="web_close">閉じる</string>
+    <string name="web_needs_download_title">ウェブサイトにはダウンロードが必要です</string>
+    <string name="web_needs_download">YouTube などのサイトを再生するには、設定 → 連携 で yt-dlp をダウンロードしてください。約 13 MB です。</string>
+    <string name="web_open_settings">設定を開く</string>
+    <string name="pref_websites_header">ウェブサイト</string>
+    <string name="ytdlp_title">YouTube とその他のサイト</string>
+    <string name="ytdlp_offer">YouTube と約 1,800 のサイトの動画を再生します。yt-dlp と Python をダウンロードします (約 13 MB)。タップしてダウンロード。</string>
+    <string name="ytdlp_installed">準備完了: yt-dlp %1$s。タップすると削除します。</string>
+    <string name="ytdlp_starting">開始しています…</string>
+    <string name="ytdlp_getting_python">Python をダウンロード中… %1$d%%</string>
+    <string name="ytdlp_getting_ytdlp">yt-dlp をダウンロード中… %1$d%%</string>
+    <string name="ytdlp_checking">新しいバージョンを確認中…</string>
+    <string name="ytdlp_updated">yt-dlp %1$s に更新しました</string>
+    <string name="ytdlp_up_to_date">yt-dlp は最新です</string>
+    <string name="ytdlp_failed">ダウンロードに失敗しました。もう一度お試しください。</string>
+    <string name="ytdlp_remove_title">yt-dlp を削除しますか？</string>
+    <string name="ytdlp_remove_message">もう一度ダウンロードするまで、ウェブサイトのリンクは再生できなくなります。</string>
+    <string name="ytdlp_remove">削除</string>
+    <string name="ytdlp_updates">アップデート</string>
+    <string name="ytdlp_updates_auto">自動</string>
+    <string name="ytdlp_updates_ask">知らせる</string>
+    <string name="ytdlp_updates_manual">「今すぐ更新」をタップしたときだけ</string>
+    <string name="ytdlp_update_now">今すぐ更新</string>
+    <string name="ytdlp_new_version">yt-dlp %1$s · %2$s が公開されました。タップして更新</string>
+    <string name="ytdlp_waiting_note">新しい yt-dlp が公開されました。設定 → 連携 で更新できます。</string>
+    <string name="ytdlp_quality">最初の画質</string>
+    <string name="ytdlp_quality_screen">この画面に最適</string>
+    <string name="ytdlp_quality_best">最高</string>
+</resources>

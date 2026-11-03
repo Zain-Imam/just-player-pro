@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="controls_name_quality">Quality</string>
+    <string name="controls_quality_note">Only for videos from websites</string>
+    <string name="controls_name_queue">Queue</string>
+    <string name="controls_queue_note">Only for YouTube playlists</string>
+    <string name="web_getting">Getting the video from %1$s…</string>
+    <string name="web_audio_only">Audio only</string>
+    <string name="web_audio_original">%1$s (original)</string>
+    <string name="web_audio_dubbed">%1$s (dubbed)</string>
+    <string name="web_subtitle_auto">%1$s (auto)</string>
+    <string name="web_queue_unavailable">Unavailable video</string>
+    <string name="web_queue_skipped">Skipped a video that can\'t be played</string>
+    <string name="web_subtitle_failed">Captions unavailable right now</string>
+    <string name="web_failed_title">Can\'t play this right now</string>
+    <string name="web_failed_later">Try again in a few minutes.</string>
+    <string name="web_failed_never">This video can\'t be played</string>
+    <string name="web_try_again">Try again</string>
+    <string name="web_close">Close</string>
+    <string name="web_needs_download_title">Websites need a download</string>
+    <string name="web_needs_download">To play YouTube and other sites, download yt-dlp in Settings → Integrations. It\'s about 13 MB.</string>
+    <string name="web_open_settings">Open Settings</string>
+
+    <string name="pref_websites_header">Websites</string>
+    <string name="ytdlp_title">YouTube and other sites</string>
+    <string name="ytdlp_offer">Plays videos from YouTube and about 1,800 other sites. Downloads yt-dlp and Python, about 13 MB. Tap to download.</string>
+    <string name="ytdlp_installed">Ready: yt-dlp %1$s. Tap to remove.</string>
+    <string name="ytdlp_starting">Starting…</string>
+    <string name="ytdlp_getting_python">Downloading Python… %1$d%%</string>
+    <string name="ytdlp_getting_ytdlp">Downloading yt-dlp… %1$d%%</string>
+    <string name="ytdlp_checking">Checking for a new version…</string>
+    <string name="ytdlp_updated">Updated to yt-dlp %1$s</string>
+    <string name="ytdlp_up_to_date">yt-dlp is up to date</string>
+    <string name="ytdlp_failed">Download failed. Try again.</string>
+    <string name="ytdlp_remove_title">Remove yt-dlp?</string>
+    <string name="ytdlp_remove_message">Website links will stop playing until you download it again.</string>
+    <string name="ytdlp_remove">Remove</string>
+    <string name="ytdlp_updates">Updates</string>
+    <string name="ytdlp_updates_auto">Automatic</string>
+    <string name="ytdlp_updates_ask">Let me know</string>
+    <string name="ytdlp_updates_manual">Only when I tap Update now</string>
+    <string name="ytdlp_update_now">Update now</string>
+    <string name="ytdlp_version" translatable="false">yt-dlp %1$s</string>
+    <string name="ytdlp_new_version">yt-dlp %1$s · %2$s is out, tap to update</string>
+    <string name="ytdlp_waiting_note">A new yt-dlp is out. Update it in Settings → Integrations.</string>
+    <string name="ytdlp_quality">Starting quality</string>
+    <string name="ytdlp_quality_screen">Best for this screen</string>
+    <string name="ytdlp_quality_best">Highest</string>
+</resources>
