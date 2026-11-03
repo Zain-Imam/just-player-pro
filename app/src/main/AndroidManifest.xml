@@ -16,7 +16,14 @@
         android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- with the screen off, playing keeps the processor and Wi-Fi awake -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <!-- sound behind the lock screen: a media notification, and Android keeps the network on -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <!-- the notification's tap brings back a player that lives in another app's task -->
+    <uses-permission android:name="android.permission.REORDER_TASKS" />
 
     <queries>
         <intent>
@@ -742,6 +749,22 @@
             android:exported="false"
             android:parentActivityName=".HomeActivity"
             android:theme="@style/Theme.Player.Home" />
+        <!-- Simkl and Trakt send the browser back here after signing in -->
+        <activity
+            android:name=".tracking.TrackingLogin"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="justplayerpro" android:host="auth" />
+            </intent-filter>
+        </activity>
+
         <activity
             android:name=".SettingsActivity"
             android:exported="true"
@@ -755,6 +778,19 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <!-- the sound playing on behind the lock screen: media notification, network kept on -->
+        <service
+            android:name=".PlaybackService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+        <activity
+            android:name=".ShowPlayerActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
     </application>
 

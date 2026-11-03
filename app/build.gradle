@@ -9,6 +9,20 @@ if (keystorePropertiesFile.exists()) {
     keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
 }
 
+// Trakt and Simkl app ids from .env (NAME:value lines), never from git; missing ones leave
+// that service switched off in the build
+def envValues = [:]
+def envFile = rootProject.file(".env")
+if (envFile.exists()) {
+    envFile.eachLine { line ->
+        def m = line =~ /^([A-Z0-9_]+)[:=](.*)$/
+        if (m.find()) {
+            envValues[m.group(1)] = m.group(2).trim()
+        }
+    }
+}
+def envField = { String name -> "\"" + (envValues[name] ?: "").replace("\"", "") + "\"" }
+
 android {
     namespace 'com.brouken.player'
     compileSdk = 36
@@ -36,8 +50,11 @@ android {
         applicationId "app.justplayerpro.android"
         minSdkVersion 25
         targetSdkVersion 36
-        versionCode 7
-        versionName "5.0.0"
+        versionCode 8
+        versionName "5.1.0"
+        buildConfigField "String", "TRAKT_CLIENT_ID", envField("TRAKT_CLIENT_ID")
+        buildConfigField "String", "TRAKT_CLIENT_SECRET", envField("TRAKT_CLIENT_SECRET")
+        buildConfigField "String", "SIMKL_CLIENT_ID", envField("SIMKL_CLIENT_ID")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         if (abiFilter) {
             def abiCodeMap = ["x86": 1, "x86_64": 2, "armeabi-v7a": 3, "arm64-v8a": 4]
@@ -122,6 +139,50 @@ android {
         disable 'MissingTranslation'
         disable 'UnsafeOptInUsageError'
     }
+
+    // unpacked at install: Android only runs programs from there (the yt-dlp starters)
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+    sourceSets.main.jniLibs.srcDirs += "${buildDir}/generated/starters"
+}
+
+// The yt-dlp starters are programs, which externalNativeBuild does not package, so they are
+// compiled here. Named lib*.so so the installer unpacks them with the libraries.
+def starterAbis = [
+        'arm64-v8a'  : 'aarch64-linux-android',
+        'armeabi-v7a': 'armv7a-linux-androideabi',
+        'x86'        : 'i686-linux-android',
+        'x86_64'     : 'x86_64-linux-android',
+]
+def starters = [
+        'libytdl.so': ['JPP_PYTHON_LIB', 'Py_BytesMain'],
+        'libqjs.so' : ['JPP_QJS_LIB', 'qjs_main'],
+]
+def starterTasks = []
+starterAbis.each { abi, triple ->
+    starters.each { name, entry ->
+        starterTasks << tasks.register("starter_${abi}_${name - '.so'}", Exec) {
+            def source = file('src/main/cpp/starter.c')
+            def out = file("${buildDir}/generated/starters/${abi}/${name}")
+            inputs.file source
+            outputs.file out
+            doFirst { out.parentFile.mkdirs() }
+            def windows = org.gradle.internal.os.OperatingSystem.current().windows
+            def host = windows ? 'windows-x86_64'
+                    : org.gradle.internal.os.OperatingSystem.current().macOsX ? 'darwin-x86_64' : 'linux-x86_64'
+            commandLine "${android.ndkDirectory}/toolchains/llvm/prebuilt/${host}/bin/clang${windows ? '.exe' : ''}",
+                    "--target=${triple}25", '-O2', '-s', '-Wall',
+                    "-DLIBRARY_ENV=${entry[0]}", "-DENTRY=${entry[1]}", '-o', out, source
+        }
+    }
+}
+tasks.configureEach { task ->
+    if (task.name ==~ /merge.*JniLibFolders/) {
+        task.dependsOn starterTasks
+    }
 }
 
 dependencies {
@@ -139,9 +200,8 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer-dash:$media3_version") {
         exclude group: "androidx.media3", module: "media3-exoplayer"
     }
-    implementation("androidx.media3:media3-exoplayer-hls:$media3_version") {
-        exclude group: "androidx.media3", module: "media3-exoplayer"
-    }
+    // HLS is lib-exoplayer-hls-release.aar in libs/: 1.10.0 with 1.10.1's fix for a crash on any
+    // failed playlist or segment load when not every variant is selected (androidx/media#3161)
     implementation("androidx.media3:media3-exoplayer-smoothstreaming:$media3_version") {
         exclude group: "androidx.media3", module: "media3-exoplayer"
     }

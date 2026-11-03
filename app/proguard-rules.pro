@@ -5,6 +5,10 @@
     private android.graphics.Rect bufferedBar;
     private android.graphics.Rect scrubberBar;
 }
+-keepclassmembers class androidx.media3.exoplayer.text.TextRenderer {
+    private long lastRendererPositionUs;
+    private void clearOutput();
+}
 -keepclassmembers class androidx.media3.ui.PlayerControlView {
     private androidx.media3.ui.TrackNameProvider trackNameProvider;
     private android.graphics.drawable.Drawable playButtonDrawable;
