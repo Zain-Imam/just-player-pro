@@ -74,6 +74,17 @@
             android:tint="?android:attr/textColorPrimary"
             android:src="@drawable/ic_sort_24dp" />
 
+        <!-- inside a folder: List, Gallery or Cards -->
+        <ImageButton
+            android:id="@+id/home_view_button"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/home_view"
+            android:tint="?android:attr/textColorPrimary"
+            android:visibility="gone"
+            android:src="@drawable/ic_grid_view_24dp" />
+
         <ImageButton
             android:id="@+id/home_network_button"
             android:layout_width="44dp"

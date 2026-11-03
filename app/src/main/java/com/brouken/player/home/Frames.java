@@ -27,6 +27,11 @@ public final class Frames {
             (int) Math.min(12L * 1024 * 1024, Runtime.getRuntime().maxMemory() / 8);
 
     private static final int TARGET_PX = 160;
+    private static final int BETTER_PX = 480;
+
+    // Settings > Home: a sharper frame from a tenth of the way in, not the picture Android keeps
+    // for the file, which is often the black opening. Set by Home before it draws
+    public static volatile boolean better;
 
     // three decoders: one is slow, more would take cores playback needs
     private final ExecutorService worker = Background.pool("frames", 3);
@@ -44,7 +49,14 @@ public final class Frames {
     // the tag drops late frames meant for a row that has since been recycled
     public void into(@NonNull final Context context, @NonNull final ImageView view,
                      @NonNull final Uri uri, final int fallbackIcon) {
-        final String key = uri.toString();
+        into(context, view, uri, fallbackIcon, false);
+    }
+
+    // card: whole in the middle of a tall card over a blurred copy, as Recent shows a website's video
+    public void into(@NonNull final Context context, @NonNull final ImageView view,
+                     @NonNull final Uri uri, final int fallbackIcon, final boolean card) {
+        final boolean sharper = better;
+        final String key = (sharper ? "better:" : "") + (card ? "card:" : "") + uri;
         view.setTag(key);
 
         final Bitmap known = cache.get(key);
@@ -61,11 +73,12 @@ public final class Frames {
         }
 
         worker.execute(Background.safely(() -> {
-            final Bitmap frame = kept(context, uri);
-            if (frame == null) {
+            final Bitmap kept = kept(context, uri, sharper);
+            if (kept == null) {
                 hopeless.put(key, Boolean.TRUE);
                 return;
             }
+            final Bitmap frame = card ? cardOf(kept) : kept;
             cache.put(key, frame);
             main.post(() -> {
                 if (key.equals(view.getTag())) {
@@ -73,6 +86,15 @@ public final class Frames {
                 }
             });
         }));
+    }
+
+    private static Bitmap cardOf(final Bitmap frame) {
+        try {
+            return com.brouken.player.online.Posters.asPoster(frame);
+        } catch (RuntimeException e) {
+            // an odd frame size: the frame as it is
+            return frame;
+        }
     }
 
     // clear the placeholder's tint, or it is applied to the frame too
@@ -106,8 +128,8 @@ public final class Frames {
     }
 
     @Nullable
-    private static Bitmap kept(final Context context, final Uri uri) {
-        final String key = diskKey(context, uri);
+    private static Bitmap kept(final Context context, final Uri uri, final boolean sharper) {
+        final String key = diskKey(context, uri, sharper);
         final byte[] bytes = com.brouken.player.ImageCache.read(key);
         if (bytes != null) {
             final Bitmap known = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
@@ -116,7 +138,7 @@ public final class Frames {
             }
             com.brouken.player.ImageCache.remove(key);
         }
-        final Bitmap frame = load(context, uri);
+        final Bitmap frame = sharper ? decode(context, uri, BETTER_PX, true) : load(context, uri);
         if (frame != null) {
             final java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
             if (frame.compress(Bitmap.CompressFormat.JPEG, 85, out)) {
@@ -127,7 +149,7 @@ public final class Frames {
     }
 
     // the file's size and date, so a changed file gets a new frame
-    private static String diskKey(final Context context, final Uri uri) {
+    private static String diskKey(final Context context, final Uri uri, final boolean sharper) {
         long size = -1;
         long modified = -1;
         try (android.database.Cursor cursor = context.getContentResolver().query(uri,
@@ -140,7 +162,7 @@ public final class Frames {
         } catch (Exception ignored) {
             // not a media store entry: the address alone
         }
-        return "frame:" + TARGET_PX + ":" + size + ":" + modified + ":" + uri;
+        return "frame:" + (sharper ? BETTER_PX + ":10%" : TARGET_PX) + ":" + size + ":" + modified + ":" + uri;
     }
 
     @Nullable
@@ -153,22 +175,27 @@ public final class Frames {
                 // no thumbnail: decode a frame instead
             }
         }
-        return decode(context, uri);
+        return decode(context, uri, TARGET_PX, false);
     }
 
     @Nullable
-    private static Bitmap decode(final Context context, final Uri uri) {
+    private static Bitmap decode(final Context context, final Uri uri, final int px, final boolean tenth) {
         final MediaMetadataRetriever retriever = new MediaMetadataRetriever();
         try {
             retriever.setDataSource(context, uri);
+            long at = -1;
+            if (tenth) {
+                final String length = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+                at = length == null ? -1 : Long.parseLong(length) * 100;
+            }
             Bitmap frame = null;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
                 // scaled while decoding, so a 4K frame never sits in memory
-                frame = retriever.getScaledFrameAtTime(-1,
-                        MediaMetadataRetriever.OPTION_CLOSEST_SYNC, TARGET_PX, TARGET_PX);
+                frame = retriever.getScaledFrameAtTime(at,
+                        MediaMetadataRetriever.OPTION_CLOSEST_SYNC, px, px);
             }
             if (frame == null) {
-                frame = retriever.getFrameAtTime(-1, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+                frame = retriever.getFrameAtTime(at, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
             }
             return frame;
         } catch (Exception error) {

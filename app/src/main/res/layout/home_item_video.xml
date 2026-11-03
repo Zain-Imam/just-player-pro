@@ -10,16 +10,47 @@
     android:paddingStart="16dp"
     android:paddingEnd="16dp">
 
-    <!-- 16:9 so a thumbnail fills it; code sets the alpha for icon or frame -->
-    <ImageView
-        android:id="@+id/video_icon"
-        android:layout_width="64dp"
-        android:layout_height="36dp"
-        android:layout_marginEnd="16dp"
-        android:alpha="0.45"
-        android:contentDescription="@null"
-        android:scaleType="centerInside"
-        android:src="@drawable/ic_movie_24dp" />
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp">
+
+        <!-- 16:9 so a thumbnail fills it; code sets the alpha for icon or frame -->
+        <ImageView
+            android:id="@+id/video_icon"
+            android:layout_width="64dp"
+            android:layout_height="36dp"
+            android:alpha="0.45"
+            android:contentDescription="@null"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_movie_24dp" />
+
+        <!-- how far a film played on this device got -->
+        <ProgressBar
+            android:id="@+id/video_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:layout_gravity="bottom"
+            android:max="1000"
+            android:maxHeight="3dp"
+            android:minHeight="3dp"
+            android:progressTint="?attr/accentColor"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/video_watched"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_gravity="top|end"
+            android:layout_margin="2dp"
+            android:background="@drawable/tile_watched_circle"
+            android:contentDescription="@string/film_watched"
+            android:padding="2dp"
+            android:src="@drawable/ic_check_24dp"
+            android:tint="@android:color/white"
+            android:visibility="gone" />
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="0dp"

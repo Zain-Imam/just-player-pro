@@ -46,6 +46,69 @@
                 android:tint="@color/rating_amber"
                 android:visibility="gone" />
 
+            <!-- watched: marked, finished here, or so says Trakt or Simkl -->
+            <ImageView
+                android:id="@+id/tile_watched"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="top|end"
+                android:layout_margin="6dp"
+                android:background="@drawable/tile_watched_circle"
+                android:contentDescription="@string/film_watched"
+                android:padding="3dp"
+                android:src="@drawable/ic_check_24dp"
+                android:tint="@android:color/white"
+                android:visibility="gone" />
+
+            <!-- how far a film played on this device got -->
+            <ProgressBar
+                android:id="@+id/tile_progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:layout_gravity="bottom"
+                android:max="1000"
+                android:maxHeight="3dp"
+                android:minHeight="3dp"
+                android:progressTint="?attr/accentColor"
+                android:visibility="gone" />
+
+            <!-- a YouTube playlist, and how far through it got -->
+            <TextView
+                android:id="@+id/tile_list"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_margin="6dp"
+                android:background="@drawable/home_tile_badge"
+                android:drawablePadding="3dp"
+                android:gravity="center_vertical"
+                android:paddingStart="4dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="2dp"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <!-- an episode's season and number; its poster is the show's, the same for them all -->
+            <TextView
+                android:id="@+id/tile_episode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_margin="6dp"
+                android:background="@drawable/home_tile_badge"
+                android:paddingStart="6dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="2dp"
+                android:textColor="@color/white"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
         </FrameLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

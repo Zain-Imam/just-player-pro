@@ -34,6 +34,11 @@ public final class Neighbours {
     private Neighbours() {
     }
 
+    // a website playlist's places around the current video
+    public static Either between(@Nullable final Uri previous, @Nullable final Uri next) {
+        return new Either(previous, next);
+    }
+
     public static Either none() {
         return NOTHING;
     }

@@ -2,6 +2,7 @@ package com.brouken.player;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -60,10 +61,14 @@ public class HomeActivity extends AppCompatActivity {
     private static final int TYPE_POSTER_TILE = 5;
 
     static final String LAYOUT_WALL = "wall";
+    static final String LAYOUT_CARDS = "cards";
+    // a grid, as Gallery and Cards are; Cards puts a folder's videos on Recent's tall cards
     private boolean wall;
+    private boolean cards;
     private String appliedLayout;
     private final java.util.Map<Uri, Library.Video> videoAt = new java.util.HashMap<>();
     private final java.util.Map<String, List<Uri>> folderFrames = new java.util.HashMap<>();
+    private final java.util.Map<String, String> folderLengths = new java.util.HashMap<>();
 
     private final Handler main = new Handler(Looper.getMainLooper());
     private final ExecutorService worker = Background.single("library");
@@ -76,6 +81,7 @@ public class HomeActivity extends AppCompatActivity {
     private EditText searchField;
     private ImageButton searchButton;
     private ImageButton sortButton;
+    private ImageButton viewButton;
     private RecyclerView list;
     private TextView emptyView;
     private Button grantButton;
@@ -134,18 +140,15 @@ public class HomeActivity extends AppCompatActivity {
         searchField = findViewById(R.id.home_search);
         searchButton = findViewById(R.id.home_search_button);
         sortButton = findViewById(R.id.home_sort_button);
+        viewButton = findViewById(R.id.home_view_button);
+        viewButton.setOnClickListener(view -> showViewMenu());
         list = findViewById(R.id.home_list);
         emptyView = findViewById(R.id.home_empty);
         grantButton = findViewById(R.id.home_grant);
         loadingView = findViewById(R.id.home_loading);
 
-        appliedLayout = preferences.getString("homeLayout", "list");
-        wall = LAYOUT_WALL.equals(appliedLayout);
-        if (wall) {
-            setUpWall();
-        } else {
-            list.setLayoutManager(new LinearLayoutManager(this));
-        }
+        appliedLayout = preferences.getString("homeLayout", LAYOUT_CARDS);
+        applyLayout();
         adapter = new Adapter();
         list.setAdapter(adapter);
 
@@ -180,6 +183,17 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
         searchField.setOnEditorActionListener((view, actionId, event) -> {
+            // a TV remote's OK (IME_NULL) opens the keyboard; a hardware keyboard's Enter goes to
+            // the list, once, as the key comes up
+            if (actionId == android.view.inputmethod.EditorInfo.IME_NULL) {
+                if (Utils.isTvBox(this)) {
+                    Utils.showKeyboard(searchField);
+                    return true;
+                }
+                if (event != null && event.getAction() != android.view.KeyEvent.ACTION_UP) {
+                    return true;
+                }
+            }
             hideKeyboard();
             list.requestFocus();
             return true;
@@ -229,7 +243,7 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
         if (appliedLayout != null
-                && !appliedLayout.equals(preferences.getString("homeLayout", "list"))) {
+                && !appliedLayout.equals(preferences.getString("homeLayout", LAYOUT_CARDS))) {
             recreate();
             return;
         }
@@ -237,6 +251,7 @@ public class HomeActivity extends AppCompatActivity {
             refreshRecentOnResume = false;
             render();
         }
+        com.brouken.player.tracking.Tracking.refresh(this, false, this::ticksByFilm);
         // intro before the resume offer: never two dialogs at once
         if (!picking && !permissionPending && hasStoragePermission() && Intro.pending(this)) {
             Intro.show(this);
@@ -428,11 +443,91 @@ public class HomeActivity extends AppCompatActivity {
         }));
     }
 
+    // only its stored film matches are read; nothing here needs a player
+    @Nullable
+    private com.brouken.player.online.OnlineController films;
+
+    // the cards whose film is watched, marked here under another copy or on Simkl's latest list;
+    // kept only here, so unwatching there or signing out takes the tick away
+    private java.util.Set<String> filmTicks = java.util.Collections.emptySet();
+    // a newer screen of cards makes an older count moot
+    private int filmTicksRun;
+
+    private void ticksByFilm() {
+        if (isFinishing()) {
+            return;
+        }
+        final int run = ++filmTicksRun;
+        final java.util.Set<String> marked = Watched.films(preferences);
+        final boolean connected = com.brouken.player.tracking.Tracking.anyConnected(this);
+        if (marked.isEmpty() && !connected) {
+            if (!filmTicks.isEmpty()) {
+                filmTicks = java.util.Collections.emptySet();
+                adapter.notifyDataSetChanged();
+            }
+            return;
+        }
+        filmOf(null);
+        final List<Uri> shown = new ArrayList<>();
+        for (final Row row : rows) {
+            if (row.type == TYPE_VIDEO && row.uri != null) {
+                shown.add(row.uri);
+            }
+        }
+        new Thread(() -> {
+            final java.util.Set<String> keys = connected
+                    ? com.brouken.player.tracking.Tracking.watchedKeys(this) : java.util.Collections.emptySet();
+            final java.util.Set<String> ticked = new java.util.HashSet<>();
+            for (final Uri uri : shown) {
+                if (run != filmTicksRun) {
+                    return;
+                }
+                final String film = Watched.filmKey(films.rememberedForCard(uri));
+                if (film != null && (marked.contains(film) || com.brouken.player.tracking.Tracking.covers(keys, film))) {
+                    ticked.add(Watched.placeKey(uri));
+                }
+            }
+            runOnUiThread(() -> {
+                if (!isFinishing() && run == filmTicksRun && !ticked.equals(filmTicks)) {
+                    filmTicks = ticked;
+                    adapter.notifyDataSetChanged();
+                }
+            });
+        }, "film ticks").start();
+    }
+
+    private com.brouken.player.online.Identity filmOf(final Uri uri) {
+        if (films == null) {
+            films = new com.brouken.player.online.OnlineController(this, new com.brouken.player.online.OnlineController.Host() {
+                @Nullable
+                @Override
+                public Uri mediaUri() {
+                    return null;
+                }
+
+                @Nullable
+                @Override
+                public String mediaName() {
+                    return null;
+                }
+
+                @Override
+                public void loadSubtitle(final Uri uri, @Nullable final String label) {
+                }
+            });
+        }
+        return films.rememberedForCard(uri);
+    }
+
     private void render() {
+        com.brouken.player.home.Frames.better = preferences.getBoolean("homeBetterFrames", false);
         rows.clear();
+        watchedPlaces = Watched.places(preferences);
+        // a list row shows folder pictures too, so they are found again on every visit
+        folderFrames.clear();
+        folderLengths.clear();
         if (wall) {
             videoAt.clear();
-            folderFrames.clear();
             for (final Library.Video video : everything) {
                 videoAt.put(video.uri, video);
             }
@@ -449,11 +544,13 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         adapter.notifyDataSetChanged();
+        ticksByFilm();
         if (wall && folderId == null && !rows.isEmpty()) {
             hintWallOnce();
         }
         setTitleText();
         upButton.setVisibility(folderId != null ? View.VISIBLE : View.GONE);
+        viewButton.setVisibility(folderId != null && !picking ? View.VISIBLE : View.GONE);
 
         final boolean empty = rows.isEmpty();
         list.setVisibility(empty ? View.GONE : View.VISIBLE);
@@ -465,13 +562,35 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
+    private Row recentRow(final History.Entry entry, final boolean posters) {
+        final Row row = Row.recent(entry, posters);
+        row.listPlace = History.listPlace(preferences, entry.uri);
+        // only a named entry has a film; one left plain in Film info has none
+        final com.brouken.player.online.Identity film = entry.title == null ? null : filmOf(entry.uri);
+        row.episode = film != null && film.isSeries ? film.episodeCode() : null;
+        return row;
+    }
+
+    // a playlist says so under its name; a list row has no picture to mark
+    @Nullable
+    private String recentMeta(final Row row, final boolean withPlace) {
+        if (row.listPlace == null) {
+            return row.meta;
+        }
+        String playlist = getString(R.string.home_recent_playlist);
+        if (withPlace && !row.listPlace.isEmpty()) {
+            playlist += " " + row.listPlace;
+        }
+        return TextUtils.isEmpty(row.meta) ? playlist : playlist + " · " + row.meta;
+    }
+
     private void renderRoot() {
         // no history while picking: entries may be network addresses
         final List<History.Entry> recent = picking
                 ? java.util.Collections.<History.Entry>emptyList()
                 : History.load(preferences);
         final boolean posters = preferences.getBoolean("recentPosters", false);
-        final int limit = Math.max(1, Math.min(15, preferences.getInt("recentCount", 10)));
+        final int limit = Math.max(1, Math.min(30, preferences.getInt("recentCount", 10)));
         final List<History.Entry> pinnedRecent = new ArrayList<>();
         final List<History.Entry> newest = new ArrayList<>();
         for (final History.Entry entry : recent) {
@@ -484,14 +603,22 @@ public class HomeActivity extends AppCompatActivity {
                 newest.add(entry);
             }
         }
+        final List<Row> here = picking || !preferences.getBoolean("recentHere", true)
+                ? java.util.Collections.<Row>emptyList() : playedHere();
+        // two lists, so each says which it is
         if (!pinnedRecent.isEmpty() || !newest.isEmpty()) {
-            rows.add(Row.header(getString(R.string.home_section_recent)));
+            rows.add(Row.header(getString(here.isEmpty()
+                    ? R.string.home_section_recent : R.string.home_section_recent_online)));
         }
         for (final History.Entry entry : pinnedRecent) {
-            rows.add(Row.recent(entry, posters));
+            rows.add(recentRow(entry, posters));
         }
         for (final History.Entry entry : newest) {
-            rows.add(Row.recent(entry, posters));
+            rows.add(recentRow(entry, posters));
+        }
+        if (!here.isEmpty()) {
+            rows.add(Row.header(getString(R.string.home_section_recent_here)));
+            rows.addAll(here);
         }
 
         final List<Library.Folder> folders = Library.folders(everything);
@@ -516,6 +643,69 @@ public class HomeActivity extends AppCompatActivity {
                 rows.add(Row.folder(folder, false));
             }
         }
+    }
+
+    private static final int RECENT_HERE = 10;
+
+    // films played on this device, newest first; only those still in the library, so a deleted file never shows
+    private List<Row> playedHere() {
+        final java.util.Map<String, Library.Video> byLink = new java.util.HashMap<>();
+        for (final Library.Video video : everything) {
+            byLink.put(video.uri.toString(), video);
+        }
+        final Set<String> hidden = Prefs.hiddenHere(preferences);
+        final boolean posters = preferences.getBoolean("recentPosters", false);
+        // pinned first, in the order pinned, then the newest
+        final List<String> pins = Prefs.pinnedHere(preferences);
+        final List<Prefs.Played> newest = Prefs.playedNewestFirst(this);
+        final List<Prefs.Played> ordered = new ArrayList<>();
+        for (final String pin : pins) {
+            for (final Prefs.Played played : newest) {
+                if (played.link.equals(pin)) {
+                    ordered.add(played);
+                }
+            }
+        }
+        for (final Prefs.Played played : newest) {
+            if (!pins.contains(played.link)) {
+                ordered.add(played);
+            }
+        }
+        final java.util.Set<String> known = new java.util.HashSet<>();
+        for (final Prefs.Played played : ordered) {
+            if (byLink.containsKey(played.link) && !hidden.contains(played.link)) {
+                known.add(played.link);
+            }
+        }
+        Prefs.keepPinsHere(preferences, known);
+        final List<Row> here = new ArrayList<>();
+        for (final Prefs.Played played : ordered) {
+            final Library.Video video = byLink.get(played.link);
+            if (video == null || hidden.contains(played.link)) {
+                continue;
+            }
+            final long duration = played.duration > 0 ? played.duration : video.duration;
+            int progress = -1;
+            String meta = video.folderName;
+            if (duration > 0 && played.position > 0 && played.position < duration) {
+                progress = (int) (played.position * 1000 / duration);
+                meta += "  ·  " + getString(R.string.home_time_left,
+                        Utils.formatMilis(duration - played.position));
+            }
+            // named and pictured like an online film once Film info knows which film it is
+            final com.brouken.player.online.Identity film = filmOf(video.uri);
+            final String poster = posters && film != null && film.posterPath != null
+                    && !Prefs.frameHere(preferences, played.link)
+                    ? com.brouken.player.online.Posters.url(film.posterPath) : null;
+            final Row row = Row.playedHere(video, film != null ? film.heading() : video.name, meta, progress,
+                    pins.contains(played.link), poster);
+            row.episode = film != null && film.isSeries ? film.episodeCode() : null;
+            here.add(row);
+            if (here.size() >= RECENT_HERE) {
+                break;
+            }
+        }
+        return here;
     }
 
     private void renderFolder() {
@@ -671,11 +861,23 @@ public class HomeActivity extends AppCompatActivity {
         file.setVisibility(entry != null && !entry.name.equals(row.text) ? View.VISIBLE : View.GONE);
 
         final TextView pinItem = content.findViewById(R.id.recent_menu_pin);
+        if (row.local) {
+            file.setVisibility(View.GONE);
+            if (row.poster == null) {
+                frames.into(this, poster, uri, R.drawable.ic_movie_24dp);
+            } else {
+                com.brouken.player.online.Posters.load(poster, row.poster, R.drawable.ic_movie_24dp);
+            }
+        }
         pinItem.setText(row.pinned ? R.string.recent_unpin : R.string.recent_pin);
         pinItem.setOnClickListener(view -> {
             sheet.dismiss();
-            if (!History.setPinned(preferences, uri, !row.pinned)) {
-                Toast.makeText(this, R.string.recent_pins_full, Toast.LENGTH_LONG).show();
+            final boolean done = row.local
+                    ? Prefs.setPinnedHere(preferences, uri.toString(), !row.pinned)
+                    : History.setPinned(preferences, uri, !row.pinned);
+            if (!done) {
+                Toast.makeText(this, getString(R.string.recent_pins_full,
+                        row.local ? Prefs.MAX_PINS_HERE : History.maxPins(preferences)), Toast.LENGTH_LONG).show();
                 return;
             }
             render();
@@ -685,7 +887,9 @@ public class HomeActivity extends AppCompatActivity {
             startPlayer(uri, row.mediaType, true);
         });
         final TextView info = content.findViewById(R.id.recent_menu_info);
-        info.setText(entry != null && entry.title != null ? R.string.recent_info : R.string.film_find);
+        // a film on this device is known through its saved match, not Recent
+        final boolean known = row.local ? filmOf(uri) != null : entry != null && entry.title != null;
+        info.setText(known ? R.string.recent_info : R.string.film_find);
         info.setOnClickListener(view -> {
             sheet.dismiss();
             final Intent intent = new Intent(this, FilmInfoActivity.class);
@@ -699,21 +903,23 @@ public class HomeActivity extends AppCompatActivity {
         });
         content.findViewById(R.id.recent_menu_remove).setOnClickListener(view -> {
             sheet.dismiss();
+            // a film on this device is only hidden: it keeps its place to resume
+            if (row.local) {
+                Prefs.setHiddenHere(preferences, uri.toString(), true);
+                render();
+                offerUndo(() -> Prefs.setHiddenHere(preferences, uri.toString(), false));
+                return;
+            }
             final History.Entry removed = History.find(preferences, uri);
             final int at = History.remove(preferences, uri);
             render();
             if (removed != null && at >= 0) {
-                com.google.android.material.snackbar.Snackbar
-                        // long enough to reach for Undo; the standard long one is under 3 s
-                        .make(list, R.string.recent_removed, 5000)
-                        .setAction(R.string.recent_undo, undo -> {
-                            if (BuildConfig.DEBUG) {
-                                Utils.log("Recent undo: " + removed.name + " back at " + at);
-                            }
-                            History.restore(preferences, removed, at);
-                            render();
-                        })
-                        .show();
+                offerUndo(() -> {
+                    if (BuildConfig.DEBUG) {
+                        Utils.log("Recent undo: " + removed.name + " back at " + at);
+                    }
+                    History.restore(preferences, removed, at);
+                });
             }
         });
         sheet.setContentView(content);
@@ -724,9 +930,37 @@ public class HomeActivity extends AppCompatActivity {
                 com.google.android.material.bottomsheet.BottomSheetBehavior.from(bottomSheet)
                         .setState(com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED);
             }
-            pinItem.requestFocus();
+            (row.local ? content.findViewById(R.id.recent_menu_start) : pinItem).requestFocus();
         });
         sheet.show();
+    }
+
+    private void offerUndo(final Runnable undo) {
+        final com.google.android.material.snackbar.Snackbar bar = com.google.android.material.snackbar.Snackbar
+                // long enough to reach for Undo; the standard long one is under 3 s
+                .make(list, R.string.recent_removed, 5000)
+                .setAction(R.string.recent_undo, view -> {
+                    undo.run();
+                    render();
+                });
+        bar.show();
+        // a remote can't get down to the bar past the list, so Undo takes the focus
+        final View action = bar.getView().findViewById(com.google.android.material.R.id.snackbar_action);
+        if (action != null) {
+            action.setFocusable(true);
+            action.post(action::requestFocus);
+            bar.addCallback(new com.google.android.material.snackbar.BaseTransientBottomBar
+                    .BaseCallback<com.google.android.material.snackbar.Snackbar>() {
+                @Override
+                public void onDismissed(final com.google.android.material.snackbar.Snackbar gone,
+                                        final int event) {
+                    // the focus went with the bar
+                    if (getCurrentFocus() == null || getCurrentFocus() == action) {
+                        list.requestFocus();
+                    }
+                }
+            });
+        }
     }
 
     private void togglePin(final Library.Folder folder) {
@@ -931,6 +1165,15 @@ public class HomeActivity extends AppCompatActivity {
         @Nullable
         final String poster;
         final boolean postersShown;
+        // Recent on this device: a local film with how far it got, 0 to 1000, or -1
+        boolean local;
+        int progress = -1;
+        // a YouTube playlist: "5 / 24", empty before its place is known, null for anything else
+        @Nullable
+        String listPlace;
+        // an episode: "S01E10", on the card since every episode has the show's poster
+        @Nullable
+        String episode;
 
         private Row(final int type, final String text, @Nullable final String meta,
                     @Nullable final Library.Folder folder, final boolean pinned,
@@ -968,6 +1211,15 @@ public class HomeActivity extends AppCompatActivity {
             return new Row(TYPE_VIDEO, name, meta, null, false, uri, mediaType);
         }
 
+        static Row playedHere(final Library.Video video, final String name, final String meta,
+                              final int progress, final boolean pinned, @Nullable final String poster) {
+            final Row row = new Row(TYPE_VIDEO, name, meta, null, pinned, video.uri, null, false,
+                    poster, poster != null);
+            row.local = true;
+            row.progress = progress;
+            return row;
+        }
+
         static Row recent(final History.Entry entry, final boolean postersShown) {
             final boolean identified = entry.title != null;
             return new Row(TYPE_VIDEO, identified ? entry.title : entry.name,
@@ -986,7 +1238,8 @@ public class HomeActivity extends AppCompatActivity {
             if (!wall || type == TYPE_HEADER) {
                 return type;
             }
-            if (rows.get(position).recent) {
+            if (rows.get(position).recent || rows.get(position).local
+                    || cards && type == TYPE_VIDEO) {
                 return TYPE_POSTER_TILE;
             }
             return type == TYPE_FOLDER ? TYPE_FOLDER_TILE : TYPE_VIDEO_TILE;
@@ -1063,6 +1316,8 @@ public class HomeActivity extends AppCompatActivity {
         final TextView name;
         final TextView meta;
         final ImageButton pin;
+        final View icon;
+        final com.brouken.player.home.FolderPicture picture;
 
         FolderHolder(final View view) {
             super(view);
@@ -1070,12 +1325,21 @@ public class HomeActivity extends AppCompatActivity {
             name = view.findViewById(R.id.folder_name);
             meta = view.findViewById(R.id.folder_meta);
             pin = view.findViewById(R.id.folder_pin);
+            icon = view.findViewById(R.id.folder_icon);
+            picture = view.findViewById(R.id.folder_picture);
         }
 
         void bind(final Row row) {
             final Library.Folder folder = row.folder;
             if (folder == null) {
                 return;
+            }
+            // the plain folder keeps the icon in the list, as a folder
+            final boolean pictured = !com.brouken.player.home.FolderPicture.FOLDER.equals(folderLook());
+            icon.setVisibility(pictured ? View.GONE : View.VISIBLE);
+            picture.setVisibility(pictured ? View.VISIBLE : View.GONE);
+            if (pictured) {
+                fillFolderPicture(picture, folder, false);
             }
             name.setText(folder.name);
             meta.setText(folderMeta(folder));
@@ -1099,16 +1363,33 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
+    private java.util.Set<String> watchedPlaces = java.util.Collections.emptySet();
+
+    // marked or finished here, or watched by Simkl's latest list
+    private boolean watched(final Row row) {
+        if (row.uri == null) {
+            return false;
+        }
+        final String place = Watched.placeKey(row.uri);
+        return watchedPlaces.contains(place) || filmTicks.contains(place);
+    }
+
     private final class VideoHolder extends RecyclerView.ViewHolder {
+        @Nullable
+        final android.widget.ImageView watched;
         final TextView name;
         final TextView meta;
         final android.widget.ImageView icon;
+        @Nullable
+        final android.widget.ProgressBar progress;
 
         VideoHolder(final View view) {
             super(view);
             name = view.findViewById(R.id.video_name);
             meta = view.findViewById(R.id.video_meta);
             icon = view.findViewById(R.id.video_icon);
+            progress = view.findViewById(R.id.video_progress);
+            watched = view.findViewById(R.id.video_watched);
             if (icon != null) {
                 icon.setOutlineProvider(new android.view.ViewOutlineProvider() {
                     @Override
@@ -1161,7 +1442,7 @@ public class HomeActivity extends AppCompatActivity {
             // middle ellipsis over several lines renders blank on some devices
             final boolean identified = row.recent && !TextUtils.isEmpty(row.meta);
             name.setSingleLine(!identified);
-            name.setMaxLines(identified ? 3 : 1);
+            name.setMaxLines(identified ? 2 : 1);
             name.setEllipsize(identified ? TextUtils.TruncateAt.END : TextUtils.TruncateAt.MIDDLE);
             name.setText(row.text);
             // frames for local files only; a network one means fetching the video
@@ -1179,19 +1460,27 @@ public class HomeActivity extends AppCompatActivity {
                     }
                 }
             }
-            if (TextUtils.isEmpty(row.meta)) {
+            final String metaText = row.recent ? recentMeta(row, true) : row.meta;
+            if (TextUtils.isEmpty(metaText)) {
                 meta.setVisibility(View.GONE);
             } else {
                 meta.setVisibility(View.VISIBLE);
-                meta.setText(row.meta);
+                meta.setText(metaText);
             }
             meta.setEllipsize(row.recent ? TextUtils.TruncateAt.MIDDLE : TextUtils.TruncateAt.END);
             name.setCompoundDrawablesRelative(row.recent && row.pinned ? pinMark() : null, null, null, null);
             name.setCompoundDrawablePadding(dp(6));
             name.setContentDescription(row.recent && row.pinned
                     ? getString(R.string.recent_pinned) + ", " + row.text : null);
+            if (progress != null) {
+                progress.setVisibility(row.progress >= 0 ? View.VISIBLE : View.GONE);
+                progress.setProgress(Math.max(0, row.progress));
+            }
+            if (watched != null) {
+                watched.setVisibility(watched(row) ? View.VISIBLE : View.GONE);
+            }
             itemView.setOnClickListener(view -> startPlayer(row.uri, row.mediaType));
-            if (row.recent) {
+            if (row.recent || row.local) {
                 itemView.setOnLongClickListener(view -> {
                     showRecentMenu(row);
                     return true;
@@ -1209,6 +1498,69 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
+    // a new install starts on Cards; one updated from an older version keeps the List it had
+    static void settleLayout(final Context context) {
+        final SharedPreferences prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context);
+        if (prefs.contains("homeLayout")) {
+            return;
+        }
+        boolean fresh = true;
+        try {
+            final android.content.pm.PackageInfo info =
+                    context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+            fresh = info.firstInstallTime == info.lastUpdateTime;
+        } catch (Exception ignored) {
+            // taken as new
+        }
+        prefs.edit().putString("homeLayout", fresh ? LAYOUT_CARDS : "list").apply();
+    }
+
+    private int listPaddingStart = -1;
+    private int listPaddingEnd;
+
+    // also on a change from the view button, in place, so the open folder stays open
+    private void applyLayout() {
+        appliedLayout = preferences.getString("homeLayout", LAYOUT_CARDS);
+        cards = LAYOUT_CARDS.equals(appliedLayout);
+        wall = cards || LAYOUT_WALL.equals(appliedLayout);
+        if (listPaddingStart < 0) {
+            listPaddingStart = list.getPaddingStart();
+            listPaddingEnd = list.getPaddingEnd();
+        }
+        if (wall) {
+            setUpWall();
+        } else {
+            list.setLayoutManager(new LinearLayoutManager(this));
+            list.setPaddingRelative(listPaddingStart, list.getPaddingTop(), listPaddingEnd, list.getPaddingBottom());
+        }
+    }
+
+    private void showViewMenu() {
+        final String[] values = getResources().getStringArray(R.array.home_layout_values);
+        final String[] names = getResources().getStringArray(R.array.home_layout_entries);
+        final String now = preferences.getString("homeLayout", LAYOUT_CARDS);
+        int checked = 0;
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].equals(now)) {
+                checked = i;
+            }
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.home_view)
+                .setSingleChoiceItems(names, checked, (dialog, which) -> {
+                    dialog.dismiss();
+                    if (values[which].equals(now)) {
+                        return;
+                    }
+                    preferences.edit().putString("homeLayout", values[which]).apply();
+                    applyLayout();
+                    list.setAdapter(adapter);
+                    render();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
     // columns x posters spans: a tile takes "posters" of them, a poster "columns"
     private void setUpWall() {
         final androidx.recyclerview.widget.GridLayoutManager grid =
@@ -1219,7 +1571,10 @@ public class HomeActivity extends AppCompatActivity {
                 if (position >= rows.size() || rows.get(position).type == TYPE_HEADER) {
                     return grid.getSpanCount();
                 }
-                return rows.get(position).recent ? wallColumns() : postersPerRow();
+                // folders, films on this device and, in Cards, a folder's videos line up with Recent's cards
+                final Row row = rows.get(position);
+                return row.recent || row.local || row.type == TYPE_FOLDER || cards
+                        ? wallColumns() : postersPerRow();
             }
         });
         list.setLayoutManager(grid);
@@ -1289,8 +1644,51 @@ public class HomeActivity extends AppCompatActivity {
         return known;
     }
 
+    // all its videos end to end; null when none says how long it is
+    @Nullable
+    private String folderLength(final Library.Folder folder) {
+        if (!folderLengths.containsKey(folder.id)) {
+            long total = 0;
+            for (final Library.Video video : Library.inFolder(everything, folder.id)) {
+                total += Math.max(0, video.duration);
+            }
+            // a big folder runs past what formatMilis's int can hold
+            final long seconds = total / 1000;
+            folderLengths.put(folder.id, total <= 0 ? null : seconds >= 3600
+                    ? String.format(java.util.Locale.getDefault(), "%d:%02d:%02d", seconds / 3600, seconds / 60 % 60, seconds % 60)
+                    : String.format(java.util.Locale.getDefault(), "%d:%02d", seconds / 60, seconds % 60));
+        }
+        return folderLengths.get(folder.id);
+    }
+
+    // looks from before 5.1 that are gone become the default
+    private String folderLook() {
+        final String look = preferences.getString("folderLook", com.brouken.player.home.FolderPicture.CENTRED);
+        return com.brouken.player.home.FolderPicture.SQUARE.equals(look) || com.brouken.player.home.FolderPicture.MOSAIC.equals(look) || com.brouken.player.home.FolderPicture.FOLDER.equals(look)
+                ? look : com.brouken.player.home.FolderPicture.CENTRED;
+    }
+
+    // a card is tall like Recent's, the list's small picture is wide
+    private void fillFolderPicture(final com.brouken.player.home.FolderPicture picture,
+                                   final Library.Folder folder, final boolean card) {
+        final List<Uri> uris = framesOf(folder);
+        final String look = folderLook();
+        final int shown = picture.show(look, uris.size(), Accent.color(this));
+        picture.setChip(com.brouken.player.home.FolderPicture.FOLDER.equals(look) ? folderLength(folder) : String.valueOf(folder.count));
+        final android.widget.ImageView[] images = picture.images();
+        for (int i = 0; i < shown; i++) {
+            if (uris.isEmpty()) {
+                images[i].setTag(null);
+                images[i].setImageDrawable(null);
+            } else {
+                frames.into(HomeActivity.this, images[i], uris.get(i), R.drawable.ic_movie_24dp,
+                        card && com.brouken.player.home.FolderPicture.CENTRED.equals(look));
+            }
+        }
+    }
+
     private final class FolderTileHolder extends RecyclerView.ViewHolder {
-        final android.widget.ImageView[] quarters = new android.widget.ImageView[4];
+        final com.brouken.player.home.FolderPicture picture;
         final View star;
         final TextView name;
         final TextView meta;
@@ -1298,10 +1696,7 @@ public class HomeActivity extends AppCompatActivity {
         FolderTileHolder(final View view) {
             super(view);
             view.findViewById(R.id.tile_frame).setClipToOutline(true);
-            quarters[0] = view.findViewById(R.id.tile_frame1);
-            quarters[1] = view.findViewById(R.id.tile_frame2);
-            quarters[2] = view.findViewById(R.id.tile_frame3);
-            quarters[3] = view.findViewById(R.id.tile_frame4);
+            picture = view.findViewById(R.id.tile_picture);
             star = view.findViewById(R.id.tile_star);
             name = view.findViewById(R.id.tile_name);
             meta = view.findViewById(R.id.tile_meta);
@@ -1316,16 +1711,15 @@ public class HomeActivity extends AppCompatActivity {
             name.setText(folder.name);
             meta.setText(folderMeta(folder));
             star.setVisibility(row.pinned ? View.VISIBLE : View.GONE);
-            final List<Uri> uris = framesOf(folder);
-            for (int i = 0; i < quarters.length; i++) {
-                if (uris.isEmpty()) {
-                    quarters[i].setTag(null);
-                    quarters[i].setImageDrawable(null);
-                } else {
-                    frames.into(HomeActivity.this, quarters[i], uris.get(i % uris.size()),
-                            R.drawable.ic_movie_24dp);
-                }
+            final View frame = itemView.findViewById(R.id.tile_frame);
+            final androidx.constraintlayout.widget.ConstraintLayout.LayoutParams shape =
+                    (androidx.constraintlayout.widget.ConstraintLayout.LayoutParams) frame.getLayoutParams();
+            final String ratio = com.brouken.player.home.FolderPicture.SQUARE.equals(folderLook()) ? "1:1" : "2:3";
+            if (!ratio.equals(shape.dimensionRatio)) {
+                shape.dimensionRatio = ratio;
+                frame.setLayoutParams(shape);
             }
+            fillFolderPicture(picture, folder, true);
             itemView.setOnClickListener(view -> openFolder(folder, rows.indexOf(row)));
             itemView.setOnLongClickListener(view -> {
                 togglePin(folder);
@@ -1343,31 +1737,68 @@ public class HomeActivity extends AppCompatActivity {
     private final class PosterTileHolder extends RecyclerView.ViewHolder {
         final android.widget.ImageView image;
         final android.widget.ImageView pin;
+        final android.widget.ImageView watched;
+        final TextView list;
+        final TextView episode;
         final TextView name;
         final TextView meta;
+        final android.widget.ProgressBar progress;
 
         PosterTileHolder(final View view) {
             super(view);
             view.findViewById(R.id.tile_frame).setClipToOutline(true);
             image = view.findViewById(R.id.tile_image);
             pin = view.findViewById(R.id.tile_pin);
+            watched = view.findViewById(R.id.tile_watched);
+            list = view.findViewById(R.id.tile_list);
+            episode = view.findViewById(R.id.tile_episode);
+            progress = view.findViewById(R.id.tile_progress);
+            final android.graphics.drawable.Drawable mark = androidx.core.content.ContextCompat
+                    .getDrawable(HomeActivity.this, R.drawable.ic_queue_24dp);
+            if (mark != null) {
+                mark.setBounds(0, 0, dp(14), dp(14));
+                list.setCompoundDrawablesRelative(mark, null, null, null);
+            }
             name = view.findViewById(R.id.tile_name);
             meta = view.findViewById(R.id.tile_meta);
             growOnFocus(view);
         }
 
         void bind(final Row row) {
+            if (!row.recent && !row.local) {
+                bindFolderVideo(row);
+                return;
+            }
             final boolean identified = !TextUtils.isEmpty(row.meta);
             name.setSingleLine(!identified);
-            name.setMaxLines(identified ? Integer.MAX_VALUE : 1);
-            name.setEllipsize(identified ? null : TextUtils.TruncateAt.MIDDLE);
+            // always two lines, so a long site title doesn't make its tile taller than the rest
+            if (identified) {
+                name.setLines(2);
+            }
+            name.setEllipsize(identified ? TextUtils.TruncateAt.END : TextUtils.TruncateAt.MIDDLE);
             name.setText(row.text);
-            meta.setVisibility(TextUtils.isEmpty(row.meta) ? View.GONE : View.VISIBLE);
-            meta.setText(row.meta);
-            com.brouken.player.home.Frames.placeholder(
-                    HomeActivity.this, image, R.drawable.ic_movie_24dp);
-            com.brouken.player.online.Posters.load(image, row.poster, R.drawable.ic_movie_24dp);
+            final String metaText = recentMeta(row, false);
+            meta.setVisibility(TextUtils.isEmpty(metaText) ? View.GONE : View.VISIBLE);
+            meta.setText(metaText);
+            list.setVisibility(row.listPlace == null ? View.GONE : View.VISIBLE);
+            list.setText(row.listPlace);
+            episode.setVisibility(row.listPlace == null && row.episode != null ? View.VISIBLE : View.GONE);
+            episode.setText(row.episode);
+            if (row.local && row.poster == null) {
+                // a poster still loading for a recycled card must not land on this one
+                com.brouken.player.online.Posters.forget(image);
+                frames.into(HomeActivity.this, image, row.uri, R.drawable.ic_movie_24dp, true);
+            } else {
+                // nor a frame
+                image.setTag(null);
+                com.brouken.player.home.Frames.placeholder(
+                        HomeActivity.this, image, R.drawable.ic_movie_24dp);
+                com.brouken.player.online.Posters.load(image, row.poster, R.drawable.ic_movie_24dp);
+            }
+            progress.setVisibility(row.progress >= 0 ? View.VISIBLE : View.GONE);
+            progress.setProgress(Math.max(0, row.progress));
             pin.setVisibility(row.pinned ? View.VISIBLE : View.GONE);
+            watched.setVisibility(watched(row) ? View.VISIBLE : View.GONE);
             itemView.setOnClickListener(view -> startPlayer(row.uri, row.mediaType));
             itemView.setOnLongClickListener(view -> {
                 showRecentMenu(row);
@@ -1377,6 +1808,48 @@ public class HomeActivity extends AppCompatActivity {
                     ? row.text : row.text + ", " + row.meta)
                     + (row.pinned ? ", " + getString(R.string.recent_pinned) : ""));
         }
+
+        // a video inside a folder, on Cards
+        private void bindFolderVideo(final Row row) {
+            final Library.Video video = row.uri == null ? null : videoAt.get(row.uri);
+            name.setSingleLine(false);
+            name.setLines(2);
+            name.setEllipsize(TextUtils.TruncateAt.END);
+            name.setText(row.text);
+            final String length = video != null && video.duration > 0 ? Utils.formatMilis(video.duration) : null;
+            final String size = video != null && video.size > 0
+                    ? com.brouken.player.home.Readable.size(HomeActivity.this, video.size) : null;
+            final String where = video != null && query != null && !query.trim().isEmpty()
+                    ? video.folderName : null;
+            final StringBuilder line = new StringBuilder();
+            for (final String part : new String[]{where, length, size}) {
+                if (!TextUtils.isEmpty(part)) {
+                    if (line.length() > 0) {
+                        line.append("  ·  ");
+                    }
+                    line.append(part);
+                }
+            }
+            meta.setVisibility(line.length() == 0 ? View.GONE : View.VISIBLE);
+            meta.setText(line);
+            list.setVisibility(View.GONE);
+            episode.setVisibility(View.GONE);
+            pin.setVisibility(View.GONE);
+            watched.setVisibility(watched(row) ? View.VISIBLE : View.GONE);
+            com.brouken.player.online.Posters.forget(image);
+            if (row.uri != null && !History.isNetworkUri(row.uri)) {
+                frames.into(HomeActivity.this, image, row.uri, R.drawable.ic_movie_24dp, true);
+            } else {
+                image.setTag(null);
+                com.brouken.player.home.Frames.placeholder(HomeActivity.this, image, R.drawable.ic_movie_24dp);
+            }
+            progress.setVisibility(row.progress >= 0 ? View.VISIBLE : View.GONE);
+            progress.setProgress(Math.max(0, row.progress));
+            itemView.setOnClickListener(view -> startPlayer(row.uri, row.mediaType));
+            itemView.setOnLongClickListener(null);
+            itemView.setLongClickable(false);
+            itemView.setContentDescription(line.length() == 0 ? row.text : row.text + ", " + line);
+        }
     }
 
     private final class VideoTileHolder extends RecyclerView.ViewHolder {
@@ -1384,11 +1857,13 @@ public class HomeActivity extends AppCompatActivity {
         final TextView length;
         final TextView name;
         final TextView meta;
+        final android.widget.ProgressBar progress;
 
         VideoTileHolder(final View view) {
             super(view);
             view.findViewById(R.id.tile_frame).setClipToOutline(true);
             image = view.findViewById(R.id.tile_image);
+            progress = view.findViewById(R.id.tile_progress);
             length = view.findViewById(R.id.tile_length);
             name = view.findViewById(R.id.tile_name);
             meta = view.findViewById(R.id.tile_meta);
@@ -1426,12 +1901,25 @@ public class HomeActivity extends AppCompatActivity {
                     ? com.brouken.player.home.Readable.size(HomeActivity.this, video.size) : null;
             final String where = video != null && query != null && !query.trim().isEmpty()
                     ? video.folderName : null;
-            final String line = where != null && size != null ? where + "  ·  " + size
+            // a film played on this device says where it is and how much is left
+            final String line = row.local ? row.meta
+                    : where != null && size != null ? where + "  ·  " + size
                     : where != null ? where : size;
             meta.setVisibility(TextUtils.isEmpty(line) ? View.GONE : View.VISIBLE);
             meta.setText(line);
+            progress.setVisibility(row.progress >= 0 ? View.VISIBLE : View.GONE);
+            progress.setProgress(Math.max(0, row.progress));
 
             itemView.setOnClickListener(view -> startPlayer(row.uri, row.mediaType));
+            if (row.local) {
+                itemView.setOnLongClickListener(view -> {
+                    showRecentMenu(row);
+                    return true;
+                });
+            } else {
+                itemView.setOnLongClickListener(null);
+                itemView.setLongClickable(false);
+            }
             itemView.setContentDescription(TextUtils.isEmpty(row.meta)
                     ? row.text : row.text + ", " + row.meta);
         }

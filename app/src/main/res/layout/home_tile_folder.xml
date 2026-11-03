@@ -22,49 +22,16 @@
             android:background="@drawable/home_tile_frame"
             android:duplicateParentState="true"
             android:foreground="@drawable/home_tile_ring"
-            app:layout_constraintDimensionRatio="16:9"
+            app:layout_constraintDimensionRatio="2:3"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
-            <LinearLayout
+            <!-- filled in the look chosen in Settings -->
+            <com.brouken.player.home.FolderPicture
+                android:id="@+id/tile_picture"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/tile_frame1"
-                        style="@style/HomeTileQuarter" />
-
-                    <ImageView
-                        android:id="@+id/tile_frame2"
-                        style="@style/HomeTileQuarter"
-                        android:layout_marginStart="2dp" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_marginTop="2dp"
-                    android:layout_weight="1"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/tile_frame3"
-                        style="@style/HomeTileQuarter" />
-
-                    <ImageView
-                        android:id="@+id/tile_frame4"
-                        style="@style/HomeTileQuarter"
-                        android:layout_marginStart="2dp" />
-                </LinearLayout>
-            </LinearLayout>
+                android:layout_height="match_parent" />
 
             <!-- amber like the list's star, whatever the accent -->
             <ImageView
@@ -88,12 +55,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
-        android:ellipsize="middle"
-        android:maxLines="1"
-        android:singleLine="true"
+        android:ellipsize="end"
+        android:maxLines="2"
         android:textColor="?android:attr/textColorPrimary"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:textSize="12sp" />
 
     <TextView
         android:id="@+id/tile_meta"
@@ -103,5 +68,5 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:textColor="?android:attr/textColorSecondary"
-        android:textSize="12sp" />
+        android:textSize="11sp" />
 </LinearLayout>
