@@ -11,18 +11,18 @@
     <string name="onboarding_key_title">Tambah kunci TMDB</string>
     <string name="onboarding_key_description">Setelan ada di sini. Kunci TMDB gratis inilah yang menemukan judul, poster, subtitel, dan penanda intro.</string>
     <string name="open_subtitles">Muat subtitel</string>
-    <string name="error_title">Gagal diputar</string>
+    <string name="error_title">Tidak dapat diputar</string>
     <string name="error_share">Bagikan detail</string>
-    <string name="error_network">Pemutar tidak dapat menjangkau file. Periksa koneksi, dan apakah link sudah kedaluwarsa.</string>
-    <string name="error_http">Server menolak permintaan. Link dari layanan debrid mungkin sudah kedaluwarsa.</string>
-    <string name="error_missing">File sudah tidak ada.</string>
-    <string name="error_permission">Pemutar tidak diizinkan membuka file itu.</string>
-    <string name="error_codec">Tidak ada yang dapat mendekode file ini. Coba mesin lain, atau setel mesin ke Otomatis.</string>
-    <string name="error_damaged">File tampak rusak atau tidak lengkap.</string>
-    <string name="error_drm">Ini dilindungi dari penyalinan, dan pemutar ini tidak mendukungnya.</string>
-    <string name="error_unknown">Terjadi masalah saat memutar ini.</string>
+    <string name="error_network">File tidak terjangkau. Periksa koneksi atau tautannya.</string>
+    <string name="error_http">Server menolaknya. Tautan mungkin sudah kedaluwarsa.</string>
+    <string name="error_missing">File ini sudah tidak ada.</string>
+    <string name="error_permission">Tidak ada izin untuk membuka file ini.</string>
+    <string name="error_codec">File ini tidak bisa didekode. Coba mesin yang lain.</string>
+    <string name="error_damaged">File ini rusak atau tidak lengkap.</string>
+    <string name="error_drm">Video ini dilindungi dari penyalinan.</string>
+    <string name="error_unknown">Tidak bisa diputar sekarang. Coba lagi.</string>
     <string name="error_details">Detail</string>
-    <string name="error_files_missing">Aplikasi File dinonaktifkan atau tidak ada</string>
+    <string name="error_files_missing">Aplikasi File nonaktif atau tidak ada.</string>
     <string name="request_scope">Untuk memuat subtitel eksternal secara otomatis atau melompat ke file berikutnya dalam folder, berikan akses %s ke folder teratas yang berisi video Anda (misalnya Film).</string>
     <string name="delete_query">Hapus file ini\?</string>
     <string name="delete_confirmation">Hapus</string>
@@ -82,7 +82,7 @@ lalu masukkan PIN ini saat diminta:
 
 Tidak ada yang ditampilkan di ponsel sampai PIN dimasukkan. Halaman berhenti saat Anda menekan tombol di bawah, atau saat Anda keluar dari layar ini.</string>
     <string name="pref_setup_phone_stop">Hentikan halaman</string>
-    <string name="pref_setup_phone_failed">Halaman tidak dapat dimulai. Perangkat ini mungkin tidak mengizinkannya, atau tidak terhubung ke jaringan — masukkan kunci di sini saja.</string>
+    <string name="pref_setup_phone_failed">Halaman tidak bisa dimulai. Masukkan kuncinya di sini saja.</string>
     <string name="pref_online_note">Kartu info, penanda lewati, dan pencarian subtitel semuanya memerlukan kunci TMDB.</string>
     <string name="pref_key_tmdb">Kunci TMDB</string>
     <string name="pref_key_tmdb_dialog">Gratis dari themoviedb.org → Setelan → API.</string>
@@ -109,8 +109,8 @@ Tidak ada yang ditampilkan di ponsel sampai PIN dimasukkan. Halaman berhenti saa
     <string name="online_search_subtitles">Cari subtitel online…</string>
     <string name="subtitle_source_title">Subtitel</string>
     <string name="subtitle_source_file">Muat file subtitel…</string>
-    <string name="online_needs_tmdb">Tambahkan kunci TMDB di Setelan dulu — kunci itulah yang mengubah nama file menjadi sesuatu yang bisa ditanyakan ke sumber subtitel.</string>
-    <string name="online_needs_source">Belum ada sumber subtitel. Tambahkan add-on Stremio, atau kunci OpenSubtitles, SubDL, atau Wyzie, di Setelan.</string>
+    <string name="online_needs_tmdb">Tambahkan kunci TMDB di Setelan dulu.</string>
+    <string name="online_needs_source">Siapkan sumber subtitel di Setelan dulu.</string>
     <string name="online_identify_title">Yang mana ini?</string>
     <string name="online_searching">Mencari…</string>
     <string name="online_identifying">Mengenali…</string>
@@ -130,7 +130,7 @@ Tidak ada yang ditampilkan di ponsel sampai PIN dimasukkan. Halaman berhenti saa
     <string name="recent_remove">Hapus dari Terbaru</string>
     <string name="recent_removed">Dihapus dari Terbaru</string>
     <string name="recent_undo">Urungkan</string>
-    <string name="recent_pins_full">Maksimal 3 film dapat disematkan. Lepas sematan satu dulu.</string>
+    <string name="recent_pins_full">Maksimal %1$d film dapat disematkan. Lepas sematan satu dulu.</string>
     <string name="recent_pinned">Tersemat</string>
     <string name="online_match_prompt_dismiss">Lain kali</string>
     <string name="online_no_matches">Tidak ada hasil untuk judul itu</string>
@@ -152,9 +152,9 @@ Tidak ada yang ditampilkan di ponsel sampai PIN dimasukkan. Halaman berhenti saa
     <string name="subtitle_menu_search_detail">Cari secara online untuk episode ini</string>
     <string name="subtitle_menu_settings_detail">Ukuran, posisi, penundaan, dan gaya</string>
     <string name="audio_menu_delay_detail">Geser suara terhadap gambar</string>
-    <string name="capability_title">Perangkat ini mungkin kesulitan memutarnya</string>
-    <string name="capability_hard">Tidak ada dekoder hardware yang mendukungnya. Gambar mungkin tersendat, atau berhenti sementara suara terus berjalan.</string>
-    <string name="capability_impossible">Tidak ada yang bisa mendekodenya di perangkat ini, jadi mungkin tidak bisa diputar sama sekali.</string>
+    <string name="capability_title">Mungkin tidak berjalan mulus</string>
+    <string name="capability_hard">Tidak ada dekoder perangkat keras untuk ini. Bisa tersendat.</string>
+    <string name="capability_impossible">Tidak ada yang bisa mendekode ini. Mungkin tidak bisa diputar.</string>
     <string name="capability_continue">Tetap putar</string>
     <string name="capability_quit">Tutup file</string>
     <string name="capability_try_other">Coba %1$s</string>
@@ -163,7 +163,7 @@ Tidak ada yang ditampilkan di ponsel sampai PIN dimasukkan. Halaman berhenti saa
     <string name="online_season">Musim</string>
     <string name="online_episode">Episode</string>
     <string name="online_downloading">Mengunduh…</string>
-    <string name="online_download_failed">Subtitel itu tidak dapat diunduh</string>
+    <string name="online_download_failed">Subtitel itu tidak bisa diunduh. Coba lagi.</string>
     <string name="online_download_limit">Batas %1$s hari ini tercapai</string>
     <string name="online_download_limit_until">Batas %1$s tercapai. Tunggu %2$s</string>
     <string name="online_saved_to">Dimuat, disimpan ke %1$s</string>
@@ -199,7 +199,7 @@ Tidak ada yang ditampilkan di ponsel sampai PIN dimasukkan. Halaman berhenti saa
     <string name="controls_name_repeat">Ulangi</string>
     <string name="pref_licenses">Lisensi</string>
     <string name="pref_licenses_summary">Teks lengkap setiap lisensi yang dipakai aplikasi ini</string>
-    <string name="licenses_unavailable">Teks lisensi ini tidak dapat dibaca.</string>
+    <string name="licenses_unavailable">Lisensi ini tidak bisa dibaca.</string>
     <string name="intro_next">Lanjut</string>
     <string name="intro_back">Kembali</string>
     <string name="intro_done">Selesai</string>
@@ -225,12 +225,13 @@ Tidak ada yang ditampilkan di ponsel sampai PIN dimasukkan. Halaman berhenti saa
     <string name="pref_controls_timeout_summary">Detik</string>
     <string name="unlocked">Kunci dibuka</string>
     <string name="locked_hint">Terkunci — tekan gembok, atau tahan gambar, untuk membuka</string>
+    <string name="locked_hint_remote">Terkunci. Tahan OK untuk membuka.</string>
     <string name="pref_lock_hint">Kunci layar dari sentuhan tak sengaja dengan gembok di kontrol. Untuk membuka, tekan gembok lagi, atau tahan jari di mana saja pada gambar, atau tahan OK di remote. Ketukan tak sengaja pada gambar tidak melakukan apa-apa, jadi kunci tidak bisa terbuka tanpa sengaja. Tombol volume tetap berfungsi saat terkunci.</string>
     <string name="pref_overlay_delay">Kartu muncul setelah</string>
     <string name="pref_overlay_delay_summary">Lama jeda (detik) sebelum muncul</string>
     <string name="pref_prefill">Isi pencarian dari nama file</string>
     <string name="button_lock">Kunci layar</string>
-    <string name="engine_fallback_mpv">Media3 tidak dapat memutar ini — beralih ke mpv</string>
+    <string name="engine_fallback_mpv">Media3 tidak bisa memutar ini. Beralih ke mpv.</string>
     <string name="engine_switch_file_type">Jenis file ini tidak didukung di Media3, beralih ke mpv</string>
     <string name="engine_switch_video_format">Format video ini tidak didukung di Media3, beralih ke mpv</string>
     <string name="engine_switch_audio_format">Format audio ini tidak didukung di Media3, beralih ke mpv</string>
@@ -241,14 +242,14 @@ Tidak ada yang ditampilkan di ponsel sampai PIN dimasukkan. Halaman berhenti saa
     <string name="pref_engine_auto">Otomatis</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">mpv perlu Android 8.0 ke atas</string>
-    <string name="engine_failed_title">Mesin ini tidak dapat memutar file</string>
-    <string name="engine_failed_message">%1$s tidak dapat memutar ini. %2$s kemungkinan besar bisa — itulah alasan ada dua mesin.</string>
+    <string name="engine_failed_title">File ini tidak bisa diputar</string>
+    <string name="engine_failed_message">%1$s tidak bisa memutar ini. Coba %2$s.</string>
     <string name="engine_failed_try">Coba %1$s</string>
     <string name="engine_failed_auto">Selalu Otomatis</string>
     <string name="engine_no_picture_title">Tanpa gambar</string>
-    <string name="engine_no_picture_message">%1$s memutar suara tetapi tidak gambarnya — biasanya Dolby Vision di perangkat tanpa dekoder Dolby Vision. %2$s mungkin bisa menampilkannya.</string>
-    <string name="engine_no_picture_switched">Tanpa gambar di Media3 — beralih ke mpv</string>
-    <string name="engine_no_picture_either">Tanpa gambar di kedua mesin — perangkat ini tidak bisa menampilkan video ini</string>
+    <string name="engine_no_picture_message">%1$s memutar suara tanpa gambar (sering karena Dolby Vision). Coba %2$s.</string>
+    <string name="engine_no_picture_switched">Tidak ada gambar di Media3. Beralih ke mpv.</string>
+    <string name="engine_no_picture_either">Perangkat ini tidak bisa menampilkan gambar video ini.</string>
     <string name="pref_engine_note">Otomatis dimulai dengan Media3 dan memindahkan file ke mpv jika Media3 tidak bisa memutarnya.</string>
     <string name="pref_media3_only">Hanya Media3 — tidak dipakai mpv</string>
     <string name="pref_adaptive_buffering">Buffering adaptif</string>
@@ -257,7 +258,7 @@ Tidak ada yang ditampilkan di ponsel sampai PIN dimasukkan. Halaman berhenti saa
     <string name="pref_subtitle_folder_default">Unduhan / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">Pilih folder</string>
     <string name="pref_subtitle_folder_clear">Gunakan folder default</string>
-    <string name="pref_subtitle_folder_failed">Folder itu tidak dapat digunakan</string>
+    <string name="pref_subtitle_folder_failed">Folder itu tidak bisa dipakai.</string>
     <string name="resume_title">Lanjutkan tontonan?</string>
     <string name="resume_accept">Putar</string>
     <string name="resume_decline">Lain kali</string>
@@ -270,7 +271,7 @@ Tidak ada yang ditampilkan di ponsel sampai PIN dimasukkan. Halaman berhenti saa
     <string name="open_url_title">URL jaringan</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">Putar</string>
-    <string name="open_url_invalid">Itu tidak tampak seperti URL yang bisa dibuka pemutar</string>
+    <string name="open_url_invalid">Itu bukan tautan yang bisa dibuka pemutar.</string>
     <string name="pref_folders">Folder yang boleh dibaca</string>
     <string name="pref_folders_note">Diperlukan untuk menemukan episode berikutnya, dan subtitel yang disimpan di samping film. Tambahkan semua folder tempat Anda menyimpan film.</string>
     <string name="pref_folders_empty">Belum ada. Tanpa folder, pemutar hanya melihat satu file yang Anda buka.</string>
@@ -278,7 +279,7 @@ Tidak ada yang ditampilkan di ponsel sampai PIN dimasukkan. Halaman berhenti saa
     <string name="pref_folders_remove">Ketuk untuk berhenti membaca folder ini</string>
     <string name="pref_folders_remove_confirm">Pemutar tidak akan lagi mencari episode berikutnya atau subtitel di sini.</string>
     <string name="pref_folders_remove_confirm_yes">Hapus</string>
-    <string name="pref_folders_failed">Android tidak mau menyimpan izin itu. Coba pilih folder lagi.</string>
+    <string name="pref_folders_failed">Android tidak menyimpan izinnya. Pilih foldernya lagi.</string>
     <string name="pref_folders_no_picker">Perangkat ini tidak punya pemilih folder.</string>
     <string name="pref_folders_summary_empty">Belum ada folder</string>
     <string name="error_code">Tampilkan kode</string>
@@ -311,7 +312,7 @@ Tidak ada yang ditampilkan di ponsel sampai PIN dimasukkan. Halaman berhenti saa
     <string name="update_install">Unduh dan pasang</string>
     <string name="update_open">Buka halaman</string>
     <string name="update_downloading">Mengunduh…</string>
-    <string name="update_failed">Tidak dapat memeriksa pembaruan.</string>
+    <string name="update_failed">Tidak bisa memeriksa pembaruan sekarang.</string>
     <string name="update_none_title">Sudah versi terbaru</string>
     <string name="update_none">Anda memakai %1$s. Versi terbaru yang dirilis adalah %2$s.</string>
     <string name="update_none_published">Belum ada yang dirilis. Anda memakai %1$s.</string>
@@ -355,7 +356,7 @@ URL yang Anda buka lewat jaringan diingat agar bisa dibuka lagi tanpa mengetik u
     <string name="pref_backup_exported">%1$d item diekspor</string>
     <string name="pref_backup_imported">%1$d item diimpor. Sebagian perlu pemutar dibuka ulang.</string>
     <string name="pref_backup_not_ours">File itu bukan cadangan Just Player Pro</string>
-    <string name="pref_backup_failed">File itu tidak dapat dibaca</string>
+    <string name="pref_backup_failed">File itu tidak bisa dibaca.</string>
     <string name="pref_backup_nothing">Tidak ada yang dipilih</string>
     <string name="pref_dangerous_header">Lanjutan</string>
     <string name="pref_dangerous_warning">Ini dapat merusak pemutaran file yang biasanya berfungsi.</string>
@@ -372,11 +373,12 @@ URL yang Anda buka lewat jaringan diingat agar bisa dibuka lagi tanpa mengetik u
     <string name="pref_custom_subtitle_font">Font kustom</string>
     <string name="pref_choose_custom_font">Pilih font</string>
     <string name="pref_custom_subtitle_font_not_set">Belum ada font kustom</string>
-    <string name="pref_custom_subtitle_font_failed">Font gagal dimuat</string>
+    <string name="pref_custom_subtitle_font_failed">Font itu tidak bisa dimuat.</string>
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">Aktif</string>
     <string name="osd_item_boolean_false">Nonaktif</string>
     <string name="osd_sleep_title">Timer tidur</string>
+    <string name="osd_brightness_title">Kecerahan</string>
     <string name="osd_sleep_off">Nonaktif</string>
     <string name="osd_sleep_end">Akhir file</string>
     <string name="osd_sleep_minutes">%1$d mnt</string>
@@ -428,14 +430,14 @@ Add-on 1 sudah disetel ke add-on resmi OpenSubtitles, yang langsung berfungsi. S
     <string name="pref_addon_no_subtitles_resource">Add-on itu tidak menyediakan subtitel.</string>
     <string name="pref_addon_needs_configuration">Add-on itu perlu dikonfigurasi dulu — gunakan halaman konfigurasinya dan tempel URL yang diberikannya.</string>
     <string name="pref_addon_fetch_failed">Add-on menolak permintaan subtitel.</string>
-    <string name="pref_addon_no_subtitles">Add-on tidak mengembalikan apa pun untuk film yang subtitelnya ada di mana-mana, jadi juga tidak akan mengembalikan apa pun untuk file Anda.</string>
+    <string name="pref_addon_no_subtitles">Addon ini tidak menemukan apa pun untuk film terkenal, jadi tidak akan menemukan untuk file Anda juga.</string>
     <string name="pref_addon_no_usable_url">Add-on mengembalikan subtitel tanpa link yang bisa dipakai.</string>
     <string name="pref_addon_not_downloadable">Link add-on tidak menghasilkan file subtitel.</string>
     <string name="key_check_cleared">Dihapus</string>
     <string name="key_check_saved">Disimpan</string>
     <string name="key_check_accepted">%1$s menerima kunci</string>
     <string name="key_check_rejected">%1$s menolak kunci</string>
-    <string name="key_check_rate_limited">%1$s membatasi permintaan; coba lagi sebentar lagi</string>
+    <string name="key_check_rate_limited">%1$s sedang sibuk. Coba lagi beberapa menit lagi.</string>
     <string name="key_check_no_answer">Tidak ada jawaban dari %1$s — periksa koneksi</string>
     <string name="key_check_http">%1$s menjawab HTTP %2$d</string>
     <string name="setup_enter_pin">Masukkan PIN yang ditampilkan di pemutar.</string>
@@ -501,6 +503,48 @@ Add-on 1 sudah disetel ke add-on resmi OpenSubtitles, yang langsung berfungsi. S
     <string name="home_pinned">Ditambahkan ke favorit</string>
     <string name="home_unpinned">Dihapus dari favorit</string>
     <string name="home_section_recent">Terbaru</string>
+    <string name="pref_folder_look">Gambar folder</string>
+    <string name="folder_look_mosaic">Mozaik</string>
+    <string name="folder_look_mosaic_desc">Menyesuaikan: satu gambar, dua berdampingan, atau kisi</string>
+    <string name="folder_look_folder">Folder polos</string>
+    <string name="folder_look_folder_desc">Tanpa gambar: folder berwarna tema dan total durasi videonya</string>
+    <string name="folder_look_centred">Di tengah</string>
+    <string name="folder_look_centred_desc">Gambar utuh di tengah kartu seukuran kartu Terbaru</string>
+    <string name="folder_look_square">Persegi</string>
+    <string name="folder_look_square_desc">Gambar persegi, agar lebih banyak folder muat di layar</string>
+    <string name="pref_better_frames">Gambar video lebih baik</string>
+    <string name="pref_better_frames_summary">Gambar lebih tajam dari sepersepuluh durasi tiap video, bukan awalnya. Kunjungan pertama ke folder besar lebih lambat</string>
+    <string name="film_recent_picture">Gambar di Terbaru</string>
+    <string name="film_recent_poster">Poster</string>
+    <string name="film_recent_frame">Bingkai video</string>
+    <string name="film_forget">Hapus detail film</string>
+    <string name="pref_integrations_header" formatted="false">Integrasi</string>
+    <string name="pref_tracking_header" formatted="false">Pelacakan tontonan</string>
+    <string name="tracking_not_connected" formatted="false">Belum terhubung. Ketuk untuk menghubungkan</string>
+    <string name="tracking_connected">Terhubung sebagai %1$s. Ketuk untuk memutuskan</string>
+    <string name="tracking_connected_toast">Terhubung ke %1$s</string>
+    <string name="tracking_connect_title">Hubungkan %1$s</string>
+    <string name="tracking_open_page">Buka halaman</string>
+    <string name="tracking_code_message">Di perangkat apa pun, buka %1$s lalu masukkan kode ini:\n\n%2$s</string>
+    <string name="tracking_disconnect_question">Putuskan %1$s?</string>
+    <string name="tracking_disconnect" formatted="false">Putuskan</string>
+    <string name="tracking_unavailable" formatted="false">Tidak tersedia di versi ini</string>
+    <string name="tracking_failed">Tidak bisa terhubung ke %1$s. Coba lagi.</string>
+    <string name="tracking_send_question">Kirim %1$d video yang Anda tandai sudah ditonton ke %2$s?</string>
+    <string name="tracking_send" formatted="false">Kirim</string>
+    <string name="watched_auto" formatted="false">Tandai sudah ditonton saat selesai</string>
+    <string name="watched_auto_desc" formatted="false">Juga memberi tahu Simkl sejauh mana Anda menonton, bila terhubung</string>
+    <string name="film_mark_watched" formatted="false">Tandai sudah ditonton</string>
+    <string name="film_watched" formatted="false">Sudah ditonton</string>
+    <string name="film_watched_on">Ditonton di %1$s</string>
+    <string name="film_unwatch" formatted="false">Batal ditonton</string>
+    <string name="watched_percent" formatted="false">Dihitung ditonton pada (%)</string>
+    <string name="home_section_recent_online">Terbaru (Online)</string>
+    <string name="home_section_recent_here">Terbaru (Di perangkat ini)</string>
+    <string name="home_recent_playlist">Playlist</string>
+    <string name="home_time_left">sisa %1$s</string>
+    <string name="pref_recent_here">Terbaru di perangkat ini</string>
+    <string name="pref_recent_here_summary">10 video terakhir yang Anda putar dari perangkat ini, di bawah Terbaru</string>
     <string name="home_section_pinned">Favorit</string>
     <string name="home_section_folders">Folder</string>
     <string name="home_section_results">Hasil</string>
@@ -525,7 +569,10 @@ Add-on 1 sudah disetel ke add-on resmi OpenSubtitles, yang langsung berfungsi. S
     <string name="start_on_last">Video terakhir</string>
     <string name="pref_home_layout">Tata letak</string>
     <string name="home_layout_list">Daftar</string>
-    <string name="home_layout_wall">Dinding bingkai</string>
+    <string name="home_layout_wall">Galeri</string>
+    <string name="home_layout_cards">Kartu</string>
+    <string name="home_layout_cards_desc">Kartu tinggi, seperti Terbaru</string>
+    <string name="home_view">Tampilan</string>
     <string name="home_wall_hint">Tahan folder untuk menambahkannya ke favorit</string>
     <string name="set_audio">Audio</string>
     <string name="set_storage">Penyimpanan dan cadangan</string>

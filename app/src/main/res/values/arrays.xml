@@ -154,11 +154,13 @@
     <string-array name="home_layout_entries">
         <item>@string/home_layout_list</item>
         <item>@string/home_layout_wall</item>
+        <item>@string/home_layout_cards</item>
     </string-array>
 
     <string-array name="home_layout_values" translatable="false">
         <item>list</item>
         <item>wall</item>
+        <item>cards</item>
     </string-array>
 
     <string-array name="start_on_entries">
@@ -185,10 +187,36 @@
     <array name="home_layout_pictures">
         <item>@drawable/sketch_layout_list</item>
         <item>@drawable/sketch_layout_wall</item>
+        <item>@drawable/sketch_layout_cards</item>
     </array>
     <string-array name="home_layout_descriptions">
         <item>@string/home_layout_list_desc</item>
         <item>@string/home_layout_wall_desc</item>
+        <item>@string/home_layout_cards_desc</item>
+    </string-array>
+    <string-array name="folder_look_entries">
+        <item>@string/folder_look_centred</item>
+        <item>@string/folder_look_square</item>
+        <item>@string/folder_look_mosaic</item>
+        <item>@string/folder_look_folder</item>
+    </string-array>
+    <string-array name="folder_look_values" translatable="false">
+        <item>centred</item>
+        <item>square</item>
+        <item>mosaic</item>
+        <item>folder</item>
+    </string-array>
+    <array name="folder_look_pictures">
+        <item>@drawable/sketch_folders_centred</item>
+        <item>@drawable/sketch_folders_square</item>
+        <item>@drawable/sketch_folders_mosaic</item>
+        <item>@drawable/sketch_folders_folder</item>
+    </array>
+    <string-array name="folder_look_descriptions">
+        <item>@string/folder_look_centred_desc</item>
+        <item>@string/folder_look_square_desc</item>
+        <item>@string/folder_look_mosaic_desc</item>
+        <item>@string/folder_look_folder_desc</item>
     </string-array>
     <string-array name="corner_mode_entries">
         <item>@string/set_corner_off</item>
@@ -296,5 +324,41 @@
     <item>zh-TW</item>
     <item>ja</item>
     <item>ko</item>
+  </string-array>
+  <string-array name="ytdlp_updates_values" translatable="false">
+    <item>auto</item>
+    <item>ask</item>
+    <item>manual</item>
+  </string-array>
+  <string-array name="ytdlp_quality_values" translatable="false">
+    <item>screen</item>
+    <item>best</item>
+    <item>2160</item>
+    <item>1440</item>
+    <item>1080</item>
+    <item>720</item>
+    <item>480</item>
+    <item>360</item>
+    <item>240</item>
+    <item>144</item>
+    <item>audio</item>
+  </string-array>
+  <string-array name="ytdlp_updates_entries">
+    <item>@string/ytdlp_updates_auto</item>
+    <item>@string/ytdlp_updates_ask</item>
+    <item>@string/ytdlp_updates_manual</item>
+  </string-array>
+  <string-array name="ytdlp_quality_entries">
+    <item>@string/ytdlp_quality_screen</item>
+    <item>@string/ytdlp_quality_best</item>
+    <item>2160p</item>
+    <item>1440p</item>
+    <item>1080p</item>
+    <item>720p</item>
+    <item>480p</item>
+    <item>360p</item>
+    <item>240p</item>
+    <item>144p</item>
+    <item>@string/web_audio_only</item>
   </string-array>
 </resources>

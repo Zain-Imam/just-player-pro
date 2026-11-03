@@ -11,18 +11,18 @@
     <string name="onboarding_key_title">Нужен ключ TMDB</string>
     <string name="onboarding_key_description">Настройки здесь. Бесплатный ключ TMDB находит названия, постеры, субтитры и метки заставок.</string>
     <string name="open_subtitles">Загрузить субтитры</string>
-    <string name="error_title">Ошибка воспроизведения</string>
+    <string name="error_title">Не удаётся воспроизвести</string>
     <string name="error_share">Поделиться деталями</string>
-    <string name="error_network">Плеер не смог получить файл. Проверьте подключение и не истёк ли срок ссылки.</string>
-    <string name="error_http">Сервер отклонил запрос. Возможно, истёк срок ссылки от debrid-сервиса.</string>
+    <string name="error_network">Нет доступа к файлу. Проверьте подключение или ссылку.</string>
+    <string name="error_http">Сервер отказал. Возможно, ссылка устарела.</string>
     <string name="error_missing">Этого файла больше нет.</string>
-    <string name="error_permission">Плееру не разрешено открывать этот файл.</string>
-    <string name="error_codec">Здесь нечем декодировать этот файл. Попробуйте другой движок или выберите «Авто».</string>
-    <string name="error_damaged">Файл, похоже, повреждён или неполон.</string>
-    <string name="error_drm">Файл защищён от копирования, а этот плеер такое не поддерживает.</string>
-    <string name="error_unknown">Что-то пошло не так при воспроизведении.</string>
+    <string name="error_permission">Нет разрешения открыть этот файл.</string>
+    <string name="error_codec">Не удаётся декодировать файл. Попробуйте другой движок.</string>
+    <string name="error_damaged">Файл повреждён или неполный.</string>
+    <string name="error_drm">Это видео защищено от копирования.</string>
+    <string name="error_unknown">Сейчас не воспроизводится. Попробуйте ещё раз.</string>
     <string name="error_details">Подробнее</string>
-    <string name="error_files_missing">Приложение «Файлы» отключено или отсутствует</string>
+    <string name="error_files_missing">Приложение «Файлы» отключено или отсутствует.</string>
     <string name="request_scope">Чтобы автоматически загружать внешние субтитры и переходить к следующему файлу в папке, дайте %s доступ к верхней папке с вашими видео (например, Movies).</string>
     <string name="delete_query">Удалить этот файл\?</string>
     <string name="delete_confirmation">Удалить</string>
@@ -82,7 +82,7 @@
 
 На телефоне ничего не показывается, пока не введён PIN. Страница перестанет работать, когда вы нажмёте кнопку ниже или уйдёте с этого экрана.</string>
     <string name="pref_setup_phone_stop">Остановить страницу</string>
-    <string name="pref_setup_phone_failed">Не удалось запустить страницу. Возможно, устройство этого не позволяет или не подключено к сети — введите ключи здесь.</string>
+    <string name="pref_setup_phone_failed">Не удалось открыть страницу. Введите ключи здесь.</string>
     <string name="pref_online_note">Для карточки, кнопок пропуска и поиска субтитров нужен ключ TMDB.</string>
     <string name="pref_key_tmdb">Ключ TMDB</string>
     <string name="pref_key_tmdb_dialog">Бесплатно на themoviedb.org → Настройки → API.</string>
@@ -109,8 +109,8 @@
     <string name="online_search_subtitles">Найти субтитры онлайн…</string>
     <string name="subtitle_source_title">Субтитры</string>
     <string name="subtitle_source_file">Открыть файл субтитров…</string>
-    <string name="online_needs_tmdb">Сначала добавьте ключ TMDB в настройках — именно он превращает имя файла в запрос, понятный источникам субтитров.</string>
-    <string name="online_needs_source">Источник субтитров не настроен. Добавьте в настройках аддон Stremio или ключ OpenSubtitles, SubDL или Wyzie.</string>
+    <string name="online_needs_tmdb">Сначала добавьте ключ TMDB в настройках.</string>
+    <string name="online_needs_source">Сначала настройте источник субтитров в настройках.</string>
     <string name="online_identify_title">Какой из них?</string>
     <string name="online_searching">Поиск…</string>
     <string name="online_identifying">Определение…</string>
@@ -130,7 +130,7 @@
     <string name="recent_remove">Убрать из недавних</string>
     <string name="recent_removed">Убрано из недавних</string>
     <string name="recent_undo">Отменить</string>
-    <string name="recent_pins_full">Закрепить можно до 3 фильмов. Сначала открепите один.</string>
+    <string name="recent_pins_full">Закрепить можно до %1$d фильмов. Сначала открепите один.</string>
     <string name="recent_pinned">Закреплён</string>
     <string name="online_match_prompt_dismiss">Не сейчас</string>
     <string name="online_no_matches">По этому названию ничего нет</string>
@@ -152,9 +152,9 @@
     <string name="subtitle_menu_search_detail">Найти онлайн для этой серии</string>
     <string name="subtitle_menu_settings_detail">Размер, положение, задержка и стиль</string>
     <string name="audio_menu_delay_detail">Сдвинуть звук относительно картинки</string>
-    <string name="capability_title">Устройству может быть тяжело с этим файлом</string>
-    <string name="capability_hard">Ни один аппаратный декодер здесь его не поддерживает. Картинка может дёргаться или замирать, пока звук идёт дальше.</string>
-    <string name="capability_impossible">Ничто на этом устройстве не берётся его декодировать, так что он может вообще не запуститься.</string>
+    <string name="capability_title">Может воспроизводиться неплавно</string>
+    <string name="capability_hard">Нет аппаратного декодера. Возможны рывки.</string>
+    <string name="capability_impossible">Здесь нечем декодировать это. Может не воспроизвестись.</string>
     <string name="capability_continue">Всё равно открыть</string>
     <string name="capability_quit">Закрыть файл</string>
     <string name="capability_try_other">Через %1$s</string>
@@ -163,7 +163,7 @@
     <string name="online_season">Сезон</string>
     <string name="online_episode">Серия</string>
     <string name="online_downloading">Скачивание…</string>
-    <string name="online_download_failed">Не удалось скачать эти субтитры</string>
+    <string name="online_download_failed">Не удалось скачать эти субтитры. Попробуйте ещё раз.</string>
     <string name="online_download_limit">Лимит %1$s на сегодня исчерпан</string>
     <string name="online_download_limit_until">Лимит %1$s исчерпан. Снова через %2$s</string>
     <string name="online_saved_to">Загружено и сохранено в %1$s</string>
@@ -199,7 +199,7 @@
     <string name="controls_name_repeat">Повтор</string>
     <string name="pref_licenses">Лицензии</string>
     <string name="pref_licenses_summary">Полный текст всех лицензий, под которыми создано приложение</string>
-    <string name="licenses_unavailable">Не удалось прочитать текст лицензии.</string>
+    <string name="licenses_unavailable">Не удаётся прочитать эту лицензию.</string>
     <string name="intro_next">Далее</string>
     <string name="intro_back">Назад</string>
     <string name="intro_done">Готово</string>
@@ -225,12 +225,13 @@
     <string name="pref_controls_timeout_summary">Секунды</string>
     <string name="unlocked">Разблокировано</string>
     <string name="locked_hint">Заблокировано — нажмите замок или удерживайте картинку</string>
+    <string name="locked_hint_remote">Заблокировано. Удерживайте OK, чтобы разблокировать.</string>
     <string name="pref_lock_hint">Замок на панели управления блокирует экран от случайных нажатий. Чтобы разблокировать, нажмите на замок ещё раз, удерживайте палец в любом месте картинки или удерживайте OK на пульте. Случайное касание картинки ничего не делает, так что блокировка не снимется сама. Кнопки громкости работают и при блокировке.</string>
     <string name="pref_overlay_delay">Карточка появляется через</string>
     <string name="pref_overlay_delay_summary">Секунд паузы до её появления</string>
     <string name="pref_prefill">Подставлять в поиск имя файла</string>
     <string name="button_lock">Заблокировать экран</string>
-    <string name="engine_fallback_mpv">Media3 не смог это воспроизвести — включён mpv</string>
+    <string name="engine_fallback_mpv">Media3 не может это воспроизвести. Переключено на mpv.</string>
     <string name="engine_switch_file_type">Media3 не поддерживает этот тип файла, включён mpv</string>
     <string name="engine_switch_video_format">Media3 не поддерживает этот формат видео, включён mpv</string>
     <string name="engine_switch_audio_format">Media3 не поддерживает этот формат звука, включён mpv</string>
@@ -241,14 +242,14 @@
     <string name="pref_engine_auto">Авто</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">Для mpv нужен Android 8.0 или новее</string>
-    <string name="engine_failed_title">Этот движок не смог воспроизвести файл</string>
-    <string name="engine_failed_message">%1$s не смог это воспроизвести. %2$s, скорее всего, сможет — для этого их и два.</string>
+    <string name="engine_failed_title">Не удаётся воспроизвести файл</string>
+    <string name="engine_failed_message">%1$s не может это воспроизвести. Попробуйте %2$s.</string>
     <string name="engine_failed_try">Через %1$s</string>
     <string name="engine_failed_auto">Всегда «Авто»</string>
     <string name="engine_no_picture_title">Нет картинки</string>
-    <string name="engine_no_picture_message">%1$s воспроизводит звук, но не картинку — обычно это Dolby Vision на устройстве без декодера Dolby Vision. %2$s может её показать.</string>
-    <string name="engine_no_picture_switched">Нет картинки в Media3 — включён mpv</string>
-    <string name="engine_no_picture_either">Нет картинки ни в одном движке — устройство не может показать это видео</string>
+    <string name="engine_no_picture_message">%1$s воспроизводит звук без изображения (часто Dolby Vision). Попробуйте %2$s.</string>
+    <string name="engine_no_picture_switched">Нет изображения в Media3. Переключено на mpv.</string>
+    <string name="engine_no_picture_either">Это устройство не может показать изображение этого видео.</string>
     <string name="pref_engine_note">«Авто» начинает с Media3 и переводит файл на mpv, если Media3 не может его воспроизвести.</string>
     <string name="pref_media3_only">Только Media3 — mpv не использует</string>
     <string name="pref_adaptive_buffering">Адаптивная буферизация</string>
@@ -257,7 +258,7 @@
     <string name="pref_subtitle_folder_default">Загрузки / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">Выбрать папку</string>
     <string name="pref_subtitle_folder_clear">Папка по умолчанию</string>
-    <string name="pref_subtitle_folder_failed">Эту папку не удалось использовать</string>
+    <string name="pref_subtitle_folder_failed">Эту папку нельзя использовать.</string>
     <string name="resume_title">Смотреть последнее?</string>
     <string name="resume_accept">Открыть</string>
     <string name="resume_decline">Не сейчас</string>
@@ -270,7 +271,7 @@
     <string name="open_url_title">Сетевой URL</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">Открыть</string>
-    <string name="open_url_invalid">Это не похоже на URL, который может открыть плеер</string>
+    <string name="open_url_invalid">Это не ссылка, которую может открыть плеер.</string>
     <string name="pref_folders">Папки, доступные плееру</string>
     <string name="pref_folders_note">Нужны, чтобы находить следующую серию и субтитры рядом с фильмом. Добавьте все папки, где храните фильмы.</string>
     <string name="pref_folders_empty">Пока нет. Без них плеер видит только открытый файл.</string>
@@ -278,7 +279,7 @@
     <string name="pref_folders_remove">Нажмите, чтобы не читать эту папку</string>
     <string name="pref_folders_remove_confirm">Плеер больше не будет искать здесь следующую серию и субтитры.</string>
     <string name="pref_folders_remove_confirm_yes">Убрать</string>
-    <string name="pref_folders_failed">Android не сохранил это разрешение. Попробуйте выбрать папку снова.</string>
+    <string name="pref_folders_failed">Android не сохранил разрешение. Выберите папку ещё раз.</string>
     <string name="pref_folders_no_picker">На этом устройстве нет выбора папок.</string>
     <string name="pref_folders_summary_empty">Папок пока нет</string>
     <string name="error_code">Показать код</string>
@@ -311,7 +312,7 @@
     <string name="update_install">Скачать и установить</string>
     <string name="update_open">Открыть страницу</string>
     <string name="update_downloading">Скачивание…</string>
-    <string name="update_failed">Не удалось проверить обновления.</string>
+    <string name="update_failed">Сейчас не удаётся проверить обновления.</string>
     <string name="update_none_title">Обновлений нет</string>
     <string name="update_none">У вас %1$s. Последняя опубликованная — %2$s.</string>
     <string name="update_none_published">Пока ничего не опубликовано. У вас %1$s.</string>
@@ -364,7 +365,7 @@ URL, открытые по сети, запоминаются, чтобы к н�
     <string name="pref_backup_exported">Экспортировано: %1$d</string>
     <string name="pref_backup_imported">Импортировано: %1$d. Для части изменений нужно перезапустить плеер.</string>
     <string name="pref_backup_not_ours">Это не резервная копия Just Player Pro</string>
-    <string name="pref_backup_failed">Не удалось прочитать файл</string>
+    <string name="pref_backup_failed">Не удаётся прочитать этот файл.</string>
     <string name="pref_backup_nothing">Ничего не выбрано</string>
     <string name="pref_dangerous_header">Дополнительно</string>
     <string name="pref_dangerous_warning">Они могут сломать воспроизведение файлов, которые иначе работают.</string>
@@ -381,11 +382,12 @@ URL, открытые по сети, запоминаются, чтобы к н�
     <string name="pref_custom_subtitle_font">Свой шрифт</string>
     <string name="pref_choose_custom_font">Выбрать шрифт</string>
     <string name="pref_custom_subtitle_font_not_set">Свой шрифт не выбран</string>
-    <string name="pref_custom_subtitle_font_failed">Не удалось загрузить шрифт</string>
+    <string name="pref_custom_subtitle_font_failed">Не удаётся загрузить этот шрифт.</string>
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">Вкл.</string>
     <string name="osd_item_boolean_false">Выкл.</string>
     <string name="osd_sleep_title">Таймер сна</string>
+    <string name="osd_brightness_title">Яркость</string>
     <string name="osd_sleep_off">Выкл.</string>
     <string name="osd_sleep_end">Конец файла</string>
     <string name="osd_sleep_minutes">%1$d мин</string>
@@ -437,14 +439,14 @@ URL, открытые по сети, запоминаются, чтобы к н�
     <string name="pref_addon_no_subtitles_resource">Этот аддон не даёт субтитров.</string>
     <string name="pref_addon_needs_configuration">Этот аддон сначала нужно настроить — откройте его страницу настройки и вставьте полученный URL.</string>
     <string name="pref_addon_fetch_failed">Аддон отклонил запрос субтитров.</string>
-    <string name="pref_addon_no_subtitles">Аддон ничего не вернул для фильма, у которого субтитры есть везде, — значит, и для ваших файлов ничего не вернёт.</string>
+    <string name="pref_addon_no_subtitles">Это дополнение ничего не нашло для известного фильма, значит не найдёт и для ваших файлов.</string>
     <string name="pref_addon_no_usable_url">Аддон вернул субтитры без рабочих ссылок.</string>
     <string name="pref_addon_not_downloadable">Ссылки аддона не дали файла субтитров.</string>
     <string name="key_check_cleared">Удалён</string>
     <string name="key_check_saved">Сохранён</string>
     <string name="key_check_accepted">%1$s принял ключ</string>
     <string name="key_check_rejected">%1$s отклонил ключ</string>
-    <string name="key_check_rate_limited">%1$s ограничивает запросы; повторите чуть позже</string>
+    <string name="key_check_rate_limited">%1$s перегружен. Попробуйте через несколько минут.</string>
     <string name="key_check_no_answer">%1$s не отвечает — проверьте подключение</string>
     <string name="key_check_http">%1$s ответил HTTP %2$d</string>
     <string name="setup_enter_pin">Введите PIN, показанный в плеере.</string>
@@ -510,6 +512,48 @@ URL, открытые по сети, запоминаются, чтобы к н�
     <string name="home_pinned">Добавлено в избранное</string>
     <string name="home_unpinned">Удалено из избранного</string>
     <string name="home_section_recent">Недавние</string>
+    <string name="pref_folder_look">Изображения папок</string>
+    <string name="folder_look_mosaic">Мозаика</string>
+    <string name="folder_look_mosaic_desc">Подстраивается: один кадр, два рядом или сетка</string>
+    <string name="folder_look_folder">Простая папка</string>
+    <string name="folder_look_folder_desc">Без картинок: папка цвета темы и общая длительность видео</string>
+    <string name="folder_look_centred">По центру</string>
+    <string name="folder_look_centred_desc">Весь кадр в центре карточки размером с карточки «Недавних»</string>
+    <string name="folder_look_square">Квадрат</string>
+    <string name="folder_look_square_desc">Квадратная картинка, чтобы на экране помещалось больше папок</string>
+    <string name="pref_better_frames">Лучшие кадры видео</string>
+    <string name="pref_better_frames_summary">Более чёткие кадры с десятой части каждого видео, а не с начала. Первое открытие большой папки дольше</string>
+    <string name="film_recent_picture">Картинка в «Недавних»</string>
+    <string name="film_recent_poster">Постер</string>
+    <string name="film_recent_frame">Кадр из видео</string>
+    <string name="film_forget">Убрать сведения о фильме</string>
+    <string name="pref_integrations_header" formatted="false">Интеграции</string>
+    <string name="pref_tracking_header" formatted="false">Учёт просмотров</string>
+    <string name="tracking_not_connected" formatted="false">Не подключено. Нажмите, чтобы подключить</string>
+    <string name="tracking_connected">Подключено как %1$s. Нажмите, чтобы отключить</string>
+    <string name="tracking_connected_toast">Подключено к %1$s</string>
+    <string name="tracking_connect_title">Подключить %1$s</string>
+    <string name="tracking_open_page">Открыть страницу</string>
+    <string name="tracking_code_message">На любом устройстве откройте %1$s и введите этот код:\n\n%2$s</string>
+    <string name="tracking_disconnect_question">Отключить %1$s?</string>
+    <string name="tracking_disconnect" formatted="false">Отключить</string>
+    <string name="tracking_unavailable" formatted="false">Недоступно в этой версии</string>
+    <string name="tracking_failed">Не удалось подключиться к %1$s. Попробуйте ещё раз.</string>
+    <string name="tracking_send_question">Отправить в %2$s %1$d видео, отмеченных как просмотренные?</string>
+    <string name="tracking_send" formatted="false">Отправить</string>
+    <string name="watched_auto" formatted="false">Отмечать просмотренным в конце</string>
+    <string name="watched_auto_desc" formatted="false">Также сообщает Simkl, сколько просмотрено, если он подключён</string>
+    <string name="film_mark_watched" formatted="false">Отметить просмотренным</string>
+    <string name="film_watched" formatted="false">Просмотрено</string>
+    <string name="film_watched_on">Просмотрено в %1$s</string>
+    <string name="film_unwatch" formatted="false">Снять отметку</string>
+    <string name="watched_percent" formatted="false">Считать просмотренным с (%)</string>
+    <string name="home_section_recent_online">Недавние (онлайн)</string>
+    <string name="home_section_recent_here">Недавние (на этом устройстве)</string>
+    <string name="home_recent_playlist">Плейлист</string>
+    <string name="home_time_left">осталось %1$s</string>
+    <string name="pref_recent_here">Недавние на этом устройстве</string>
+    <string name="pref_recent_here_summary">Последние 10 видео с этого устройства, под «Недавними»</string>
     <string name="home_section_pinned">Избранное</string>
     <string name="home_section_folders">Папки</string>
     <string name="home_section_results">Результаты</string>
@@ -534,7 +578,10 @@ URL, открытые по сети, запоминаются, чтобы к н�
     <string name="start_on_last">Последнее видео</string>
     <string name="pref_home_layout">Вид</string>
     <string name="home_layout_list">Список</string>
-    <string name="home_layout_wall">Стена кадров</string>
+    <string name="home_layout_wall">Галерея</string>
+    <string name="home_layout_cards">Карточки</string>
+    <string name="home_layout_cards_desc">Высокие карточки, как в Недавних</string>
+    <string name="home_view">Вид</string>
     <string name="home_wall_hint">Удерживайте папку, чтобы добавить её в избранное</string>
     <string name="set_audio">Звук</string>
     <string name="set_storage">Хранилище и резервные копии</string>

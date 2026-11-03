@@ -569,6 +569,16 @@ public class Utils {
         return scheme.startsWith("http") || scheme.equals("rtsp");
     }
 
+    public static void showKeyboard(final View field) {
+        final android.view.inputmethod.InputMethodManager manager =
+                (android.view.inputmethod.InputMethodManager) field.getContext()
+                        .getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (manager != null) {
+            field.requestFocus();
+            manager.showSoftInput(field, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+        }
+    }
+
     public static boolean isTvBox(Context context) {
         if (Showcase.on(context, Showcase.PREF_TV)) {
             return true;
@@ -626,6 +636,7 @@ public class Utils {
 
             if (BuildConfig.DEBUG)
                 Toast.makeText(activity, "Video frameRate: " + frameRate, Toast.LENGTH_LONG).show();
+            log("Video frame rate for matching: " + frameRate);
 
             if (frameRate > 0) {
                 Display display = activity.getWindow().getDecorView().getDisplay();

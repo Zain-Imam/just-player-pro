@@ -11,6 +11,8 @@
     <!-- fixed amber whatever the accent, so it reads as a rating -->
     <color name="rating_amber">#F5C518</color>
     <color name="shortcut_background">#F5F5F5</color>
+    <!-- the logo's orange, for the media notification's icon below Android 12 -->
+    <color name="notification_accent">#FFF26522</color>
 
     <color name="ui_controls_background">#98000000</color>
     <color name="ui_panel_background">#E6101010</color>

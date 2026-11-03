@@ -118,6 +118,11 @@ public final class MpvPlayer extends BasePlayer
     private final boolean network;
     // a live stream wants to stay close to live, not to wait longer each time
     private final boolean patient;
+    // may be live by its address (a playlist, rtsp and the like), or a site said so
+    private final boolean maybeLive;
+    // a live stream's length is what has arrived so far and keeps growing; a film's stays put
+    private long firstDurationMs = C.TIME_UNSET;
+    private boolean durationGrows;
 
     // mpv resumes once cache-pause-wait seconds are in; a seek keeps the MpvOptions value
     private final com.brouken.player.engine.StallPatience patience =
@@ -158,7 +163,8 @@ public final class MpvPlayer extends BasePlayer
         this.listeners = new ListenerSet<>(Looper.getMainLooper(), Clock.DEFAULT,
                 (listener, flags) -> listener.onEvents(this, new Player.Events(flags)));
         this.network = options.isNetwork();
-        this.patient = network && !options.isLive();
+        this.maybeLive = options.isLive();
+        this.patient = network && !maybeLive;
 
         mpv = MPVLib.create(this.context);
         options.applyTo(mpv, this.context);
@@ -250,6 +256,10 @@ public final class MpvPlayer extends BasePlayer
         if (mpv == null || mediaItems.isEmpty()) {
             return;
         }
+        // starting to play asks for the sound, as Media3 does; during a call the film waits paused
+        if (playWhenReady && !takeAudioFocus()) {
+            applyPlayWhenReady(false);
+        }
         error = null;
         fileOpened = false;
         renderedFirstFrame = false;
@@ -325,7 +335,10 @@ public final class MpvPlayer extends BasePlayer
             return;
         }
 
-        final String uri = item.localConfiguration.uri.toString();
+        // a website video may give mpv a different address than Media3 (its main playlist)
+        final String uri = item.localConfiguration.tag instanceof com.brouken.player.ytdlp.WebVideo.Choice
+                ? ((com.brouken.player.ytdlp.WebVideo.Choice) item.localConfiguration.tag).mpvUrl()
+                : item.localConfiguration.uri.toString();
         fileOpened = false;
         handler.removeCallbacks(addNextSubtitle);
         addedSubtitles.clear();
@@ -337,9 +350,18 @@ public final class MpvPlayer extends BasePlayer
         // per-file start option; the global `start` property would stick
         final long startMs = pendingStartPositionMs;
         pendingStartPositionMs = C.TIME_UNSET;
+        final List<String> fileOptions = new ArrayList<>();
         if (startMs != C.TIME_UNSET && startMs > 0) {
+            fileOptions.add("start=" + (startMs / 1000.0));
+        }
+        // a website's separate audio stream, and YouTube's fast piece size
+        if (item.localConfiguration.tag instanceof com.brouken.player.ytdlp.WebVideo.Choice) {
+            fileOptions.addAll(((com.brouken.player.ytdlp.WebVideo.Choice) item.localConfiguration.tag)
+                    .mpvOptions());
+        }
+        if (!fileOptions.isEmpty()) {
             mpv.command(new String[]{"loadfile", uri, "replace", "-1",
-                    "start=" + (startMs / 1000.0)});
+                    android.text.TextUtils.join(",", fileOptions)});
         } else {
             mpv.command(new String[]{"loadfile", uri});
         }
@@ -352,10 +374,34 @@ public final class MpvPlayer extends BasePlayer
 
     @Override
     public void setPlayWhenReady(boolean playWhenReady) {
+        if (released) {
+            return;
+        }
+        // a pause during a short interruption is the user's: the film stays paused after it
+        if (!playWhenReady && pausedForFocus) {
+            pausedForFocus = false;
+            dropAudioFocus();
+            return;
+        }
+        if (this.playWhenReady == playWhenReady) {
+            return;
+        }
+        // during a call or another app's music Android says no, and the film stays paused
+        if (playWhenReady && !takeAudioFocus()) {
+            return;
+        }
+        if (!playWhenReady && !pausedForFocus) {
+            dropAudioFocus();
+        }
+        applyPlayWhenReady(playWhenReady);
+    }
+
+    private void applyPlayWhenReady(final boolean playWhenReady) {
         if (this.playWhenReady == playWhenReady) {
             return;
         }
         this.playWhenReady = playWhenReady;
+        updateStayAwake();
         // while holding, the pause state is applied on landing (see hold)
         if (mpv != null && !holding) {
             mpv.setPropertyBoolean(PROP_PAUSE, !playWhenReady);
@@ -386,6 +432,8 @@ public final class MpvPlayer extends BasePlayer
             return;
         }
         released = true;
+        dropAudioFocus();
+        stayAwake(false);
         handler.removeCallbacksAndMessages(null);
         seekAfterOpenMs = C.TIME_UNSET;
         pictureListener = null;
@@ -712,6 +760,13 @@ public final class MpvPlayer extends BasePlayer
                     break;
                 case PROP_DURATION:
                     final long newDuration = value > 0 ? (long) (value * 1000) : C.TIME_UNSET;
+                    if (newDuration != C.TIME_UNSET) {
+                        if (firstDurationMs == C.TIME_UNSET) {
+                            firstDurationMs = newDuration;
+                        } else if (newDuration > firstDurationMs + 5_000) {
+                            durationGrows = true;
+                        }
+                    }
                     if (newDuration != durationMs) {
                         durationMs = newDuration;
                         updateTimeline();
@@ -737,6 +792,11 @@ public final class MpvPlayer extends BasePlayer
                     }
                     if (playWhenReady == value) {
                         playWhenReady = !value;
+                        // mpv paused itself (the end of the file, a stream that broke off)
+                        if (!playWhenReady && !pausedForFocus) {
+                            dropAudioFocus();
+                        }
+                        updateStayAwake();
                         listeners.sendEvent(Player.EVENT_PLAY_WHEN_READY_CHANGED, listener ->
                                 listener.onPlayWhenReadyChanged(playWhenReady,
                                         Player.PLAY_WHEN_READY_CHANGE_REASON_REMOTE));
@@ -844,6 +904,9 @@ public final class MpvPlayer extends BasePlayer
         if (text == null || level > MPVLib.MpvLogLevel.MPV_LOG_LEVEL_WARN) {
             return;
         }
+        if (com.brouken.player.BuildConfig.DEBUG) {
+            android.util.Log.w("mpv", prefix + ": " + text.trim());
+        }
         synchronized (complaints) {
             if (complaints.length() < COMPLAINTS_LIMIT) {
                 complaints.append(text.trim()).append('\n');
@@ -910,6 +973,7 @@ public final class MpvPlayer extends BasePlayer
             return;
         }
         playbackState = state;
+        updateStayAwake();
         listeners.queueEvent(Player.EVENT_PLAYBACK_STATE_CHANGED, listener ->
                 listener.onPlaybackStateChanged(state));
         updateIsPlaying();
@@ -1301,12 +1365,37 @@ public final class MpvPlayer extends BasePlayer
     @Override
     public void setRepeatMode(int repeatMode) {
         this.repeatMode = repeatMode;
-        if (mpv != null) {
-            mpv.setOptionString("loop-file",
-                    repeatMode == Player.REPEAT_MODE_OFF ? "no" : "inf");
-        }
+        applyLoop();
         listeners.sendEvent(Player.EVENT_REPEAT_MODE_CHANGED, listener ->
                 listener.onRepeatModeChanged(repeatMode));
+    }
+
+    // frames thrown away for being late, by the decoder or the screen; -1 when mpv cannot say
+    public int droppedFrames() {
+        if (mpv == null) {
+            return -1;
+        }
+        final Integer decoder = mpv.getPropertyInt("decoder-frame-drop-count");
+        final Integer output = mpv.getPropertyInt("frame-drop-count");
+        return decoder == null && output == null ? -1
+                : (decoder == null ? 0 : decoder) + (output == null ? 0 : output);
+    }
+
+    public double avSync() {
+        final Double sync = mpv == null ? null : mpv.getPropertyDouble("avsync");
+        return sync == null ? 0 : sync;
+    }
+
+    public double frameRate() {
+        final Double fps = mpv == null ? null : mpv.getPropertyDouble("container-fps");
+        return fps == null || fps <= 0 ? 24 : fps;
+    }
+
+    // a property, not an option: options set after start-up do not reach the playing file
+    private void applyLoop() {
+        if (mpv != null) {
+            mpv.setPropertyString("loop-file", repeatMode == Player.REPEAT_MODE_OFF ? "no" : "inf");
+        }
     }
 
     @Override
@@ -1438,12 +1527,20 @@ public final class MpvPlayer extends BasePlayer
     }
 
     // parity goes in the font size so styled (ASS) subtitles don't grow by it too
+    // Android's caption text size, which Media3 applies too
+    private float subtitleCaptionScale = 1f;
+
+    private void setEdge(final String border, final String shadow) {
+        set("sub-border-size", border);
+        set("sub-shadow-offset", shadow);
+    }
+
     private void applySubtitleScale() {
         if (mpv == null) {
             return;
         }
         set("sub-font-size", String.valueOf(subtitleFontSize * subtitleParity));
-        set("sub-scale", String.valueOf(MpvSubtitleScale.scale(subtitleSizeStep, 1.0)));
+        set("sub-scale", String.valueOf(MpvSubtitleScale.scale(subtitleSizeStep, 1.0) * subtitleCaptionScale));
     }
 
 
@@ -1479,10 +1576,13 @@ public final class MpvPlayer extends BasePlayer
     }
 
     // customFontFamily is found by libass in sub-fonts-dir; color is #RRGGBB
+    // backColor is a box behind the text, null for none; colours are #AARRGGBB
     public void setSubtitleStyle(final int verticalPosition, final int sizeStep,
                                  final String edgeType, final String typeface,
                                  final boolean embeddedStyles,
-                                 @Nullable final String customFontFamily, final String color) {
+                                 @Nullable final String customFontFamily, final String color,
+                                 @Nullable final String backColor, final String edgeColor,
+                                 final float captionScale) {
         if (mpv == null) {
             return;
         }
@@ -1495,33 +1595,39 @@ public final class MpvPlayer extends BasePlayer
         set("sub-ass-force-margins", "yes");
 
         subtitleSizeStep = sizeStep;
+        subtitleCaptionScale = captionScale;
         applySubtitleScale();
 
+        set("sub-outline-color", edgeColor);
+        set("sub-shadow-color", edgeColor);
+        // libass can't emboss, so Raised and Depressed are a thin edge with and without a shadow
         switch (edgeType == null ? "" : edgeType) {
             case "None":
-                set("sub-border-style", "outline-and-shadow");
-                set("sub-border-size", "0");
-                set("sub-shadow-offset", "0");
+                setEdge("0", "0");
                 break;
             case "DropShadow":
-                set("sub-border-style", "outline-and-shadow");
-                set("sub-border-size", "0");
-                set("sub-shadow-offset", "3");
+                setEdge("0", "3");
                 break;
             case "OutlineShadow":
+                setEdge("3", "3");
+                break;
             case "Raised":
+                setEdge("1.5", "2");
+                break;
             case "Depressed":
-                set("sub-border-style", "outline-and-shadow");
-                set("sub-border-size", "3");
-                set("sub-shadow-offset", "3");
+                setEdge("1.5", "0");
                 break;
             case "Outline":
-            case "Default":
             default:
-                set("sub-border-style", "outline-and-shadow");
-                set("sub-border-size", "3");
-                set("sub-shadow-offset", "0");
+                setEdge("3", "0");
                 break;
+        }
+        // Android's caption background, as Media3 draws it
+        if (backColor != null) {
+            set("sub-border-style", "background-box");
+            set("sub-back-color", backColor);
+        } else {
+            set("sub-border-style", "outline-and-shadow");
         }
 
         final boolean bold = "Bold".equals(typeface);
@@ -1595,11 +1701,20 @@ public final class MpvPlayer extends BasePlayer
     }
 
     // volume is a float property; integer writes are rejected
-    public void setVolumePercent(final int percent) {
-        if (mpv == null) {
-            return;
+    // mpv's percent at the player's full volume: above 100 with Volume boost, so the sleep
+    // timer's fade and the app's own volume keys work on top of the boost, as on Media3
+    private float fullPercent = 100f;
+
+    public void setFullVolumePercent(final float percent) {
+        fullPercent = percent;
+        applyVolume();
+    }
+
+    private void applyVolume() {
+        if (mpv != null) {
+            // 200 is mpv's volume-max
+            set("volume", String.valueOf(Math.round(Math.min(200f, volume * fullPercent))));
         }
-        set("volume", String.valueOf(percent));
     }
 
     public void addSubtitle(final android.net.Uri uri) {
@@ -1743,6 +1858,12 @@ public final class MpvPlayer extends BasePlayer
         }
     }
 
+    // mpv's timeline has no live flag; in its first seconds a live stream is not yet seen to grow,
+    // and nobody has finished a film then
+    public boolean isLiveStream() {
+        return maybeLive && (durationGrows || durationMs == C.TIME_UNSET || positionMs < 10_000);
+    }
+
     @NonNull
     @Override
     public MediaMetadata getMediaMetadata() {
@@ -1839,9 +1960,7 @@ public final class MpvPlayer extends BasePlayer
     @Override
     public void setVolume(float volume) {
         this.volume = volume;
-        if (mpv != null) {
-            set("volume", String.valueOf(volume * 100));
-        }
+        applyVolume();
         listeners.sendEvent(Player.EVENT_VOLUME_CHANGED, listener ->
                 listener.onVolumeChanged(volume));
     }
@@ -1927,6 +2046,143 @@ public final class MpvPlayer extends BasePlayer
 
     @Override
     public void setAudioAttributes(@NonNull AudioAttributes audioAttributes, boolean handleAudioFocus) {
+        this.handleAudioFocus = handleAudioFocus;
+        if (!handleAudioFocus) {
+            dropAudioFocus();
+        }
+    }
+
+    // Media3 asks Android for the sound by itself; mpv plays straight out, so this does the
+    // same: a call or another app's music pauses the film, and a short interruption gives it back
+    private boolean handleAudioFocus;
+    private boolean hasAudioFocus;
+    private boolean pausedForFocus;
+    // a short interruption is going on: playing now asks Android again
+    private boolean focusLostForNow;
+    @Nullable
+    private android.media.AudioFocusRequest focusRequest;
+
+    private final android.media.AudioManager.OnAudioFocusChangeListener focusChange = change -> {
+        if (released) {
+            return;
+        }
+        switch (change) {
+            case android.media.AudioManager.AUDIOFOCUS_GAIN:
+                focusLostForNow = false;
+                if (pausedForFocus) {
+                    pausedForFocus = false;
+                    applyPlayWhenReady(true);
+                }
+                break;
+            case android.media.AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                focusLostForNow = true;
+                if (playWhenReady) {
+                    pausedForFocus = true;
+                    applyPlayWhenReady(false);
+                }
+                break;
+            case android.media.AudioManager.AUDIOFOCUS_LOSS:
+                applyPlayWhenReady(false);
+                // gone for good: given back, so Android lets go of this player
+                dropAudioFocus();
+                break;
+            default:
+                // a notification sound: Android lowers the volume by itself meanwhile
+                break;
+        }
+    };
+
+    // what Media3's WAKE_MODE_NETWORK does: with the screen off the processor and Wi-Fi stay up
+    // while playing, or a stream starves and stops
+    @Nullable
+    private android.os.PowerManager.WakeLock wakeLock;
+    @Nullable
+    private android.net.wifi.WifiManager.WifiLock wifiLock;
+
+    // only while it plays or fills up to play, as Media3 holds them: not paused, ended or idle
+    private void updateStayAwake() {
+        stayAwake(!released && playWhenReady
+                && (playbackState == Player.STATE_READY || playbackState == Player.STATE_BUFFERING));
+    }
+
+    @SuppressWarnings("deprecation")
+    private void stayAwake(final boolean awake) {
+        try {
+            if (wakeLock == null) {
+                final android.os.PowerManager power =
+                        (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
+                if (power != null) {
+                    wakeLock = power.newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "JustPlayer:mpv");
+                    wakeLock.setReferenceCounted(false);
+                }
+                final android.net.wifi.WifiManager wifi =
+                        (android.net.wifi.WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+                if (wifi != null) {
+                    wifiLock = wifi.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF, "JustPlayer:mpv");
+                    wifiLock.setReferenceCounted(false);
+                }
+            }
+            if (awake) {
+                if (wakeLock != null) wakeLock.acquire();
+                if (wifiLock != null) wifiLock.acquire();
+            } else {
+                if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+                if (wifiLock != null && wifiLock.isHeld()) wifiLock.release();
+            }
+        } catch (RuntimeException e) {
+            android.util.Log.w("JustPlayer", "mpv wake lock: " + e);
+        }
+    }
+
+    private boolean takeAudioFocus() {
+        if (!handleAudioFocus || (hasAudioFocus && !focusLostForNow)) {
+            return true;
+        }
+        final android.media.AudioManager audio =
+                (android.media.AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        if (audio == null) {
+            return true;
+        }
+        final int answer;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            if (focusRequest == null) {
+                focusRequest = new android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN)
+                        .setAudioAttributes(new android.media.AudioAttributes.Builder()
+                                .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MOVIE)
+                                .build())
+                        .setOnAudioFocusChangeListener(focusChange, handler)
+                        .build();
+            }
+            answer = audio.requestAudioFocus(focusRequest);
+        } else {
+            answer = audio.requestAudioFocus(focusChange, android.media.AudioManager.STREAM_MUSIC,
+                    android.media.AudioManager.AUDIOFOCUS_GAIN);
+        }
+        hasAudioFocus = answer == android.media.AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        if (hasAudioFocus) {
+            focusLostForNow = false;
+        }
+        return hasAudioFocus;
+    }
+
+    private void dropAudioFocus() {
+        pausedForFocus = false;
+        focusLostForNow = false;
+        if (!hasAudioFocus) {
+            return;
+        }
+        hasAudioFocus = false;
+        final android.media.AudioManager audio =
+                (android.media.AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        if (audio == null) {
+            return;
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O && focusRequest != null) {
+            audio.abandonAudioFocusRequest(focusRequest);
+        } else {
+            audio.abandonAudioFocus(focusChange);
+        }
     }
 
     @NonNull
@@ -1942,6 +2198,8 @@ public final class MpvPlayer extends BasePlayer
                         Player.COMMAND_SEEK_BACK,
                         Player.COMMAND_SEEK_FORWARD,
                         Player.COMMAND_SET_SPEED_AND_PITCH,
+                        // without it the Loop button never reaches mpv
+                        Player.COMMAND_SET_REPEAT_MODE,
                         Player.COMMAND_GET_CURRENT_MEDIA_ITEM,
                         Player.COMMAND_GET_METADATA,
                         Player.COMMAND_GET_TIMELINE,

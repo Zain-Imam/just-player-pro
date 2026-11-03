@@ -13,16 +13,16 @@
     <string name="open_subtitles">Tải phụ đề</string>
     <string name="error_title">Không phát được</string>
     <string name="error_share">Chia sẻ chi tiết</string>
-    <string name="error_network">Trình phát không truy cập được tệp. Hãy kiểm tra kết nối, và xem liên kết đã hết hạn chưa.</string>
-    <string name="error_http">Máy chủ từ chối yêu cầu. Liên kết từ dịch vụ debrid có thể đã hết hạn.</string>
-    <string name="error_missing">Tệp không còn ở đó nữa.</string>
-    <string name="error_permission">Trình phát không được phép mở tệp đó.</string>
-    <string name="error_codec">Không có gì ở đây giải mã được tệp này. Hãy thử công cụ phát còn lại, hoặc đặt thành Tự động.</string>
-    <string name="error_damaged">Tệp có vẻ bị hỏng hoặc không đầy đủ.</string>
-    <string name="error_drm">Nội dung này được chống sao chép, trình phát này không hỗ trợ.</string>
-    <string name="error_unknown">Đã xảy ra lỗi khi phát nội dung này.</string>
+    <string name="error_network">Không truy cập được tệp. Kiểm tra kết nối hoặc liên kết.</string>
+    <string name="error_http">Máy chủ đã từ chối. Liên kết có thể đã hết hạn.</string>
+    <string name="error_missing">Tệp này không còn nữa.</string>
+    <string name="error_permission">Không có quyền mở tệp này.</string>
+    <string name="error_codec">Không giải mã được tệp này. Hãy thử công cụ còn lại.</string>
+    <string name="error_damaged">Tệp này bị hỏng hoặc chưa đầy đủ.</string>
+    <string name="error_drm">Video này được bảo vệ chống sao chép.</string>
+    <string name="error_unknown">Hiện không phát được. Hãy thử lại.</string>
     <string name="error_details">Chi tiết</string>
-    <string name="error_files_missing">Ứng dụng Files bị tắt hoặc không có</string>
+    <string name="error_files_missing">Ứng dụng Tệp đã tắt hoặc không có.</string>
     <string name="request_scope">Để tự động tải phụ đề bên ngoài hoặc chuyển sang tệp tiếp theo trong thư mục, hãy cấp cho %s quyền truy cập thư mục cao nhất chứa video của bạn (ví dụ: Movies).</string>
     <string name="delete_query">Xóa tệp này?</string>
     <string name="delete_confirmation">Xóa</string>
@@ -82,7 +82,7 @@ và nhập mã PIN này khi được hỏi:
 
 Điện thoại không hiển thị gì cho đến khi nhập đúng PIN. Trang sẽ dừng khi bạn nhấn nút bên dưới, hoặc khi bạn rời màn hình này.</string>
     <string name="pref_setup_phone_stop">Dừng trang</string>
-    <string name="pref_setup_phone_failed">Không khởi động được trang. Thiết bị này có thể không cho phép, hoặc không kết nối mạng — hãy nhập khóa tại đây.</string>
+    <string name="pref_setup_phone_failed">Không mở được trang. Hãy nhập khóa tại đây.</string>
     <string name="pref_online_note">Thẻ thông tin, mốc bỏ qua và tìm phụ đề đều cần khóa TMDB.</string>
     <string name="pref_key_tmdb">Khóa TMDB</string>
     <string name="pref_key_tmdb_dialog">Miễn phí tại themoviedb.org → Settings → API.</string>
@@ -109,8 +109,8 @@ và nhập mã PIN này khi được hỏi:
     <string name="online_search_subtitles">Tìm phụ đề trực tuyến…</string>
     <string name="subtitle_source_title">Phụ đề</string>
     <string name="subtitle_source_file">Mở tệp phụ đề…</string>
-    <string name="online_needs_tmdb">Trước tiên, hãy thêm khóa TMDB trong Cài đặt — khóa này biến tên tệp thành thông tin mà các nguồn phụ đề có thể tra cứu.</string>
-    <string name="online_needs_source">Chưa có nguồn phụ đề nào. Hãy thêm một tiện ích Stremio, hoặc khóa OpenSubtitles, SubDL hay Wyzie, trong Cài đặt.</string>
+    <string name="online_needs_tmdb">Hãy thêm khóa TMDB trong Cài đặt trước.</string>
+    <string name="online_needs_source">Hãy thiết lập nguồn phụ đề trong Cài đặt trước.</string>
     <string name="online_identify_title">Đây là phim nào?</string>
     <string name="online_searching">Đang tìm…</string>
     <string name="online_identifying">Đang nhận diện…</string>
@@ -130,7 +130,7 @@ và nhập mã PIN này khi được hỏi:
     <string name="recent_remove">Xóa khỏi Gần đây</string>
     <string name="recent_removed">Đã xóa khỏi Gần đây</string>
     <string name="recent_undo">Hoàn tác</string>
-    <string name="recent_pins_full">Chỉ ghim được tối đa 3 phim. Hãy bỏ ghim một phim trước.</string>
+    <string name="recent_pins_full">Chỉ ghim được tối đa %1$d phim. Hãy bỏ ghim một phim trước.</string>
     <string name="recent_pinned">Đã ghim</string>
     <string name="online_match_prompt_dismiss">Để sau</string>
     <string name="online_no_matches">Không tìm thấy gì cho tên đó</string>
@@ -152,9 +152,9 @@ và nhập mã PIN này khi được hỏi:
     <string name="subtitle_menu_search_detail">Tìm trực tuyến cho tập này</string>
     <string name="subtitle_menu_settings_detail">Cỡ chữ, vị trí, độ trễ và kiểu</string>
     <string name="audio_menu_delay_detail">Chỉnh âm thanh lệch so với hình</string>
-    <string name="capability_title">Thiết bị này có thể khó phát tệp này</string>
-    <string name="capability_hard">Không có bộ giải mã phần cứng nào hỗ trợ tệp này. Hình có thể bị giật, hoặc đứng hình trong khi tiếng vẫn chạy.</string>
-    <string name="capability_impossible">Không có gì trên thiết bị này giải mã được tệp này, nên có thể hoàn toàn không phát được.</string>
+    <string name="capability_title">Có thể phát không mượt</string>
+    <string name="capability_hard">Không có bộ giải mã phần cứng cho video này. Có thể bị giật.</string>
+    <string name="capability_impossible">Không có gì ở đây giải mã được. Có thể không phát được.</string>
     <string name="capability_continue">Vẫn phát</string>
     <string name="capability_quit">Đóng tệp</string>
     <string name="capability_try_other">Thử %1$s</string>
@@ -163,7 +163,7 @@ và nhập mã PIN này khi được hỏi:
     <string name="online_season">Mùa</string>
     <string name="online_episode">Tập</string>
     <string name="online_downloading">Đang tải xuống…</string>
-    <string name="online_download_failed">Không tải được phụ đề đó</string>
+    <string name="online_download_failed">Không tải được phụ đề đó. Hãy thử lại.</string>
     <string name="online_download_limit">%1$s đã hết lượt tải hôm nay</string>
     <string name="online_download_limit_until">%1$s đã hết lượt tải. Có thêm sau %2$s</string>
     <string name="online_saved_to">Đã tải và lưu vào %1$s</string>
@@ -199,7 +199,7 @@ và nhập mã PIN này khi được hỏi:
     <string name="controls_name_repeat">Lặp lại</string>
     <string name="pref_licenses">Giấy phép</string>
     <string name="pref_licenses_summary">Toàn văn mọi giấy phép mà ứng dụng này sử dụng</string>
-    <string name="licenses_unavailable">Không đọc được văn bản giấy phép này.</string>
+    <string name="licenses_unavailable">Không đọc được giấy phép này.</string>
     <string name="intro_next">Tiếp</string>
     <string name="intro_back">Trở lại</string>
     <string name="intro_done">Xong</string>
@@ -225,12 +225,13 @@ và nhập mã PIN này khi được hỏi:
     <string name="pref_controls_timeout_summary">Giây</string>
     <string name="unlocked">Đã mở khóa</string>
     <string name="locked_hint">Đã khóa — nhấn ổ khóa, hoặc nhấn giữ hình, để mở khóa</string>
+    <string name="locked_hint_remote">Đã khóa. Giữ OK để mở khóa.</string>
     <string name="pref_lock_hint">Dùng ổ khóa trên thanh điều khiển để khóa màn hình, tránh chạm nhầm. Để mở khóa, nhấn lại ổ khóa, hoặc giữ ngón tay ở bất kỳ đâu trên hình, hoặc giữ nút OK trên điều khiển từ xa. Chạm nhầm vào hình sẽ không có tác dụng, nên không thể vô tình mở khóa. Phím âm lượng vẫn hoạt động khi khóa.</string>
     <string name="pref_overlay_delay">Thẻ hiện ra sau</string>
     <string name="pref_overlay_delay_summary">Số giây tạm dừng trước khi thẻ hiện</string>
     <string name="pref_prefill">Điền tìm kiếm từ tên tệp</string>
     <string name="button_lock">Khóa màn hình</string>
-    <string name="engine_fallback_mpv">Media3 không phát được — đã chuyển sang mpv</string>
+    <string name="engine_fallback_mpv">Media3 không phát được. Đã chuyển sang mpv.</string>
     <string name="engine_switch_file_type">Media3 không hỗ trợ loại tệp này, đã chuyển sang mpv</string>
     <string name="engine_switch_video_format">Media3 không hỗ trợ định dạng video này, đã chuyển sang mpv</string>
     <string name="engine_switch_audio_format">Media3 không hỗ trợ định dạng âm thanh này, đã chuyển sang mpv</string>
@@ -241,14 +242,14 @@ và nhập mã PIN này khi được hỏi:
     <string name="pref_engine_auto">Tự động</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">mpv cần Android 8.0 trở lên</string>
-    <string name="engine_failed_title">Công cụ này không phát được tệp</string>
-    <string name="engine_failed_message">%1$s không phát được tệp này. %2$s rất có thể phát được — vì thế mới có hai công cụ.</string>
+    <string name="engine_failed_title">Không phát được tệp này</string>
+    <string name="engine_failed_message">%1$s không phát được. Hãy thử %2$s.</string>
     <string name="engine_failed_try">Thử %1$s</string>
     <string name="engine_failed_auto">Luôn dùng Tự động</string>
     <string name="engine_no_picture_title">Không có hình</string>
-    <string name="engine_no_picture_message">%1$s đang phát tiếng nhưng không có hình — thường là Dolby Vision trên thiết bị không có bộ giải mã Dolby Vision. %2$s có thể hiển thị được.</string>
-    <string name="engine_no_picture_switched">Không có hình trên Media3 — đã chuyển sang mpv</string>
-    <string name="engine_no_picture_either">Không có hình trên cả hai công cụ — thiết bị này không hiển thị được video này</string>
+    <string name="engine_no_picture_message">%1$s phát âm thanh nhưng không có hình (thường do Dolby Vision). Hãy thử %2$s.</string>
+    <string name="engine_no_picture_switched">Media3 không có hình. Đã chuyển sang mpv.</string>
+    <string name="engine_no_picture_either">Thiết bị này không hiển thị được hình của video này.</string>
     <string name="pref_engine_note">Tự động bắt đầu bằng Media3 và chuyển tệp sang mpv khi Media3 không phát được.</string>
     <string name="pref_media3_only">Chỉ Media3 — mpv không dùng</string>
     <string name="pref_adaptive_buffering">Bộ đệm thích ứng</string>
@@ -257,7 +258,7 @@ và nhập mã PIN này khi được hỏi:
     <string name="pref_subtitle_folder_default">Downloads / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">Chọn thư mục</string>
     <string name="pref_subtitle_folder_clear">Dùng thư mục mặc định</string>
-    <string name="pref_subtitle_folder_failed">Không dùng được thư mục đó</string>
+    <string name="pref_subtitle_folder_failed">Không dùng được thư mục đó.</string>
     <string name="resume_title">Mở lại video trước?</string>
     <string name="resume_accept">Phát</string>
     <string name="resume_decline">Để sau</string>
@@ -270,7 +271,7 @@ và nhập mã PIN này khi được hỏi:
     <string name="open_url_title">URL mạng</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">Phát</string>
-    <string name="open_url_invalid">Đây không giống một URL mà trình phát mở được</string>
+    <string name="open_url_invalid">Đây không phải liên kết trình phát có thể mở.</string>
     <string name="pref_folders">Thư mục trình phát được đọc</string>
     <string name="pref_folders_note">Cần để tìm tập tiếp theo, và phụ đề lưu cạnh phim. Hãy thêm mọi thư mục bạn để phim.</string>
     <string name="pref_folders_empty">Chưa có. Nếu không có, trình phát chỉ thấy đúng tệp bạn đã mở.</string>
@@ -278,7 +279,7 @@ và nhập mã PIN này khi được hỏi:
     <string name="pref_folders_remove">Nhấn để ngừng đọc thư mục này</string>
     <string name="pref_folders_remove_confirm">Trình phát sẽ không tìm tập tiếp theo hay phụ đề ở đây nữa.</string>
     <string name="pref_folders_remove_confirm_yes">Xóa</string>
-    <string name="pref_folders_failed">Android không giữ quyền đó. Hãy thử chọn lại thư mục.</string>
+    <string name="pref_folders_failed">Android không giữ quyền. Hãy chọn lại thư mục.</string>
     <string name="pref_folders_no_picker">Thiết bị này không có trình chọn thư mục.</string>
     <string name="pref_folders_summary_empty">Chưa có thư mục nào</string>
     <string name="error_code">Hiện mã lỗi</string>
@@ -311,7 +312,7 @@ và nhập mã PIN này khi được hỏi:
     <string name="update_install">Tải xuống và cài đặt</string>
     <string name="update_open">Mở trang</string>
     <string name="update_downloading">Đang tải xuống…</string>
-    <string name="update_failed">Không kiểm tra được bản cập nhật.</string>
+    <string name="update_failed">Hiện không kiểm tra được bản cập nhật.</string>
     <string name="update_none_title">Đã là bản mới nhất</string>
     <string name="update_none">Bạn đang có %1$s. Bản mới nhất đã phát hành là %2$s.</string>
     <string name="update_none_published">Chưa có bản nào được phát hành. Bạn đang có %1$s.</string>
@@ -355,7 +356,7 @@ Các URL bạn mở qua mạng sẽ được ghi nhớ để bạn quay lại m�
     <string name="pref_backup_exported">Đã xuất %1$d mục</string>
     <string name="pref_backup_imported">Đã nhập %1$d mục. Một số mục cần mở lại trình phát.</string>
     <string name="pref_backup_not_ours">Tệp đó không phải bản sao lưu Just Player Pro</string>
-    <string name="pref_backup_failed">Không đọc được tệp đó</string>
+    <string name="pref_backup_failed">Không đọc được tệp đó.</string>
     <string name="pref_backup_nothing">Chưa chọn gì</string>
     <string name="pref_dangerous_header">Nâng cao</string>
     <string name="pref_dangerous_warning">Các mục này có thể làm hỏng việc phát những tệp vốn vẫn chạy tốt.</string>
@@ -372,11 +373,12 @@ Các URL bạn mở qua mạng sẽ được ghi nhớ để bạn quay lại m�
     <string name="pref_custom_subtitle_font">Phông chữ tùy chỉnh</string>
     <string name="pref_choose_custom_font">Chọn phông chữ</string>
     <string name="pref_custom_subtitle_font_not_set">Chưa chọn phông chữ nào</string>
-    <string name="pref_custom_subtitle_font_failed">Không tải được phông chữ</string>
+    <string name="pref_custom_subtitle_font_failed">Không tải được phông chữ đó.</string>
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">Bật</string>
     <string name="osd_item_boolean_false">Tắt</string>
     <string name="osd_sleep_title">Hẹn giờ ngủ</string>
+    <string name="osd_brightness_title">Độ sáng</string>
     <string name="osd_sleep_off">Tắt</string>
     <string name="osd_sleep_end">Khi hết tệp</string>
     <string name="osd_sleep_minutes">%1$d phút</string>
@@ -428,14 +430,14 @@ Tiện ích 1 được đặt sẵn là tiện ích OpenSubtitles chính thức,
     <string name="pref_addon_no_subtitles_resource">Tiện ích đó không cung cấp phụ đề.</string>
     <string name="pref_addon_needs_configuration">Tiện ích đó cần được cấu hình trước — hãy dùng trang configure của nó rồi dán URL nó đưa cho bạn.</string>
     <string name="pref_addon_fetch_failed">Tiện ích đã từ chối yêu cầu phụ đề.</string>
-    <string name="pref_addon_no_subtitles">Tiện ích không trả về gì cho một phim có phụ đề ở khắp nơi, nên nó cũng sẽ không trả về gì cho tệp của bạn.</string>
+    <string name="pref_addon_no_subtitles">Tiện ích này không tìm thấy gì cho một phim nổi tiếng, nên cũng sẽ không tìm thấy cho tệp của bạn.</string>
     <string name="pref_addon_no_usable_url">Tiện ích trả về phụ đề nhưng không có liên kết dùng được.</string>
     <string name="pref_addon_not_downloadable">Liên kết của tiện ích không cho ra tệp phụ đề nào.</string>
     <string name="key_check_cleared">Đã xóa</string>
     <string name="key_check_saved">Đã lưu</string>
     <string name="key_check_accepted">%1$s đã chấp nhận khóa</string>
     <string name="key_check_rejected">%1$s đã từ chối khóa</string>
-    <string name="key_check_rate_limited">%1$s đang giới hạn yêu cầu; hãy thử lại sau ít phút</string>
+    <string name="key_check_rate_limited">%1$s đang bận. Hãy thử lại sau vài phút.</string>
     <string name="key_check_no_answer">%1$s không phản hồi — hãy kiểm tra kết nối</string>
     <string name="key_check_http">%1$s trả về HTTP %2$d</string>
     <string name="setup_enter_pin">Nhập mã PIN hiển thị trên trình phát.</string>
@@ -501,6 +503,48 @@ Tiện ích 1 được đặt sẵn là tiện ích OpenSubtitles chính thức,
     <string name="home_pinned">Đã thêm vào Yêu thích</string>
     <string name="home_unpinned">Đã xóa khỏi Yêu thích</string>
     <string name="home_section_recent">Gần đây</string>
+    <string name="pref_folder_look">Hình thư mục</string>
+    <string name="folder_look_mosaic">Ghép ảnh</string>
+    <string name="folder_look_mosaic_desc">Vừa với thư mục: một hình, hai hình cạnh nhau hoặc lưới</string>
+    <string name="folder_look_folder">Thư mục đơn giản</string>
+    <string name="folder_look_folder_desc">Không có hình: thư mục theo màu giao diện và tổng thời lượng video</string>
+    <string name="folder_look_centred">Ở giữa</string>
+    <string name="folder_look_centred_desc">Toàn bộ hình ở giữa một thẻ cỡ bằng thẻ Gần đây</string>
+    <string name="folder_look_square">Vuông</string>
+    <string name="folder_look_square_desc">Hình vuông để màn hình chứa được nhiều thư mục hơn</string>
+    <string name="pref_better_frames">Hình video đẹp hơn</string>
+    <string name="pref_better_frames_summary">Hình sắc nét hơn lấy ở một phần mười mỗi video thay vì phần mở đầu. Lần đầu mở thư mục lớn sẽ chậm hơn</string>
+    <string name="film_recent_picture">Hình trong Gần đây</string>
+    <string name="film_recent_poster">Áp phích</string>
+    <string name="film_recent_frame">Khung hình video</string>
+    <string name="film_forget">Xóa thông tin phim</string>
+    <string name="pref_integrations_header" formatted="false">Tích hợp</string>
+    <string name="pref_tracking_header" formatted="false">Theo dõi đã xem</string>
+    <string name="tracking_not_connected" formatted="false">Chưa kết nối. Nhấn để kết nối</string>
+    <string name="tracking_connected">Đã kết nối với tên %1$s. Nhấn để ngắt</string>
+    <string name="tracking_connected_toast">Đã kết nối với %1$s</string>
+    <string name="tracking_connect_title">Kết nối %1$s</string>
+    <string name="tracking_open_page">Mở trang</string>
+    <string name="tracking_code_message">Trên thiết bị bất kỳ, mở %1$s và nhập mã này:\n\n%2$s</string>
+    <string name="tracking_disconnect_question">Ngắt kết nối %1$s?</string>
+    <string name="tracking_disconnect" formatted="false">Ngắt kết nối</string>
+    <string name="tracking_unavailable" formatted="false">Không có trong phiên bản này</string>
+    <string name="tracking_failed">Không kết nối được với %1$s. Hãy thử lại.</string>
+    <string name="tracking_send_question">Gửi %1$d video bạn đã đánh dấu đã xem đến %2$s?</string>
+    <string name="tracking_send" formatted="false">Gửi</string>
+    <string name="watched_auto" formatted="false">Đánh dấu đã xem khi xem xong</string>
+    <string name="watched_auto_desc" formatted="false">Khi đã kết nối, cũng báo cho Simkl bạn xem đến đâu</string>
+    <string name="film_mark_watched" formatted="false">Đánh dấu đã xem</string>
+    <string name="film_watched" formatted="false">Đã xem</string>
+    <string name="film_watched_on">Đã xem trên %1$s</string>
+    <string name="film_unwatch" formatted="false">Bỏ đã xem</string>
+    <string name="watched_percent" formatted="false">Tính là đã xem khi đến (%)</string>
+    <string name="home_section_recent_online">Gần đây (Trực tuyến)</string>
+    <string name="home_section_recent_here">Gần đây (Trên thiết bị này)</string>
+    <string name="home_recent_playlist">Danh sách phát</string>
+    <string name="home_time_left">còn %1$s</string>
+    <string name="pref_recent_here">Gần đây trên thiết bị này</string>
+    <string name="pref_recent_here_summary">10 video mới nhất bạn phát từ thiết bị này, dưới mục Gần đây</string>
     <string name="home_section_pinned">Yêu thích</string>
     <string name="home_section_folders">Thư mục</string>
     <string name="home_section_results">Kết quả</string>
@@ -525,7 +569,10 @@ Tiện ích 1 được đặt sẵn là tiện ích OpenSubtitles chính thức,
     <string name="start_on_last">Video gần nhất</string>
     <string name="pref_home_layout">Bố cục</string>
     <string name="home_layout_list">Danh sách</string>
-    <string name="home_layout_wall">Tường ảnh</string>
+    <string name="home_layout_wall">Thư viện</string>
+    <string name="home_layout_cards">Thẻ</string>
+    <string name="home_layout_cards_desc">Thẻ dọc, giống Gần đây</string>
+    <string name="home_view">Chế độ xem</string>
     <string name="home_wall_hint">Nhấn giữ thư mục để thêm vào Yêu thích</string>
     <string name="set_audio">Âm thanh</string>
     <string name="set_storage">Bộ nhớ và sao lưu</string>

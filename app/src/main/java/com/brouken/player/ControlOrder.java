@@ -23,9 +23,11 @@ final class ControlOrder {
     static final String ROTATE = "rotate";
     static final String PIP = "pip";
     static final String REPEAT = "repeat";
+    static final String QUALITY = "quality";
+    static final String QUEUE = "queue";
 
     static final String[] DEFAULT = {
-            OPEN, SUBTITLE, AUDIO, ASPECT, SETTINGS, LOCK, ROTATE, PIP, REPEAT,
+            OPEN, SUBTITLE, AUDIO, QUALITY, QUEUE, ASPECT, SETTINGS, LOCK, ROTATE, PIP, REPEAT,
     };
 
     private static final String PREF_ORDER = "controlOrder";
@@ -132,6 +134,8 @@ final class ControlOrder {
             case SETTINGS: return R.string.controls_name_settings;
             case LOCK:     return R.string.controls_name_lock;
             case ROTATE:   return R.string.controls_name_rotate;
+            case QUALITY:  return R.string.controls_name_quality;
+            case QUEUE:    return R.string.controls_name_queue;
             case PIP:      return R.string.controls_name_pip;
             default:       return R.string.controls_name_repeat;
         }
@@ -147,6 +151,8 @@ final class ControlOrder {
             case SETTINGS: return R.drawable.ic_settings_24dp;
             case LOCK:     return R.drawable.ic_lock_open_24dp;
             case ROTATE:   return R.drawable.ic_auto_rotate_24dp;
+            case QUALITY:  return R.drawable.ic_hd_24dp;
+            case QUEUE:    return R.drawable.ic_queue_24dp;
             case PIP:      return R.drawable.ic_picture_in_picture_alt_24dp;
             default:       return androidx.media3.ui.R.drawable.exo_styled_controls_repeat_all;
         }

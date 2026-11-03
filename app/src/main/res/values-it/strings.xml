@@ -13,16 +13,16 @@
     <string name="open_subtitles">Carica sottotitoli</string>
     <string name="error_title">Impossibile riprodurre</string>
     <string name="error_share">Condividi i dettagli</string>
-    <string name="error_network">Il lettore non riesce a raggiungere il file. Controlla la connessione e verifica se il link è scaduto.</string>
-    <string name="error_http">Il server ha rifiutato la richiesta. Un link di un servizio debrid potrebbe essere scaduto.</string>
-    <string name="error_missing">Il file non c\'è più.</string>
-    <string name="error_permission">Il lettore non ha il permesso di aprire quel file.</string>
-    <string name="error_codec">Niente qui riesce a decodificare questo file. Prova l\'altro motore o imposta il motore su Auto.</string>
-    <string name="error_damaged">Il file sembra danneggiato o incompleto.</string>
-    <string name="error_drm">È protetto da copia, e questo lettore non lo gestisce.</string>
-    <string name="error_unknown">Qualcosa è andato storto durante la riproduzione.</string>
+    <string name="error_network">File non raggiungibile. Controlla la connessione o il link.</string>
+    <string name="error_http">Il server ha rifiutato. Il link potrebbe essere scaduto.</string>
+    <string name="error_missing">Questo file non c\'è più.</string>
+    <string name="error_permission">Nessun permesso per aprire questo file.</string>
+    <string name="error_codec">Impossibile decodificare questo file. Prova l\'altro motore.</string>
+    <string name="error_damaged">Questo file è danneggiato o incompleto.</string>
+    <string name="error_drm">Questo video è protetto da copia.</string>
+    <string name="error_unknown">Impossibile riprodurre ora. Riprova.</string>
     <string name="error_details">Dettagli</string>
-    <string name="error_files_missing">L\'app File è disattivata o mancante</string>
+    <string name="error_files_missing">L\'app File è disattivata o assente.</string>
     <string name="request_scope">Per caricare automaticamente i sottotitoli esterni o passare al file successivo in una cartella, concedi a %s l\'accesso alla cartella più in alto che contiene i tuoi video (ad es. Film).</string>
     <string name="delete_query">Eliminare il file?</string>
     <string name="delete_confirmation">Elimina</string>
@@ -82,7 +82,7 @@ e inserisci questo PIN quando richiesto:
 
 Sul telefono non viene mostrato nulla finché non inserisci il PIN. La pagina si ferma quando premi il pulsante qui sotto o quando esci da questa schermata.</string>
     <string name="pref_setup_phone_stop">Ferma la pagina</string>
-    <string name="pref_setup_phone_failed">Impossibile avviare la pagina. Questo dispositivo potrebbe non consentirlo, oppure non è connesso a una rete — inserisci qui le chiavi.</string>
+    <string name="pref_setup_phone_failed">Impossibile avviare la pagina. Inserisci le chiavi qui.</string>
     <string name="pref_online_note">La scheda info, i punti da saltare e la ricerca sottotitoli richiedono una chiave TMDB.</string>
     <string name="pref_key_tmdb">Chiave TMDB</string>
     <string name="pref_key_tmdb_dialog">Gratis su themoviedb.org → Impostazioni → API.</string>
@@ -109,8 +109,8 @@ Sul telefono non viene mostrato nulla finché non inserisci il PIN. La pagina si
     <string name="online_search_subtitles">Cerca sottotitoli online…</string>
     <string name="subtitle_source_title">Sottotitoli</string>
     <string name="subtitle_source_file">Apri file sottotitoli…</string>
-    <string name="online_needs_tmdb">Prima aggiungi una chiave TMDB nelle Impostazioni — è ciò che trasforma il nome di un file in qualcosa che le fonti di sottotitoli possono cercare.</string>
-    <string name="online_needs_source">Nessuna fonte di sottotitoli configurata. Aggiungi un addon Stremio, o una chiave per OpenSubtitles, SubDL o Wyzie, nelle Impostazioni.</string>
+    <string name="online_needs_tmdb">Aggiungi prima una chiave TMDB nelle Impostazioni.</string>
+    <string name="online_needs_source">Configura prima una fonte di sottotitoli nelle Impostazioni.</string>
     <string name="online_identify_title">Qual è il titolo?</string>
     <string name="online_searching">Ricerca…</string>
     <string name="online_identifying">Riconoscimento…</string>
@@ -130,7 +130,7 @@ Sul telefono non viene mostrato nulla finché non inserisci il PIN. La pagina si
     <string name="recent_remove">Rimuovi da Recenti</string>
     <string name="recent_removed">Rimosso da Recenti</string>
     <string name="recent_undo">Annulla</string>
-    <string name="recent_pins_full">Puoi fissare fino a 3 film. Prima togline uno.</string>
+    <string name="recent_pins_full">Puoi fissare fino a %1$d film. Prima togline uno.</string>
     <string name="recent_pinned">Fissato</string>
     <string name="online_match_prompt_dismiss">Non ora</string>
     <string name="online_no_matches">Nessun risultato per quel titolo</string>
@@ -152,9 +152,9 @@ Sul telefono non viene mostrato nulla finché non inserisci il PIN. La pagina si
     <string name="subtitle_menu_search_detail">Trovane uno online per questo episodio</string>
     <string name="subtitle_menu_settings_detail">Dimensioni, posizione, ritardo e stile</string>
     <string name="audio_menu_delay_detail">Sposta l\'audio rispetto al video</string>
-    <string name="capability_title">Questo dispositivo potrebbe avere difficoltà</string>
-    <string name="capability_hard">Nessun decoder hardware qui lo supporta. Il video potrebbe scattare, o fermarsi mentre l\'audio continua.</string>
-    <string name="capability_impossible">Niente su questo dispositivo dichiara di decodificarlo, quindi potrebbe non riprodursi affatto.</string>
+    <string name="capability_title">Potrebbe non essere fluido</string>
+    <string name="capability_hard">Nessun decoder hardware per questo. Può scattare.</string>
+    <string name="capability_impossible">Niente qui sa decodificarlo. Potrebbe non partire.</string>
     <string name="capability_continue">Guarda comunque</string>
     <string name="capability_quit">Chiudi il file</string>
     <string name="capability_try_other">Prova %1$s</string>
@@ -163,7 +163,7 @@ Sul telefono non viene mostrato nulla finché non inserisci il PIN. La pagina si
     <string name="online_season">Stagione</string>
     <string name="online_episode">Episodio</string>
     <string name="online_downloading">Scaricamento…</string>
-    <string name="online_download_failed">Impossibile scaricare quel sottotitolo</string>
+    <string name="online_download_failed">Impossibile scaricare quel sottotitolo. Riprova.</string>
     <string name="online_download_limit">Limite di %1$s raggiunto per oggi</string>
     <string name="online_download_limit_until">Limite di %1$s raggiunto. Altri tra %2$s</string>
     <string name="online_saved_to">Caricato e salvato in %1$s</string>
@@ -199,7 +199,7 @@ Sul telefono non viene mostrato nulla finché non inserisci il PIN. La pagina si
     <string name="controls_name_repeat">Ripeti</string>
     <string name="pref_licenses">Licenze</string>
     <string name="pref_licenses_summary">Il testo completo di ogni licenza usata da questa app</string>
-    <string name="licenses_unavailable">Impossibile leggere il testo di questa licenza.</string>
+    <string name="licenses_unavailable">Impossibile leggere questa licenza.</string>
     <string name="intro_next">Avanti</string>
     <string name="intro_back">Indietro</string>
     <string name="intro_done">Fatto</string>
@@ -225,12 +225,13 @@ Sul telefono non viene mostrato nulla finché non inserisci il PIN. La pagina si
     <string name="pref_controls_timeout_summary">Secondi</string>
     <string name="unlocked">Sbloccato</string>
     <string name="locked_hint">Bloccato — premi il lucchetto o tieni premuta l\'immagine per sbloccare</string>
+    <string name="locked_hint_remote">Bloccato. Tieni premuto OK per sbloccare.</string>
     <string name="pref_lock_hint">Blocca lo schermo contro i tocchi accidentali con il lucchetto nei controlli. Per sbloccare, premi di nuovo il lucchetto, tieni il dito in un punto qualsiasi dell\'immagine o tieni premuto OK sul telecomando. Un tocco casuale sull\'immagine non fa nulla, quindi il blocco non si toglie per sbaglio. I tasti del volume funzionano anche a schermo bloccato.</string>
     <string name="pref_overlay_delay">Scheda visibile dopo</string>
     <string name="pref_overlay_delay_summary">Secondi di pausa prima che appaia</string>
     <string name="pref_prefill">Compila la ricerca dal nome file</string>
     <string name="button_lock">Blocca schermo</string>
-    <string name="engine_fallback_mpv">Media3 non riesce a riprodurlo — passato a mpv</string>
+    <string name="engine_fallback_mpv">Media3 non riesce a riprodurlo. Passato a mpv.</string>
     <string name="engine_switch_file_type">Tipo di file non supportato da Media3, passato a mpv</string>
     <string name="engine_switch_video_format">Formato video non supportato da Media3, passato a mpv</string>
     <string name="engine_switch_audio_format">Formato audio non supportato da Media3, passato a mpv</string>
@@ -241,14 +242,14 @@ Sul telefono non viene mostrato nulla finché non inserisci il PIN. La pagina si
     <string name="pref_engine_auto">Auto</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">mpv funziona da Android 8.0 in su</string>
-    <string name="engine_failed_title">Questo motore non riesce a riprodurre il file</string>
-    <string name="engine_failed_message">%1$s non è riuscito a riprodurlo. %2$s molto probabilmente sì — per questo ce ne sono due.</string>
+    <string name="engine_failed_title">Impossibile riprodurre il file</string>
+    <string name="engine_failed_message">%1$s non riesce a riprodurlo. Prova %2$s.</string>
     <string name="engine_failed_try">Prova %1$s</string>
     <string name="engine_failed_auto">Usa sempre Auto</string>
     <string name="engine_no_picture_title">Niente video</string>
-    <string name="engine_no_picture_message">%1$s riproduce l\'audio ma non l\'immagine — di solito è Dolby Vision su un dispositivo senza decoder Dolby Vision. %2$s potrebbe mostrarla.</string>
-    <string name="engine_no_picture_switched">Nessuna immagine con Media3 — passato a mpv</string>
-    <string name="engine_no_picture_either">Nessuna immagine con entrambi i motori — questo dispositivo non può mostrare il video</string>
+    <string name="engine_no_picture_message">%1$s riproduce l\'audio ma non l\'immagine (spesso Dolby Vision). Prova %2$s.</string>
+    <string name="engine_no_picture_switched">Nessuna immagine con Media3. Passato a mpv.</string>
+    <string name="engine_no_picture_either">Questo dispositivo non può mostrare l\'immagine di questo video.</string>
     <string name="pref_engine_note">Auto parte con Media3 e passa un file a mpv quando Media3 non riesce a riprodurlo.</string>
     <string name="pref_media3_only">Solo Media3 — non usato da mpv</string>
     <string name="pref_adaptive_buffering">Buffering adattivo</string>
@@ -257,7 +258,7 @@ Sul telefono non viene mostrato nulla finché non inserisci il PIN. La pagina si
     <string name="pref_subtitle_folder_default">Download / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">Scegli una cartella</string>
     <string name="pref_subtitle_folder_clear">Usa la cartella predefinita</string>
-    <string name="pref_subtitle_folder_failed">Impossibile usare quella cartella</string>
+    <string name="pref_subtitle_folder_failed">Impossibile usare quella cartella.</string>
     <string name="resume_title">Riprendi l\'ultimo?</string>
     <string name="resume_accept">Guarda</string>
     <string name="resume_decline">Non ora</string>
@@ -270,7 +271,7 @@ Sul telefono non viene mostrato nulla finché non inserisci il PIN. La pagina si
     <string name="open_url_title">URL di rete</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">Guarda</string>
-    <string name="open_url_invalid">Non sembra un URL che un lettore possa aprire</string>
+    <string name="open_url_invalid">Non è un link che il lettore può aprire.</string>
     <string name="pref_folders">Cartelle leggibili dal lettore</string>
     <string name="pref_folders_note">Servono per trovare l\'episodio successivo e un sottotitolo salvato accanto al film. Aggiungi tutte quelle in cui tieni dei film.</string>
     <string name="pref_folders_empty">Ancora nessuna. Senza, il lettore vede solo il singolo file che hai aperto.</string>
@@ -278,7 +279,7 @@ Sul telefono non viene mostrato nulla finché non inserisci il PIN. La pagina si
     <string name="pref_folders_remove">Tocca per non leggere più questa cartella</string>
     <string name="pref_folders_remove_confirm">Il lettore non cercherà più qui l\'episodio successivo o i sottotitoli.</string>
     <string name="pref_folders_remove_confirm_yes">Rimuovi</string>
-    <string name="pref_folders_failed">Android non ha mantenuto quel permesso. Prova a scegliere di nuovo la cartella.</string>
+    <string name="pref_folders_failed">Android non ha mantenuto il permesso. Scegli di nuovo la cartella.</string>
     <string name="pref_folders_no_picker">Nessun selettore di cartelle sul dispositivo.</string>
     <string name="pref_folders_summary_empty">Ancora nessuna cartella</string>
     <string name="error_code">Mostra codice</string>
@@ -311,7 +312,7 @@ Sul telefono non viene mostrato nulla finché non inserisci il PIN. La pagina si
     <string name="update_install">Scarica e installa</string>
     <string name="update_open">Apri la pagina</string>
     <string name="update_downloading">Scaricamento…</string>
-    <string name="update_failed">Impossibile cercare aggiornamenti.</string>
+    <string name="update_failed">Impossibile controllare gli aggiornamenti ora.</string>
     <string name="update_none_title">Sei già aggiornato</string>
     <string name="update_none">Hai la %1$s. La più recente pubblicata è la %2$s.</string>
     <string name="update_none_published">Non è ancora stato pubblicato nulla. Hai la %1$s.</string>
@@ -358,7 +359,7 @@ Gli URL che apri dalla rete vengono ricordati, così puoi riaprirli senza digita
     <string name="pref_backup_exported">%1$d elementi esportati</string>
     <string name="pref_backup_imported">%1$d elementi importati. Per alcuni bisogna riaprire il lettore.</string>
     <string name="pref_backup_not_ours">Quel file non è un backup di Just Player Pro</string>
-    <string name="pref_backup_failed">Impossibile leggere quel file</string>
+    <string name="pref_backup_failed">Impossibile leggere quel file.</string>
     <string name="pref_backup_nothing">Non hai scelto nulla</string>
     <string name="pref_dangerous_header">Avanzate</string>
     <string name="pref_dangerous_warning">Possono impedire la riproduzione di file che altrimenti funzionano.</string>
@@ -375,11 +376,12 @@ Gli URL che apri dalla rete vengono ricordati, così puoi riaprirli senza digita
     <string name="pref_custom_subtitle_font">Carattere personalizzato</string>
     <string name="pref_choose_custom_font">Scegli il carattere</string>
     <string name="pref_custom_subtitle_font_not_set">Nessun carattere scelto</string>
-    <string name="pref_custom_subtitle_font_failed">Carattere non caricato</string>
+    <string name="pref_custom_subtitle_font_failed">Impossibile caricare quel carattere.</string>
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">Attivo</string>
     <string name="osd_item_boolean_false">Disattivato</string>
     <string name="osd_sleep_title">Timer di spegnimento</string>
+    <string name="osd_brightness_title">Luminosità</string>
     <string name="osd_sleep_off">Disattivato</string>
     <string name="osd_sleep_end">Fine del file</string>
     <string name="osd_sleep_minutes">%1$d min</string>
@@ -431,14 +433,14 @@ L\'addon 1 è già impostato sull\'addon ufficiale di OpenSubtitles, che funzion
     <string name="pref_addon_no_subtitles_resource">Quell\'addon non fornisce sottotitoli.</string>
     <string name="pref_addon_needs_configuration">Quell\'addon va prima configurato — usa la sua pagina di configurazione e incolla l\'URL che ti dà.</string>
     <string name="pref_addon_fetch_failed">L\'addon ha rifiutato una richiesta di sottotitoli.</string>
-    <string name="pref_addon_no_subtitles">L\'addon non ha restituito nulla per un film che ha sottotitoli ovunque, quindi non restituirebbe nulla nemmeno per i tuoi file.</string>
+    <string name="pref_addon_no_subtitles">Questo addon non ha trovato nulla per un film noto, quindi non troverà nulla neanche per i tuoi.</string>
     <string name="pref_addon_no_usable_url">L\'addon ha restituito sottotitoli senza link utilizzabili.</string>
     <string name="pref_addon_not_downloadable">I link dell\'addon non hanno fornito un file di sottotitoli.</string>
     <string name="key_check_cleared">Rimossa</string>
     <string name="key_check_saved">Salvata</string>
     <string name="key_check_accepted">Chiave accettata da %1$s</string>
     <string name="key_check_rejected">Chiave rifiutata da %1$s</string>
-    <string name="key_check_rate_limited">%1$s sta limitando le richieste; riprova tra poco</string>
+    <string name="key_check_rate_limited">%1$s è occupato. Riprova tra qualche minuto.</string>
     <string name="key_check_no_answer">Nessuna risposta da %1$s — controlla la connessione</string>
     <string name="key_check_http">%1$s ha risposto HTTP %2$d</string>
     <string name="setup_enter_pin">Inserisci il PIN mostrato sul lettore.</string>
@@ -504,6 +506,48 @@ L\'addon 1 è già impostato sull\'addon ufficiale di OpenSubtitles, che funzion
     <string name="home_pinned">Aggiunto ai preferiti</string>
     <string name="home_unpinned">Rimosso dai preferiti</string>
     <string name="home_section_recent">Recenti</string>
+    <string name="pref_folder_look">Immagini delle cartelle</string>
+    <string name="folder_look_mosaic">Mosaico</string>
+    <string name="folder_look_mosaic_desc">Si adatta: un\'immagine, due affiancate o una griglia</string>
+    <string name="folder_look_folder">Cartella semplice</string>
+    <string name="folder_look_folder_desc">Senza immagini: una cartella del colore del tema e la durata dei suoi video</string>
+    <string name="folder_look_centred">Centrata</string>
+    <string name="folder_look_centred_desc">L\'immagine intera al centro di una scheda grande come quelle di Recenti</string>
+    <string name="folder_look_square">Quadrata</string>
+    <string name="folder_look_square_desc">Un\'immagine quadrata, così più cartelle entrano nello schermo</string>
+    <string name="pref_better_frames">Immagini video migliori</string>
+    <string name="pref_better_frames_summary">Immagini più nitide prese a un decimo di ogni video invece che dall\'inizio. La prima apertura di una cartella grande è più lenta</string>
+    <string name="film_recent_picture">Immagine in Recenti</string>
+    <string name="film_recent_poster">Locandina</string>
+    <string name="film_recent_frame">Fotogramma del video</string>
+    <string name="film_forget">Rimuovi i dettagli del film</string>
+    <string name="pref_integrations_header" formatted="false">Integrazioni</string>
+    <string name="pref_tracking_header" formatted="false">Tracciamento visioni</string>
+    <string name="tracking_not_connected" formatted="false">Non connesso. Tocca per connettere</string>
+    <string name="tracking_connected">Connesso come %1$s. Tocca per disconnettere</string>
+    <string name="tracking_connected_toast">Connesso a %1$s</string>
+    <string name="tracking_connect_title">Connetti %1$s</string>
+    <string name="tracking_open_page">Apri la pagina</string>
+    <string name="tracking_code_message">Su qualsiasi dispositivo, apri %1$s e inserisci questo codice:\n\n%2$s</string>
+    <string name="tracking_disconnect_question">Disconnettere %1$s?</string>
+    <string name="tracking_disconnect" formatted="false">Disconnetti</string>
+    <string name="tracking_unavailable" formatted="false">Non disponibile in questa versione</string>
+    <string name="tracking_failed">Impossibile connettersi a %1$s. Riprova.</string>
+    <string name="tracking_send_question">Inviare a %2$s i %1$d video segnati come visti?</string>
+    <string name="tracking_send" formatted="false">Invia</string>
+    <string name="watched_auto" formatted="false">Segna come visto alla fine</string>
+    <string name="watched_auto_desc" formatted="false">Comunica anche a Simkl a che punto sei, se connesso</string>
+    <string name="film_mark_watched" formatted="false">Segna come visto</string>
+    <string name="film_watched" formatted="false">Visto</string>
+    <string name="film_watched_on">Visto su %1$s</string>
+    <string name="film_unwatch" formatted="false">Segna come non visto</string>
+    <string name="watched_percent" formatted="false">Conta come visto al (%)</string>
+    <string name="home_section_recent_online">Recenti (online)</string>
+    <string name="home_section_recent_here">Recenti (su questo dispositivo)</string>
+    <string name="home_recent_playlist">Playlist</string>
+    <string name="home_time_left">mancano %1$s</string>
+    <string name="pref_recent_here">Recenti su questo dispositivo</string>
+    <string name="pref_recent_here_summary">Gli ultimi 10 video riprodotti da questo dispositivo, sotto Recenti</string>
     <string name="home_section_pinned">Preferiti</string>
     <string name="home_section_folders">Cartelle</string>
     <string name="home_section_results">Risultati</string>
@@ -528,7 +572,10 @@ L\'addon 1 è già impostato sull\'addon ufficiale di OpenSubtitles, che funzion
     <string name="start_on_last">Ultimo video</string>
     <string name="pref_home_layout">Visualizzazione</string>
     <string name="home_layout_list">Elenco</string>
-    <string name="home_layout_wall">Mosaico</string>
+    <string name="home_layout_wall">Galleria</string>
+    <string name="home_layout_cards">Schede</string>
+    <string name="home_layout_cards_desc">Schede alte, come Recenti</string>
+    <string name="home_view">Vista</string>
     <string name="home_wall_hint">Tieni premuta una cartella per aggiungerla ai preferiti</string>
     <string name="set_audio">Audio</string>
     <string name="set_storage">Archiviazione e backup</string>

@@ -17,7 +17,7 @@ public final class TrackNames {
 
     public static String title(final Context context, final Format format,
                                final int index, final int trackType) {
-        if (format.label != null && !format.label.isEmpty()) {
+        if (format.label != null && !format.label.trim().isEmpty() && !isAddress(format.label)) {
             return format.label;
         }
         if (format.language != null && !format.language.isEmpty()
@@ -31,6 +31,11 @@ public final class TrackNames {
                 ? R.string.audio_menu_track : R.string.subtitle_menu_track, index + 1);
     }
 
+    // some streams name a track by where it's loaded from, which means nothing to anyone
+    public static boolean isAddress(@Nullable final String label) {
+        return label != null && label.contains("://");
+    }
+
     @Nullable
     public static String detail(final Context context, final Format format,
                                 final boolean selected) {
@@ -39,7 +44,7 @@ public final class TrackNames {
             append(line, context.getString(R.string.subtitle_menu_current));
         }
 
-        if (format.label != null && !format.label.isEmpty()
+        if (format.label != null && !format.label.trim().isEmpty() && !isAddress(format.label)
                 && format.language != null && !format.language.isEmpty()
                 && !C.LANGUAGE_UNDETERMINED.equals(format.language)) {
             final String languageName = new Locale(format.language).getDisplayLanguage();

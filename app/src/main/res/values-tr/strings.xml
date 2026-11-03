@@ -11,18 +11,18 @@
     <string name="onboarding_key_title">Anahtar ekleyin</string>
     <string name="onboarding_key_description">Ayarlar burada. Başlıkları, afişleri, altyazıları ve giriş işaretlerini ücretsiz bir TMDB anahtarı bulur.</string>
     <string name="open_subtitles">Altyazı yükle</string>
-    <string name="error_title">Bu oynatılamadı</string>
+    <string name="error_title">Oynatılamıyor</string>
     <string name="error_share">Ayrıntıları paylaş</string>
-    <string name="error_network">Oynatıcı dosyaya ulaşamadı. İnternet bağlantısını ve bağlantının süresinin dolup dolmadığını kontrol edin.</string>
-    <string name="error_http">Sunucu isteği reddetti. Bir debrid hizmetinden alınan bağlantının süresi dolmuş olabilir.</string>
-    <string name="error_missing">Dosya artık orada değil.</string>
-    <string name="error_permission">Oynatıcının bu dosyayı açma izni yok.</string>
-    <string name="error_codec">Buradaki hiçbir şey bu dosyanın kodunu çözemiyor. Diğer motoru deneyin veya motoru Otomatik yapın.</string>
-    <string name="error_damaged">Dosya hasarlı veya eksik görünüyor.</string>
-    <string name="error_drm">Bu içerik kopya korumalı ve bu oynatıcı bunu desteklemiyor.</string>
-    <string name="error_unknown">Oynatılırken bir sorun oluştu.</string>
+    <string name="error_network">Dosyaya ulaşılamıyor. Bağlantıyı veya adresi kontrol edin.</string>
+    <string name="error_http">Sunucu reddetti. Bağlantının süresi dolmuş olabilir.</string>
+    <string name="error_missing">Bu dosya artık yok.</string>
+    <string name="error_permission">Bu dosyayı açma izni yok.</string>
+    <string name="error_codec">Bu dosyanın kodu çözülemiyor. Diğer motoru deneyin.</string>
+    <string name="error_damaged">Bu dosya bozuk veya eksik.</string>
+    <string name="error_drm">Bu video kopyalamaya karşı korumalı.</string>
+    <string name="error_unknown">Şu an oynatılamıyor. Tekrar deneyin.</string>
     <string name="error_details">Ayrıntılar</string>
-    <string name="error_files_missing">Dosyalar uygulaması devre dışı veya yok</string>
+    <string name="error_files_missing">Dosyalar uygulaması kapalı veya yok.</string>
     <string name="request_scope">Harici altyazıları otomatik yüklemek veya klasördeki sonraki dosyaya geçebilmek için, videolarınızı içeren en üst klasör için (ör. Filmler) %s uygulamasına erişim izni verin.</string>
     <string name="delete_query">Dosya silinsin mi\?</string>
     <string name="delete_confirmation">Sil</string>
@@ -82,7 +82,7 @@ ve sorulduğunda bu PIN\'i girin:
 
 PIN girilene kadar telefonda hiçbir şey gösterilmez. Sayfa, aşağıdaki düğmeye bastığınızda veya bu ekrandan çıktığınızda durur.</string>
     <string name="pref_setup_phone_stop">Sayfayı durdur</string>
-    <string name="pref_setup_phone_failed">Sayfa başlatılamadı. Bu cihaz buna izin vermiyor veya bir ağa bağlı değil olabilir — anahtarları burada girin.</string>
+    <string name="pref_setup_phone_failed">Sayfa başlatılamadı. Anahtarları buraya girin.</string>
     <string name="pref_online_note">Bilgi kartı, atlama işaretleri ve altyazı arama için TMDB anahtarı gerekir.</string>
     <string name="pref_key_tmdb">TMDB anahtarı</string>
     <string name="pref_key_tmdb_dialog">Ücretsiz: themoviedb.org → Ayarlar → API.</string>
@@ -109,8 +109,8 @@ PIN girilene kadar telefonda hiçbir şey gösterilmez. Sayfa, aşağıdaki dü�
     <string name="online_search_subtitles">Çevrimiçi altyazı ara…</string>
     <string name="subtitle_source_title">Altyazılar</string>
     <string name="subtitle_source_file">Altyazı dosyası yükle…</string>
-    <string name="online_needs_tmdb">Önce Ayarlar bölümünde bir TMDB anahtarı ekleyin — dosya adını, altyazı kaynaklarına sorulabilecek bir başlığa o çevirir.</string>
-    <string name="online_needs_source">Hiçbir altyazı kaynağı ayarlanmamış. Ayarlar bölümünde bir Stremio eklentisi ya da OpenSubtitles, SubDL veya Wyzie anahtarı ekleyin.</string>
+    <string name="online_needs_tmdb">Önce Ayarlar\'a bir TMDB anahtarı ekleyin.</string>
+    <string name="online_needs_source">Önce Ayarlar\'da bir altyazı kaynağı kurun.</string>
     <string name="online_identify_title">Bu hangisi?</string>
     <string name="online_searching">Aranıyor…</string>
     <string name="online_identifying">Tanımlanıyor…</string>
@@ -130,7 +130,7 @@ PIN girilene kadar telefonda hiçbir şey gösterilmez. Sayfa, aşağıdaki dü�
     <string name="recent_remove">Geçmişten kaldır</string>
     <string name="recent_removed">Geçmişten kaldırıldı</string>
     <string name="recent_undo">Geri al</string>
-    <string name="recent_pins_full">En fazla 3 film sabitlenebilir. Önce birinin sabitlemesini kaldırın.</string>
+    <string name="recent_pins_full">En fazla %1$d film sabitlenebilir. Önce birinin sabitlemesini kaldırın.</string>
     <string name="recent_pinned">Sabitli</string>
     <string name="online_match_prompt_dismiss">Şimdi değil</string>
     <string name="online_no_matches">Bu başlık için sonuç yok</string>
@@ -152,9 +152,9 @@ PIN girilene kadar telefonda hiçbir şey gösterilmez. Sayfa, aşağıdaki dü�
     <string name="subtitle_menu_search_detail">Bu bölüm için çevrimiçi bir tane bulun</string>
     <string name="subtitle_menu_settings_detail">Boyut, konum, gecikme ve stil</string>
     <string name="audio_menu_delay_detail">Sesi görüntüye göre kaydırın</string>
-    <string name="capability_title">Bu cihaz bunu oynatmakta zorlanabilir</string>
-    <string name="capability_hard">Bunu destekleyen bir donanım kod çözücüsü yok. Görüntü takılabilir veya ses sürerken durabilir.</string>
-    <string name="capability_impossible">Bu cihazda bunun kodunu çözebilen hiçbir şey yok, bu yüzden hiç oynatılmayabilir.</string>
+    <string name="capability_title">Akıcı oynatılmayabilir</string>
+    <string name="capability_hard">Bunun için donanım kod çözücü yok. Takılabilir.</string>
+    <string name="capability_impossible">Burada bunu çözebilecek bir şey yok. Oynatılmayabilir.</string>
     <string name="capability_continue">Yine de oynat</string>
     <string name="capability_quit">Dosyayı kapat</string>
     <string name="capability_try_other">Dene: %1$s</string>
@@ -163,7 +163,7 @@ PIN girilene kadar telefonda hiçbir şey gösterilmez. Sayfa, aşağıdaki dü�
     <string name="online_season">Sezon</string>
     <string name="online_episode">Bölüm</string>
     <string name="online_downloading">İndiriliyor…</string>
-    <string name="online_download_failed">Bu altyazı indirilemedi</string>
+    <string name="online_download_failed">O altyazı indirilemedi. Tekrar deneyin.</string>
     <string name="online_download_limit">%1$s günlük sınırı doldu</string>
     <string name="online_download_limit_until">%1$s sınırı doldu. %2$s içinde yenilenir.</string>
     <string name="online_saved_to">Yüklendi ve kaydedildi: %1$s</string>
@@ -199,7 +199,7 @@ PIN girilene kadar telefonda hiçbir şey gösterilmez. Sayfa, aşağıdaki dü�
     <string name="controls_name_repeat">Döngü</string>
     <string name="pref_licenses">Lisanslar</string>
     <string name="pref_licenses_summary">Bu uygulamanın kullandığı her lisansın tam metni</string>
-    <string name="licenses_unavailable">Bu lisans metni okunamadı.</string>
+    <string name="licenses_unavailable">Bu lisans okunamadı.</string>
     <string name="intro_next">İleri</string>
     <string name="intro_back">Geri</string>
     <string name="intro_done">Bitti</string>
@@ -225,12 +225,13 @@ PIN girilene kadar telefonda hiçbir şey gösterilmez. Sayfa, aşağıdaki dü�
     <string name="pref_controls_timeout_summary">Saniye</string>
     <string name="unlocked">Kilit açıldı</string>
     <string name="locked_hint">Kilitli — açmak için asma kilide basın veya görüntüyü basılı tutun</string>
+    <string name="locked_hint_remote">Kilitli. Açmak için OK\'u basılı tutun.</string>
     <string name="pref_lock_hint">Kontrollerdeki asma kilitle ekranı yanlışlıkla dokunmalara karşı kilitleyin. Kilidi açmak için asma kilide yeniden basın, parmağınızı görüntünün herhangi bir yerinde basılı tutun veya kumandada OK tuşunu basılı tutun. Görüntüye yanlışlıkla dokunmak bir şey yapmaz, bu yüzden kilit kazara açılamaz. Kilitliyken ses tuşları çalışmaya devam eder.</string>
     <string name="pref_overlay_delay">Kart gecikmesi</string>
     <string name="pref_overlay_delay_summary">Görünmeden önceki duraklama süresi</string>
     <string name="pref_prefill">Aramayı dosya adından doldur</string>
     <string name="button_lock">Ekranı kilitle</string>
-    <string name="engine_fallback_mpv">Media3 bunu oynatamadı — mpv\'ye geçildi</string>
+    <string name="engine_fallback_mpv">Media3 bunu oynatamıyor. mpv\'ye geçildi.</string>
     <string name="engine_switch_file_type">Bu dosya türü Media3\'te desteklenmiyor, mpv\'ye geçildi</string>
     <string name="engine_switch_video_format">Bu video biçimi Media3\'te desteklenmiyor, mpv\'ye geçildi</string>
     <string name="engine_switch_audio_format">Bu ses biçimi Media3\'te desteklenmiyor, mpv\'ye geçildi</string>
@@ -241,14 +242,14 @@ PIN girilene kadar telefonda hiçbir şey gösterilmez. Sayfa, aşağıdaki dü�
     <string name="pref_engine_auto">Otomatik</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">mpv, Android 8.0 veya üstü ister</string>
-    <string name="engine_failed_title">Bu motor dosyayı oynatamadı</string>
-    <string name="engine_failed_message">%1$s bunu oynatamadı. %2$s büyük olasılıkla oynatabilir — iki motor bu yüzden var.</string>
+    <string name="engine_failed_title">Bu dosya oynatılamıyor</string>
+    <string name="engine_failed_message">%1$s bunu oynatamıyor. %2$s deneyin.</string>
     <string name="engine_failed_try">Dene: %1$s</string>
     <string name="engine_failed_auto">Her zaman Otomatik</string>
     <string name="engine_no_picture_title">Görüntü yok</string>
-    <string name="engine_no_picture_message">%1$s sesi oynatıyor ama görüntüyü oynatamıyor — genellikle Dolby Vision kod çözücüsü olmayan bir cihazdaki Dolby Vision yüzünden. %2$s gösterebilir.</string>
-    <string name="engine_no_picture_switched">Media3\'te görüntü yok — mpv\'ye geçildi</string>
-    <string name="engine_no_picture_either">İki motorda da görüntü yok — bu cihaz bu videoyu gösteremiyor</string>
+    <string name="engine_no_picture_message">%1$s sesi oynatıyor ama görüntüyü değil (genellikle Dolby Vision). %2$s deneyin.</string>
+    <string name="engine_no_picture_switched">Media3\'te görüntü yok. mpv\'ye geçildi.</string>
+    <string name="engine_no_picture_either">Bu cihaz bu videonun görüntüsünü gösteremiyor.</string>
     <string name="pref_engine_note">Otomatik, Media3 ile başlar ve Media3 oynatamazsa dosyayı mpv\'ye aktarır.</string>
     <string name="pref_media3_only">Yalnızca Media3 — mpv kullanmaz</string>
     <string name="pref_adaptive_buffering">Uyarlamalı arabellek</string>
@@ -257,7 +258,7 @@ PIN girilene kadar telefonda hiçbir şey gösterilmez. Sayfa, aşağıdaki dü�
     <string name="pref_subtitle_folder_default">İndirilenler / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">Klasör seç</string>
     <string name="pref_subtitle_folder_clear">Varsayılan klasörü kullan</string>
-    <string name="pref_subtitle_folder_failed">Bu klasör kullanılamadı</string>
+    <string name="pref_subtitle_folder_failed">O klasör kullanılamıyor.</string>
     <string name="resume_title">Son videoya devam?</string>
     <string name="resume_accept">Oynat</string>
     <string name="resume_decline">Daha sonra</string>
@@ -270,7 +271,7 @@ PIN girilene kadar telefonda hiçbir şey gösterilmez. Sayfa, aşağıdaki dü�
     <string name="open_url_title">Ağ URL\'si</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">Oynat</string>
-    <string name="open_url_invalid">Bu, oynatıcının açabileceği bir URL gibi görünmüyor</string>
+    <string name="open_url_invalid">Bu, oynatıcının açabileceği bir bağlantı değil.</string>
     <string name="pref_folders">Okuma izni olan klasörler</string>
     <string name="pref_folders_note">Sonraki bölümü ve filmin yanına kaydedilmiş altyazıyı bulmak için gerekir. Film tuttuğunuz her klasörü ekleyin.</string>
     <string name="pref_folders_empty">Henüz yok. Klasör olmadan oynatıcı yalnızca açtığınız dosyayı görür.</string>
@@ -278,7 +279,7 @@ PIN girilene kadar telefonda hiçbir şey gösterilmez. Sayfa, aşağıdaki dü�
     <string name="pref_folders_remove">Bu klasörü okumayı bırakmak için dokunun</string>
     <string name="pref_folders_remove_confirm">Oynatıcı artık sonraki bölüm veya altyazı için burada aramayacak.</string>
     <string name="pref_folders_remove_confirm_yes">Kaldır</string>
-    <string name="pref_folders_failed">Android bu izni saklamadı. Klasörü yeniden seçmeyi deneyin.</string>
+    <string name="pref_folders_failed">Android izni tutmadı. Klasörü yeniden seçin.</string>
     <string name="pref_folders_no_picker">Bu cihazda klasör seçici yok.</string>
     <string name="pref_folders_summary_empty">Henüz klasör yok</string>
     <string name="error_code">Kodu göster</string>
@@ -311,7 +312,7 @@ PIN girilene kadar telefonda hiçbir şey gösterilmez. Sayfa, aşağıdaki dü�
     <string name="update_install">İndir ve yükle</string>
     <string name="update_open">Sayfayı aç</string>
     <string name="update_downloading">İndiriliyor…</string>
-    <string name="update_failed">Güncelleme denetlenemedi.</string>
+    <string name="update_failed">Şu an güncellemeler kontrol edilemiyor.</string>
     <string name="update_none_title">Uygulama güncel</string>
     <string name="update_none">Sizdeki sürüm %1$s. Yayınlanan en yeni sürüm %2$s.</string>
     <string name="update_none_published">Henüz bir şey yayınlanmadı. Sizdeki sürüm %1$s.</string>
@@ -358,7 +359,7 @@ Ağ üzerinden açtığınız URL\'ler, yeniden yazmadan dönebilmeniz için hat
     <string name="pref_backup_exported">%1$d öğe dışa aktarıldı</string>
     <string name="pref_backup_imported">%1$d öğe içe aktarıldı. Bazıları için oynatıcı yeniden açılmalı.</string>
     <string name="pref_backup_not_ours">Bu dosya bir Just Player Pro yedeği değil</string>
-    <string name="pref_backup_failed">Bu dosya okunamadı</string>
+    <string name="pref_backup_failed">O dosya okunamadı.</string>
     <string name="pref_backup_nothing">Hiçbir şey seçilmedi</string>
     <string name="pref_dangerous_header">Gelişmiş</string>
     <string name="pref_dangerous_warning">Bunlar normalde çalışan dosyaların oynatılmasını bozabilir.</string>
@@ -375,11 +376,12 @@ Ağ üzerinden açtığınız URL\'ler, yeniden yazmadan dönebilmeniz için hat
     <string name="pref_custom_subtitle_font">Özel yazı tipi</string>
     <string name="pref_choose_custom_font">Yazı tipini seç</string>
     <string name="pref_custom_subtitle_font_not_set">Özel yazı tipi seçilmedi</string>
-    <string name="pref_custom_subtitle_font_failed">Yazı tipi yüklenemedi</string>
+    <string name="pref_custom_subtitle_font_failed">O yazı tipi yüklenemedi.</string>
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">Açık</string>
     <string name="osd_item_boolean_false">Kapalı</string>
     <string name="osd_sleep_title">Uyku zamanlayıcısı</string>
+    <string name="osd_brightness_title">Parlaklık</string>
     <string name="osd_sleep_off">Kapalı</string>
     <string name="osd_sleep_end">Dosya sonu</string>
     <string name="osd_sleep_minutes">%1$d dk</string>
@@ -431,14 +433,14 @@ Eklenti 1, olduğu gibi çalışan resmi OpenSubtitles eklentisine ayarlı gelir
     <string name="pref_addon_no_subtitles_resource">Bu eklenti altyazı sağlamıyor.</string>
     <string name="pref_addon_needs_configuration">Bu eklentinin önce yapılandırılması gerekiyor — yapılandırma sayfasını kullanın ve verdiği URL\'yi yapıştırın.</string>
     <string name="pref_addon_fetch_failed">Eklenti altyazı isteğini reddetti.</string>
-    <string name="pref_addon_no_subtitles">Eklenti, her yerde altyazısı olan bir film için hiçbir şey döndürmedi; dosyalarınız için de bir şey döndürmeyecektir.</string>
+    <string name="pref_addon_no_subtitles">Bu eklenti bilinen bir film için hiçbir şey bulamadı, sizinkiler için de bulamaz.</string>
     <string name="pref_addon_no_usable_url">Eklenti, kullanılabilir bağlantısı olmayan altyazılar döndürdü.</string>
     <string name="pref_addon_not_downloadable">Eklentinin bağlantıları bir altyazı dosyası vermedi.</string>
     <string name="key_check_cleared">Silindi</string>
     <string name="key_check_saved">Kaydedildi</string>
     <string name="key_check_accepted">%1$s anahtarı kabul etti</string>
     <string name="key_check_rejected">%1$s anahtarı reddetti</string>
-    <string name="key_check_rate_limited">%1$s istekleri sınırlıyor; biraz sonra yeniden deneyin</string>
+    <string name="key_check_rate_limited">%1$s meşgul. Birkaç dakika sonra tekrar deneyin.</string>
     <string name="key_check_no_answer">%1$s yanıt vermiyor — bağlantıyı kontrol edin</string>
     <string name="key_check_http">%1$s yanıtı: HTTP %2$d</string>
     <string name="setup_enter_pin">Oynatıcıda gösterilen PIN\'i girin.</string>
@@ -504,6 +506,48 @@ Eklenti 1, olduğu gibi çalışan resmi OpenSubtitles eklentisine ayarlı gelir
     <string name="home_pinned">Favorilere eklendi</string>
     <string name="home_unpinned">Favorilerden kaldırıldı</string>
     <string name="home_section_recent">Geçmiş</string>
+    <string name="pref_folder_look">Klasör resimleri</string>
+    <string name="folder_look_mosaic">Mozaik</string>
+    <string name="folder_look_mosaic_desc">Klasöre uyar: tek resim, yan yana iki resim veya ızgara</string>
+    <string name="folder_look_folder">Sade klasör</string>
+    <string name="folder_look_folder_desc">Resimsiz: tema renginde klasör ve videolarının toplam süresi</string>
+    <string name="folder_look_centred">Ortada</string>
+    <string name="folder_look_centred_desc">Resmin tamamı, Geçmiş kartları boyutunda bir kartın ortasında</string>
+    <string name="folder_look_square">Kare</string>
+    <string name="folder_look_square_desc">Kare resim, ekrana daha çok klasör sığar</string>
+    <string name="pref_better_frames">Daha iyi video resimleri</string>
+    <string name="pref_better_frames_summary">Başlangıç yerine her videonun onda birinden alınan daha net resimler. Büyük bir klasörü ilk açış daha yavaş olur</string>
+    <string name="film_recent_picture">Geçmişteki resim</string>
+    <string name="film_recent_poster">Afiş</string>
+    <string name="film_recent_frame">Video karesi</string>
+    <string name="film_forget">Film bilgilerini kaldır</string>
+    <string name="pref_integrations_header" formatted="false">Entegrasyonlar</string>
+    <string name="pref_tracking_header" formatted="false">İzleme takibi</string>
+    <string name="tracking_not_connected" formatted="false">Bağlı değil. Bağlanmak için dokunun</string>
+    <string name="tracking_connected">%1$s olarak bağlı. Bağlantıyı kesmek için dokunun</string>
+    <string name="tracking_connected_toast">%1$s hesabına bağlandı</string>
+    <string name="tracking_connect_title">%1$s bağla</string>
+    <string name="tracking_open_page">Sayfayı aç</string>
+    <string name="tracking_code_message">Herhangi bir cihazda %1$s adresini açıp bu kodu girin:\n\n%2$s</string>
+    <string name="tracking_disconnect_question">%1$s bağlantısı kesilsin mi?</string>
+    <string name="tracking_disconnect" formatted="false">Bağlantıyı kes</string>
+    <string name="tracking_unavailable" formatted="false">Bu sürümde yok</string>
+    <string name="tracking_failed">%1$s hesabına bağlanılamadı. Tekrar deneyin.</string>
+    <string name="tracking_send_question">İzlendi olarak işaretlediğiniz %1$d video %2$s hesabına gönderilsin mi?</string>
+    <string name="tracking_send" formatted="false">Gönder</string>
+    <string name="watched_auto" formatted="false">Bitince izlendi olarak işaretle</string>
+    <string name="watched_auto_desc" formatted="false">Bağlıysa Simkl\'e de nereye kadar izlediğinizi bildirir</string>
+    <string name="film_mark_watched" formatted="false">İzlendi olarak işaretle</string>
+    <string name="film_watched" formatted="false">İzlendi</string>
+    <string name="film_watched_on">%1$s üzerinde izlendi</string>
+    <string name="film_unwatch" formatted="false">İzlenmedi yap</string>
+    <string name="watched_percent" formatted="false">İzlendi sayılacağı yer (%)</string>
+    <string name="home_section_recent_online">Geçmiş (Çevrim içi)</string>
+    <string name="home_section_recent_here">Geçmiş (Bu cihazda)</string>
+    <string name="home_recent_playlist">Oynatma listesi</string>
+    <string name="home_time_left">%1$s kaldı</string>
+    <string name="pref_recent_here">Son izlenenler (bu cihaz)</string>
+    <string name="pref_recent_here_summary">Bu cihazdan oynattığınız son 10 video, Son izlenenler\'in altında</string>
     <string name="home_section_pinned">Favoriler</string>
     <string name="home_section_folders">Klasörler</string>
     <string name="home_section_results">Sonuçlar</string>
@@ -528,7 +572,10 @@ Eklenti 1, olduğu gibi çalışan resmi OpenSubtitles eklentisine ayarlı gelir
     <string name="start_on_last">Son video</string>
     <string name="pref_home_layout">Düzen</string>
     <string name="home_layout_list">Liste</string>
-    <string name="home_layout_wall">Resim duvarı</string>
+    <string name="home_layout_wall">Galeri</string>
+    <string name="home_layout_cards">Kartlar</string>
+    <string name="home_layout_cards_desc">Son izlenenler gibi uzun kartlar</string>
+    <string name="home_view">Görünüm</string>
     <string name="home_wall_hint">Favorilere eklemek için klasörü basılı tutun</string>
     <string name="set_audio">Ses</string>
     <string name="set_storage">Depolama ve yedekleme</string>

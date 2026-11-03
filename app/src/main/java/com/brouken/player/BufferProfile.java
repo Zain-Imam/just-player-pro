@@ -111,7 +111,12 @@ public final class BufferProfile {
     }
 
     public static Tier tierFor(final Context context, @Nullable final Uri uri) {
-        if (looksLive(uri)) {
+        return tierFor(context, looksLive(uri));
+    }
+
+    // live as the link looks, or as yt-dlp said for a website's page
+    public static Tier tierFor(final Context context, final boolean live) {
+        if (live) {
             return Tier.LIVE;
         }
         if (batterySaver(context)) {
@@ -122,7 +127,11 @@ public final class BufferProfile {
 
     @NonNull
     static LoadControl create(final Context context, @Nullable final Uri uri) {
-        final Tier tier = tierFor(context, uri);
+        return create(context, looksLive(uri));
+    }
+
+    static LoadControl create(final Context context, final boolean live) {
+        final Tier tier = tierFor(context, live);
 
         final int budgetMb = heapBudgetMb(context, tier);
 

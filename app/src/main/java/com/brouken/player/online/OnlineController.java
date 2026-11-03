@@ -34,6 +34,8 @@ import java.util.concurrent.Executors;
 public final class OnlineController {
 
     private static final String PREF_KEY_IDENTITIES = "onlineIdentities";
+    private static final String PREF_KEY_LEFT_PLAIN = "onlineLeftPlain";
+    private static final int MAX_LEFT_PLAIN = 300;
     // keys, three or four a film; the least used films go first
     private static final int MAX_REMEMBERED = 240;
 
@@ -44,6 +46,8 @@ public final class OnlineController {
 
     // kept so picking another subtitle for this file does not search again
     private Uri lastResultsUri;
+    @Nullable
+    private String lastResultsFor;
     private List<Subtitles.Result> lastResults;
 
     public interface Host {
@@ -161,6 +165,7 @@ public final class OnlineController {
         if (uri == null || identity == null) {
             return;
         }
+        pickedAgain(uri);
         try {
             final JSONObject all =
                     new JSONObject(preferences().getString(PREF_KEY_IDENTITIES, "{}"));
@@ -188,6 +193,79 @@ public final class OnlineController {
             preferences().edit().putString(PREF_KEY_IDENTITIES, all.toString()).apply();
         } catch (Exception ignored) {
         }
+    }
+
+    // Film info's Remove: every saved match goes, and the video stays plain until a film is picked by hand.
+    // fileName, since Film info may not have the name the match was also saved under
+    public void forgetFilm(@Nullable final Uri uri, @Nullable final String fileName) {
+        if (uri == null) {
+            return;
+        }
+        try {
+            final JSONObject all =
+                    new JSONObject(preferences().getString(PREF_KEY_IDENTITIES, "{}"));
+            final String wanted = pathKey(uri);
+            final List<String> gone = new ArrayList<>();
+            final Iterator<String> keys = all.keys();
+            while (keys.hasNext()) {
+                final String key = keys.next();
+                if (key.startsWith("http") && wanted.equals(pathKey(Uri.parse(key)))) {
+                    gone.add(key);
+                }
+            }
+            gone.add(uri.toString());
+            gone.add(wanted);
+            gone.add(cardKey(uri.toString()));
+            gone.add(cardKey(wanted));
+            final String name = cachedName(uri);
+            if (name != null) {
+                gone.add(nameKey(name));
+            }
+            if (fileName != null && !fileName.trim().isEmpty()) {
+                gone.add(nameKey(fileName));
+            }
+            for (final String key : gone) {
+                all.remove(key);
+            }
+            final org.json.JSONArray plain = leftPlainList();
+            plain.put(wanted);
+            while (plain.length() > MAX_LEFT_PLAIN) {
+                plain.remove(0);
+            }
+            preferences().edit().putString(PREF_KEY_IDENTITIES, all.toString())
+                    .putString(PREF_KEY_LEFT_PLAIN, plain.toString()).apply();
+        } catch (Exception ignored) {
+        }
+    }
+
+    public boolean leftPlain(@Nullable final Uri uri) {
+        return uri != null && indexInLeftPlain(leftPlainList(), pathKey(uri)) >= 0;
+    }
+
+    private void pickedAgain(final Uri uri) {
+        final org.json.JSONArray plain = leftPlainList();
+        final int at = indexInLeftPlain(plain, pathKey(uri));
+        if (at >= 0) {
+            plain.remove(at);
+            preferences().edit().putString(PREF_KEY_LEFT_PLAIN, plain.toString()).apply();
+        }
+    }
+
+    private org.json.JSONArray leftPlainList() {
+        try {
+            return new org.json.JSONArray(preferences().getString(PREF_KEY_LEFT_PLAIN, "[]"));
+        } catch (Exception e) {
+            return new org.json.JSONArray();
+        }
+    }
+
+    private static int indexInLeftPlain(final org.json.JSONArray plain, final String key) {
+        for (int i = 0; i < plain.length(); i++) {
+            if (key.equals(plain.optString(i))) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private SharedPreferences preferences() {
@@ -246,6 +324,7 @@ public final class OnlineController {
     }
 
     private void remember(final Uri uri, final Identity identity) {
+        pickedAgain(uri);
         try {
             final JSONObject all = new JSONObject(preferences().getString(PREF_KEY_IDENTITIES, "{}"));
             final JSONObject json = identity.toJson();
@@ -301,16 +380,25 @@ public final class OnlineController {
 
     private boolean hasResultsFor(@Nullable final Uri uri) {
         return uri != null && lastResults != null && !lastResults.isEmpty()
-                && uri.equals(lastResultsUri);
+                && uri.equals(lastResultsUri)
+                && (!titlesAreLinked() || java.util.Objects.equals(lastResultsFor, titleKey(remembered(uri))));
     }
 
-    private void rememberResults(@Nullable final Uri uri,
+    private void rememberResults(@Nullable final Uri uri, final Identity identity,
                                  @Nullable final List<Subtitles.Result> results) {
         if (uri == null || results == null || results.isEmpty()) {
             return;
         }
         lastResultsUri = uri;
+        lastResultsFor = titleKey(identity);
         lastResults = new ArrayList<>(results);
+    }
+
+    // the film or episode a result list was made for, so a title fixed on the card drops it
+    @Nullable
+    private static String titleKey(@Nullable final Identity identity) {
+        return identity == null ? null
+                : identity.tmdbId + ":" + identity.season + ":" + identity.episode;
     }
 
     // call when the identity or the file changes
@@ -393,7 +481,9 @@ public final class OnlineController {
             return;
         }
 
-        identify(activity, reIdentify, identity -> {
+        // one title for both: the box offers the title the card was given, not the file name's
+        final Identity offered = !reIdentify && titlesAreLinked() ? remembered(uri) : null;
+        identify(activity, reIdentify, offered, identity -> {
             if (uri != null) {
                 remember(uri, identity);
             }
@@ -411,6 +501,11 @@ public final class OnlineController {
 
     public void identify(final Activity activity, final boolean manual,
                          final OnIdentified callback) {
+        identify(activity, manual, null, callback);
+    }
+
+    private void identify(final Activity activity, final boolean manual, @Nullable final Identity offered,
+                          final OnIdentified callback) {
         // picked by hand, so the automatic match never checks it again
         final OnIdentified picked = identity -> {
             if (identity != null) {
@@ -420,7 +515,7 @@ public final class OnlineController {
         };
         worker.execute(() -> {
             final String name = Readings.searchName(resolvedName(), host.launchTitle());
-            main.post(() -> showIdentifyDialog(activity, name, manual, picked));
+            main.post(() -> showIdentifyDialog(activity, name, manual, offered, picked));
         });
     }
 
@@ -429,7 +524,8 @@ public final class OnlineController {
     private AlertDialog identifyDialog;
 
     private void showIdentifyDialog(final Activity activity, @Nullable final String name,
-                                    final boolean manual, final OnIdentified callback) {
+                                    final boolean manual, @Nullable final Identity offered,
+                                    final OnIdentified callback) {
         if (activity.isFinishing() || activity.isDestroyed()
                 || (identifyDialog != null && identifyDialog.isShowing())) {
             return;
@@ -445,6 +541,7 @@ public final class OnlineController {
         // not ReleaseName, which cuts site-like words: Edge.of.Tomorrow to "morrow"
         final NameReading.Parsed read = NameReading.parse(name);
         final String prefilled = !prefillSearch() ? ""
+                : offered != null ? offered.heading()
                 : NameReading.titleOk(read) ? read.title
                 : parsed.looksLikeTitle() ? parsed.searchQuery()
                 : "";
@@ -460,6 +557,11 @@ public final class OnlineController {
                 .setNeutralButton(R.string.online_clear, null)
                 .setPositiveButton(R.string.online_search, (d, which) -> {
                     final String query = input.getText().toString().trim();
+                    // left as offered: that exact film or episode, no new lookup
+                    if (offered != null && prefillSearch() && query.equalsIgnoreCase(prefilled.trim())) {
+                        callback.onIdentified(offered);
+                        return;
+                    }
                     final boolean edited = !query.equalsIgnoreCase(prefilled.trim());
                     searchTmdb(activity, query,
                             manual || edited ? parsed.withoutEpisode() : parsed, callback);
@@ -523,6 +625,10 @@ public final class OnlineController {
     public void identifyAutomatically(@Nullable final Uri uri, final OnIdentified changed,
                                       @Nullable final OnNotSure notSure) {
         if (uri == null) {
+            return;
+        }
+        if (leftPlain(uri)) {
+            android.util.Log.i(com.brouken.player.Utils.TAG, "Automatic match: off, its film was removed in Film info");
             return;
         }
         if (!ApiKeys.hasTmdb(context)) {
@@ -672,7 +778,7 @@ public final class OnlineController {
                 dismiss(progress);
                 if (candidates.isEmpty()) {
                     toast(R.string.online_no_matches);
-                    showIdentifyDialog(activity, query, true, callback);
+                    showIdentifyDialog(activity, query, true, null, callback);
                     return;
                 }
                 chooseCandidate(activity, candidates, parsed, callback);
@@ -805,7 +911,7 @@ public final class OnlineController {
                     toast(R.string.online_no_subtitles);
                     return;
                 }
-                rememberResults(host.mediaUri(), results);
+                rememberResults(host.mediaUri(), identity, results);
                 showResults(activity, results);
             });
         });

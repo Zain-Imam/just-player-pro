@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 // seek previews from a second reader: the keyframe first, then the exact frame
-final class PreviewGrabber {
+final class PreviewGrabber implements SeekFrames {
 
     interface Callback {
         // keyframe first, then the exact frame; null when nothing came for the time
@@ -106,13 +106,15 @@ final class PreviewGrabber {
         worker = new Handler(thread.getLooper());
     }
 
-    boolean failed() {
+    @Override
+    public boolean failed() {
         return hopeless
                 || (failedAt >= 0 && SystemClock.uptimeMillis() - failedAt < RETRY_AFTER_MS);
     }
 
     // a cached exact frame comes back at once on the calling thread
-    void request(final long positionMs, final Callback callback) {
+    @Override
+    public void request(final long positionMs, final Callback callback) {
         if (released || failed()) {
             return;
         }
@@ -153,18 +155,21 @@ final class PreviewGrabber {
     }
 
     // the drag is over: no walk on to a frame nobody will see
-    void cancel() {
+    @Override
+    public void cancel() {
         wanted = -1;
     }
 
     // online the connection closes too, so the host sees only playback's
-    void rest() {
+    @Override
+    public void rest() {
         exact.evictAll();
         keyframes.evictAll();
         worker.post(Utils.isSupportedNetworkUri(uri) ? this::closeAll : this::closeDecoder);
     }
 
-    void release() {
+    @Override
+    public void release() {
         released = true;
         worker.removeCallbacksAndMessages(null);
         worker.post(() -> {

@@ -317,12 +317,12 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                 }
                 gestureOrientation = Orientation.VERTICAL;
 
+                // a fast swipe moves further, up to four points for one move
+                final int steps = Math.max(1, Math.min(4,
+                        Math.round(Math.abs(Utils.pxToDp(distanceY)) / 6f)));
                 if (motionEvent.getX() < (float)(getWidth() / 2)) {
-                    brightnessControl.changeBrightness(this, gestureScrollY > 0, canSetAutoBrightness);
+                    brightnessControl.changeBrightness(this, gestureScrollY > 0, canSetAutoBrightness, steps);
                 } else {
-                    // a fast swipe moves further, up to four points for one move
-                    final int steps = Math.max(1, Math.min(4,
-                            Math.round(Math.abs(Utils.pxToDp(distanceY)) / 6f)));
                     Utils.adjustVolumeFine(getContext(), mAudioManager, this, gestureScrollY > 0, canBoostVolume, steps);
                 }
 
@@ -573,6 +573,14 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
 
         @Override
         public void onCues(@NonNull CueGroup cueGroup) {
+            if (BuildConfig.DEBUG) {
+                // what is on screen, so device tests can follow subtitles without screenshots
+                final StringBuilder shown = new StringBuilder();
+                for (final androidx.media3.common.text.Cue cue : cueGroup.cues) {
+                    shown.append(cue.text == null ? "[picture]" : cue.text.toString().replace('\n', ' ')).append(" | ");
+                }
+                Utils.log("Cues at " + cueGroup.presentationTimeUs / 1000 + ": " + shown);
+            }
             SubtitleView subtitleView = getSubtitleView();
             if (subtitleView != null) {
                 subtitleView.setCues(cueModifier.modifyCues(cueGroup.cues));

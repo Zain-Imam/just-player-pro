@@ -46,8 +46,10 @@ public final class Languages {
             order.add(locale.getLanguage());
         }
 
-        // the search language as a real tag: pt-br searches as pt-BR, sp as es-ES
-        final String search = preference(context, "subtitleLanguage");
+        // the search language as a real tag: pt-br searches as pt-BR, sp as es-ES. Settings shows
+        // English until another is picked, and nothing is saved before that
+        final String search = PreferenceManager.getDefaultSharedPreferences(context)
+                .getString("subtitleLanguage", "en");
         if (search != null && !search.isEmpty()) {
             order.add(com.brouken.player.online.SubtitleLanguages.trackTag(search));
         }
@@ -78,6 +80,13 @@ public final class Languages {
             list.append(spelling);
         }
         return list.toString();
+    }
+
+    // one spelling to compare by: eng, en and en-US all become en, as sites tag them
+    public static String plain(final String language) {
+        final String tag = language.replace("-orig", "").toLowerCase(Locale.ROOT);
+        final String iso1 = toIso1(tag);
+        return iso1 != null ? iso1 : tag;
     }
 
     private static String preference(final Context context, final String key) {

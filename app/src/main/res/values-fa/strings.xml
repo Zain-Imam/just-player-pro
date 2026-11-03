@@ -11,18 +11,18 @@
     <string name="onboarding_key_title">افزودن کلید TMDB</string>
     <string name="onboarding_key_description">تنظیمات اینجاست. با یک کلید رایگان TMDB، عنوان‌ها، پوسترها، زیرنویس‌ها و نشانگرهای تیتراژ پیدا می‌شوند.</string>
     <string name="open_subtitles">بارگذاری زیرنویس</string>
-    <string name="error_title">این فایل پخش نشد</string>
+    <string name="error_title">پخش نمی‌شود</string>
     <string name="error_share">هم‌رسانی جزئیات</string>
-    <string name="error_network">پخش‌کننده به فایل دسترسی پیدا نکرد. اتصال را بررسی کنید و ببینید پیوند منقضی نشده باشد.</string>
-    <string name="error_http">سرور درخواست را رد کرد. ممکن است پیوندی از سرویس debrid منقضی شده باشد.</string>
-    <string name="error_missing">فایل دیگر وجود ندارد.</string>
-    <string name="error_permission">پخش‌کننده اجازه باز کردن این فایل را ندارد.</string>
-    <string name="error_codec">هیچ چیز در اینجا نمی‌تواند این فایل را رمزگشایی کند. موتور دیگر را امتحان کنید یا موتور را روی «خودکار» بگذارید.</string>
-    <string name="error_damaged">به نظر می‌رسد فایل آسیب‌دیده یا ناقص است.</string>
-    <string name="error_drm">این محتوا در برابر کپی محافظت شده است و این پخش‌کننده از آن پشتیبانی نمی‌کند.</string>
-    <string name="error_unknown">هنگام پخش این مورد مشکلی پیش آمد.</string>
+    <string name="error_network">به فایل دسترسی نیست. اتصال یا پیوند را بررسی کنید.</string>
+    <string name="error_http">سرور آن را رد کرد. شاید پیوند منقضی شده باشد.</string>
+    <string name="error_missing">این فایل دیگر وجود ندارد.</string>
+    <string name="error_permission">اجازهٔ باز کردن این فایل نیست.</string>
+    <string name="error_codec">این فایل رمزگشایی نمی‌شود. موتور دیگر را امتحان کنید.</string>
+    <string name="error_damaged">این فایل خراب یا ناقص است.</string>
+    <string name="error_drm">این ویدیو در برابر کپی محافظت شده است.</string>
+    <string name="error_unknown">الان پخش نمی‌شود. دوباره امتحان کنید.</string>
     <string name="error_details">جزئیات</string>
-    <string name="error_files_missing">برنامه Files غیرفعال است یا وجود ندارد</string>
+    <string name="error_files_missing">برنامهٔ Files غیرفعال است یا وجود ندارد.</string>
     <string name="request_scope">برای بارگذاری خودکار زیرنویس‌های خارجی یا رفتن به فایل بعدی در پوشه، به %s اجازه دسترسی به بالاترین پوشه‌ای را بدهید که ویدیوهایتان در آن است (مثلاً Movies).</string>
     <string name="delete_query">این فایل حذف شود؟</string>
     <string name="delete_confirmation">حذف</string>
@@ -82,7 +82,7 @@
 
 تا PIN وارد نشود، چیزی روی تلفن نشان داده نمی‌شود. وقتی دکمه زیر را فشار دهید یا از این صفحه خارج شوید، صفحه متوقف می‌شود.</string>
     <string name="pref_setup_phone_stop">توقف صفحه</string>
-    <string name="pref_setup_phone_failed">صفحه راه‌اندازی نشد. شاید این دستگاه اجازه ندهد، یا به شبکه‌ای وصل نباشد — به‌جای آن، کلیدها را همین‌جا وارد کنید.</string>
+    <string name="pref_setup_phone_failed">صفحه باز نشد. به‌جای آن کلیدها را اینجا وارد کنید.</string>
     <string name="pref_online_note">کارت اطلاعات، نشانگرهای پرش و جستجوی زیرنویس همگی به کلید TMDB نیاز دارند.</string>
     <string name="pref_key_tmdb">کلید TMDB</string>
     <string name="pref_key_tmdb_dialog">رایگان از themoviedb.org → Settings → API.</string>
@@ -109,8 +109,8 @@
     <string name="online_search_subtitles">جستجوی زیرنویس آنلاین…</string>
     <string name="subtitle_source_title">زیرنویس</string>
     <string name="subtitle_source_file">بارگذاری فایل زیرنویس…</string>
-    <string name="online_needs_tmdb">ابتدا در تنظیمات یک کلید TMDB اضافه کنید — همین کلید است که نام فایل را به چیزی تبدیل می‌کند که بتوان از منابع زیرنویس درباره‌اش پرسید.</string>
-    <string name="online_needs_source">هیچ منبع زیرنویسی تنظیم نشده است. در تنظیمات یک افزونه Stremio، یا کلیدی برای OpenSubtitles، SubDL یا Wyzie اضافه کنید.</string>
+    <string name="online_needs_tmdb">اول یک کلید TMDB در تنظیمات اضافه کنید.</string>
+    <string name="online_needs_source">اول یک منبع زیرنویس در تنظیمات راه‌اندازی کنید.</string>
     <string name="online_identify_title">این کدام است؟</string>
     <string name="online_searching">در حال جستجو…</string>
     <string name="online_identifying">در حال شناسایی…</string>
@@ -130,7 +130,7 @@
     <string name="recent_remove">حذف از موارد اخیر</string>
     <string name="recent_removed">از موارد اخیر حذف شد</string>
     <string name="recent_undo">واگرد</string>
-    <string name="recent_pins_full">فقط ۳ فیلم را می‌توان سنجاق کرد. ابتدا سنجاق یکی را بردارید.</string>
+    <string name="recent_pins_full">فقط %1$d فیلم را می‌توان سنجاق کرد. ابتدا سنجاق یکی را بردارید.</string>
     <string name="recent_pinned">سنجاق‌شده</string>
     <string name="online_match_prompt_dismiss">اکنون نه</string>
     <string name="online_no_matches">چیزی برای این عنوان پیدا نشد</string>
@@ -152,9 +152,9 @@
     <string name="subtitle_menu_search_detail">یافتن زیرنویس آنلاین برای این قسمت</string>
     <string name="subtitle_menu_settings_detail">اندازه، موقعیت، تأخیر و سبک</string>
     <string name="audio_menu_delay_detail">جلو یا عقب بردن صدا نسبت به تصویر</string>
-    <string name="capability_title">این دستگاه شاید با این فایل مشکل داشته باشد</string>
-    <string name="capability_hard">هیچ رمزگشای سخت‌افزاری در اینجا از آن پشتیبانی نمی‌کند. ممکن است تصویر تکه‌تکه شود، یا متوقف شود در حالی که صدا ادامه دارد.</string>
-    <string name="capability_impossible">هیچ چیزی در این دستگاه ادعای رمزگشایی آن را ندارد، پس ممکن است اصلاً پخش نشود.</string>
+    <string name="capability_title">شاید روان پخش نشود</string>
+    <string name="capability_hard">رمزگشای سخت‌افزاری برای این نیست. ممکن است بپرد.</string>
+    <string name="capability_impossible">چیزی اینجا آن را رمزگشایی نمی‌کند. شاید پخش نشود.</string>
     <string name="capability_continue">باز هم پخش شود</string>
     <string name="capability_quit">بستن فایل</string>
     <string name="capability_try_other">امتحان %1$s</string>
@@ -163,7 +163,7 @@
     <string name="online_season">فصل</string>
     <string name="online_episode">قسمت</string>
     <string name="online_downloading">در حال بارگیری…</string>
-    <string name="online_download_failed">این زیرنویس بارگیری نشد</string>
+    <string name="online_download_failed">این زیرنویس دانلود نشد. دوباره امتحان کنید.</string>
     <string name="online_download_limit">سقف امروز %1$s پر شد</string>
     <string name="online_download_limit_until">سقف %1$s پر شد. بارگیری بیشتر پس از %2$s</string>
     <string name="online_saved_to">بارگذاری و در %1$s ذخیره شد</string>
@@ -225,12 +225,13 @@
     <string name="pref_controls_timeout_summary">ثانیه</string>
     <string name="unlocked">قفل باز شد</string>
     <string name="locked_hint">قفل است — برای باز کردن، روی قفل ضربه بزنید یا تصویر را لمس طولانی کنید</string>
+    <string name="locked_hint_remote">قفل است. برای باز کردن، OK را نگه دارید.</string>
     <string name="pref_lock_hint">با قفل موجود در کنترل‌ها، صفحه را در برابر لمس‌های تصادفی قفل کنید. برای باز کردن قفل، دوباره قفل را فشار دهید، یا انگشتتان را هر جای تصویر نگه دارید، یا دکمه OK کنترل از راه دور را نگه دارید. ضربه اتفاقی روی تصویر کاری نمی‌کند، پس قفل تصادفاً باز نمی‌شود. دکمه‌های صدا هنگام قفل همچنان کار می‌کنند.</string>
     <string name="pref_overlay_delay">نمایش کارت پس از</string>
     <string name="pref_overlay_delay_summary">ثانیه‌های مکث پیش از نمایش</string>
     <string name="pref_prefill">پر کردن جستجو از نام فایل</string>
     <string name="button_lock">قفل صفحه</string>
-    <string name="engine_fallback_mpv">پخش با Media3 ممکن نشد — به mpv تغییر یافت</string>
+    <string name="engine_fallback_mpv">Media3 این را پخش نمی‌کند. به mpv تغییر کرد.</string>
     <string name="engine_switch_file_type">این نوع فایل در Media3 پشتیبانی نمی‌شود، به mpv تغییر یافت</string>
     <string name="engine_switch_video_format">این قالب ویدیو در Media3 پشتیبانی نمی‌شود، به mpv تغییر یافت</string>
     <string name="engine_switch_audio_format">این قالب صدا در Media3 پشتیبانی نمی‌شود، به mpv تغییر یافت</string>
@@ -241,14 +242,14 @@
     <string name="pref_engine_auto">خودکار</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">پیش‌نیاز mpv: Android 8.0 یا جدیدتر</string>
-    <string name="engine_failed_title">این موتور نتوانست فایل را پخش کند</string>
-    <string name="engine_failed_message">پخش این مورد با %1$s ممکن نشد. به احتمال زیاد %2$s می‌تواند — برای همین دو موتور وجود دارد.</string>
+    <string name="engine_failed_title">این فایل پخش نمی‌شود</string>
+    <string name="engine_failed_message">%1$s این را پخش نمی‌کند. %2$s را امتحان کنید.</string>
     <string name="engine_failed_try">امتحان %1$s</string>
     <string name="engine_failed_auto">همیشه «خودکار»</string>
     <string name="engine_no_picture_title">بدون تصویر</string>
-    <string name="engine_no_picture_message">صدا با %1$s پخش می‌شود ولی تصویر نه — معمولاً به‌خاطر Dolby Vision روی دستگاهی بدون رمزگشای Dolby Vision. شاید %2$s آن را نشان دهد.</string>
-    <string name="engine_no_picture_switched">بدون تصویر در Media3 — به mpv تغییر یافت</string>
-    <string name="engine_no_picture_either">هیچ‌کدام از دو موتور تصویر ندارند — این دستگاه نمی‌تواند این ویدیو را نشان دهد</string>
+    <string name="engine_no_picture_message">%1$s صدا را پخش می‌کند ولی تصویر را نه (اغلب Dolby Vision). %2$s را امتحان کنید.</string>
+    <string name="engine_no_picture_switched">Media3 تصویر ندارد. به mpv تغییر کرد.</string>
+    <string name="engine_no_picture_either">این دستگاه تصویر این ویدیو را نشان نمی‌دهد.</string>
     <string name="pref_engine_note">حالت خودکار با Media3 شروع می‌کند و وقتی Media3 نتواند فایلی را پخش کند، آن را به mpv می‌برد.</string>
     <string name="pref_media3_only">فقط برای Media3 — نه mpv</string>
     <string name="pref_adaptive_buffering">بافر تطبیقی</string>
@@ -257,7 +258,7 @@
     <string name="pref_subtitle_folder_default">بارگیری‌ها / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">انتخاب پوشه</string>
     <string name="pref_subtitle_folder_clear">استفاده از پوشه پیش‌فرض</string>
-    <string name="pref_subtitle_folder_failed">استفاده از این پوشه ممکن نشد</string>
+    <string name="pref_subtitle_folder_failed">از این پوشه نمی‌شود استفاده کرد.</string>
     <string name="resume_title">پخش آخرین ویدیو؟</string>
     <string name="resume_accept">پخش</string>
     <string name="resume_decline">اکنون نه</string>
@@ -270,7 +271,7 @@
     <string name="open_url_title">نشانی شبکه</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">پخش</string>
-    <string name="open_url_invalid">این شبیه نشانی‌ای نیست که پخش‌کننده بتواند باز کند</string>
+    <string name="open_url_invalid">این پیوندی نیست که پخش‌کننده بتواند باز کند.</string>
     <string name="pref_folders">پوشه‌های مجاز برای خواندن</string>
     <string name="pref_folders_note">برای یافتن قسمت بعدی و زیرنویسی که کنار فیلم ذخیره شده لازم است. هر تعداد پوشه که فیلم‌هایتان در آن‌هاست اضافه کنید.</string>
     <string name="pref_folders_empty">هنوز پوشه‌ای نیست. بدون آن، پخش‌کننده فقط همان فایلی را می‌بیند که باز کرده‌اید.</string>
@@ -278,7 +279,7 @@
     <string name="pref_folders_remove">برای توقف خواندن این پوشه ضربه بزنید</string>
     <string name="pref_folders_remove_confirm">پخش‌کننده دیگر اینجا دنبال قسمت بعدی یا زیرنویس نمی‌گردد.</string>
     <string name="pref_folders_remove_confirm_yes">حذف</string>
-    <string name="pref_folders_failed">این اجازه در Android حفظ نشد. دوباره پوشه را انتخاب کنید.</string>
+    <string name="pref_folders_failed">Android اجازه را نگه نداشت. پوشه را دوباره انتخاب کنید.</string>
     <string name="pref_folders_no_picker">این دستگاه انتخابگر پوشه ندارد.</string>
     <string name="pref_folders_summary_empty">هنوز پوشه‌ای نیست</string>
     <string name="error_code">نمایش کد خطا</string>
@@ -311,7 +312,7 @@
     <string name="update_install">بارگیری و نصب</string>
     <string name="update_open">باز کردن صفحه</string>
     <string name="update_downloading">در حال بارگیری…</string>
-    <string name="update_failed">بررسی به‌روزرسانی ممکن نشد.</string>
+    <string name="update_failed">الان نمی‌شود به‌روزرسانی را بررسی کرد.</string>
     <string name="update_none_title">به‌روز هستید</string>
     <string name="update_none">نسخه شما %1$s است. جدیدترین نسخه منتشرشده %2$s است.</string>
     <string name="update_none_published">هنوز چیزی منتشر نشده است. نسخه شما %1$s است.</string>
@@ -358,7 +359,7 @@
     <string name="pref_backup_exported">%1$d مورد صادر شد</string>
     <string name="pref_backup_imported">%1$d مورد وارد شد. برای بخشی از آن‌ها باید پخش‌کننده دوباره باز شود.</string>
     <string name="pref_backup_not_ours">این فایل نسخه پشتیبان Just Player Pro نیست</string>
-    <string name="pref_backup_failed">این فایل خوانده نشد</string>
+    <string name="pref_backup_failed">این فایل خوانده نشد.</string>
     <string name="pref_backup_nothing">چیزی انتخاب نشد</string>
     <string name="pref_dangerous_header">پیشرفته</string>
     <string name="pref_dangerous_warning">این گزینه‌ها ممکن است پخش فایل‌هایی را که در غیر این صورت کار می‌کنند خراب کنند.</string>
@@ -375,11 +376,12 @@
     <string name="pref_custom_subtitle_font">قلم سفارشی</string>
     <string name="pref_choose_custom_font">انتخاب قلم</string>
     <string name="pref_custom_subtitle_font_not_set">قلم سفارشی انتخاب نشده</string>
-    <string name="pref_custom_subtitle_font_failed">قلم بارگذاری نشد</string>
+    <string name="pref_custom_subtitle_font_failed">این قلم بارگذاری نشد.</string>
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">روشن</string>
     <string name="osd_item_boolean_false">خاموش</string>
     <string name="osd_sleep_title">زمان‌سنج خواب</string>
+    <string name="osd_brightness_title">روشنایی</string>
     <string name="osd_sleep_off">خاموش</string>
     <string name="osd_sleep_end">پایان فایل</string>
     <string name="osd_sleep_minutes">%1$d دقیقه</string>
@@ -431,14 +433,14 @@
     <string name="pref_addon_no_subtitles_resource">این افزونه زیرنویس ارائه نمی‌دهد.</string>
     <string name="pref_addon_needs_configuration">این افزونه ابتدا باید پیکربندی شود — از صفحه پیکربندی آن استفاده کنید و نشانی‌ای را که می‌دهد بچسبانید.</string>
     <string name="pref_addon_fetch_failed">افزونه درخواست زیرنویس را رد کرد.</string>
-    <string name="pref_addon_no_subtitles">افزونه برای فیلمی که همه‌جا زیرنویس دارد چیزی برنگرداند، پس برای فایل‌های شما هم چیزی برنمی‌گرداند.</string>
+    <string name="pref_addon_no_subtitles">این افزونه برای یک فیلم معروف چیزی پیدا نکرد، پس برای فایل‌های شما هم پیدا نمی‌کند.</string>
     <string name="pref_addon_no_usable_url">افزونه زیرنویس‌هایی بدون پیوند قابل استفاده برگرداند.</string>
     <string name="pref_addon_not_downloadable">پیوندهای افزونه فایل زیرنویسی تحویل ندادند.</string>
     <string name="key_check_cleared">پاک شد</string>
     <string name="key_check_saved">ذخیره شد</string>
     <string name="key_check_accepted">کلید را %1$s پذیرفت</string>
     <string name="key_check_rejected">کلید را %1$s رد کرد</string>
-    <string name="key_check_rate_limited">محدودیت درخواست از %1$s؛ کمی بعد دوباره امتحان کنید</string>
+    <string name="key_check_rate_limited">%1$s شلوغ است. چند دقیقهٔ دیگر دوباره امتحان کنید.</string>
     <string name="key_check_no_answer">پاسخی از %1$s نیامد — اتصال را بررسی کنید</string>
     <string name="key_check_http">پاسخ %1$s: HTTP %2$d</string>
     <string name="setup_enter_pin">کد PIN نمایش داده شده روی پخش‌کننده را وارد کنید.</string>
@@ -504,6 +506,48 @@
     <string name="home_pinned">به دلخواه‌ها اضافه شد</string>
     <string name="home_unpinned">از دلخواه‌ها حذف شد</string>
     <string name="home_section_recent">اخیر</string>
+    <string name="pref_folder_look">تصویر پوشه‌ها</string>
+    <string name="folder_look_mosaic">موزاییک</string>
+    <string name="folder_look_mosaic_desc">متناسب با پوشه: یک تصویر، دو تصویر کنار هم یا یک شبکه</string>
+    <string name="folder_look_folder">پوشه ساده</string>
+    <string name="folder_look_folder_desc">بدون تصویر: پوشه‌ای به رنگ پوسته و مدت ویدیوهایش</string>
+    <string name="folder_look_centred">در وسط</string>
+    <string name="folder_look_centred_desc">کل تصویر در وسط کارتی هم‌اندازهٔ کارت‌های اخیر</string>
+    <string name="folder_look_square">مربع</string>
+    <string name="folder_look_square_desc">تصویری مربعی تا پوشه‌های بیشتری در صفحه جا شوند</string>
+    <string name="pref_better_frames">تصاویر بهتر ویدیو</string>
+    <string name="pref_better_frames_summary">تصاویر واضح‌تر از یک‌دهم هر ویدیو به‌جای شروع آن. نخستین باز کردن پوشه‌ای بزرگ کندتر است</string>
+    <string name="film_recent_picture">تصویر در اخیر</string>
+    <string name="film_recent_poster">پوستر</string>
+    <string name="film_recent_frame">فریمی از ویدیو</string>
+    <string name="film_forget">حذف جزئیات فیلم</string>
+    <string name="pref_integrations_header" formatted="false">یکپارچه‌سازی‌ها</string>
+    <string name="pref_tracking_header" formatted="false">پیگیری تماشا</string>
+    <string name="tracking_not_connected" formatted="false">متصل نیست. برای اتصال بزنید</string>
+    <string name="tracking_connected">متصل به‌عنوان %1$s. برای قطع اتصال بزنید</string>
+    <string name="tracking_connected_toast">به %1$s متصل شد</string>
+    <string name="tracking_connect_title">اتصال %1$s</string>
+    <string name="tracking_open_page">باز کردن صفحه</string>
+    <string name="tracking_code_message">در هر دستگاهی %1$s را باز کنید و این کد را وارد کنید:\n\n%2$s</string>
+    <string name="tracking_disconnect_question">اتصال %1$s قطع شود؟</string>
+    <string name="tracking_disconnect" formatted="false">قطع اتصال</string>
+    <string name="tracking_unavailable" formatted="false">در این نسخه در دسترس نیست</string>
+    <string name="tracking_failed">اتصال به %1$s ممکن نشد. دوباره امتحان کنید.</string>
+    <string name="tracking_send_question">%1$d ویدیویی که دیده‌شده علامت زدید به %2$s فرستاده شود؟</string>
+    <string name="tracking_send" formatted="false">فرستادن</string>
+    <string name="watched_auto" formatted="false">وقتی تمام شد، دیده‌شده علامت بزن</string>
+    <string name="watched_auto_desc" formatted="false">هنگام اتصال، به Simkl هم می‌گوید تا کجا دیده‌اید</string>
+    <string name="film_mark_watched" formatted="false">علامت دیده‌شده</string>
+    <string name="film_watched" formatted="false">دیده‌شده</string>
+    <string name="film_watched_on">دیده‌شده در %1$s</string>
+    <string name="film_unwatch" formatted="false">برداشتن علامت</string>
+    <string name="watched_percent" formatted="false">دیده‌شده حساب می‌شود از (%)</string>
+    <string name="home_section_recent_online">اخیر (آنلاین)</string>
+    <string name="home_section_recent_here">اخیر (روی این دستگاه)</string>
+    <string name="home_recent_playlist">فهرست پخش</string>
+    <string name="home_time_left">%1$s مانده</string>
+    <string name="pref_recent_here">اخیر در این دستگاه</string>
+    <string name="pref_recent_here_summary">۱۰ ویدیوی آخری که از این دستگاه پخش کردید، زیر اخیر</string>
     <string name="home_section_pinned">دلخواه‌ها</string>
     <string name="home_section_folders">پوشه‌ها</string>
     <string name="home_section_results">نتایج</string>
@@ -528,7 +572,10 @@
     <string name="start_on_last">آخرین ویدیو</string>
     <string name="pref_home_layout">چیدمان</string>
     <string name="home_layout_list">فهرست</string>
-    <string name="home_layout_wall">دیوار تصاویر</string>
+    <string name="home_layout_wall">گالری</string>
+    <string name="home_layout_cards">کارت‌ها</string>
+    <string name="home_layout_cards_desc">کارت‌های بلند، مثل اخیر</string>
+    <string name="home_view">نما</string>
     <string name="home_wall_hint">پوشه را لمس طولانی کنید تا به دلخواه‌ها اضافه شود</string>
     <string name="set_audio">صدا</string>
     <string name="set_storage">ذخیره‌سازی و پشتیبان‌گیری</string>

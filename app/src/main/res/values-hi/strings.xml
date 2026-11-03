@@ -11,18 +11,18 @@
     <string name="onboarding_key_title">TMDB कुंजी जोड़ें</string>
     <string name="onboarding_key_description">सेटिंग यहां हैं। मुफ़्त TMDB कुंजी से ही टाइटल, पोस्टर, सबटाइटल और इंट्रो मार्कर मिलते हैं।</string>
     <string name="open_subtitles">सबटाइटल लोड करें</string>
-    <string name="error_title">यह नहीं चल सका</string>
+    <string name="error_title">इसे चलाया नहीं जा सकता</string>
     <string name="error_share">जानकारी शेयर करें</string>
-    <string name="error_network">प्लेयर फ़ाइल तक नहीं पहुंच सका। कनेक्शन जांचें, और देखें कि लिंक की मियाद खत्म तो नहीं हो गई।</string>
-    <string name="error_http">सर्वर ने अनुरोध ठुकरा दिया। हो सकता है डेब्रिड सेवा के लिंक की मियाद खत्म हो गई हो।</string>
-    <string name="error_missing">फ़ाइल अब वहां नहीं है।</string>
-    <string name="error_permission">प्लेयर को वह फ़ाइल खोलने की अनुमति नहीं है।</string>
-    <string name="error_codec">यहां कुछ भी इस फ़ाइल को डिकोड नहीं कर सकता। दूसरा इंजन आज़माएं, या इंजन को ऑटो पर सेट करें।</string>
-    <string name="error_damaged">फ़ाइल खराब या अधूरी लगती है।</string>
-    <string name="error_drm">यह कॉपी-सुरक्षित है, और यह प्लेयर इसे नहीं चला सकता।</string>
-    <string name="error_unknown">इसे चलाते समय कुछ गड़बड़ हो गई।</string>
+    <string name="error_network">फ़ाइल तक नहीं पहुँच पा रहे। कनेक्शन या लिंक जाँचें।</string>
+    <string name="error_http">सर्वर ने मना कर दिया। हो सकता है लिंक की अवधि खत्म हो गई हो।</string>
+    <string name="error_missing">यह फ़ाइल अब मौजूद नहीं है।</string>
+    <string name="error_permission">इस फ़ाइल को खोलने की अनुमति नहीं है।</string>
+    <string name="error_codec">इस फ़ाइल को डिकोड नहीं किया जा सकता। दूसरा इंजन आज़माएँ।</string>
+    <string name="error_damaged">यह फ़ाइल खराब या अधूरी है।</string>
+    <string name="error_drm">यह वीडियो कॉपी-सुरक्षित है।</string>
+    <string name="error_unknown">अभी नहीं चल रहा। फिर से कोशिश करें।</string>
     <string name="error_details">जानकारी</string>
-    <string name="error_files_missing">Files ऐप बंद है या मौजूद नहीं है</string>
+    <string name="error_files_missing">Files ऐप बंद है या मौजूद नहीं है।</string>
     <string name="request_scope">बाहरी सबटाइटल अपने-आप लोड करने या फ़ोल्डर की अगली फ़ाइल पर जाने के लिए, %s को उस सबसे ऊपरी फ़ोल्डर का ऐक्सेस दें जिसमें आपके वीडियो हैं (जैसे Movies)।</string>
     <string name="delete_query">यह फ़ाइल मिटाएं?</string>
     <string name="delete_confirmation">मिटाएं</string>
@@ -82,7 +82,7 @@
 
 PIN डाले जाने तक फ़ोन पर कुछ नहीं दिखता। नीचे दिया बटन दबाने पर, या यह स्क्रीन छोड़ने पर, पेज बंद हो जाता है।</string>
     <string name="pref_setup_phone_stop">पेज बंद करें</string>
-    <string name="pref_setup_phone_failed">पेज शुरू नहीं हो सका। हो सकता है यह डिवाइस इसकी अनुमति न दे, या किसी नेटवर्क पर न हो — इसके बजाय कुंजियां यहीं डालें।</string>
+    <string name="pref_setup_phone_failed">पेज शुरू नहीं हो सका। इसके बजाय कुंजियाँ यहीं डालें।</string>
     <string name="pref_online_note">जानकारी कार्ड, स्किप मार्कर और सबटाइटल खोज, सबके लिए TMDB कुंजी चाहिए।</string>
     <string name="pref_key_tmdb">TMDB कुंजी</string>
     <string name="pref_key_tmdb_dialog">themoviedb.org → Settings → API पर मुफ़्त मिलती है।</string>
@@ -109,8 +109,8 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="online_search_subtitles">ऑनलाइन सबटाइटल खोजें…</string>
     <string name="subtitle_source_title">सबटाइटल</string>
     <string name="subtitle_source_file">सबटाइटल फ़ाइल लोड करें…</string>
-    <string name="online_needs_tmdb">पहले सेटिंग में TMDB कुंजी जोड़ें — इसी से फ़ाइल का नाम ऐसी चीज़ बनता है जिसके बारे में सबटाइटल स्रोतों से पूछा जा सके।</string>
-    <string name="online_needs_source">कोई सबटाइटल स्रोत सेट नहीं है। सेटिंग में Stremio ऐड-ऑन, या OpenSubtitles, SubDL या Wyzie की कुंजी जोड़ें।</string>
+    <string name="online_needs_tmdb">पहले सेटिंग्स में TMDB कुंजी जोड़ें।</string>
+    <string name="online_needs_source">पहले सेटिंग्स में सबटाइटल स्रोत सेट करें।</string>
     <string name="online_identify_title">यह कौन-सा है?</string>
     <string name="online_searching">खोजा जा रहा है…</string>
     <string name="online_identifying">पहचाना जा रहा है…</string>
@@ -130,7 +130,7 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="recent_remove">‘हालिया’ से हटाएं</string>
     <string name="recent_removed">‘हालिया’ से हटाया गया</string>
     <string name="recent_undo">पहले जैसा करें</string>
-    <string name="recent_pins_full">ज़्यादा से ज़्यादा 3 फ़िल्में पिन हो सकती हैं। पहले कोई एक अनपिन करें।</string>
+    <string name="recent_pins_full">ज़्यादा से ज़्यादा %1$d फ़िल्में पिन हो सकती हैं। पहले कोई एक अनपिन करें।</string>
     <string name="recent_pinned">पिन की गई</string>
     <string name="online_match_prompt_dismiss">अभी नहीं</string>
     <string name="online_no_matches">उस टाइटल के लिए कुछ नहीं मिला</string>
@@ -152,9 +152,9 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="subtitle_menu_search_detail">इस एपिसोड के लिए ऑनलाइन खोजें</string>
     <string name="subtitle_menu_settings_detail">साइज़, जगह, देरी और स्टाइल</string>
     <string name="audio_menu_delay_detail">आवाज़ को तस्वीर के हिसाब से आगे-पीछे करें</string>
-    <string name="capability_title">यह डिवाइस इसे चलाने में अटक सकता है</string>
-    <string name="capability_hard">यहां कोई हार्डवेयर डिकोडर इसे सपोर्ट नहीं करता। तस्वीर अटक सकती है, या आवाज़ चलती रहे और तस्वीर रुक जाए।</string>
-    <string name="capability_impossible">इस डिवाइस पर कुछ भी इसे डिकोड करने का दावा नहीं करता, इसलिए शायद यह चले ही नहीं।</string>
+    <string name="capability_title">यह शायद आसानी से न चले</string>
+    <string name="capability_hard">इसके लिए हार्डवेयर डिकोडर नहीं है। यह अटक सकता है।</string>
+    <string name="capability_impossible">यहाँ कुछ भी इसे डिकोड नहीं करता। शायद यह न चले।</string>
     <string name="capability_continue">फिर भी चलाएं</string>
     <string name="capability_quit">फ़ाइल बंद करें</string>
     <string name="capability_try_other">%1$s आज़माएं</string>
@@ -163,7 +163,7 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="online_season">सीज़न</string>
     <string name="online_episode">एपिसोड</string>
     <string name="online_downloading">डाउनलोड हो रहा है…</string>
-    <string name="online_download_failed">वह सबटाइटल डाउनलोड नहीं हो सका</string>
+    <string name="online_download_failed">वह सबटाइटल डाउनलोड नहीं हुआ। फिर से कोशिश करें।</string>
     <string name="online_download_limit">%1$s की आज की सीमा पूरी हो गई</string>
     <string name="online_download_limit_until">%1$s की सीमा पूरी हो गई। %2$s में और मिलेंगे</string>
     <string name="online_saved_to">लोड हो गया, और %1$s में सेव किया गया</string>
@@ -199,7 +199,7 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="controls_name_repeat">लूप</string>
     <string name="pref_licenses">लाइसेंस</string>
     <string name="pref_licenses_summary">इस ऐप में इस्तेमाल हुए हर लाइसेंस का पूरा टेक्स्ट</string>
-    <string name="licenses_unavailable">यह लाइसेंस टेक्स्ट पढ़ा नहीं जा सका।</string>
+    <string name="licenses_unavailable">यह लाइसेंस पढ़ा नहीं जा सका।</string>
     <string name="intro_next">आगे</string>
     <string name="intro_back">वापस</string>
     <string name="intro_done">हो गया</string>
@@ -225,12 +225,13 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="pref_controls_timeout_summary">सेकंड</string>
     <string name="unlocked">अनलॉक हो गया</string>
     <string name="locked_hint">लॉक है — अनलॉक करने के लिए ताला दबाएं, या तस्वीर को दबाकर रखें</string>
+    <string name="locked_hint_remote">लॉक है। अनलॉक करने के लिए OK दबाकर रखें।</string>
     <string name="pref_lock_hint">कंट्रोल में दिए ताले से स्क्रीन लॉक करें, ताकि गलती से छूने पर कुछ न हो। अनलॉक करने के लिए ताला फिर से दबाएं, या तस्वीर पर कहीं भी उंगली दबाकर रखें, या रिमोट पर OK दबाकर रखें। तस्वीर पर गलती से टैप करने पर कुछ नहीं होता, इसलिए लॉक गलती से नहीं खुल सकता। लॉक होने पर भी आवाज़ बटन काम करते हैं।</string>
     <string name="pref_overlay_delay">कार्ड इतनी देर बाद दिखे</string>
     <string name="pref_overlay_delay_summary">दिखने से पहले कितने सेकंड पॉज़ रहे</string>
     <string name="pref_prefill">फ़ाइल के नाम से खोज भरें</string>
     <string name="button_lock">स्क्रीन लॉक करें</string>
-    <string name="engine_fallback_mpv">Media3 इसे नहीं चला सका — mpv पर स्विच किया गया</string>
+    <string name="engine_fallback_mpv">Media3 इसे नहीं चला सकता। mpv पर बदल दिया।</string>
     <string name="engine_switch_file_type">यह फ़ाइल टाइप Media3 पर काम नहीं करता, mpv पर स्विच किया गया</string>
     <string name="engine_switch_video_format">यह वीडियो फ़ॉर्मैट Media3 पर काम नहीं करता, mpv पर स्विच किया गया</string>
     <string name="engine_switch_audio_format">यह ऑडियो फ़ॉर्मैट Media3 पर काम नहीं करता, mpv पर स्विच किया गया</string>
@@ -241,14 +242,14 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="pref_engine_auto">ऑटो</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">mpv के लिए Android 8.0 या नया वर्शन चाहिए</string>
-    <string name="engine_failed_title">यह इंजन फ़ाइल नहीं चला सका</string>
-    <string name="engine_failed_message">%1$s इसे नहीं चला सका। %2$s शायद चला सकता है — इसीलिए दो इंजन हैं।</string>
+    <string name="engine_failed_title">यह फ़ाइल नहीं चल सकती</string>
+    <string name="engine_failed_message">%1$s इसे नहीं चला सकता। %2$s आज़माएँ।</string>
     <string name="engine_failed_try">%1$s आज़माएं</string>
     <string name="engine_failed_auto">हमेशा ऑटो इस्तेमाल करें</string>
     <string name="engine_no_picture_title">तस्वीर नहीं</string>
-    <string name="engine_no_picture_message">%1$s आवाज़ चला रहा है पर तस्वीर नहीं — आमतौर पर ऐसा तब होता है जब Dolby Vision डिकोडर के बिना वाले डिवाइस पर Dolby Vision चलाया जाए। %2$s इसे दिखा सकता है।</string>
-    <string name="engine_no_picture_switched">Media3 पर तस्वीर नहीं — mpv पर स्विच किया गया</string>
-    <string name="engine_no_picture_either">किसी भी इंजन पर तस्वीर नहीं — यह डिवाइस यह वीडियो नहीं दिखा सकता</string>
+    <string name="engine_no_picture_message">%1$s आवाज़ चला रहा है पर तस्वीर नहीं (अक्सर Dolby Vision)। %2$s आज़माएँ।</string>
+    <string name="engine_no_picture_switched">Media3 पर तस्वीर नहीं। mpv पर बदल दिया।</string>
+    <string name="engine_no_picture_either">यह डिवाइस इस वीडियो की तस्वीर नहीं दिखा सकता।</string>
     <string name="pref_engine_note">ऑटो, Media3 से शुरू करता है और जब Media3 कोई फ़ाइल नहीं चला पाता, तो उसे mpv पर ले जाता है।</string>
     <string name="pref_media3_only">सिर्फ़ Media3 — mpv इसका इस्तेमाल नहीं करता</string>
     <string name="pref_adaptive_buffering">अडैप्टिव बफ़रिंग</string>
@@ -257,7 +258,7 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="pref_subtitle_folder_default">Downloads / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">फ़ोल्डर चुनें</string>
     <string name="pref_subtitle_folder_clear">डिफ़ॉल्ट फ़ोल्डर इस्तेमाल करें</string>
-    <string name="pref_subtitle_folder_failed">वह फ़ोल्डर इस्तेमाल नहीं हो सका</string>
+    <string name="pref_subtitle_folder_failed">उस फ़ोल्डर का इस्तेमाल नहीं हो सकता।</string>
     <string name="resume_title">पिछला वीडियो चलाएं?</string>
     <string name="resume_accept">चलाएं</string>
     <string name="resume_decline">अभी नहीं</string>
@@ -270,7 +271,7 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="open_url_title">नेटवर्क URL</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">चलाएं</string>
-    <string name="open_url_invalid">यह ऐसा URL नहीं लगता जिसे प्लेयर खोल सके</string>
+    <string name="open_url_invalid">यह ऐसा लिंक नहीं जिसे प्लेयर खोल सके।</string>
     <string name="pref_folders">फ़ोल्डर जिन्हें प्लेयर पढ़ सकता है</string>
     <string name="pref_folders_note">अगला एपिसोड, और फ़िल्म के पास सेव किया सबटाइटल ढूंढने के लिए ज़रूरी। जितने फ़ोल्डरों में आप फ़िल्में रखते हैं, सब जोड़ें।</string>
     <string name="pref_folders_empty">अभी कोई नहीं। इसके बिना प्लेयर सिर्फ़ वही एक फ़ाइल देखता है जो आपने खोली।</string>
@@ -278,7 +279,7 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="pref_folders_remove">इस फ़ोल्डर को पढ़ना बंद करने के लिए टैप करें</string>
     <string name="pref_folders_remove_confirm">प्लेयर अब यहां अगला एपिसोड या सबटाइटल नहीं खोजेगा।</string>
     <string name="pref_folders_remove_confirm_yes">हटाएं</string>
-    <string name="pref_folders_failed">Android ने वह अनुमति नहीं रखी। फ़ोल्डर फिर से चुनकर देखें।</string>
+    <string name="pref_folders_failed">Android ने अनुमति नहीं रखी। फ़ोल्डर फिर से चुनें।</string>
     <string name="pref_folders_no_picker">इस डिवाइस में फ़ोल्डर चुनने का टूल नहीं है।</string>
     <string name="pref_folders_summary_empty">अभी कोई फ़ोल्डर नहीं</string>
     <string name="error_code">कोड दिखाएं</string>
@@ -311,7 +312,7 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="update_install">डाउनलोड और इंस्टॉल करें</string>
     <string name="update_open">पेज खोलें</string>
     <string name="update_downloading">डाउनलोड हो रहा है…</string>
-    <string name="update_failed">अपडेट की जांच नहीं हो सकी।</string>
+    <string name="update_failed">अभी अपडेट जाँचे नहीं जा सकते।</string>
     <string name="update_none_title">आपका ऐप अप-टू-डेट है</string>
     <string name="update_none">आपके पास %1$s है। सबसे नया प्रकाशित वर्शन %2$s है।</string>
     <string name="update_none_published">अभी तक कुछ भी प्रकाशित नहीं हुआ है। आपके पास %1$s है।</string>
@@ -358,7 +359,7 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="pref_backup_exported">%1$d चीज़ें एक्सपोर्ट की गईं</string>
     <string name="pref_backup_imported">%1$d चीज़ें इंपोर्ट की गईं। कुछ के लिए प्लेयर फिर से खोलना होगा।</string>
     <string name="pref_backup_not_ours">यह Just Player Pro की बैकअप फ़ाइल नहीं है</string>
-    <string name="pref_backup_failed">वह फ़ाइल पढ़ी नहीं जा सकी</string>
+    <string name="pref_backup_failed">वह फ़ाइल पढ़ी नहीं जा सकी।</string>
     <string name="pref_backup_nothing">कुछ भी नहीं चुना गया</string>
     <string name="pref_dangerous_header">बेहतर सेटिंग</string>
     <string name="pref_dangerous_warning">इनसे उन फ़ाइलों का प्लेबैक बिगड़ सकता है जो वैसे ठीक चलती हैं।</string>
@@ -375,11 +376,12 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="pref_custom_subtitle_font">कस्टम फ़ॉन्ट</string>
     <string name="pref_choose_custom_font">फ़ॉन्ट चुनें</string>
     <string name="pref_custom_subtitle_font_not_set">कोई कस्टम फ़ॉन्ट नहीं चुना गया</string>
-    <string name="pref_custom_subtitle_font_failed">फ़ॉन्ट लोड नहीं हो सका</string>
+    <string name="pref_custom_subtitle_font_failed">वह फ़ॉन्ट लोड नहीं हो सका।</string>
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">चालू</string>
     <string name="osd_item_boolean_false">बंद</string>
     <string name="osd_sleep_title">स्लीप टाइमर</string>
+    <string name="osd_brightness_title">चमक</string>
     <string name="osd_sleep_off">बंद</string>
     <string name="osd_sleep_end">फ़ाइल खत्म होने पर</string>
     <string name="osd_sleep_minutes">%1$d मिनट</string>
@@ -431,14 +433,14 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="pref_addon_no_subtitles_resource">वह ऐड-ऑन सबटाइटल नहीं देता।</string>
     <string name="pref_addon_needs_configuration">उस ऐड-ऑन को पहले कॉन्फ़िगर करना होगा — उसका configure पेज इस्तेमाल करें और जो URL वह दे, उसे चिपकाएं।</string>
     <string name="pref_addon_fetch_failed">ऐड-ऑन ने सबटाइटल का अनुरोध ठुकरा दिया।</string>
-    <string name="pref_addon_no_subtitles">ऐड-ऑन ने ऐसी फ़िल्म के लिए कुछ नहीं दिया जिसके सबटाइटल हर जगह मिलते हैं, इसलिए आपकी फ़ाइलों के लिए भी वह कुछ नहीं देगा।</string>
+    <string name="pref_addon_no_subtitles">इस ऐडऑन को एक मशहूर फ़िल्म के लिए कुछ नहीं मिला, तो आपकी फ़ाइलों के लिए भी नहीं मिलेगा।</string>
     <string name="pref_addon_no_usable_url">ऐड-ऑन ने ऐसे सबटाइटल दिए जिनमें कोई काम का लिंक नहीं है।</string>
     <string name="pref_addon_not_downloadable">ऐड-ऑन के लिंक से कोई सबटाइटल फ़ाइल नहीं मिली।</string>
     <string name="key_check_cleared">हटा दी गई</string>
     <string name="key_check_saved">सेव की गई</string>
     <string name="key_check_accepted">%1$s ने कुंजी स्वीकार की</string>
     <string name="key_check_rejected">%1$s ने कुंजी अस्वीकार की</string>
-    <string name="key_check_rate_limited">%1$s अनुरोध सीमित कर रहा है; थोड़ी देर में फिर कोशिश करें</string>
+    <string name="key_check_rate_limited">%1$s व्यस्त है। कुछ मिनट बाद फिर कोशिश करें।</string>
     <string name="key_check_no_answer">%1$s से कोई जवाब नहीं — कनेक्शन जांचें</string>
     <string name="key_check_http">%1$s ने HTTP %2$d जवाब दिया</string>
     <string name="setup_enter_pin">प्लेयर पर दिखाया गया PIN डालें।</string>
@@ -504,6 +506,48 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="home_pinned">पसंदीदा में जोड़ा गया</string>
     <string name="home_unpinned">पसंदीदा से हटाया गया</string>
     <string name="home_section_recent">हालिया</string>
+    <string name="pref_folder_look">फ़ोल्डर की तस्वीरें</string>
+    <string name="folder_look_mosaic">मोज़ेक</string>
+    <string name="folder_look_mosaic_desc">फ़ोल्डर के हिसाब से: एक तस्वीर, दो साथ-साथ, या ग्रिड</string>
+    <string name="folder_look_folder">सादा फ़ोल्डर</string>
+    <string name="folder_look_folder_desc">बिना तस्वीरों के: थीम के रंग का फ़ोल्डर और उसके वीडियो की कुल अवधि</string>
+    <string name="folder_look_centred">बीच में</string>
+    <string name="folder_look_centred_desc">पूरी तस्वीर, हालिया जितने बड़े कार्ड के बीच में</string>
+    <string name="folder_look_square">चौकोर</string>
+    <string name="folder_look_square_desc">चौकोर तस्वीर, ताकि स्क्रीन पर ज़्यादा फ़ोल्डर आएँ</string>
+    <string name="pref_better_frames">बेहतर वीडियो तस्वीरें</string>
+    <string name="pref_better_frames_summary">शुरुआत की जगह हर वीडियो के दसवें हिस्से से ली गई साफ़ तस्वीरें। बड़े फ़ोल्डर को पहली बार खोलना धीमा होगा</string>
+    <string name="film_recent_picture">हालिया में तस्वीर</string>
+    <string name="film_recent_poster">पोस्टर</string>
+    <string name="film_recent_frame">वीडियो का फ़्रेम</string>
+    <string name="film_forget">फ़िल्म की जानकारी हटाएं</string>
+    <string name="pref_integrations_header" formatted="false">इंटीग्रेशन</string>
+    <string name="pref_tracking_header" formatted="false">देखे गए की ट्रैकिंग</string>
+    <string name="tracking_not_connected" formatted="false">कनेक्ट नहीं है। कनेक्ट करने के लिए टैप करें</string>
+    <string name="tracking_connected">%1$s के रूप में कनेक्टेड। डिस्कनेक्ट करने के लिए टैप करें</string>
+    <string name="tracking_connected_toast">%1$s से कनेक्ट हो गया</string>
+    <string name="tracking_connect_title">%1$s कनेक्ट करें</string>
+    <string name="tracking_open_page">पेज खोलें</string>
+    <string name="tracking_code_message">किसी भी डिवाइस पर %1$s खोलें और यह कोड डालें:\n\n%2$s</string>
+    <string name="tracking_disconnect_question">%1$s डिस्कनेक्ट करें?</string>
+    <string name="tracking_disconnect" formatted="false">डिस्कनेक्ट करें</string>
+    <string name="tracking_unavailable" formatted="false">इस वर्ज़न में उपलब्ध नहीं</string>
+    <string name="tracking_failed">%1$s से कनेक्ट नहीं हो सका। फिर से कोशिश करें।</string>
+    <string name="tracking_send_question">देखे गए के रूप में मार्क किए %1$d वीडियो %2$s को भेजें?</string>
+    <string name="tracking_send" formatted="false">भेजें</string>
+    <string name="watched_auto" formatted="false">खत्म होने पर देखा हुआ मार्क करें</string>
+    <string name="watched_auto_desc" formatted="false">कनेक्ट होने पर Simkl को भी बताता है कि आप कहाँ तक पहुँचे</string>
+    <string name="film_mark_watched" formatted="false">देखा हुआ मार्क करें</string>
+    <string name="film_watched" formatted="false">देख लिया</string>
+    <string name="film_watched_on">%1$s पर देखा गया</string>
+    <string name="film_unwatch" formatted="false">न देखा हुआ करें</string>
+    <string name="watched_percent" formatted="false">इतने पर देखा हुआ माना जाए (%)</string>
+    <string name="home_section_recent_online">हालिया (ऑनलाइन)</string>
+    <string name="home_section_recent_here">हालिया (इस डिवाइस पर)</string>
+    <string name="home_recent_playlist">प्लेलिस्ट</string>
+    <string name="home_time_left">%1$s बाकी</string>
+    <string name="pref_recent_here">इस डिवाइस पर हाल के</string>
+    <string name="pref_recent_here_summary">इस डिवाइस से चलाए गए आखिरी 10 वीडियो, हाल के के नीचे</string>
     <string name="home_section_pinned">पसंदीदा</string>
     <string name="home_section_folders">फ़ोल्डर</string>
     <string name="home_section_results">नतीजे</string>
@@ -528,7 +572,10 @@ PIN डाले जाने तक फ़ोन पर कुछ नहीं 
     <string name="start_on_last">पिछला वीडियो</string>
     <string name="pref_home_layout">लेआउट</string>
     <string name="home_layout_list">सूची</string>
-    <string name="home_layout_wall">तस्वीरों की दीवार</string>
+    <string name="home_layout_wall">गैलरी</string>
+    <string name="home_layout_cards">कार्ड</string>
+    <string name="home_layout_cards_desc">हाल के जैसे लंबे कार्ड</string>
+    <string name="home_view">व्यू</string>
     <string name="home_wall_hint">किसी फ़ोल्डर को पसंदीदा में जोड़ने के लिए उसे दबाकर रखें</string>
     <string name="set_audio">ऑडियो</string>
     <string name="set_storage">स्टोरेज और बैकअप</string>

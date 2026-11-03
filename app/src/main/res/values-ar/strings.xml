@@ -11,18 +11,18 @@
     <string name="onboarding_key_title">أضف مفتاح TMDB</string>
     <string name="onboarding_key_description">الإعدادات هنا. مفتاح TMDB المجاني هو ما يتيح العثور على العناوين والملصقات والترجمات وعلامات المقدّمة.</string>
     <string name="open_subtitles">تحميل الترجمة</string>
-    <string name="error_title">تعذّر تشغيل هذا الملف</string>
+    <string name="error_title">تعذّر تشغيل هذا</string>
     <string name="error_share">مشاركة التفاصيل</string>
-    <string name="error_network">تعذّر على المشغّل الوصول إلى الملف. تحقّق من الاتصال، ومن أن صلاحية الرابط لم تنتهِ.</string>
-    <string name="error_http">رفض الخادم الطلب. ربما انتهت صلاحية رابط من خدمة debrid.</string>
-    <string name="error_missing">لم يعد الملف موجودًا.</string>
-    <string name="error_permission">لا يملك المشغّل إذنًا بفتح هذا الملف.</string>
-    <string name="error_codec">لا شيء هنا يستطيع فك ترميز هذا الملف. جرّب المحرك الآخر، أو اضبط المحرك على «تلقائي».</string>
-    <string name="error_damaged">يبدو أن الملف تالف أو غير مكتمل.</string>
-    <string name="error_drm">هذا المحتوى محمي من النسخ، وهذا المشغّل لا يدعم ذلك.</string>
-    <string name="error_unknown">حدث خطأ أثناء تشغيل هذا المحتوى.</string>
+    <string name="error_network">تعذّر الوصول إلى الملف. تحقق من الاتصال أو الرابط.</string>
+    <string name="error_http">رفض الخادم الطلب. ربما انتهت صلاحية الرابط.</string>
+    <string name="error_missing">هذا الملف لم يعد موجودًا.</string>
+    <string name="error_permission">لا يوجد إذن لفتح هذا الملف.</string>
+    <string name="error_codec">تعذّر فك ترميز هذا الملف. جرّب المحرك الآخر.</string>
+    <string name="error_damaged">هذا الملف تالف أو غير مكتمل.</string>
+    <string name="error_drm">هذا الفيديو محمي من النسخ.</string>
+    <string name="error_unknown">تعذّر التشغيل الآن. حاول مرة أخرى.</string>
     <string name="error_details">التفاصيل</string>
-    <string name="error_files_missing">تطبيق Files غير مفعّل أو غير موجود</string>
+    <string name="error_files_missing">تطبيق الملفات متوقف أو غير موجود.</string>
     <string name="request_scope">لتحميل الترجمة الخارجية تلقائيًا أو للانتقال إلى الملف التالي في المجلد، امنح %s إذن الوصول إلى المجلد الأعلى الذي يحتوي على فيديوهاتك (مثل Movies).</string>
     <string name="delete_query">حذف هذا الملف؟</string>
     <string name="delete_confirmation">حذف</string>
@@ -82,7 +82,7 @@
 
 لن يظهر أي شيء على الهاتف قبل إدخال رقم PIN. تتوقف الصفحة عند الضغط على الزر أدناه، أو عند مغادرة هذه الشاشة.</string>
     <string name="pref_setup_phone_stop">إيقاف الصفحة</string>
-    <string name="pref_setup_phone_failed">تعذّر تشغيل الصفحة. ربما لا يسمح هذا الجهاز بذلك، أو أنه غير متصل بشبكة — أدخل المفاتيح هنا بدلًا من ذلك.</string>
+    <string name="pref_setup_phone_failed">تعذّر تشغيل الصفحة. أدخل المفاتيح هنا بدلًا من ذلك.</string>
     <string name="pref_online_note">تحتاج بطاقة المعلومات وعلامات التخطي والبحث عن الترجمة جميعها إلى مفتاح TMDB.</string>
     <string name="pref_key_tmdb">مفتاح TMDB</string>
     <string name="pref_key_tmdb_dialog">مجاني من themoviedb.org → Settings → API.</string>
@@ -109,8 +109,8 @@
     <string name="online_search_subtitles">البحث عن ترجمة على الإنترنت…</string>
     <string name="subtitle_source_title">الترجمة</string>
     <string name="subtitle_source_file">تحميل ملف ترجمة…</string>
-    <string name="online_needs_tmdb">أضف مفتاح TMDB في الإعدادات أولًا — فهو ما يحوّل اسم الملف إلى شيء يمكن سؤال مصادر الترجمة عنه.</string>
-    <string name="online_needs_source">لم يتم إعداد أي مصدر للترجمة. أضف إضافة Stremio، أو مفتاحًا لـ OpenSubtitles أو SubDL أو Wyzie، في الإعدادات.</string>
+    <string name="online_needs_tmdb">أضف مفتاح TMDB في الإعدادات أولًا.</string>
+    <string name="online_needs_source">اضبط مصدرًا للترجمات في الإعدادات أولًا.</string>
     <string name="online_identify_title">أيٌّ منها هذا؟</string>
     <string name="online_searching">جارٍ البحث…</string>
     <string name="online_identifying">جارٍ التعرّف…</string>
@@ -130,7 +130,7 @@
     <string name="recent_remove">إزالة من الأخيرة</string>
     <string name="recent_removed">تمت الإزالة من الأخيرة</string>
     <string name="recent_undo">تراجع</string>
-    <string name="recent_pins_full">يمكن تثبيت 3 أفلام كحد أقصى. ألغِ تثبيت أحدها أولًا.</string>
+    <string name="recent_pins_full">الحد الأقصى للأفلام المثبتة هو %1$d. ألغِ تثبيت أحدها أولًا.</string>
     <string name="recent_pinned">مثبّت</string>
     <string name="online_match_prompt_dismiss">ليس الآن</string>
     <string name="online_no_matches">لا نتائج لهذا العنوان</string>
@@ -152,9 +152,9 @@
     <string name="subtitle_menu_search_detail">ابحث عن ترجمة على الإنترنت لهذه الحلقة</string>
     <string name="subtitle_menu_settings_detail">الحجم والموضع والتأخير والنمط</string>
     <string name="audio_menu_delay_detail">تقديم الصوت أو تأخيره عن الصورة</string>
-    <string name="capability_title">قد يجد هذا الجهاز صعوبة في تشغيل هذا</string>
-    <string name="capability_hard">لا توجد هنا أداة فك ترميز عبر الأجهزة تدعمه. قد تتقطّع الصورة، أو تتوقف بينما يستمر الصوت.</string>
-    <string name="capability_impossible">لا شيء على هذا الجهاز يدّعي القدرة على فك ترميزه، لذا قد لا يعمل إطلاقًا.</string>
+    <string name="capability_title">قد لا يعمل هذا بسلاسة</string>
+    <string name="capability_hard">لا يوجد مفكك ترميز عتادي لهذا. قد يتقطع.</string>
+    <string name="capability_impossible">لا شيء هنا يفك ترميز هذا. قد لا يعمل.</string>
     <string name="capability_continue">تشغيل على أي حال</string>
     <string name="capability_quit">إغلاق الملف</string>
     <string name="capability_try_other">تجربة %1$s</string>
@@ -163,7 +163,7 @@
     <string name="online_season">الموسم</string>
     <string name="online_episode">الحلقة</string>
     <string name="online_downloading">جارٍ التنزيل…</string>
-    <string name="online_download_failed">تعذّر تنزيل هذه الترجمة</string>
+    <string name="online_download_failed">تعذّر تنزيل هذه الترجمة. حاول مرة أخرى.</string>
     <string name="online_download_limit">بلغت الحد اليومي في %1$s</string>
     <string name="online_download_limit_until">بلغت حد %1$s. المزيد بعد %2$s</string>
     <string name="online_saved_to">تم التحميل والحفظ في %1$s</string>
@@ -199,7 +199,7 @@
     <string name="controls_name_repeat">تكرار</string>
     <string name="pref_licenses">التراخيص</string>
     <string name="pref_licenses_summary">النص الكامل لكل ترخيص بُني عليه هذا التطبيق</string>
-    <string name="licenses_unavailable">تعذّرت قراءة نص هذا الترخيص.</string>
+    <string name="licenses_unavailable">تعذّرت قراءة هذا الترخيص.</string>
     <string name="intro_next">التالي</string>
     <string name="intro_back">رجوع</string>
     <string name="intro_done">تم</string>
@@ -225,12 +225,13 @@
     <string name="pref_controls_timeout_summary">بالثواني</string>
     <string name="unlocked">تم فتح القفل</string>
     <string name="locked_hint">مقفل — اضغط على رمز القفل، أو اضغط مطولًا على الصورة، لفتح القفل</string>
+    <string name="locked_hint_remote">مقفل. اضغط مطولًا على OK لإلغاء القفل.</string>
     <string name="pref_lock_hint">اقفل الشاشة لمنع اللمسات العرضية باستخدام رمز القفل في أزرار التحكم. لفتح القفل، اضغط على رمز القفل مجددًا، أو اضغط مطولًا بإصبعك في أي مكان على الصورة، أو اضغط مطولًا على زر OK في جهاز التحكم عن بُعد. لا تؤدي النقرة العابرة على الصورة إلى أي شيء، لذا لا يمكن فتح القفل عن طريق الخطأ. تظل أزرار الصوت تعمل أثناء القفل.</string>
     <string name="pref_overlay_delay">تظهر البطاقة بعد</string>
     <string name="pref_overlay_delay_summary">ثوانٍ من الإيقاف قبل ظهورها</string>
     <string name="pref_prefill">ملء البحث من اسم الملف</string>
     <string name="button_lock">قفل الشاشة</string>
-    <string name="engine_fallback_mpv">تعذّر على Media3 تشغيل هذا — تم التبديل إلى mpv</string>
+    <string name="engine_fallback_mpv">تعذّر على Media3 تشغيل هذا. تم التبديل إلى mpv.</string>
     <string name="engine_switch_file_type">نوع الملف هذا غير مدعوم في Media3، تم التبديل إلى mpv</string>
     <string name="engine_switch_video_format">تنسيق الفيديو هذا غير مدعوم في Media3، تم التبديل إلى mpv</string>
     <string name="engine_switch_audio_format">تنسيق الصوت هذا غير مدعوم في Media3، تم التبديل إلى mpv</string>
@@ -241,14 +242,14 @@
     <string name="pref_engine_auto">تلقائي</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">يحتاج mpv إلى Android 8.0 أو أحدث</string>
-    <string name="engine_failed_title">تعذّر على هذا المحرك تشغيل الملف</string>
-    <string name="engine_failed_message">تعذّر على %1$s تشغيل هذا. ومن المرجّح جدًا أن ينجح %2$s — ولهذا يوجد محرّكان.</string>
+    <string name="engine_failed_title">تعذّر تشغيل هذا الملف</string>
+    <string name="engine_failed_message">تعذّر على %1$s تشغيل هذا. جرّب %2$s.</string>
     <string name="engine_failed_try">تجربة %1$s</string>
     <string name="engine_failed_auto">«تلقائي» دائمًا</string>
     <string name="engine_no_picture_title">لا توجد صورة</string>
-    <string name="engine_no_picture_message">يشغّل %1$s الصوت دون الصورة — غالبًا بسبب Dolby Vision على جهاز لا يملك أداة فك ترميز Dolby Vision. قد يعرضها %2$s.</string>
-    <string name="engine_no_picture_switched">لا صورة في Media3 — تم التبديل إلى mpv</string>
-    <string name="engine_no_picture_either">لا صورة في أيٍّ من المحرّكين — لا يمكن لهذا الجهاز عرض هذا الفيديو</string>
+    <string name="engine_no_picture_message">يشغّل %1$s الصوت دون صورة (غالبًا Dolby Vision). جرّب %2$s.</string>
+    <string name="engine_no_picture_switched">لا صورة في Media3. تم التبديل إلى mpv.</string>
+    <string name="engine_no_picture_either">لا يستطيع هذا الجهاز عرض صورة هذا الفيديو.</string>
     <string name="pref_engine_note">يبدأ الوضع التلقائي بـ Media3 وينقل الملف إلى mpv عندما يتعذّر على Media3 تشغيله.</string>
     <string name="pref_media3_only">خاص بـ Media3 — لا يستخدمه mpv</string>
     <string name="pref_adaptive_buffering">تخزين مؤقت تكيّفي</string>
@@ -257,7 +258,7 @@
     <string name="pref_subtitle_folder_default">التنزيلات / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">اختيار مجلد</string>
     <string name="pref_subtitle_folder_clear">استخدام المجلد الافتراضي</string>
-    <string name="pref_subtitle_folder_failed">تعذّر استخدام هذا المجلد</string>
+    <string name="pref_subtitle_folder_failed">تعذّر استخدام هذا المجلد.</string>
     <string name="resume_title">تشغيل آخر فيديو؟</string>
     <string name="resume_accept">تشغيل</string>
     <string name="resume_decline">ليس الآن</string>
@@ -270,7 +271,7 @@
     <string name="open_url_title">رابط من الشبكة</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">تشغيل</string>
-    <string name="open_url_invalid">لا يبدو هذا رابطًا يمكن للمشغّل فتحه</string>
+    <string name="open_url_invalid">هذا ليس رابطًا يمكن للمشغّل فتحه.</string>
     <string name="pref_folders">مجلدات يمكن للمشغّل قراءتها</string>
     <string name="pref_folders_note">لازمة للعثور على الحلقة التالية، وعلى ترجمة محفوظة بجانب الفيلم. أضف كل المجلدات التي تحتفظ فيها بأفلامك.</string>
     <string name="pref_folders_empty">لا يوجد أي مجلد بعد. ومن دونه لا يرى المشغّل إلا الملف الذي فتحته.</string>
@@ -278,7 +279,7 @@
     <string name="pref_folders_remove">انقر لإيقاف قراءة هذا المجلد</string>
     <string name="pref_folders_remove_confirm">لن يبحث المشغّل هنا بعد الآن عن الحلقة التالية أو عن الترجمة.</string>
     <string name="pref_folders_remove_confirm_yes">إزالة</string>
-    <string name="pref_folders_failed">لم يحتفظ Android بهذا الإذن. جرّب اختيار المجلد مرة أخرى.</string>
+    <string name="pref_folders_failed">لم يحتفظ Android بالإذن. اختر المجلد مرة أخرى.</string>
     <string name="pref_folders_no_picker">لا يوفّر هذا الجهاز أداة لاختيار المجلدات.</string>
     <string name="pref_folders_summary_empty">لا مجلدات بعد</string>
     <string name="error_code">عرض رمز الخطأ</string>
@@ -311,7 +312,7 @@
     <string name="update_install">التنزيل والتثبيت</string>
     <string name="update_open">فتح الصفحة</string>
     <string name="update_downloading">جارٍ التنزيل…</string>
-    <string name="update_failed">تعذّر البحث عن تحديث.</string>
+    <string name="update_failed">تعذّر التحقق من التحديثات الآن.</string>
     <string name="update_none_title">لديك أحدث إصدار</string>
     <string name="update_none">لديك %1$s. وأحدث إصدار منشور هو %2$s.</string>
     <string name="update_none_published">لم يُنشر أي إصدار بعد. لديك %1$s.</string>
@@ -370,7 +371,7 @@
     <string name="pref_backup_exported">العناصر المُصدَّرة: %1$d</string>
     <string name="pref_backup_imported">العناصر المستورَدة: %1$d. يحتاج بعضها إلى إعادة فتح المشغّل.</string>
     <string name="pref_backup_not_ours">هذا الملف ليس نسخة احتياطية من Just Player Pro</string>
-    <string name="pref_backup_failed">تعذّرت قراءة هذا الملف</string>
+    <string name="pref_backup_failed">تعذّرت قراءة هذا الملف.</string>
     <string name="pref_backup_nothing">لم يتم اختيار أي شيء</string>
     <string name="pref_dangerous_header">الإعدادات المتقدمة</string>
     <string name="pref_dangerous_warning">قد تتسبب هذه الخيارات في تعطيل تشغيل ملفات تعمل بشكل طبيعي.</string>
@@ -387,11 +388,12 @@
     <string name="pref_custom_subtitle_font">خط مخصص</string>
     <string name="pref_choose_custom_font">اختيار الخط</string>
     <string name="pref_custom_subtitle_font_not_set">لم يتم اختيار خط مخصص</string>
-    <string name="pref_custom_subtitle_font_failed">تعذّر تحميل الخط</string>
+    <string name="pref_custom_subtitle_font_failed">تعذّر تحميل هذا الخط.</string>
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">تشغيل</string>
     <string name="osd_item_boolean_false">إيقاف</string>
     <string name="osd_sleep_title">مؤقت النوم</string>
+    <string name="osd_brightness_title">السطوع</string>
     <string name="osd_sleep_off">إيقاف</string>
     <string name="osd_sleep_end">نهاية الملف</string>
     <string name="osd_sleep_minutes">%1$d دقيقة</string>
@@ -443,14 +445,14 @@
     <string name="pref_addon_no_subtitles_resource">هذه الإضافة لا توفّر ترجمات.</string>
     <string name="pref_addon_needs_configuration">يجب إعداد هذه الإضافة أولًا — استخدم صفحة إعدادها والصق الرابط الذي تمنحك إياه.</string>
     <string name="pref_addon_fetch_failed">رفضت الإضافة طلب ترجمة.</string>
-    <string name="pref_addon_no_subtitles">لم تُرجع الإضافة شيئًا لفيلم تتوفر له ترجمات في كل مكان، لذا لن تُرجع شيئًا لملفاتك أيضًا.</string>
+    <string name="pref_addon_no_subtitles">لم تجد هذه الإضافة شيئًا لفيلم معروف، فلن تجد شيئًا لملفاتك أيضًا.</string>
     <string name="pref_addon_no_usable_url">أرجعت الإضافة ترجمات بلا روابط صالحة.</string>
     <string name="pref_addon_not_downloadable">لم تقدّم روابط الإضافة أي ملف ترجمة.</string>
     <string name="key_check_cleared">تم المحو</string>
     <string name="key_check_saved">تم الحفظ</string>
     <string name="key_check_accepted">قبِل %1$s المفتاح</string>
     <string name="key_check_rejected">رفض %1$s المفتاح</string>
-    <string name="key_check_rate_limited">يحدّ %1$s من الطلبات؛ أعد المحاولة بعد قليل</string>
+    <string name="key_check_rate_limited">%1$s مشغول. حاول مرة أخرى بعد بضع دقائق.</string>
     <string name="key_check_no_answer">لا رد من %1$s — تحقّق من الاتصال</string>
     <string name="key_check_http">ردّ %1$s برمز HTTP %2$d</string>
     <string name="setup_enter_pin">أدخل رقم PIN الظاهر على المشغّل.</string>
@@ -516,6 +518,48 @@
     <string name="home_pinned">تمت الإضافة إلى المفضّلة</string>
     <string name="home_unpinned">تمت الإزالة من المفضّلة</string>
     <string name="home_section_recent">الأخيرة</string>
+    <string name="pref_folder_look">صور المجلدات</string>
+    <string name="folder_look_mosaic">فسيفساء</string>
+    <string name="folder_look_mosaic_desc">تناسب المجلد: صورة واحدة أو اثنتان جنبًا إلى جنب أو شبكة</string>
+    <string name="folder_look_folder">مجلد بسيط</string>
+    <string name="folder_look_folder_desc">بلا صور: مجلد بلون السمة ومدة فيديوهاته</string>
+    <string name="folder_look_centred">في الوسط</string>
+    <string name="folder_look_centred_desc">الصورة كاملة في وسط بطاقة بحجم بطاقات الأخيرة</string>
+    <string name="folder_look_square">مربّع</string>
+    <string name="folder_look_square_desc">صورة مربعة لتتسع الشاشة لمجلدات أكثر</string>
+    <string name="pref_better_frames">صور فيديو أوضح</string>
+    <string name="pref_better_frames_summary">صور أوضح من عُشر الفيديو بدل بدايته. أول فتح لمجلد كبير أبطأ</string>
+    <string name="film_recent_picture">الصورة في الأخيرة</string>
+    <string name="film_recent_poster">الملصق</string>
+    <string name="film_recent_frame">لقطة من الفيديو</string>
+    <string name="film_forget">إزالة تفاصيل الفيلم</string>
+    <string name="pref_integrations_header" formatted="false">عمليات الربط</string>
+    <string name="pref_tracking_header" formatted="false">تتبع المشاهدة</string>
+    <string name="tracking_not_connected" formatted="false">غير متصل. انقر للاتصال</string>
+    <string name="tracking_connected">متصل باسم %1$s. انقر لقطع الاتصال</string>
+    <string name="tracking_connected_toast">تم الاتصال بـ %1$s</string>
+    <string name="tracking_connect_title">ربط %1$s</string>
+    <string name="tracking_open_page">افتح الصفحة</string>
+    <string name="tracking_code_message">على أي جهاز، افتح %1$s وأدخل هذا الرمز:\n\n%2$s</string>
+    <string name="tracking_disconnect_question">قطع الاتصال بـ %1$s؟</string>
+    <string name="tracking_disconnect" formatted="false">قطع الاتصال</string>
+    <string name="tracking_unavailable" formatted="false">غير متاح في هذا الإصدار</string>
+    <string name="tracking_failed">تعذّر الاتصال بـ %1$s. حاول مجددًا.</string>
+    <string name="tracking_send_question">إرسال %1$d من الفيديوهات التي حددتها كمشاهدة إلى %2$s؟</string>
+    <string name="tracking_send" formatted="false">إرسال</string>
+    <string name="watched_auto" formatted="false">تحديد كمشاهَد عند الانتهاء</string>
+    <string name="watched_auto_desc" formatted="false">يخبر Simkl أيضًا بمدى تقدمك عند الاتصال</string>
+    <string name="film_mark_watched" formatted="false">تحديد كمشاهَد</string>
+    <string name="film_watched" formatted="false">تمت المشاهدة</string>
+    <string name="film_watched_on">تمت المشاهدة على %1$s</string>
+    <string name="film_unwatch" formatted="false">إلغاء المشاهدة</string>
+    <string name="watched_percent" formatted="false">يُحتسب كمشاهَد عند (%)</string>
+    <string name="home_section_recent_online">الأخيرة (عبر الإنترنت)</string>
+    <string name="home_section_recent_here">الأخيرة (على هذا الجهاز)</string>
+    <string name="home_recent_playlist">قائمة تشغيل</string>
+    <string name="home_time_left">متبقٍّ %1$s</string>
+    <string name="pref_recent_here">الأخيرة على هذا الجهاز</string>
+    <string name="pref_recent_here_summary">آخر 10 فيديوهات شغّلتها من هذا الجهاز، تحت الأخيرة</string>
     <string name="home_section_pinned">المفضّلة</string>
     <string name="home_section_folders">المجلدات</string>
     <string name="home_section_results">النتائج</string>
@@ -540,7 +584,10 @@
     <string name="start_on_last">آخر فيديو</string>
     <string name="pref_home_layout">التنسيق</string>
     <string name="home_layout_list">قائمة</string>
-    <string name="home_layout_wall">جدار الصور</string>
+    <string name="home_layout_wall">معرض</string>
+    <string name="home_layout_cards">بطاقات</string>
+    <string name="home_layout_cards_desc">بطاقات طويلة مثل الأخيرة</string>
+    <string name="home_view">العرض</string>
     <string name="home_wall_hint">اضغط مطولًا على مجلد لإضافته إلى المفضّلة</string>
     <string name="set_audio">الصوت</string>
     <string name="set_storage">التخزين والنسخ الاحتياطي</string>

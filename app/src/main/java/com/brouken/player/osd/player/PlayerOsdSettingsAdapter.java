@@ -41,10 +41,13 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
                                  final boolean adaptiveBuffering,
                                  final int sleepMinutes, final boolean sleepAtEnd,
                                  final int videoTracks, final int audioDelayMs,
-                                 final int subtitleDelayMs) {
+                                 final int subtitleDelayMs, final int brightness) {
         // rows with arrows first, plain button rows after
         final List<OsdSettingsItem> items = new ArrayList<>();
         items.add(createSpeedItem(speed));
+        if (brightness != NO_BRIGHTNESS) {
+            items.add(createBrightnessItem(brightness));
+        }
         items.add(createAudioDelayItem(audioDelayMs));
         items.add(createSubtitleDelayItem(subtitleDelayMs));
         items.add(createEngineItem(engine));
@@ -63,6 +66,31 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
         this.items = items.toArray(new OsdSettingsItem[0]);
     }
 
+
+    // a TV has no swipe for it, so it gets a row; -1 is the system's own
+    public static final int NO_BRIGHTNESS = Integer.MIN_VALUE;
+    static final int[] BRIGHTNESS = {-1, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100};
+
+    private OsdSettingsItem createBrightnessItem(final int level) {
+        final ChoiceOsdSettingsItem.Element[] elements =
+                new ChoiceOsdSettingsItem.Element[BRIGHTNESS.length];
+        int selected = 0;
+        for (int i = 0; i < BRIGHTNESS.length; i++) {
+            elements[i] = new ChoiceOsdSettingsItem.Element(BRIGHTNESS[i] < 0
+                    ? context.getString(R.string.video_menu_auto)
+                    : String.valueOf(BRIGHTNESS[i]));
+            // nearest, so a level set by swiping still shows
+            if (level >= 0 && BRIGHTNESS[i] >= 0
+                    && (BRIGHTNESS[selected] < 0
+                    || Math.abs(BRIGHTNESS[i] - level) < Math.abs(BRIGHTNESS[selected] - level))) {
+                selected = i;
+            }
+        }
+        final ChoiceOsdSettingsItem.Listener itemListener =
+                (position, newValueIndex) -> listener.onBrightnessChange(BRIGHTNESS[newValueIndex]);
+        return new ChoiceOsdSettingsItem(context.getString(R.string.osd_brightness_title),
+                elements, selected, itemListener, this);
+    }
 
     // 0 is off, -1 is the end of the file
     static final int[] SLEEP_MINUTES = {0, 15, 30, 45, 60, 90, -1};
@@ -238,6 +266,8 @@ public class PlayerOsdSettingsAdapter extends OsdSettingsAdapter {
         void onAdaptiveBufferingChange(boolean enabled);
 
         void onSleepChange(int minutes);
+
+        void onBrightnessChange(int level);
 
         void onShowInfoCard();
 

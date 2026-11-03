@@ -41,7 +41,7 @@ public final class Posters {
     }
 
     @Nullable
-    private static byte[] fetch(final String url) {
+    public static byte[] fetch(final String url) {
         final byte[] kept = com.brouken.player.ImageCache.read(url);
         if (kept != null) {
             com.brouken.player.Utils.log("Poster from the image cache");
@@ -59,6 +59,29 @@ public final class Posters {
         view.setImageTintList(null);
         view.setAlpha(1f);
         view.setImageBitmap(bitmap);
+    }
+
+    // a website's wide thumbnail on the tall poster card: whole across the middle, over a blurred,
+    // darkened copy of itself, so it fills the card the way a film poster does
+    public static Bitmap asPoster(final Bitmap wide) {
+        if (wide.getWidth() <= wide.getHeight()) {
+            return wide;
+        }
+        final int width = 360;
+        final int height = 540;
+        final Bitmap poster = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+        final android.graphics.Canvas canvas = new android.graphics.Canvas(poster);
+        final android.graphics.Paint paint = new android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG);
+        // shrunk to a few pixels and drawn back large, which blurs it
+        final int middle = Math.min(wide.getWidth(), wide.getHeight() * width / height);
+        final Bitmap blur = Bitmap.createScaledBitmap(Bitmap.createBitmap(wide,
+                (wide.getWidth() - middle) / 2, 0, middle, wide.getHeight()), 12, 18, true);
+        canvas.drawBitmap(blur, null, new android.graphics.Rect(0, 0, width, height), paint);
+        canvas.drawColor(0x8C000000);
+        final int fitted = wide.getHeight() * width / wide.getWidth();
+        final int top = (height - fitted) / 2;
+        canvas.drawBitmap(wide, null, new android.graphics.Rect(0, top, width, top + fitted), paint);
+        return poster;
     }
 
     // keeps a poster still loading from landing on a recycled view
@@ -96,11 +119,12 @@ public final class Posters {
                 com.brouken.player.ImageCache.remove(url);
                 return;
             }
-            CACHE.put(url, bitmap);
+            final Bitmap shown = url.startsWith("https://image.tmdb.org/") ? bitmap : asPoster(bitmap);
+            CACHE.put(url, shown);
 
             MAIN.post(() -> {
                 if (url.equals(view.getTag(TAG_KEY))) {
-                    show(view, bitmap);
+                    show(view, shown);
                 }
             });
         });

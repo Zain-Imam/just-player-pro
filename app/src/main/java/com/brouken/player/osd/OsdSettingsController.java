@@ -73,7 +73,8 @@ public class OsdSettingsController {
         playerAdapter.setInitialValues(prefs.speedForUri(prefs.mediaUri), prefs.playbackEngine, true, true,
                 prefs.adaptiveBuffering, 0, false, 0,
                 prefs.getAudioDelayForUri(prefs.mediaUri),
-                prefs.getSubtitleDelayForUri(prefs.mediaUri));
+                prefs.getSubtitleDelayForUri(prefs.mediaUri),
+                PlayerOsdSettingsAdapter.NO_BRIGHTNESS);
 
         audioAdapter = new AudioOsdSettingsAdapter(context,
                 delayMs -> playerActivity.updateAudioDelay(delayMs));
@@ -129,7 +130,9 @@ public class OsdSettingsController {
                 playerActivity.sleepAtEndOfFile(),
                 playerActivity.videoTrackCount(),
                 prefs.getAudioDelayForUri(prefs.mediaUri),
-                prefs.getSubtitleDelayForUri(prefs.mediaUri)
+                prefs.getSubtitleDelayForUri(prefs.mediaUri),
+                com.brouken.player.Utils.isTvBox(playerActivity) ? playerActivity.brightnessLevel()
+                        : PlayerOsdSettingsAdapter.NO_BRIGHTNESS
         );
         playerAdapter.notifyDataSetChanged();
 
@@ -175,8 +178,7 @@ public class OsdSettingsController {
             public void onEngineChange(String engine) {
                 preferences().edit().putString("playbackEngine", engine).apply();
                 prefs.loadUserPreferences();
-                playerSettingsWindow.dismiss();
-                // the engine is chosen when the player is built
+                // the engine is chosen when the player is built; the panel stays, like any other choice
                 playerActivity.rebuildPlayer();
             }
 
@@ -199,14 +201,17 @@ public class OsdSettingsController {
                 preferences().edit().putBoolean("adaptiveBuffering", enabled).apply();
                 prefs.loadUserPreferences();
                 // buffering is set on the load control at build time
-                playerSettingsWindow.dismiss();
                 playerActivity.rebuildPlayer();
             }
 
             @Override
             public void onSleepChange(int minutes) {
                 playerActivity.setSleepTimer(minutes);
-                playerSettingsWindow.dismiss();
+            }
+
+            @Override
+            public void onBrightnessChange(int level) {
+                playerActivity.setBrightnessLevel(level);
             }
 
             @Override
@@ -337,6 +342,7 @@ public class OsdSettingsController {
             @Override
             public void onSubtitleEmbeddedStylesChange(boolean embeddedStyles) {
                 prefs.updateSubtitleStyleEmbedded(embeddedStyles);
+                playerActivity.updateSubtitleStyle(playerActivity);
             }
 
             @Override

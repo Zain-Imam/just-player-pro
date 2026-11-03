@@ -35,14 +35,55 @@ public final class MpvEngineUi implements EngineUi {
 
     @Override
     public void applySubtitleStyle() {
+        // Android's own caption settings, read the way Media3EngineUi reads them
+        final android.view.accessibility.CaptioningManager captions =
+                (android.view.accessibility.CaptioningManager) playerView.getContext()
+                        .getSystemService(android.content.Context.CAPTIONING_SERVICE);
+        final android.view.accessibility.CaptioningManager.CaptionStyle system =
+                captions == null ? null : captions.getUserStyle();
+        final String color = !SubtitleColors.isDefault(prefs.subtitleColor) || system == null
+                || !system.hasForegroundColor()
+                ? SubtitleColors.hex(prefs.subtitleColor) : argb(system.foregroundColor);
+        final boolean box = system != null && system.hasBackgroundColor()
+                && android.graphics.Color.alpha(system.backgroundColor) > 0;
         mpv.setSubtitleStyle(
                 prefs.subtitleVerticalPosition,
                 prefs.subtitleSize,
-                prefs.subtitleEdgeType == null ? null : prefs.subtitleEdgeType.name(),
+                edgeName(system),
                 prefs.subtitleTypeface == null ? null : prefs.subtitleTypeface.name(),
                 prefs.subtitleStyleEmbedded,
                 customFontFamily(),
-                SubtitleColors.hex(prefs.subtitleColor));
+                color,
+                box ? argb(system.backgroundColor) : null,
+                argb(system != null && system.hasEdgeColor() ? system.edgeColor : android.graphics.Color.BLACK),
+                captions == null ? 1f : captions.getFontScale());
+    }
+
+    private static String argb(final int color) {
+        return String.format(java.util.Locale.US, "#%08X", color);
+    }
+
+    // Default follows Android's edge type, as it does on Media3
+    @Nullable
+    private String edgeName(@Nullable final android.view.accessibility.CaptioningManager.CaptionStyle system) {
+        if (prefs.subtitleEdgeType == null) {
+            return null;
+        }
+        if (!"Default".equals(prefs.subtitleEdgeType.name()) || system == null || !system.hasEdgeType()) {
+            return prefs.subtitleEdgeType.name();
+        }
+        switch (system.edgeType) {
+            case android.view.accessibility.CaptioningManager.CaptionStyle.EDGE_TYPE_NONE:
+                return "None";
+            case android.view.accessibility.CaptioningManager.CaptionStyle.EDGE_TYPE_DROP_SHADOW:
+                return "DropShadow";
+            case android.view.accessibility.CaptioningManager.CaptionStyle.EDGE_TYPE_RAISED:
+                return "Raised";
+            case android.view.accessibility.CaptioningManager.CaptionStyle.EDGE_TYPE_DEPRESSED:
+                return "Depressed";
+            default:
+                return "Outline";
+        }
     }
 
     // read again only when the file changes; this runs on every layout change

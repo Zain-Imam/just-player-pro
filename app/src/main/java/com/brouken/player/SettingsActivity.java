@@ -61,7 +61,7 @@ public class SettingsActivity extends AppCompatActivity {
     // anyone can open settings, and any other page name would crash it
     private static final List<String> PAGES = Arrays.asList("screen_appearance", "screen_home",
             "screen_playback", "screen_audio", "screen_gestures", "screen_subtitles", "screen_online",
-            "screen_storage", "screen_advanced", "screen_about");
+            "screen_websites", "screen_storage", "screen_advanced", "screen_about");
 
     @Nullable
     private String page() {
@@ -299,7 +299,7 @@ public class SettingsActivity extends AppCompatActivity {
                     entry(R.array.accent_entries, R.array.accent_values, prefs.getString("accentColor", "orange")),
                     entry(R.array.player_style_entries, R.array.player_style_values, prefs.getString("playerStyle", "classic"))));
             set("header_home", getString(R.string.set_hub_home,
-                    entry(R.array.home_layout_entries, R.array.home_layout_values, prefs.getString("homeLayout", "list")),
+                    entry(R.array.home_layout_entries, R.array.home_layout_values, prefs.getString("homeLayout", "cards")),
                     prefs.getInt("recentCount", 10)));
             final String seek = SeekPreview.mode(requireContext());
             set("header_playback", getString(R.string.set_hub_playback,
@@ -320,6 +320,7 @@ public class SettingsActivity extends AppCompatActivity {
                     ? getString(R.string.set_hub_online_set,
                             entry(R.array.identify_mode_entries, R.array.identify_mode_values, prefs.getString("identifyMode", "auto")))
                     : getString(R.string.set_hub_online_unset));
+            set("header_websites", getString(R.string.ytdlp_title));
             set("header_storage", getString(R.string.set_hub_storage));
             set("header_advanced", getString(R.string.set_hub_advanced));
             set("header_about", getString(R.string.set_hub_about, BuildConfig.VERSION_NAME));
@@ -976,6 +977,8 @@ public class SettingsActivity extends AppCompatActivity {
             SeekPreview.migrate(PreferenceManager.getDefaultSharedPreferences(requireContext()));
             PlayerCorner.migrate(PreferenceManager.getDefaultSharedPreferences(requireContext()));
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
+            com.brouken.player.ytdlp.WebsitesSettings.wire(this);
+            com.brouken.player.tracking.TrackingSettings.wire(this);
             final Preference battery = findPreference(PlayerCorner.BATTERY);
             if (battery != null && !PlayerCorner.hasBattery(requireContext())) {
                 battery.setVisible(false);
@@ -1360,6 +1363,7 @@ public class SettingsActivity extends AppCompatActivity {
             super.onResume();
             markWhatIsSet();
             showRatingsOrder();
+            com.brouken.player.tracking.TrackingSettings.show(this);
             if (pendingCustomFontFallbackPermission) {
                 pendingCustomFontFallbackPermission = false;
                 if (!needsManageExternalStoragePermission()) {
@@ -1398,7 +1402,6 @@ public class SettingsActivity extends AppCompatActivity {
                     "tunneling",
                     "mapDV7ToHevc",
                     "skipSilence",
-                    "frameRateMatching",
             };
 
             for (final String key : media3OnlyKeys) {

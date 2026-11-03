@@ -414,7 +414,7 @@ public final class Ratings {
             if (!file.isFile() || System.currentTimeMillis() - file.lastModified() >= KEEP_MS) {
                 return null;
             }
-            final byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
+            final byte[] bytes = com.brouken.player.Utils.readFile(file);
             final JSONObject json = new JSONObject(new String(bytes, StandardCharsets.UTF_8));
             final Map<String, Double> ratings = new LinkedHashMap<>();
             for (final String site : SITES) {

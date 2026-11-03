@@ -3,6 +3,8 @@ package com.brouken.player;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
@@ -11,6 +13,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.ImageSpan;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -19,6 +24,7 @@ import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
@@ -55,6 +61,10 @@ public class FilmInfoActivity extends AppCompatActivity {
     private TextView resume;
     private TextView start;
     private TextView change;
+    private TextView forget;
+    private TextView watchedButton;
+    private TextView unwatchButton;
+    private int accentColor;
     private ProgressBar progress;
     private ViewGroup ratings;
     private View confirm;
@@ -116,6 +126,7 @@ public class FilmInfoActivity extends AppCompatActivity {
         backdrop = findViewById(R.id.film_backdrop);
         poster = findViewById(R.id.film_poster);
         title = findViewById(R.id.film_title);
+        shadeWords();
         meta = findViewById(R.id.film_meta);
         genres = findViewById(R.id.film_genres);
         overview = findViewById(R.id.film_overview);
@@ -123,6 +134,9 @@ public class FilmInfoActivity extends AppCompatActivity {
         resume = findViewById(R.id.film_resume);
         start = findViewById(R.id.film_start);
         change = findViewById(R.id.film_change);
+        forget = findViewById(R.id.film_forget);
+        watchedButton = findViewById(R.id.film_watched);
+        unwatchButton = findViewById(R.id.film_unwatch);
         progress = findViewById(R.id.film_progress);
         ratings = findViewById(R.id.film_ratings);
         confirm = findViewById(R.id.film_confirm);
@@ -139,6 +153,11 @@ public class FilmInfoActivity extends AppCompatActivity {
         start.setBackground(button(0, 0xFF8A8A8A, accent));
         change.setBackground(button(0, accent, accent));
         change.setTextColor(accent);
+        forget.setBackground(button(0, 0xFF8A8A8A, accent));
+        accentColor = accent;
+        unwatchButton.setBackground(button(0, 0xFF8A8A8A, accent));
+        watchedButton.setOnClickListener(v -> setWatched(true));
+        unwatchButton.setOnClickListener(v -> setWatched(false));
         progress.setProgressTintList(ColorStateList.valueOf(accent));
 
         findViewById(R.id.film_back).setOnClickListener(v -> finish());
@@ -154,7 +173,18 @@ public class FilmInfoActivity extends AppCompatActivity {
             History.setIdentified(preferences, uri, identity.posterPath, identity.heading());
             setResult(RESULT_OK);
             bind();
+            showRecentPicture();
         }));
+        // back to a plain video, as one just opened; nothing guesses the film again
+        forget.setOnClickListener(v -> {
+            final History.Entry entry = History.find(preferences, uri);
+            online.forgetFilm(uri, entry != null ? entry.name : Utils.getFileName(this, uri, true));
+            History.clearIdentified(preferences, uri);
+            setResult(RESULT_OK);
+            bind();
+            showRecentPicture();
+            change.requestFocus();
+        });
         setUpAdditions(accent, onAccent);
 
         bind();
@@ -178,6 +208,8 @@ public class FilmInfoActivity extends AppCompatActivity {
         overview.setText(identity == null || identity.overview == null ? "" : identity.overview);
         overview.setVisibility(identity == null || identity.overview == null ? View.GONE : View.VISIBLE);
         change.setText(identity != null ? R.string.film_change : R.string.film_find);
+        forget.setVisibility(identity != null || entry != null && (entry.title != null || entry.poster != null)
+                ? View.VISIBLE : View.GONE);
 
         runtimeMinutes = 0;
         genres.setVisibility(View.GONE);
@@ -190,6 +222,7 @@ public class FilmInfoActivity extends AppCompatActivity {
 
         showResume();
         showConfirm(entry, identity);
+        showWatched(identity);
         showCast(null);
         showRatings(identity, null);
 
@@ -268,7 +301,46 @@ public class FilmInfoActivity extends AppCompatActivity {
         }
     }
 
+    private int recentAccent;
+    private int recentOnAccent;
+
+    // a film on this device that Film info knows: its Recent card shows the poster or a frame
+    private void showRecentPicture() {
+        final View row = findViewById(R.id.film_recent_picture);
+        // every layout has it, but a missing row must never take the screen down
+        if (row == null || findViewById(R.id.film_recent_poster) == null || findViewById(R.id.film_recent_frame) == null) {
+            return;
+        }
+        // only where it changes something: a film on this device, with posters shown in Recent
+        if (Utils.isSupportedNetworkUri(uri) || History.isNetworkUri(uri) || online.rememberedForCard(uri) == null
+                || !preferences.getBoolean("recentPosters", false)) {
+            row.setVisibility(View.GONE);
+            return;
+        }
+        row.setVisibility(View.VISIBLE);
+        final TextView poster = findViewById(R.id.film_recent_poster);
+        final TextView frame = findViewById(R.id.film_recent_frame);
+        final boolean framed = Prefs.frameHere(preferences, uri.toString());
+        poster.setBackground(button(framed ? 0 : recentAccent, recentAccent, recentAccent));
+        poster.setTextColor(framed ? recentAccent : recentOnAccent);
+        frame.setBackground(button(framed ? recentAccent : 0, recentAccent, recentAccent));
+        frame.setTextColor(framed ? recentOnAccent : recentAccent);
+        poster.setOnClickListener(v -> {
+            Prefs.setFrameHere(preferences, uri.toString(), false);
+            setResult(RESULT_OK);
+            showRecentPicture();
+        });
+        frame.setOnClickListener(v -> {
+            Prefs.setFrameHere(preferences, uri.toString(), true);
+            setResult(RESULT_OK);
+            showRecentPicture();
+        });
+    }
+
     private void setUpAdditions(final int accent, final int onAccent) {
+        recentAccent = accent;
+        recentOnAccent = onAccent;
+        showRecentPicture();
         final TextView copy = findViewById(R.id.film_copy_link);
         if (Utils.isSupportedNetworkUri(uri) || History.isNetworkUri(uri)) {
             copy.setBackground(button(0, themeColour(android.R.attr.textColorSecondary), accent));
@@ -526,6 +598,70 @@ public class FilmInfoActivity extends AppCompatActivity {
         finish();
     }
 
+    // marked here (Unwatch offered), watched on Simkl (no Unwatch: done there), or not yet
+    private void showWatched(@Nullable final Identity identity) {
+        final Watched.State state = Watched.state(preferences, uri, identity);
+        final boolean byApp = state != null;
+        final String elsewhere = byApp ? null
+                : com.brouken.player.tracking.Tracking.watchedOn(this, Watched.filmKey(identity));
+        final boolean watched = byApp || elsewhere != null;
+        final String label = byApp ? getString(R.string.film_watched)
+                : elsewhere != null ? getString(R.string.film_watched_on, elsewhere)
+                : getString(R.string.film_mark_watched);
+        watchedButton.setBackground(watched ? button(0xFF22A55B, 0, accentColor) : button(0, 0xFF8A8A8A, accentColor));
+        watchedButton.setTextColor(watched ? 0xFFFFFFFF : title.getCurrentTextColor());
+        final Drawable check = watched ? androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_check_24dp) : null;
+        if (check != null) {
+            check.mutate().setTint(0xFFFFFFFF);
+            check.setBounds(0, 0, Utils.dpToPx(20), Utils.dpToPx(20));
+            // the tick inside the words, so the two are centred together
+            final SpannableStringBuilder text = new SpannableStringBuilder("  ").append(label);
+            text.setSpan(new CentredIcon(check), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            watchedButton.setText(text);
+        } else {
+            watchedButton.setText(label);
+        }
+        watchedButton.setClickable(!watched);
+        watchedButton.setFocusable(!watched);
+        unwatchButton.setVisibility(byApp ? View.VISIBLE : View.GONE);
+    }
+
+    // an icon in a line of text, centred on the letters rather than sitting on the baseline
+    private static final class CentredIcon extends ImageSpan {
+        CentredIcon(final Drawable drawable) {
+            super(drawable);
+        }
+
+        @Override
+        public void draw(@NonNull final Canvas canvas, final CharSequence text, final int start, final int end,
+                         final float x, final int top, final int y, final int bottom, @NonNull final Paint paint) {
+            final Drawable drawable = getDrawable();
+            final Paint.FontMetricsInt metrics = paint.getFontMetricsInt();
+            canvas.save();
+            canvas.translate(x, y + (metrics.ascent + metrics.descent) / 2f - drawable.getBounds().height() / 2f);
+            drawable.draw(canvas);
+            canvas.restore();
+        }
+    }
+
+    private void setWatched(final boolean watched) {
+        final Identity identity = online.rememberedForCard(uri);
+        final String key = Watched.filmKey(identity);
+        if (watched) {
+            Watched.mark(preferences, uri, identity, com.brouken.player.tracking.Tracking.listOf(this, key));
+            if (key != null) {
+                com.brouken.player.tracking.Tracking.history(this, java.util.Collections.singletonList(key), true);
+            }
+        } else {
+            final Watched.State marked = Watched.state(preferences, uri, identity);
+            Watched.forget(preferences, uri, identity);
+            com.brouken.player.tracking.Tracking.unwatch(this, key, marked != null ? marked.simklList : null);
+        }
+        setResult(RESULT_OK);
+        showWatched(identity);
+        (watched ? unwatchButton : watchedButton).requestFocus();
+    }
+
     private Drawable button(final int fill, final int stroke, final int focus) {
         final float density = getResources().getDisplayMetrics().density;
         final StateListDrawable states = new StateListDrawable();
@@ -544,5 +680,23 @@ public class FilmInfoActivity extends AppCompatActivity {
             shape.setStroke(Math.round(strokeDp * density), stroke);
         }
         return shape;
+    }
+
+    // on a TV, and a phone on its side, the backdrop fills the screen behind the words: a light
+    // panel keeps them readable over a bright picture without hiding it
+    private void shadeWords() {
+        if (getResources().getConfiguration().orientation
+                != android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
+            return;
+        }
+        final android.util.TypedValue value = new android.util.TypedValue();
+        getTheme().resolveAttribute(android.R.attr.colorBackground, value, true);
+        final GradientDrawable panel = new GradientDrawable();
+        panel.setColor((value.data & 0x00FFFFFF) | 0x80000000);
+        panel.setCornerRadius(Utils.dpToPx(16));
+        final View column = (View) title.getParent();
+        column.setBackground(panel);
+        final int pad = Utils.dpToPx(20);
+        column.setPadding(pad, pad, pad, pad);
     }
 }

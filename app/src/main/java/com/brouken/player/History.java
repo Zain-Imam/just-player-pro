@@ -36,7 +36,15 @@ final class History {
     private static final String KEY_TITLE = "title";
     // held at the top of Recent, outside its count, never trimmed
     private static final String KEY_PINNED = "pinned";
-    static final int MAX_PINS = 3;
+
+    static int maxPins(final SharedPreferences preferences) {
+        return maxPins(preferences.getInt("recentCount", 10));
+    }
+
+    // half as many as Recent shows, and never fewer than the three there always were
+    static int maxPins(final int recentCount) {
+        return Math.max(3, Math.max(1, Math.min(30, recentCount)) / 2);
+    }
 
     private static final int MAX_ENTRIES = 100;
 
@@ -172,9 +180,15 @@ final class History {
         // ever played, so an expired link today does not hide yesterday's film
         boolean played = false;
         boolean pinned = false;
+        // a playlist keeps showing the video that last played until the new one shows a picture
+        final boolean list = com.brouken.player.ytdlp.WebQueue.listOf(uri) != null;
+        Entry lastPlayed = null;
         for (int i = entries.size() - 1; i >= 0; i--) {
             final Entry existing = entries.get(i);
             if (key.equals(existing.uri.toString()) || place.equals(withoutQuery(existing.uri))) {
+                if (list && existing.played) {
+                    lastPlayed = existing;
+                }
                 if (existing.nameKind > kind
                         || (existing.nameKind == kind && kind > NAME_RAW)) {
                     name = existing.name;
@@ -190,7 +204,10 @@ final class History {
             }
         }
 
-        entries.add(0, new Entry(uri, name, type, System.currentTimeMillis(), played, kind, poster, title, pinned));
+        entries.add(0, lastPlayed != null
+                ? new Entry(lastPlayed.uri, lastPlayed.name, lastPlayed.type, System.currentTimeMillis(), true,
+                        lastPlayed.nameKind, lastPlayed.poster, lastPlayed.title, pinned)
+                : new Entry(uri, name, type, System.currentTimeMillis(), played, kind, poster, title, pinned));
         trim(entries);
 
         save(preferences, entries);
@@ -205,7 +222,7 @@ final class History {
         }
     }
 
-    // false when a fourth pin is asked for
+    // false when one more than maxPins is asked for
     static boolean setPinned(final SharedPreferences preferences, @NonNull final Uri uri,
                              final boolean pin) {
         final List<Entry> entries = load(preferences);
@@ -216,7 +233,7 @@ final class History {
                     pins++;
                 }
             }
-            if (pins >= MAX_PINS) {
+            if (pins >= maxPins(preferences)) {
                 return false;
             }
         }
@@ -307,13 +324,56 @@ final class History {
         final String name = slash < 0 ? path : path.substring(slash + 1);
         return name.isEmpty() ? null : name;
     }
-    private static String withoutQuery(@NonNull final Uri uri) {
+    static String withoutQuery(@NonNull final Uri uri) {
+        // a playlist is one entry, at the video played last
+        final String list = com.brouken.player.ytdlp.WebQueue.listOf(uri);
+        if (list != null) {
+            return "https://www.youtube.com/playlist?list=" + list;
+        }
+        final String youTube = com.brouken.player.ytdlp.WebVideo.youTubePlace(uri);
+        if (youTube != null) {
+            return youTube;
+        }
         final String scheme = uri.getScheme();
         final String authority = uri.getAuthority();
         if (scheme == null || authority == null) {
             return uri.toString();
         }
         return scheme + "://" + authority + (uri.getPath() == null ? "" : uri.getPath());
+    }
+
+    // where each playlist got to, for its Recent tile
+    private static final String PREF_LIST_PLACE = "recentListPlace";
+    private static final int MAX_LIST_PLACES = 50;
+
+    static void setListPlace(final SharedPreferences preferences, final String listId,
+                             final int number, final int count) {
+        try {
+            final JSONObject places = new JSONObject(preferences.getString(PREF_LIST_PLACE, "{}"));
+            // kept in the order last played, so the oldest go first
+            places.remove(listId);
+            places.put(listId, number + " / " + count);
+            while (places.length() > MAX_LIST_PLACES) {
+                places.remove(places.keys().next());
+            }
+            preferences.edit().putString(PREF_LIST_PLACE, places.toString()).apply();
+        } catch (JSONException ignored) {
+        }
+    }
+
+    // "5 / 24", or null for anything but a playlist
+    @Nullable
+    static String listPlace(final SharedPreferences preferences, @Nullable final Uri uri) {
+        final String list = com.brouken.player.ytdlp.WebQueue.listOf(uri);
+        if (list == null) {
+            return null;
+        }
+        try {
+            final String place = new JSONObject(preferences.getString(PREF_LIST_PLACE, "{}")).optString(list, "");
+            return place.isEmpty() ? "" : place;
+        } catch (JSONException e) {
+            return "";
+        }
     }
 
     static void rename(final SharedPreferences preferences, @Nullable final Uri uri,
@@ -358,6 +418,26 @@ final class History {
         return at;
     }
 
+    // Film info's Remove: back to the file's own name and picture
+    static void clearIdentified(final SharedPreferences preferences, @Nullable final Uri uri) {
+        if (uri == null) {
+            return;
+        }
+        final List<Entry> entries = load(preferences);
+        final String place = withoutQuery(uri);
+        boolean changed = false;
+        for (int i = 0; i < entries.size(); i++) {
+            final Entry entry = entries.get(i);
+            if (place.equals(withoutQuery(entry.uri)) && (entry.poster != null || entry.title != null)) {
+                entries.set(i, entry.withIdentified(null, null));
+                changed = true;
+            }
+        }
+        if (changed) {
+            save(preferences, entries);
+        }
+    }
+
     static void setIdentified(final SharedPreferences preferences, @Nullable final Uri uri,
                               @Nullable final String posterPath, @Nullable final String heading) {
         final String poster = posterPath == null || posterPath.isEmpty() ? null : posterPath;
@@ -387,6 +467,22 @@ final class History {
     }
 
     // called once a frame renders: a link that buffers then fails never played
+    // the playlist's entry takes this video, its picture and title, now that it plays
+    static void playedInList(final SharedPreferences preferences, final Uri uri,
+                             @Nullable final String poster, @Nullable final String title) {
+        final List<Entry> entries = load(preferences);
+        final String place = withoutQuery(uri);
+        for (int i = 0; i < entries.size(); i++) {
+            final Entry entry = entries.get(i);
+            if (place.equals(withoutQuery(entry.uri))) {
+                entries.set(i, new Entry(uri, entry.name, entry.type, entry.time, true, entry.nameKind,
+                        poster, title, entry.pinned));
+                save(preferences, entries);
+                return;
+            }
+        }
+    }
+
     static void markPlayed(final SharedPreferences preferences, @Nullable final Uri uri) {
         if (!isNetworkUri(uri)) {
             return;

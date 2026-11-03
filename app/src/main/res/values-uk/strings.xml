@@ -11,18 +11,18 @@
     <string name="onboarding_key_title">Додайте ключ TMDB</string>
     <string name="onboarding_key_description">Налаштування тут. Безплатний ключ TMDB знаходить назви, постери, субтитри й позначки заставок.</string>
     <string name="open_subtitles">Завантажити субтитри</string>
-    <string name="error_title">Помилка відтворення</string>
+    <string name="error_title">Не вдається відтворити</string>
     <string name="error_share">Поділитися деталями</string>
-    <string name="error_network">Плеєр не зміг отримати файл. Перевірте з’єднання і чи не минув строк дії посилання.</string>
-    <string name="error_http">Сервер відхилив запит. Можливо, минув строк дії посилання від debrid-сервісу.</string>
+    <string name="error_network">Немає доступу до файлу. Перевірте з\'єднання або посилання.</string>
+    <string name="error_http">Сервер відмовив. Можливо, посилання застаріло.</string>
     <string name="error_missing">Цього файлу більше немає.</string>
-    <string name="error_permission">Плеєру не дозволено відкривати цей файл.</string>
-    <string name="error_codec">Тут нічим декодувати цей файл. Спробуйте інший рушій або виберіть «Авто».</string>
-    <string name="error_damaged">Файл, схоже, пошкоджений або неповний.</string>
-    <string name="error_drm">Файл захищений від копіювання, а цей плеєр такого не підтримує.</string>
-    <string name="error_unknown">Під час відтворення щось пішло не так.</string>
+    <string name="error_permission">Немає дозволу відкрити цей файл.</string>
+    <string name="error_codec">Не вдається декодувати файл. Спробуйте інший рушій.</string>
+    <string name="error_damaged">Файл пошкоджений або неповний.</string>
+    <string name="error_drm">Це відео захищене від копіювання.</string>
+    <string name="error_unknown">Зараз не відтворюється. Спробуйте ще раз.</string>
     <string name="error_details">Докладніше</string>
-    <string name="error_files_missing">Застосунок «Файли» вимкнено або його немає</string>
+    <string name="error_files_missing">Застосунок «Файли» вимкнено або його немає.</string>
     <string name="request_scope">Щоб автоматично завантажувати зовнішні субтитри й переходити до наступного файлу в папці, надайте %s доступ до верхньої папки з вашими відео (наприклад, Movies).</string>
     <string name="delete_query">Видалити цей файл\?</string>
     <string name="delete_confirmation">Видалити</string>
@@ -82,7 +82,7 @@
 
 На телефоні нічого не показується, доки не введено PIN. Сторінка припинить роботу, коли ви натиснете кнопку нижче або вийдете з цього екрана.</string>
     <string name="pref_setup_phone_stop">Зупинити сторінку</string>
-    <string name="pref_setup_phone_failed">Не вдалося запустити сторінку. Можливо, пристрій цього не дозволяє або не під’єднаний до мережі — введіть ключі тут.</string>
+    <string name="pref_setup_phone_failed">Не вдалося відкрити сторінку. Введіть ключі тут.</string>
     <string name="pref_online_note">Для картки, кнопок пропуску й пошуку субтитрів потрібен ключ TMDB.</string>
     <string name="pref_key_tmdb">Ключ TMDB</string>
     <string name="pref_key_tmdb_dialog">Безплатно на themoviedb.org → Налаштування → API.</string>
@@ -109,8 +109,8 @@
     <string name="online_search_subtitles">Знайти субтитри онлайн…</string>
     <string name="subtitle_source_title">Субтитри</string>
     <string name="subtitle_source_file">Відкрити файл субтитрів…</string>
-    <string name="online_needs_tmdb">Спочатку додайте ключ TMDB у налаштуваннях — саме він перетворює назву файлу на запит, зрозумілий джерелам субтитрів.</string>
-    <string name="online_needs_source">Джерело субтитрів не налаштовано. Додайте в налаштуваннях додаток Stremio або ключ OpenSubtitles, SubDL чи Wyzie.</string>
+    <string name="online_needs_tmdb">Спершу додайте ключ TMDB у налаштуваннях.</string>
+    <string name="online_needs_source">Спершу налаштуйте джерело субтитрів у налаштуваннях.</string>
     <string name="online_identify_title">Який із них?</string>
     <string name="online_searching">Пошук…</string>
     <string name="online_identifying">Визначення…</string>
@@ -130,7 +130,7 @@
     <string name="recent_remove">Прибрати з нещодавніх</string>
     <string name="recent_removed">Прибрано з нещодавніх</string>
     <string name="recent_undo">Скасувати</string>
-    <string name="recent_pins_full">Закріпити можна до 3 фільмів. Спершу відкріпіть один.</string>
+    <string name="recent_pins_full">Закріпити можна до %1$d фільмів. Спершу відкріпіть один.</string>
     <string name="recent_pinned">Вгорі</string>
     <string name="online_match_prompt_dismiss">Не зараз</string>
     <string name="online_no_matches">За цією назвою нічого немає</string>
@@ -152,9 +152,9 @@
     <string name="subtitle_menu_search_detail">Знайти онлайн для цієї серії</string>
     <string name="subtitle_menu_settings_detail">Розмір, положення, затримка й стиль</string>
     <string name="audio_menu_delay_detail">Зсунути звук відносно картинки</string>
-    <string name="capability_title">Цьому пристрою може бути важко з цим файлом</string>
-    <string name="capability_hard">Жоден апаратний декодер тут його не підтримує. Картинка може смикатися або завмирати, поки звук іде далі.</string>
-    <string name="capability_impossible">Ніщо на цьому пристрої не береться його декодувати, тож він може взагалі не запуститися.</string>
+    <string name="capability_title">Може відтворюватися неплавно</string>
+    <string name="capability_hard">Немає апаратного декодера. Можливі ривки.</string>
+    <string name="capability_impossible">Тут нічим це декодувати. Може не відтворитися.</string>
     <string name="capability_continue">Однаково відкрити</string>
     <string name="capability_quit">Закрити файл</string>
     <string name="capability_try_other">Через %1$s</string>
@@ -163,7 +163,7 @@
     <string name="online_season">Сезон</string>
     <string name="online_episode">Серія</string>
     <string name="online_downloading">Завантаження…</string>
-    <string name="online_download_failed">Не вдалося завантажити ці субтитри</string>
+    <string name="online_download_failed">Не вдалося завантажити ці субтитри. Спробуйте ще раз.</string>
     <string name="online_download_limit">Ліміт %1$s на сьогодні вичерпано</string>
     <string name="online_download_limit_until">Ліміт %1$s вичерпано. Знову через %2$s</string>
     <string name="online_saved_to">Додано й збережено в %1$s</string>
@@ -199,7 +199,7 @@
     <string name="controls_name_repeat">Повтор</string>
     <string name="pref_licenses">Ліцензії</string>
     <string name="pref_licenses_summary">Повний текст усіх ліцензій, за якими створено застосунок</string>
-    <string name="licenses_unavailable">Не вдалося прочитати текст ліцензії.</string>
+    <string name="licenses_unavailable">Не вдається прочитати цю ліцензію.</string>
     <string name="intro_next">Далі</string>
     <string name="intro_back">Назад</string>
     <string name="intro_done">Готово</string>
@@ -225,12 +225,13 @@
     <string name="pref_controls_timeout_summary">Секунди</string>
     <string name="unlocked">Розблоковано</string>
     <string name="locked_hint">Заблоковано — натисніть замок або утримуйте картинку</string>
+    <string name="locked_hint_remote">Заблоковано. Утримуйте OK, щоб розблокувати.</string>
     <string name="pref_lock_hint">Замок на панелі керування блокує екран від випадкових натискань. Щоб розблокувати, натисніть замок ще раз, утримуйте палець будь-де на картинці або утримуйте OK на пульті. Випадковий дотик до картинки нічого не робить, тож блокування не зніметься саме. Кнопки гучності працюють і під час блокування.</string>
     <string name="pref_overlay_delay">Картка з’являється через</string>
     <string name="pref_overlay_delay_summary">Секунд паузи до її появи</string>
     <string name="pref_prefill">Підставляти в пошук назву файлу</string>
     <string name="button_lock">Заблокувати екран</string>
-    <string name="engine_fallback_mpv">Media3 не зміг це відтворити — увімкнено mpv</string>
+    <string name="engine_fallback_mpv">Media3 не може це відтворити. Перемкнено на mpv.</string>
     <string name="engine_switch_file_type">Media3 не підтримує цей тип файлу, увімкнено mpv</string>
     <string name="engine_switch_video_format">Media3 не підтримує цей формат відео, увімкнено mpv</string>
     <string name="engine_switch_audio_format">Media3 не підтримує цей формат звуку, увімкнено mpv</string>
@@ -241,14 +242,14 @@
     <string name="pref_engine_auto">Авто</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">mpv потребує Android 8.0 і вище</string>
-    <string name="engine_failed_title">Цей рушій не зміг відтворити файл</string>
-    <string name="engine_failed_message">%1$s не зміг це відтворити. %2$s, найпевніше, зможе — саме тому їх два.</string>
+    <string name="engine_failed_title">Не вдається відтворити файл</string>
+    <string name="engine_failed_message">%1$s не може це відтворити. Спробуйте %2$s.</string>
     <string name="engine_failed_try">Через %1$s</string>
     <string name="engine_failed_auto">Завжди «Авто»</string>
     <string name="engine_no_picture_title">Без картинки</string>
-    <string name="engine_no_picture_message">%1$s відтворює звук, але не картинку — зазвичай це Dolby Vision на пристрої без декодера Dolby Vision. %2$s може її показати.</string>
-    <string name="engine_no_picture_switched">Немає картинки в Media3 — увімкнено mpv</string>
-    <string name="engine_no_picture_either">Немає картинки в жодному рушії — пристрій не може показати це відео</string>
+    <string name="engine_no_picture_message">%1$s відтворює звук без зображення (часто Dolby Vision). Спробуйте %2$s.</string>
+    <string name="engine_no_picture_switched">Немає зображення в Media3. Перемкнено на mpv.</string>
+    <string name="engine_no_picture_either">Цей пристрій не може показати зображення цього відео.</string>
     <string name="pref_engine_note">«Авто» починає з Media3 і переводить файл на mpv, якщо Media3 не може його відтворити.</string>
     <string name="pref_media3_only">Лише Media3 — mpv не використовує</string>
     <string name="pref_adaptive_buffering">Адаптивна буферизація</string>
@@ -257,7 +258,7 @@
     <string name="pref_subtitle_folder_default">Завантаження / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">Вибрати папку</string>
     <string name="pref_subtitle_folder_clear">Папка за замовчуванням</string>
-    <string name="pref_subtitle_folder_failed">Цю папку не вдалося використати</string>
+    <string name="pref_subtitle_folder_failed">Цю папку не можна використати.</string>
     <string name="resume_title">Дивитися останнє?</string>
     <string name="resume_accept">Почати</string>
     <string name="resume_decline">Не зараз</string>
@@ -270,7 +271,7 @@
     <string name="open_url_title">Мережевий URL</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">Почати</string>
-    <string name="open_url_invalid">Це не схоже на URL, який може відкрити плеєр</string>
+    <string name="open_url_invalid">Це не посилання, яке може відкрити плеєр.</string>
     <string name="pref_folders">Папки, доступні плеєру</string>
     <string name="pref_folders_note">Потрібні, щоб знаходити наступну серію й субтитри поруч із фільмом. Додайте всі папки, де зберігаєте фільми.</string>
     <string name="pref_folders_empty">Поки немає. Без них плеєр бачить лише відкритий файл.</string>
@@ -278,7 +279,7 @@
     <string name="pref_folders_remove">Натисніть, щоб не читати цю папку</string>
     <string name="pref_folders_remove_confirm">Плеєр більше не шукатиме тут наступну серію чи субтитри.</string>
     <string name="pref_folders_remove_confirm_yes">Прибрати</string>
-    <string name="pref_folders_failed">Android не зберіг цей дозвіл. Спробуйте вибрати папку знову.</string>
+    <string name="pref_folders_failed">Android не зберіг дозвіл. Виберіть папку ще раз.</string>
     <string name="pref_folders_no_picker">На цьому пристрої немає вибору папок.</string>
     <string name="pref_folders_summary_empty">Папок поки немає</string>
     <string name="error_code">Показати код</string>
@@ -311,7 +312,7 @@
     <string name="update_install">Отримати й встановити</string>
     <string name="update_open">До сторінки</string>
     <string name="update_downloading">Завантаження…</string>
-    <string name="update_failed">Не вдалося перевірити оновлення.</string>
+    <string name="update_failed">Зараз не вдається перевірити оновлення.</string>
     <string name="update_none_title">Оновлень немає</string>
     <string name="update_none">У вас %1$s. Найновіша опублікована — %2$s.</string>
     <string name="update_none_published">Ще нічого не опубліковано. У вас %1$s.</string>
@@ -364,7 +365,7 @@ URL, відкриті через мережу, запам’ятовуються
     <string name="pref_backup_exported">Експортовано: %1$d</string>
     <string name="pref_backup_imported">Імпортовано: %1$d. Частина змін потребує перезапуску плеєра.</string>
     <string name="pref_backup_not_ours">Це не резервна копія Just Player Pro</string>
-    <string name="pref_backup_failed">Не вдалося прочитати файл</string>
+    <string name="pref_backup_failed">Не вдається прочитати цей файл.</string>
     <string name="pref_backup_nothing">Нічого не вибрано</string>
     <string name="pref_dangerous_header">Додатково</string>
     <string name="pref_dangerous_warning">Вони можуть зламати відтворення файлів, які інакше працюють.</string>
@@ -381,11 +382,12 @@ URL, відкриті через мережу, запам’ятовуються
     <string name="pref_custom_subtitle_font">Свій шрифт</string>
     <string name="pref_choose_custom_font">Вибрати шрифт</string>
     <string name="pref_custom_subtitle_font_not_set">Свій шрифт не вибрано</string>
-    <string name="pref_custom_subtitle_font_failed">Не вдалося завантажити шрифт</string>
+    <string name="pref_custom_subtitle_font_failed">Не вдається завантажити цей шрифт.</string>
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">Увімк.</string>
     <string name="osd_item_boolean_false">Вимк.</string>
     <string name="osd_sleep_title">Таймер сну</string>
+    <string name="osd_brightness_title">Яскравість</string>
     <string name="osd_sleep_off">Вимк.</string>
     <string name="osd_sleep_end">Кінець файлу</string>
     <string name="osd_sleep_minutes">%1$d хв</string>
@@ -437,14 +439,14 @@ URL, відкриті через мережу, запам’ятовуються
     <string name="pref_addon_no_subtitles_resource">Цей додаток не надає субтитрів.</string>
     <string name="pref_addon_needs_configuration">Цей додаток спершу треба налаштувати — відкрийте його сторінку налаштування й вставте отриманий URL.</string>
     <string name="pref_addon_fetch_failed">Додаток відхилив запит субтитрів.</string>
-    <string name="pref_addon_no_subtitles">Додаток нічого не повернув для фільму, до якого субтитри є всюди, — отже, і для ваших файлів нічого не поверне.</string>
+    <string name="pref_addon_no_subtitles">Цей додаток нічого не знайшов для відомого фільму, тож не знайде і для ваших файлів.</string>
     <string name="pref_addon_no_usable_url">Додаток повернув субтитри без робочих посилань.</string>
     <string name="pref_addon_not_downloadable">Посилання додатка не дали файлу субтитрів.</string>
     <string name="key_check_cleared">Видалено</string>
     <string name="key_check_saved">Збережено</string>
     <string name="key_check_accepted">%1$s прийняв ключ</string>
     <string name="key_check_rejected">%1$s відхилив ключ</string>
-    <string name="key_check_rate_limited">%1$s обмежує запити; спробуйте трохи згодом</string>
+    <string name="key_check_rate_limited">%1$s перевантажений. Спробуйте за кілька хвилин.</string>
     <string name="key_check_no_answer">%1$s не відповідає — перевірте з’єднання</string>
     <string name="key_check_http">%1$s відповів HTTP %2$d</string>
     <string name="setup_enter_pin">Введіть PIN, показаний у плеєрі.</string>
@@ -510,6 +512,48 @@ URL, відкриті через мережу, запам’ятовуються
     <string name="home_pinned">Додано у вибране</string>
     <string name="home_unpinned">Прибрано з вибраного</string>
     <string name="home_section_recent">Нещодавні</string>
+    <string name="pref_folder_look">Зображення тек</string>
+    <string name="folder_look_mosaic">Мозаїка</string>
+    <string name="folder_look_mosaic_desc">Підлаштовується: один кадр, два поруч або сітка</string>
+    <string name="folder_look_folder">Проста тека</string>
+    <string name="folder_look_folder_desc">Без картинок: тека кольору теми й загальна тривалість відео</string>
+    <string name="folder_look_centred">По центру</string>
+    <string name="folder_look_centred_desc">Увесь кадр у центрі картки розміром із картки «Нещодавніх»</string>
+    <string name="folder_look_square">Квадрат</string>
+    <string name="folder_look_square_desc">Квадратна картинка, щоб на екрані вміщалося більше тек</string>
+    <string name="pref_better_frames">Кращі кадри відео</string>
+    <string name="pref_better_frames_summary">Чіткіші кадри з десятої частини кожного відео, а не з початку. Перше відкриття великої теки довше</string>
+    <string name="film_recent_picture">Картинка в «Нещодавніх»</string>
+    <string name="film_recent_poster">Постер</string>
+    <string name="film_recent_frame">Кадр із відео</string>
+    <string name="film_forget">Прибрати відомості про фільм</string>
+    <string name="pref_integrations_header" formatted="false">Інтеграції</string>
+    <string name="pref_tracking_header" formatted="false">Облік переглядів</string>
+    <string name="tracking_not_connected" formatted="false">Не підключено. Торкніться, щоб підключити</string>
+    <string name="tracking_connected">Підключено як %1$s. Торкніться, щоб відключити</string>
+    <string name="tracking_connected_toast">Підключено до %1$s</string>
+    <string name="tracking_connect_title">Підключити %1$s</string>
+    <string name="tracking_open_page">Відкрити сторінку</string>
+    <string name="tracking_code_message">На будь-якому пристрої відкрийте %1$s і введіть цей код:\n\n%2$s</string>
+    <string name="tracking_disconnect_question">Відключити %1$s?</string>
+    <string name="tracking_disconnect" formatted="false">Відключити</string>
+    <string name="tracking_unavailable" formatted="false">Недоступно в цій версії</string>
+    <string name="tracking_failed">Не вдалося підключитися до %1$s. Спробуйте ще раз.</string>
+    <string name="tracking_send_question">Надіслати до %2$s %1$d відео, позначених як переглянуті?</string>
+    <string name="tracking_send" formatted="false">Надіслати</string>
+    <string name="watched_auto" formatted="false">Позначати переглянутим наприкінці</string>
+    <string name="watched_auto_desc" formatted="false">Також повідомляє Simkl, скільки переглянуто, якщо його підключено</string>
+    <string name="film_mark_watched" formatted="false">Позначити переглянутим</string>
+    <string name="film_watched" formatted="false">Переглянуто</string>
+    <string name="film_watched_on">Переглянуто в %1$s</string>
+    <string name="film_unwatch" formatted="false">Зняти позначку</string>
+    <string name="watched_percent" formatted="false">Вважати переглянутим з (%)</string>
+    <string name="home_section_recent_online">Нещодавні (онлайн)</string>
+    <string name="home_section_recent_here">Нещодавні (на цьому пристрої)</string>
+    <string name="home_recent_playlist">Плейлист</string>
+    <string name="home_time_left">залишилось %1$s</string>
+    <string name="pref_recent_here">Нещодавні на цьому пристрої</string>
+    <string name="pref_recent_here_summary">Останні 10 відео з цього пристрою, під «Нещодавніми»</string>
     <string name="home_section_pinned">Вибране</string>
     <string name="home_section_folders">Папки</string>
     <string name="home_section_results">Результати</string>
@@ -534,7 +578,10 @@ URL, відкриті через мережу, запам’ятовуються
     <string name="start_on_last">Останнє відео</string>
     <string name="pref_home_layout">Подання</string>
     <string name="home_layout_list">Список</string>
-    <string name="home_layout_wall">Стіна кадрів</string>
+    <string name="home_layout_wall">Галерея</string>
+    <string name="home_layout_cards">Картки</string>
+    <string name="home_layout_cards_desc">Високі картки, як у Нещодавніх</string>
+    <string name="home_view">Вигляд</string>
     <string name="home_wall_hint">Утримуйте папку, щоб додати її у вибране</string>
     <string name="set_audio">Звук</string>
     <string name="set_storage">Сховище й резервні копії</string>

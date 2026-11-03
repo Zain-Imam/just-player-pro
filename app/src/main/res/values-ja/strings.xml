@@ -11,18 +11,18 @@
     <string name="onboarding_key_title">TMDBキーを追加</string>
     <string name="onboarding_key_description">設定はここにあります。無料のTMDBキーがあれば、タイトル、ポスター、字幕、OPの位置を見つけられます。</string>
     <string name="open_subtitles">字幕を読み込む</string>
-    <string name="error_title">再生できませんでした</string>
+    <string name="error_title">再生できません</string>
     <string name="error_share">詳細を共有</string>
-    <string name="error_network">ファイルにアクセスできませんでした。接続と、リンクの期限が切れていないかを確認してください。</string>
-    <string name="error_http">サーバーがリクエストを拒否しました。デブリッドサービスのリンクの期限が切れている可能性があります。</string>
-    <string name="error_missing">ファイルがもう存在しません。</string>
+    <string name="error_network">ファイルに接続できません。接続またはリンクを確認してください。</string>
+    <string name="error_http">サーバーに拒否されました。リンクの期限が切れている可能性があります。</string>
+    <string name="error_missing">このファイルはもうありません。</string>
     <string name="error_permission">このファイルを開く権限がありません。</string>
-    <string name="error_codec">このファイルをデコードできるものがありません。もう一方のエンジンを試すか、エンジンを「自動」に設定してください。</string>
-    <string name="error_damaged">ファイルが破損しているか、不完全なようです。</string>
-    <string name="error_drm">これはコピー保護されているため、このプレーヤーでは再生できません。</string>
-    <string name="error_unknown">再生中に問題が発生しました。</string>
+    <string name="error_codec">このファイルをデコードできません。もう一方のエンジンを試してください。</string>
+    <string name="error_damaged">このファイルは破損しているか不完全です。</string>
+    <string name="error_drm">この動画はコピー保護されています。</string>
+    <string name="error_unknown">今は再生できません。もう一度お試しください。</string>
     <string name="error_details">詳細</string>
-    <string name="error_files_missing">ファイルアプリが無効か、見つかりません</string>
+    <string name="error_files_missing">ファイルアプリが無効か、ありません。</string>
     <string name="request_scope">外部字幕を自動で読み込んだり、フォルダ内の次のファイルに移動したりするには、動画が入っている最上位のフォルダ（例: Movies）へのアクセスを%sに許可してください。</string>
     <string name="delete_query">このファイルを削除？</string>
     <string name="delete_confirmation">削除</string>
@@ -82,7 +82,7 @@
 
 PINを入力するまで、スマートフォンには何も表示されません。下のボタンを押すか、この画面を離れるとページは停止します。</string>
     <string name="pref_setup_phone_stop">ページを停止</string>
-    <string name="pref_setup_phone_failed">ページを開始できませんでした。この端末で許可されていないか、ネットワークに接続されていません。代わりにここでキーを入力してください。</string>
+    <string name="pref_setup_phone_failed">ページを開始できません。代わりにここでキーを入力してください。</string>
     <string name="pref_online_note">情報カード、スキップ位置、字幕検索にはすべてTMDBキーが必要です。</string>
     <string name="pref_key_tmdb">TMDBキー</string>
     <string name="pref_key_tmdb_dialog">themoviedb.org → 設定 → API で無料で取得できます。</string>
@@ -109,8 +109,8 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="online_search_subtitles">オンラインで字幕を検索…</string>
     <string name="subtitle_source_title">字幕</string>
     <string name="subtitle_source_file">字幕ファイルを読み込む…</string>
-    <string name="online_needs_tmdb">先に設定でTMDBキーを追加してください。ファイル名を、字幕ソースに問い合わせられる作品情報に変換するために必要です。</string>
-    <string name="online_needs_source">字幕ソースが設定されていません。設定でStremioアドオン、またはOpenSubtitles、SubDL、Wyzieのキーを追加してください。</string>
+    <string name="online_needs_tmdb">まず設定で TMDB キーを追加してください。</string>
+    <string name="online_needs_source">まず設定で字幕ソースを設定してください。</string>
     <string name="online_identify_title">どの作品ですか？</string>
     <string name="online_searching">検索中…</string>
     <string name="online_identifying">特定中…</string>
@@ -130,7 +130,7 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="recent_remove">最近の動画から外す</string>
     <string name="recent_removed">最近の動画から外しました</string>
     <string name="recent_undo">元に戻す</string>
-    <string name="recent_pins_full">固定できるのは3本までです。先に1本の固定を解除してください。</string>
+    <string name="recent_pins_full">固定できるのは%1$d本までです。先に1本の固定を解除してください。</string>
     <string name="recent_pinned">固定済み</string>
     <string name="online_match_prompt_dismiss">後で</string>
     <string name="online_no_matches">そのタイトルでは見つかりませんでした</string>
@@ -152,9 +152,9 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="subtitle_menu_search_detail">このエピソードの字幕をオンラインで探します</string>
     <string name="subtitle_menu_settings_detail">サイズ、位置、遅延、スタイル</string>
     <string name="audio_menu_delay_detail">映像に対して音声をずらします</string>
-    <string name="capability_title">この端末では再生が難しい可能性があります</string>
-    <string name="capability_hard">この形式に対応するハードウェアデコーダーがありません。映像がカクついたり、音声だけが流れ続けたりする場合があります。</string>
-    <string name="capability_impossible">この端末にはデコードできるものがないため、まったく再生できない可能性があります。</string>
+    <string name="capability_title">スムーズに再生できない可能性があります</string>
+    <string name="capability_hard">ハードウェアデコーダーがありません。カクつくことがあります。</string>
+    <string name="capability_impossible">この端末にはデコーダーがありません。再生できない可能性があります。</string>
     <string name="capability_continue">このまま再生</string>
     <string name="capability_quit">ファイルを閉じる</string>
     <string name="capability_try_other">%1$sを試す</string>
@@ -163,7 +163,7 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="online_season">シーズン</string>
     <string name="online_episode">エピソード</string>
     <string name="online_downloading">ダウンロード中…</string>
-    <string name="online_download_failed">この字幕をダウンロードできませんでした</string>
+    <string name="online_download_failed">その字幕をダウンロードできません。もう一度お試しください。</string>
     <string name="online_download_limit">%1$sの本日の上限に達しました</string>
     <string name="online_download_limit_until">%1$sの上限に達しました。%2$s後に再び使えます</string>
     <string name="online_saved_to">読み込み、%1$sに保存しました</string>
@@ -199,7 +199,7 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="controls_name_repeat">ループ</string>
     <string name="pref_licenses">ライセンス</string>
     <string name="pref_licenses_summary">このアプリが使用しているすべてのライセンスの全文</string>
-    <string name="licenses_unavailable">このライセンスの本文を読み込めませんでした。</string>
+    <string name="licenses_unavailable">このライセンスを読み込めません。</string>
     <string name="intro_next">次へ</string>
     <string name="intro_back">戻る</string>
     <string name="intro_done">完了</string>
@@ -225,12 +225,13 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="pref_controls_timeout_summary">秒</string>
     <string name="unlocked">ロック解除</string>
     <string name="locked_hint">ロック中 — 解除するには鍵アイコンを押すか、画面を長押しします</string>
+    <string name="locked_hint_remote">ロック中。OK を長押しで解除。</string>
     <string name="pref_lock_hint">コントロールの鍵アイコンで画面をロックすると、誤操作を防げます。解除するには、鍵アイコンをもう一度押すか、画面のどこかを長押しするか、リモコンのOKを長押しします。画面を誤ってタップしても何も起きないため、うっかりロックが解除されることはありません。ロック中も音量ボタンは使えます。</string>
     <string name="pref_overlay_delay">カード表示までの時間</string>
     <string name="pref_overlay_delay_summary">一時停止してから表示するまでの秒数</string>
     <string name="pref_prefill">ファイル名から検索語を入力</string>
     <string name="button_lock">画面ロック</string>
-    <string name="engine_fallback_mpv">Media3で再生できなかったため、mpvに切り替えました</string>
+    <string name="engine_fallback_mpv">Media3 では再生できません。mpv に切り替えました。</string>
     <string name="engine_switch_file_type">このファイル形式はMedia3で非対応のため、mpvに切り替えました</string>
     <string name="engine_switch_video_format">この動画形式はMedia3で非対応のため、mpvに切り替えました</string>
     <string name="engine_switch_audio_format">この音声形式はMedia3で非対応のため、mpvに切り替えました</string>
@@ -241,14 +242,14 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="pref_engine_auto">自動</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">mpvにはAndroid 8.0以降が必要です</string>
-    <string name="engine_failed_title">このエンジンではファイルを再生できませんでした</string>
-    <string name="engine_failed_message">%1$sでは再生できませんでした。%2$sならおそらく再生できます。エンジンが2つあるのはそのためです。</string>
+    <string name="engine_failed_title">このファイルは再生できません</string>
+    <string name="engine_failed_message">%1$s では再生できません。%2$s を試してください。</string>
     <string name="engine_failed_try">%1$sを試す</string>
     <string name="engine_failed_auto">常に「自動」を使用</string>
     <string name="engine_no_picture_title">映像なし</string>
-    <string name="engine_no_picture_message">%1$sで音声は再生されていますが、映像が表示されません。多くの場合、Dolby Visionデコーダーのない端末でのDolby Visionが原因です。%2$sなら表示できる可能性があります。</string>
-    <string name="engine_no_picture_switched">Media3で映像が表示されないため、mpvに切り替えました</string>
-    <string name="engine_no_picture_either">どちらのエンジンでも映像が出ません — この端末ではこの動画を表示できません</string>
+    <string name="engine_no_picture_message">%1$s は音声のみで映像が出ません（多くは Dolby Vision）。%2$s を試してください。</string>
+    <string name="engine_no_picture_switched">Media3 で映像が出ません。mpv に切り替えました。</string>
+    <string name="engine_no_picture_either">この端末ではこの動画の映像を表示できません。</string>
     <string name="pref_engine_note">「自動」はMedia3で再生を始め、Media3で再生できないファイルはmpvに切り替えます。</string>
     <string name="pref_media3_only">Media3のみ — mpvでは使用されません</string>
     <string name="pref_adaptive_buffering">適応型バッファリング</string>
@@ -257,7 +258,7 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="pref_subtitle_folder_default">ダウンロード / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">フォルダを選択</string>
     <string name="pref_subtitle_folder_clear">デフォルトのフォルダを使用</string>
-    <string name="pref_subtitle_folder_failed">このフォルダは使用できません</string>
+    <string name="pref_subtitle_folder_failed">そのフォルダは使えません。</string>
     <string name="resume_title">続きを再生しますか？</string>
     <string name="resume_accept">再生</string>
     <string name="resume_decline">後で</string>
@@ -270,7 +271,7 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="open_url_title">ネットワークURL</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">再生</string>
-    <string name="open_url_invalid">プレーヤーで開けるURLではないようです</string>
+    <string name="open_url_invalid">プレーヤーで開けるリンクではありません。</string>
     <string name="pref_folders">プレーヤーが読み取れるフォルダ</string>
     <string name="pref_folders_note">次のエピソードや、作品と同じ場所に保存された字幕を見つけるために必要です。作品を保存しているフォルダをすべて追加してください。</string>
     <string name="pref_folders_empty">まだありません。フォルダがない場合、プレーヤーは開いたファイルしか認識できません。</string>
@@ -278,7 +279,7 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="pref_folders_remove">タップするとこのフォルダの読み取りを停止します</string>
     <string name="pref_folders_remove_confirm">今後、このフォルダで次のエピソードや字幕を探さなくなります。</string>
     <string name="pref_folders_remove_confirm_yes">削除</string>
-    <string name="pref_folders_failed">Androidがこの権限を保持しませんでした。もう一度フォルダを選択してください。</string>
+    <string name="pref_folders_failed">Android が権限を保持しませんでした。フォルダをもう一度選んでください。</string>
     <string name="pref_folders_no_picker">この端末にはフォルダ選択機能がありません。</string>
     <string name="pref_folders_summary_empty">フォルダはまだありません</string>
     <string name="error_code">コードを表示</string>
@@ -311,7 +312,7 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="update_install">取得してインストール</string>
     <string name="update_open">ページを開く</string>
     <string name="update_downloading">ダウンロード中…</string>
-    <string name="update_failed">アップデートを確認できませんでした。</string>
+    <string name="update_failed">今はアップデートを確認できません。</string>
     <string name="update_none_title">最新の状態です</string>
     <string name="update_none">現在のバージョンは%1$sです。公開されている最新版は%2$sです。</string>
     <string name="update_none_published">まだ何も公開されていません。現在のバージョンは%1$sです。</string>
@@ -355,7 +356,7 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="pref_backup_exported">%1$d件をエクスポートしました</string>
     <string name="pref_backup_imported">%1$d件をインポートしました。一部はプレーヤーを開き直すと反映されます。</string>
     <string name="pref_backup_not_ours">Just Player Proのバックアップファイルではありません</string>
-    <string name="pref_backup_failed">ファイルを読み込めませんでした</string>
+    <string name="pref_backup_failed">そのファイルを読み込めません。</string>
     <string name="pref_backup_nothing">何も選択されていません</string>
     <string name="pref_dangerous_header">詳細設定</string>
     <string name="pref_dangerous_warning">通常は再生できるファイルが、これらの設定で再生できなくなる場合があります。</string>
@@ -372,11 +373,12 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="pref_custom_subtitle_font">カスタムフォント</string>
     <string name="pref_choose_custom_font">フォントを選択</string>
     <string name="pref_custom_subtitle_font_not_set">フォントが選択されていません</string>
-    <string name="pref_custom_subtitle_font_failed">フォントを読み込めません</string>
+    <string name="pref_custom_subtitle_font_failed">そのフォントを読み込めません。</string>
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">オン</string>
     <string name="osd_item_boolean_false">オフ</string>
     <string name="osd_sleep_title">スリープタイマー</string>
+    <string name="osd_brightness_title">明るさ</string>
     <string name="osd_sleep_off">オフ</string>
     <string name="osd_sleep_end">ファイルの最後</string>
     <string name="osd_sleep_minutes">%1$d分</string>
@@ -428,14 +430,14 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="pref_addon_no_subtitles_resource">このアドオンは字幕を提供していません。</string>
     <string name="pref_addon_needs_configuration">このアドオンは先に設定が必要です — 設定ページを使い、表示されたURLを貼り付けてください。</string>
     <string name="pref_addon_fetch_failed">アドオンが字幕のリクエストを拒否しました。</string>
-    <string name="pref_addon_no_subtitles">どこにでも字幕がある作品に対してアドオンが何も返さなかったため、お使いのファイルでも何も返さないと考えられます。</string>
+    <string name="pref_addon_no_subtitles">このアドオンは有名な映画で何も見つけられなかったので、あなたのファイルでも見つけられません。</string>
     <string name="pref_addon_no_usable_url">アドオンが返した字幕に、使用できるリンクがありません。</string>
     <string name="pref_addon_not_downloadable">アドオンのリンクから字幕ファイルを取得できませんでした。</string>
     <string name="key_check_cleared">消去済み</string>
     <string name="key_check_saved">保存済み</string>
     <string name="key_check_accepted">%1$sがキーを承認しました</string>
     <string name="key_check_rejected">%1$sがキーを拒否しました</string>
-    <string name="key_check_rate_limited">%1$sがリクエストを制限しています。しばらくしてからお試しください</string>
+    <string name="key_check_rate_limited">%1$s は混み合っています。数分後にもう一度お試しください。</string>
     <string name="key_check_no_answer">%1$sから応答がありません — 接続を確認してください</string>
     <string name="key_check_http">%1$sの応答: HTTP %2$d</string>
     <string name="setup_enter_pin">プレーヤーに表示されているPINを入力してください。</string>
@@ -501,6 +503,48 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="home_pinned">お気に入りに追加しました</string>
     <string name="home_unpinned">お気に入りから削除しました</string>
     <string name="home_section_recent">最近の動画</string>
+    <string name="pref_folder_look">フォルダの画像</string>
+    <string name="folder_look_mosaic">モザイク</string>
+    <string name="folder_look_mosaic_desc">フォルダに合わせて表示：1枚、2枚並び、またはグリッド</string>
+    <string name="folder_look_folder">シンプルなフォルダ</string>
+    <string name="folder_look_folder_desc">画像なし：テーマ色のフォルダと動画の合計時間</string>
+    <string name="folder_look_centred">中央</string>
+    <string name="folder_look_centred_desc">最近の動画と同じ大きさのカードの中央に画像全体を表示</string>
+    <string name="folder_look_square">正方形</string>
+    <string name="folder_look_square_desc">正方形の画像で、画面により多くのフォルダが入ります</string>
+    <string name="pref_better_frames">より良い動画の画像</string>
+    <string name="pref_better_frames_summary">冒頭ではなく各動画の10分の1の位置から取った鮮明な画像。大きなフォルダを初めて開くときは遅くなります</string>
+    <string name="film_recent_picture">最近の動画での画像</string>
+    <string name="film_recent_poster">ポスター</string>
+    <string name="film_recent_frame">動画のフレーム</string>
+    <string name="film_forget">作品情報を削除</string>
+    <string name="pref_integrations_header" formatted="false">連携</string>
+    <string name="pref_tracking_header" formatted="false">視聴の記録</string>
+    <string name="tracking_not_connected" formatted="false">未接続。タップして接続</string>
+    <string name="tracking_connected">%1$s として接続中。タップで切断</string>
+    <string name="tracking_connected_toast">%1$s に接続しました</string>
+    <string name="tracking_connect_title">%1$s に接続</string>
+    <string name="tracking_open_page">ページを開く</string>
+    <string name="tracking_code_message">任意の端末で %1$s を開き、次のコードを入力してください:\n\n%2$s</string>
+    <string name="tracking_disconnect_question">%1$s との接続を解除しますか？</string>
+    <string name="tracking_disconnect" formatted="false">接続を解除</string>
+    <string name="tracking_unavailable" formatted="false">このバージョンでは使えません</string>
+    <string name="tracking_failed">%1$s に接続できませんでした。もう一度お試しください。</string>
+    <string name="tracking_send_question">視聴済みにした %1$d 本の動画を %2$s に送りますか？</string>
+    <string name="tracking_send" formatted="false">送信</string>
+    <string name="watched_auto" formatted="false">見終わったら視聴済みにする</string>
+    <string name="watched_auto_desc" formatted="false">接続中は、どこまで見たかを Simkl にも伝えます</string>
+    <string name="film_mark_watched" formatted="false">視聴済みにする</string>
+    <string name="film_watched" formatted="false">視聴済み</string>
+    <string name="film_watched_on">%1$s で視聴済み</string>
+    <string name="film_unwatch" formatted="false">未視聴に戻す</string>
+    <string name="watched_percent" formatted="false">視聴済みとみなす位置 (%)</string>
+    <string name="home_section_recent_online">最近の動画 (オンライン)</string>
+    <string name="home_section_recent_here">最近の動画 (この端末)</string>
+    <string name="home_recent_playlist">再生リスト</string>
+    <string name="home_time_left">残り %1$s</string>
+    <string name="pref_recent_here">最近（この端末）</string>
+    <string name="pref_recent_here_summary">この端末で再生した最新10本を「最近」の下に表示</string>
     <string name="home_section_pinned">お気に入り</string>
     <string name="home_section_folders">フォルダ</string>
     <string name="home_section_results">検索結果</string>
@@ -525,7 +569,10 @@ PINを入力するまで、スマートフォンには何も表示されませ�
     <string name="start_on_last">前回の動画</string>
     <string name="pref_home_layout">レイアウト</string>
     <string name="home_layout_list">リスト</string>
-    <string name="home_layout_wall">グリッド</string>
+    <string name="home_layout_wall">ギャラリー</string>
+    <string name="home_layout_cards">カード</string>
+    <string name="home_layout_cards_desc">最近と同じ縦長カード</string>
+    <string name="home_view">表示</string>
     <string name="home_wall_hint">フォルダを長押しするとお気に入りに追加できます</string>
     <string name="set_audio">音声</string>
     <string name="set_storage">ストレージとバックアップ</string>

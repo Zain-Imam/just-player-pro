@@ -11,18 +11,18 @@
     <string name="onboarding_key_title">Configure o TMDB</string>
     <string name="onboarding_key_description">As configurações ficam aqui. Uma chave grátis do TMDB é o que encontra títulos, pôsteres, legendas e marcas de abertura.</string>
     <string name="open_subtitles">Carregar legendas</string>
-    <string name="error_title">Falha ao reproduzir</string>
+    <string name="error_title">Não é possível reproduzir</string>
     <string name="error_share">Enviar detalhes</string>
-    <string name="error_network">O player não conseguiu acessar o arquivo. Verifique a conexão e se o link expirou.</string>
-    <string name="error_http">O servidor recusou a solicitação. Um link de um serviço debrid pode ter expirado.</string>
-    <string name="error_missing">O arquivo não está mais lá.</string>
-    <string name="error_permission">O player não tem permissão para abrir esse arquivo.</string>
-    <string name="error_codec">Nada aqui decodifica este arquivo. Tente o outro motor ou defina o motor como Auto.</string>
-    <string name="error_damaged">O arquivo parece danificado ou incompleto.</string>
-    <string name="error_drm">Isto tem proteção contra cópia, que este player não suporta.</string>
-    <string name="error_unknown">Algo deu errado ao reproduzir isto.</string>
+    <string name="error_network">Não foi possível acessar o arquivo. Verifique a conexão ou o link.</string>
+    <string name="error_http">O servidor recusou. O link pode ter expirado.</string>
+    <string name="error_missing">Este arquivo não existe mais.</string>
+    <string name="error_permission">Sem permissão para abrir este arquivo.</string>
+    <string name="error_codec">Não é possível decodificar este arquivo. Tente o outro mecanismo.</string>
+    <string name="error_damaged">Este arquivo está danificado ou incompleto.</string>
+    <string name="error_drm">Este vídeo é protegido contra cópia.</string>
+    <string name="error_unknown">Não dá para reproduzir agora. Tente de novo.</string>
     <string name="error_details">Detalhes</string>
-    <string name="error_files_missing">O app Arquivos está desativado ou ausente</string>
+    <string name="error_files_missing">O app Arquivos está desativado ou ausente.</string>
     <string name="request_scope">Para carregar legendas externas automaticamente ou pular para o próximo arquivo de uma pasta, conceda a %s acesso à pasta mais alta que contém seus vídeos (por ex., Filmes).</string>
     <string name="delete_query">Excluir arquivo?</string>
     <string name="delete_confirmation">Excluir</string>
@@ -82,7 +82,7 @@ e digite este PIN quando for pedido:
 
 Nada aparece no celular até o PIN ser digitado. A página para quando você tocar no botão abaixo ou sair desta tela.</string>
     <string name="pref_setup_phone_stop">Parar a página</string>
-    <string name="pref_setup_phone_failed">Não foi possível iniciar a página. Este dispositivo pode não permitir, ou não está em uma rede — digite as chaves aqui.</string>
+    <string name="pref_setup_phone_failed">Não foi possível abrir a página. Digite as chaves aqui.</string>
     <string name="pref_online_note">A ficha, as marcas de pulo e a busca de legendas precisam de uma chave do TMDB.</string>
     <string name="pref_key_tmdb">Chave do TMDB</string>
     <string name="pref_key_tmdb_dialog">Grátis em themoviedb.org → Configurações → API.</string>
@@ -109,8 +109,8 @@ Nada aparece no celular até o PIN ser digitado. A página para quando você toc
     <string name="online_search_subtitles">Buscar legendas online…</string>
     <string name="subtitle_source_title">Legendas</string>
     <string name="subtitle_source_file">Abrir arquivo de legenda…</string>
-    <string name="online_needs_tmdb">Adicione antes uma chave do TMDB em Configurações — é ela que transforma o nome do arquivo em algo que as fontes de legendas entendem.</string>
-    <string name="online_needs_source">Nenhuma fonte de legendas configurada. Adicione um complemento do Stremio, ou uma chave do OpenSubtitles, SubDL ou Wyzie, em Configurações.</string>
+    <string name="online_needs_tmdb">Adicione uma chave do TMDB nas Configurações primeiro.</string>
+    <string name="online_needs_source">Configure uma fonte de legendas nas Configurações primeiro.</string>
     <string name="online_identify_title">Qual é este?</string>
     <string name="online_searching">Buscando…</string>
     <string name="online_identifying">Identificando…</string>
@@ -130,7 +130,7 @@ Nada aparece no celular até o PIN ser digitado. A página para quando você toc
     <string name="recent_remove">Remover de Recentes</string>
     <string name="recent_removed">Removido de Recentes</string>
     <string name="recent_undo">Desfazer</string>
-    <string name="recent_pins_full">Até 3 filmes podem ser fixados. Desafixe um antes.</string>
+    <string name="recent_pins_full">Até %1$d filmes podem ser fixados. Desafixe um antes.</string>
     <string name="recent_pinned">Fixado</string>
     <string name="online_match_prompt_dismiss">Agora não</string>
     <string name="online_no_matches">Nada encontrado para esse título</string>
@@ -152,9 +152,9 @@ Nada aparece no celular até o PIN ser digitado. A página para quando você toc
     <string name="subtitle_menu_search_detail">Busque uma online para este episódio</string>
     <string name="subtitle_menu_settings_detail">Tamanho, posição, atraso e estilo</string>
     <string name="audio_menu_delay_detail">Ajuste o som em relação à imagem</string>
-    <string name="capability_title">Este dispositivo pode ter dificuldade com isto</string>
-    <string name="capability_hard">Nenhum decodificador de hardware aqui suporta isto. A imagem pode travar, ou parar enquanto o som continua.</string>
-    <string name="capability_impossible">Nada neste dispositivo diz que decodifica isto, então pode nem reproduzir.</string>
+    <string name="capability_title">Pode não rodar liso</string>
+    <string name="capability_hard">Sem decodificador de hardware para isto. Pode travar.</string>
+    <string name="capability_impossible">Nada aqui decodifica isto. Pode não reproduzir.</string>
     <string name="capability_continue">Ver mesmo assim</string>
     <string name="capability_quit">Fechar o arquivo</string>
     <string name="capability_try_other">Tentar %1$s</string>
@@ -163,7 +163,7 @@ Nada aparece no celular até o PIN ser digitado. A página para quando você toc
     <string name="online_season">Temporada</string>
     <string name="online_episode">Episódio</string>
     <string name="online_downloading">Baixando…</string>
-    <string name="online_download_failed">Não foi possível baixar essa legenda</string>
+    <string name="online_download_failed">Não foi possível baixar essa legenda. Tente de novo.</string>
     <string name="online_download_limit">%1$s: limite diário atingido</string>
     <string name="online_download_limit_until">%1$s: limite atingido. Mais em %2$s</string>
     <string name="online_saved_to">Carregada e salva em %1$s</string>
@@ -199,7 +199,7 @@ Nada aparece no celular até o PIN ser digitado. A página para quando você toc
     <string name="controls_name_repeat">Repetir</string>
     <string name="pref_licenses">Licenças</string>
     <string name="pref_licenses_summary">O texto completo de todas as licenças deste app</string>
-    <string name="licenses_unavailable">Não foi possível ler o texto desta licença.</string>
+    <string name="licenses_unavailable">Não foi possível ler esta licença.</string>
     <string name="intro_next">Avançar</string>
     <string name="intro_back">Voltar</string>
     <string name="intro_done">Pronto</string>
@@ -225,12 +225,13 @@ Nada aparece no celular até o PIN ser digitado. A página para quando você toc
     <string name="pref_controls_timeout_summary">Segundos</string>
     <string name="unlocked">Desbloqueado</string>
     <string name="locked_hint">Bloqueado — toque no cadeado ou segure a imagem para desbloquear</string>
+    <string name="locked_hint_remote">Bloqueado. Segure OK para desbloquear.</string>
     <string name="pref_lock_hint">Bloqueie a tela contra toques acidentais com o cadeado nos controles. Para desbloquear, toque no cadeado de novo, segure o dedo em qualquer lugar da imagem ou segure OK no controle remoto. Um toque solto na imagem não faz nada, então o bloqueio não sai por acidente. As teclas de volume continuam funcionando com a tela bloqueada.</string>
     <string name="pref_overlay_delay">A ficha aparece após</string>
     <string name="pref_overlay_delay_summary">Segundos em pausa antes de aparecer</string>
     <string name="pref_prefill">Usar o nome do arquivo na busca</string>
     <string name="button_lock">Bloquear tela</string>
-    <string name="engine_fallback_mpv">O Media3 não reproduziu isto — trocado para mpv</string>
+    <string name="engine_fallback_mpv">O Media3 não reproduz isto. Trocado para o mpv.</string>
     <string name="engine_switch_file_type">Este tipo de arquivo não é suportado no Media3, trocado para mpv</string>
     <string name="engine_switch_video_format">Este formato de vídeo não é suportado no Media3, trocado para mpv</string>
     <string name="engine_switch_audio_format">Este formato de áudio não é suportado no Media3, trocado para mpv</string>
@@ -241,14 +242,14 @@ Nada aparece no celular até o PIN ser digitado. A página para quando você toc
     <string name="pref_engine_auto">Auto</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">mpv requer Android 8.0 ou superior</string>
-    <string name="engine_failed_title">Este motor não conseguiu reproduzir o arquivo</string>
-    <string name="engine_failed_message">%1$s não conseguiu reproduzir isto. %2$s provavelmente consegue — é por isso que há dois.</string>
+    <string name="engine_failed_title">Não é possível reproduzir o arquivo</string>
+    <string name="engine_failed_message">%1$s não reproduz isto. Tente o %2$s.</string>
     <string name="engine_failed_try">Tentar %1$s</string>
     <string name="engine_failed_auto">Sempre usar Auto</string>
     <string name="engine_no_picture_title">Sem imagem</string>
-    <string name="engine_no_picture_message">%1$s está reproduzindo o som mas não a imagem — geralmente Dolby Vision num dispositivo sem decodificador Dolby Vision. %2$s pode mostrá-la.</string>
-    <string name="engine_no_picture_switched">Sem imagem no Media3 — trocado para mpv</string>
-    <string name="engine_no_picture_either">Sem imagem em nenhum motor — este dispositivo não consegue exibir este vídeo</string>
+    <string name="engine_no_picture_message">%1$s reproduz o som mas não a imagem (geralmente Dolby Vision). Tente o %2$s.</string>
+    <string name="engine_no_picture_switched">Sem imagem no Media3. Trocado para o mpv.</string>
+    <string name="engine_no_picture_either">Este aparelho não consegue mostrar a imagem deste vídeo.</string>
     <string name="pref_engine_note">Auto começa no Media3 e passa o arquivo para o mpv quando o Media3 não consegue reproduzi-lo.</string>
     <string name="pref_media3_only">Só Media3 — o mpv não usa</string>
     <string name="pref_adaptive_buffering">Buffer adaptável</string>
@@ -257,7 +258,7 @@ Nada aparece no celular até o PIN ser digitado. A página para quando você toc
     <string name="pref_subtitle_folder_default">Downloads / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">Escolher uma pasta</string>
     <string name="pref_subtitle_folder_clear">Usar a pasta padrão</string>
-    <string name="pref_subtitle_folder_failed">Não foi possível usar essa pasta</string>
+    <string name="pref_subtitle_folder_failed">Não é possível usar essa pasta.</string>
     <string name="resume_title">Ver o último vídeo?</string>
     <string name="resume_accept">Ver</string>
     <string name="resume_decline">Agora não</string>
@@ -270,7 +271,7 @@ Nada aparece no celular até o PIN ser digitado. A página para quando você toc
     <string name="open_url_title">URL de rede</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">Ver</string>
-    <string name="open_url_invalid">Isso não parece uma URL que um player consiga abrir</string>
+    <string name="open_url_invalid">Esse não é um link que o player consiga abrir.</string>
     <string name="pref_folders">Pastas que o player pode ler</string>
     <string name="pref_folders_note">Necessário para achar o próximo episódio e a legenda salva junto ao filme. Adicione todas as pastas onde você guarda filmes.</string>
     <string name="pref_folders_empty">Nenhuma ainda. Sem uma, o player só vê o arquivo que você abriu.</string>
@@ -278,7 +279,7 @@ Nada aparece no celular até o PIN ser digitado. A página para quando você toc
     <string name="pref_folders_remove">Toque para parar de ler esta pasta</string>
     <string name="pref_folders_remove_confirm">O player não vai mais procurar aqui o próximo episódio ou legendas.</string>
     <string name="pref_folders_remove_confirm_yes">Remover</string>
-    <string name="pref_folders_failed">O Android não manteve essa permissão. Tente escolher a pasta de novo.</string>
+    <string name="pref_folders_failed">O Android não manteve a permissão. Escolha a pasta de novo.</string>
     <string name="pref_folders_no_picker">Este dispositivo não tem seletor de pastas.</string>
     <string name="pref_folders_summary_empty">Nenhuma pasta ainda</string>
     <string name="error_code">Mostrar código</string>
@@ -311,7 +312,7 @@ Nada aparece no celular até o PIN ser digitado. A página para quando você toc
     <string name="update_install">Baixar e instalar</string>
     <string name="update_open">Abrir a página</string>
     <string name="update_downloading">Baixando…</string>
-    <string name="update_failed">Erro ao buscar atualizações.</string>
+    <string name="update_failed">Não é possível verificar atualizações agora.</string>
     <string name="update_none_title">Tudo atualizado</string>
     <string name="update_none">Você tem a %1$s. A mais recente publicada é a %2$s.</string>
     <string name="update_none_published">Nada foi publicado ainda. Você tem a %1$s.</string>
@@ -358,7 +359,7 @@ As URLs que você abre pela rede ficam guardadas para você voltar a elas sem di
     <string name="pref_backup_exported">%1$d itens exportados</string>
     <string name="pref_backup_imported">%1$d itens importados. Parte disso exige reabrir o player.</string>
     <string name="pref_backup_not_ours">Esse arquivo não é um backup do Just Player Pro</string>
-    <string name="pref_backup_failed">Falha ao ler esse arquivo</string>
+    <string name="pref_backup_failed">Não foi possível ler esse arquivo.</string>
     <string name="pref_backup_nothing">Nada foi escolhido</string>
     <string name="pref_dangerous_header">Avançado</string>
     <string name="pref_dangerous_warning">Isto pode quebrar a reprodução de arquivos que funcionam normalmente.</string>
@@ -375,11 +376,12 @@ As URLs que você abre pela rede ficam guardadas para você voltar a elas sem di
     <string name="pref_custom_subtitle_font">Fonte personalizada</string>
     <string name="pref_choose_custom_font">Escolher a fonte</string>
     <string name="pref_custom_subtitle_font_not_set">Nenhuma fonte personalizada</string>
-    <string name="pref_custom_subtitle_font_failed">Falha ao carregar a fonte</string>
+    <string name="pref_custom_subtitle_font_failed">Não foi possível carregar essa fonte.</string>
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">Ativado</string>
     <string name="osd_item_boolean_false">Desativado</string>
     <string name="osd_sleep_title">Temporizador de desligamento</string>
+    <string name="osd_brightness_title">Brilho</string>
     <string name="osd_sleep_off">Desativado</string>
     <string name="osd_sleep_end">Fim do arquivo</string>
     <string name="osd_sleep_minutes">%1$d min</string>
@@ -431,14 +433,14 @@ O complemento 1 vem com o oficial do OpenSubtitles, que funciona como está. Os 
     <string name="pref_addon_no_subtitles_resource">Esse complemento não fornece legendas.</string>
     <string name="pref_addon_needs_configuration">Esse complemento precisa ser configurado antes — use a página de configuração dele e cole a URL que ela der.</string>
     <string name="pref_addon_fetch_failed">O complemento recusou um pedido de legendas.</string>
-    <string name="pref_addon_no_subtitles">O complemento não retornou nada para um filme que tem legendas em todo lugar, então também não retornaria nada para os seus arquivos.</string>
+    <string name="pref_addon_no_subtitles">Este addon não achou nada para um filme conhecido, então também não vai achar para os seus.</string>
     <string name="pref_addon_no_usable_url">O complemento retornou legendas sem links utilizáveis.</string>
     <string name="pref_addon_not_downloadable">Os links do complemento não entregaram um arquivo de legenda.</string>
     <string name="key_check_cleared">Campo apagado</string>
     <string name="key_check_saved">Campo salvo</string>
     <string name="key_check_accepted">%1$s aceitou a chave</string>
     <string name="key_check_rejected">%1$s recusou a chave</string>
-    <string name="key_check_rate_limited">%1$s está limitando pedidos; tente daqui a pouco</string>
+    <string name="key_check_rate_limited">%1$s está ocupado. Tente de novo em alguns minutos.</string>
     <string name="key_check_no_answer">Sem resposta de %1$s — verifique a conexão</string>
     <string name="key_check_http">%1$s respondeu HTTP %2$d</string>
     <string name="setup_enter_pin">Digite o PIN mostrado no player.</string>
@@ -504,6 +506,48 @@ O complemento 1 vem com o oficial do OpenSubtitles, que funciona como está. Os 
     <string name="home_pinned">Salvo nos favoritos</string>
     <string name="home_unpinned">Removido dos favoritos</string>
     <string name="home_section_recent">Recentes</string>
+    <string name="pref_folder_look">Imagens das pastas</string>
+    <string name="folder_look_mosaic">Mosaico</string>
+    <string name="folder_look_mosaic_desc">Se ajusta: uma imagem, duas lado a lado ou uma grade</string>
+    <string name="folder_look_folder">Pasta simples</string>
+    <string name="folder_look_folder_desc">Sem imagens: uma pasta na cor do tema e a duração dos vídeos</string>
+    <string name="folder_look_centred">Centralizada</string>
+    <string name="folder_look_centred_desc">A imagem inteira no meio de um cartão do tamanho dos de Recentes</string>
+    <string name="folder_look_square">Quadrada</string>
+    <string name="folder_look_square_desc">Uma imagem quadrada, para caberem mais pastas na tela</string>
+    <string name="pref_better_frames">Imagens de vídeo melhores</string>
+    <string name="pref_better_frames_summary">Imagens mais nítidas tiradas a um décimo de cada vídeo em vez do início. A primeira visita a uma pasta grande é mais lenta</string>
+    <string name="film_recent_picture">Imagem em Recentes</string>
+    <string name="film_recent_poster">Pôster</string>
+    <string name="film_recent_frame">Quadro do vídeo</string>
+    <string name="film_forget">Remover detalhes do filme</string>
+    <string name="pref_integrations_header" formatted="false">Integrações</string>
+    <string name="pref_tracking_header" formatted="false">Acompanhamento</string>
+    <string name="tracking_not_connected" formatted="false">Não conectado. Toque para conectar</string>
+    <string name="tracking_connected">Conectado como %1$s. Toque para desconectar</string>
+    <string name="tracking_connected_toast">Conectado ao %1$s</string>
+    <string name="tracking_connect_title">Conectar %1$s</string>
+    <string name="tracking_open_page">Abrir a página</string>
+    <string name="tracking_code_message">Em qualquer aparelho, abra %1$s e digite este código:\n\n%2$s</string>
+    <string name="tracking_disconnect_question">Desconectar %1$s?</string>
+    <string name="tracking_disconnect" formatted="false">Desconectar</string>
+    <string name="tracking_unavailable" formatted="false">Indisponível nesta versão</string>
+    <string name="tracking_failed">Não foi possível conectar ao %1$s. Tente de novo.</string>
+    <string name="tracking_send_question">Enviar ao %2$s os %1$d vídeos marcados como assistidos?</string>
+    <string name="tracking_send" formatted="false">Enviar</string>
+    <string name="watched_auto" formatted="false">Marcar como assistido ao terminar</string>
+    <string name="watched_auto_desc" formatted="false">Também informa ao Simkl até onde você assistiu, se conectado</string>
+    <string name="film_mark_watched" formatted="false">Marcar como assistido</string>
+    <string name="film_watched" formatted="false">Assistido</string>
+    <string name="film_watched_on">Assistido no %1$s</string>
+    <string name="film_unwatch" formatted="false">Desmarcar</string>
+    <string name="watched_percent" formatted="false">Conta como assistido em (%)</string>
+    <string name="home_section_recent_online">Recentes (online)</string>
+    <string name="home_section_recent_here">Recentes (neste dispositivo)</string>
+    <string name="home_recent_playlist">Playlist</string>
+    <string name="home_time_left">faltam %1$s</string>
+    <string name="pref_recent_here">Recentes neste aparelho</string>
+    <string name="pref_recent_here_summary">Os últimos 10 vídeos tocados neste aparelho, abaixo de Recentes</string>
     <string name="home_section_pinned">Favoritos</string>
     <string name="home_section_folders">Pastas</string>
     <string name="home_section_results">Resultados</string>
@@ -528,7 +572,10 @@ O complemento 1 vem com o oficial do OpenSubtitles, que funciona como está. Os 
     <string name="start_on_last">Último vídeo</string>
     <string name="pref_home_layout">Exibição</string>
     <string name="home_layout_list">Lista</string>
-    <string name="home_layout_wall">Mosaico</string>
+    <string name="home_layout_wall">Galeria</string>
+    <string name="home_layout_cards">Cartões</string>
+    <string name="home_layout_cards_desc">Cartões altos, como em Recentes</string>
+    <string name="home_view">Visualização</string>
     <string name="home_wall_hint">Toque e segure uma pasta para salvar nos favoritos</string>
     <string name="set_audio">Áudio</string>
     <string name="set_storage">Armazenamento e backup</string>

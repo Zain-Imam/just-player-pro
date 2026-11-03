@@ -13,16 +13,16 @@
     <string name="open_subtitles">載入字幕</string>
     <string name="error_title">無法播放</string>
     <string name="error_share">分享詳細資料</string>
-    <string name="error_network">播放器無法連上檔案。請檢查網路連線，以及連結是否已過期。</string>
-    <string name="error_http">伺服器拒絕了要求。來自 debrid 服務的連結可能已過期。</string>
+    <string name="error_network">無法存取檔案。請檢查網路或連結。</string>
+    <string name="error_http">伺服器拒絕了要求。連結可能已過期。</string>
     <string name="error_missing">這個檔案已不存在。</string>
-    <string name="error_permission">播放器沒有開啟這個檔案的權限。</string>
-    <string name="error_codec">這裡沒有任何元件能解碼這個檔案。請試試另一個引擎，或將引擎設為「自動」。</string>
-    <string name="error_damaged">這個檔案似乎已損毀或不完整。</string>
-    <string name="error_drm">這是受版權保護的內容，本播放器無法處理。</string>
-    <string name="error_unknown">播放時發生問題。</string>
+    <string name="error_permission">沒有開啟此檔案的權限。</string>
+    <string name="error_codec">無法解碼此檔案。請試試另一個引擎。</string>
+    <string name="error_damaged">此檔案已損毀或不完整。</string>
+    <string name="error_drm">此影片受複製保護。</string>
+    <string name="error_unknown">現在無法播放。請再試一次。</string>
     <string name="error_details">詳細資料</string>
-    <string name="error_files_missing">「檔案」應用程式已停用或不存在</string>
+    <string name="error_files_missing">「檔案」應用程式已停用或不存在。</string>
     <string name="request_scope">如要自動載入外部字幕，或跳到同一目錄中的下一個檔案，請允許 %s 存取存放你影片的最上層資料夾（例如 Movies）。</string>
     <string name="delete_query">要刪除這個檔案嗎？</string>
     <string name="delete_confirmation">刪除</string>
@@ -82,7 +82,7 @@
 
 輸入 PIN 之前，手機上不會顯示任何內容。按下方按鈕或離開這個畫面後，頁面就會停止。</string>
     <string name="pref_setup_phone_stop">停止頁面</string>
-    <string name="pref_setup_phone_failed">無法啟動頁面。這部裝置可能不允許，或未連上網路——請改在這裡輸入金鑰。</string>
+    <string name="pref_setup_phone_failed">無法啟動頁面。請改在這裡輸入金鑰。</string>
     <string name="pref_online_note">資訊卡、略過標記和字幕搜尋都需要 TMDB 金鑰。</string>
     <string name="pref_key_tmdb">TMDB 金鑰</string>
     <string name="pref_key_tmdb_dialog">可在 themoviedb.org → 設定 → API 免費取得。</string>
@@ -109,8 +109,8 @@
     <string name="online_search_subtitles">搜尋線上字幕…</string>
     <string name="subtitle_source_title">字幕</string>
     <string name="subtitle_source_file">載入字幕檔案…</string>
-    <string name="online_needs_tmdb">請先在「設定」中新增 TMDB 金鑰——有了它，才能把檔案名稱轉成字幕來源可以查詢的內容。</string>
-    <string name="online_needs_source">尚未設定任何字幕來源。請在「設定」中新增 Stremio 附加元件，或 OpenSubtitles、SubDL、Wyzie 的金鑰。</string>
+    <string name="online_needs_tmdb">請先在設定中新增 TMDB 金鑰。</string>
+    <string name="online_needs_source">請先在設定中設定字幕來源。</string>
     <string name="online_identify_title">這是哪一部？</string>
     <string name="online_searching">正在搜尋…</string>
     <string name="online_identifying">正在辨識…</string>
@@ -130,7 +130,7 @@
     <string name="recent_remove">從最近播放中移除</string>
     <string name="recent_removed">已從最近播放中移除</string>
     <string name="recent_undo">復原</string>
-    <string name="recent_pins_full">最多只能釘選 3 部影片。請先取消釘選一部。</string>
+    <string name="recent_pins_full">最多只能釘選 %1$d 部影片。請先取消釘選一部。</string>
     <string name="recent_pinned">已釘選</string>
     <string name="online_match_prompt_dismiss">以後再說</string>
     <string name="online_no_matches">找不到這個標題的結果</string>
@@ -152,9 +152,9 @@
     <string name="subtitle_menu_search_detail">在線上尋找這一集的字幕</string>
     <string name="subtitle_menu_settings_detail">大小、位置、延遲和樣式</string>
     <string name="audio_menu_delay_detail">調整聲音與畫面的同步</string>
-    <string name="capability_title">這部裝置可能難以播放這個檔案</string>
-    <string name="capability_hard">這部裝置沒有能處理它的硬體解碼器。畫面可能會斷斷續續，或停住而聲音繼續播放。</string>
-    <string name="capability_impossible">這部裝置上沒有任何元件表示能解碼它，因此可能完全無法播放。</string>
+    <string name="capability_title">可能播放不流暢</string>
+    <string name="capability_hard">沒有對應的硬體解碼器。可能會卡頓。</string>
+    <string name="capability_impossible">此裝置無法解碼。可能無法播放。</string>
     <string name="capability_continue">仍要播放</string>
     <string name="capability_quit">關閉檔案</string>
     <string name="capability_try_other">改用 %1$s</string>
@@ -163,7 +163,7 @@
     <string name="online_season">季</string>
     <string name="online_episode">集</string>
     <string name="online_downloading">正在下載…</string>
-    <string name="online_download_failed">無法下載這個字幕</string>
+    <string name="online_download_failed">無法下載該字幕。請再試一次。</string>
     <string name="online_download_limit">%1$s 今日下載次數已達上限</string>
     <string name="online_download_limit_until">%1$s 已達上限，%2$s後可繼續下載</string>
     <string name="online_saved_to">已載入，並儲存至 %1$s</string>
@@ -199,7 +199,7 @@
     <string name="controls_name_repeat">循環播放</string>
     <string name="pref_licenses">授權</string>
     <string name="pref_licenses_summary">本應用程式所依據的每份授權完整內容</string>
-    <string name="licenses_unavailable">無法讀取這份授權內容。</string>
+    <string name="licenses_unavailable">無法讀取此授權。</string>
     <string name="intro_next">下一步</string>
     <string name="intro_back">上一步</string>
     <string name="intro_done">完成</string>
@@ -225,12 +225,13 @@
     <string name="pref_controls_timeout_summary">秒</string>
     <string name="unlocked">已解鎖</string>
     <string name="locked_hint">已鎖定——按鎖頭按鈕或按住畫面即可解鎖</string>
+    <string name="locked_hint_remote">已鎖定。長按 OK 解鎖。</string>
     <string name="pref_lock_hint">使用控制列中的鎖頭按鈕鎖定螢幕，避免誤觸。如要解鎖，請再按一次鎖頭按鈕、用手指按住畫面任意位置，或按住遙控器上的確定鍵。不小心輕觸畫面不會有任何反應，因此不會意外解鎖。鎖定時音量鍵仍可使用。</string>
     <string name="pref_overlay_delay">資訊卡顯示延遲</string>
     <string name="pref_overlay_delay_summary">暫停幾秒後顯示</string>
     <string name="pref_prefill">用檔案名稱預先填入搜尋內容</string>
     <string name="button_lock">鎖定螢幕</string>
-    <string name="engine_fallback_mpv">Media3 無法播放這個檔案——已切換至 mpv</string>
+    <string name="engine_fallback_mpv">Media3 無法播放，已切換到 mpv。</string>
     <string name="engine_switch_file_type">Media3 不支援這種檔案類型，已切換至 mpv</string>
     <string name="engine_switch_video_format">Media3 不支援這種影片格式，已切換至 mpv</string>
     <string name="engine_switch_audio_format">Media3 不支援這種音訊格式，已切換至 mpv</string>
@@ -241,14 +242,14 @@
     <string name="pref_engine_auto">自動</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">mpv 需要 Android 8.0 以上版本</string>
-    <string name="engine_failed_title">這個引擎無法播放這個檔案</string>
-    <string name="engine_failed_message">%1$s 無法播放這個檔案。%2$s 很可能可以——這正是設有兩個引擎的原因。</string>
+    <string name="engine_failed_title">無法播放此檔案</string>
+    <string name="engine_failed_message">%1$s 無法播放。請試試 %2$s。</string>
     <string name="engine_failed_try">改用 %1$s</string>
     <string name="engine_failed_auto">一律使用「自動」</string>
     <string name="engine_no_picture_title">沒有畫面</string>
-    <string name="engine_no_picture_message">%1$s 正在播放聲音，但沒有畫面——通常是在沒有 Dolby Vision 解碼器的裝置上播放 Dolby Vision 內容。%2$s 或許能顯示畫面。</string>
-    <string name="engine_no_picture_switched">Media3 沒有畫面——已切換至 mpv</string>
-    <string name="engine_no_picture_either">兩個引擎都沒有畫面——這部裝置無法顯示這部影片</string>
+    <string name="engine_no_picture_message">%1$s 只有聲音沒有畫面（多為 Dolby Vision）。請試試 %2$s。</string>
+    <string name="engine_no_picture_switched">Media3 沒有畫面，已切換到 mpv。</string>
+    <string name="engine_no_picture_either">此裝置無法顯示這部影片的畫面。</string>
     <string name="pref_engine_note">「自動」會先使用 Media3，當 Media3 無法播放某個檔案時改用 mpv。</string>
     <string name="pref_media3_only">僅限 Media3——mpv 不會使用這項設定</string>
     <string name="pref_adaptive_buffering">自動調整緩衝</string>
@@ -257,7 +258,7 @@
     <string name="pref_subtitle_folder_default">下載 / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">選擇資料夾</string>
     <string name="pref_subtitle_folder_clear">使用預設資料夾</string>
-    <string name="pref_subtitle_folder_failed">無法使用這個資料夾</string>
+    <string name="pref_subtitle_folder_failed">無法使用該資料夾。</string>
     <string name="resume_title">要播放上次的影片嗎？</string>
     <string name="resume_accept">播放</string>
     <string name="resume_decline">以後再說</string>
@@ -270,7 +271,7 @@
     <string name="open_url_title">網路 URL</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">播放</string>
-    <string name="open_url_invalid">這看起來不像播放器能開啟的 URL</string>
+    <string name="open_url_invalid">這不是播放器能開啟的連結。</string>
     <string name="pref_folders">播放器可讀取的資料夾</string>
     <string name="pref_folders_note">用於尋找下一集，以及存放在影片旁的字幕。存放影片的資料夾都可以加進來。</string>
     <string name="pref_folders_empty">尚未新增。沒有資料夾時，播放器只能看到你開啟的那一個檔案。</string>
@@ -278,7 +279,7 @@
     <string name="pref_folders_remove">輕觸即可停止讀取這個資料夾</string>
     <string name="pref_folders_remove_confirm">播放器將不再於此處尋找下一集或字幕。</string>
     <string name="pref_folders_remove_confirm_yes">移除</string>
-    <string name="pref_folders_failed">Android 未保留這項權限。請試著重新選擇資料夾。</string>
+    <string name="pref_folders_failed">Android 未保留權限。請重新選擇資料夾。</string>
     <string name="pref_folders_no_picker">這部裝置沒有資料夾選擇器。</string>
     <string name="pref_folders_summary_empty">尚無資料夾</string>
     <string name="error_code">顯示 QR 圖碼</string>
@@ -311,7 +312,7 @@
     <string name="update_install">下載並安裝</string>
     <string name="update_open">開啟頁面</string>
     <string name="update_downloading">正在下載…</string>
-    <string name="update_failed">無法檢查更新。</string>
+    <string name="update_failed">現在無法檢查更新。</string>
     <string name="update_none_title">已是最新版本</string>
     <string name="update_none">你的版本是 %1$s，最新發布的版本是 %2$s。</string>
     <string name="update_none_published">尚未發布任何版本。你的版本是 %1$s。</string>
@@ -355,7 +356,7 @@
     <string name="pref_backup_exported">已匯出 %1$d 個項目</string>
     <string name="pref_backup_imported">已匯入 %1$d 個項目。部分內容需要重新開啟播放器才會生效。</string>
     <string name="pref_backup_not_ours">這個檔案不是 Just Player Pro 備份</string>
-    <string name="pref_backup_failed">無法讀取這個檔案</string>
+    <string name="pref_backup_failed">無法讀取該檔案。</string>
     <string name="pref_backup_nothing">未選擇任何項目</string>
     <string name="pref_dangerous_header">進階</string>
     <string name="pref_dangerous_warning">這些選項可能會導致原本正常的檔案無法播放。</string>
@@ -372,11 +373,12 @@
     <string name="pref_custom_subtitle_font">自訂字型</string>
     <string name="pref_choose_custom_font">選擇字型</string>
     <string name="pref_custom_subtitle_font_not_set">未選取自訂字型</string>
-    <string name="pref_custom_subtitle_font_failed">無法載入字型</string>
+    <string name="pref_custom_subtitle_font_failed">無法載入該字型。</string>
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">開啟</string>
     <string name="osd_item_boolean_false">關閉</string>
     <string name="osd_sleep_title">睡眠定時器</string>
+    <string name="osd_brightness_title">亮度</string>
     <string name="osd_sleep_off">關閉</string>
     <string name="osd_sleep_end">檔案結束時</string>
     <string name="osd_sleep_minutes">%1$d 分鐘</string>
@@ -428,14 +430,14 @@
     <string name="pref_addon_no_subtitles_resource">這個附加元件不提供字幕。</string>
     <string name="pref_addon_needs_configuration">這個附加元件需要先設定——請使用它的設定頁面，並貼上該頁面提供的 URL。</string>
     <string name="pref_addon_fetch_failed">附加元件拒絕了字幕要求。</string>
-    <string name="pref_addon_no_subtitles">對於一部到處都找得到字幕的影片，這個附加元件沒有傳回任何結果，因此對你的檔案也不會傳回任何結果。</string>
+    <string name="pref_addon_no_subtitles">此外掛連知名電影都找不到字幕，也不會找到你的檔案的字幕。</string>
     <string name="pref_addon_no_usable_url">附加元件傳回的字幕沒有可用的連結。</string>
     <string name="pref_addon_not_downloadable">附加元件提供的連結無法下載字幕檔案。</string>
     <string name="key_check_cleared">已清除</string>
     <string name="key_check_saved">已儲存</string>
     <string name="key_check_accepted">%1$s 已接受金鑰</string>
     <string name="key_check_rejected">%1$s 拒絕了金鑰</string>
-    <string name="key_check_rate_limited">%1$s 正在限制要求頻率，請稍後再試</string>
+    <string name="key_check_rate_limited">%1$s 忙碌中。請幾分鐘後再試。</string>
     <string name="key_check_no_answer">%1$s 沒有回應——請檢查網路連線</string>
     <string name="key_check_http">%1$s 回應 HTTP %2$d</string>
     <string name="setup_enter_pin">請輸入播放器上顯示的 PIN。</string>
@@ -501,6 +503,48 @@
     <string name="home_pinned">已加入我的最愛</string>
     <string name="home_unpinned">已從我的最愛中移除</string>
     <string name="home_section_recent">最近播放</string>
+    <string name="pref_folder_look">資料夾圖片</string>
+    <string name="folder_look_mosaic">拼貼</string>
+    <string name="folder_look_mosaic_desc">依資料夾調整：一張、兩張並排或格狀</string>
+    <string name="folder_look_folder">簡單資料夾</string>
+    <string name="folder_look_folder_desc">無圖片：主題色資料夾及影片總長度</string>
+    <string name="folder_look_centred">置中</string>
+    <string name="folder_look_centred_desc">整張畫面置中，卡片與「最近播放」一樣大</string>
+    <string name="folder_look_square">方形</string>
+    <string name="folder_look_square_desc">方形畫面，螢幕上能放下更多資料夾</string>
+    <string name="pref_better_frames">更好的影片畫面</string>
+    <string name="pref_better_frames_summary">從每部影片十分之一處而非開頭擷取更清晰的畫面。首次開啟大型資料夾會較慢</string>
+    <string name="film_recent_picture">「最近播放」中的圖片</string>
+    <string name="film_recent_poster">海報</string>
+    <string name="film_recent_frame">影片畫面</string>
+    <string name="film_forget">移除影片資訊</string>
+    <string name="pref_integrations_header" formatted="false">整合</string>
+    <string name="pref_tracking_header" formatted="false">觀看紀錄</string>
+    <string name="tracking_not_connected" formatted="false">未連線。輕觸即可連線</string>
+    <string name="tracking_connected">已以 %1$s 身分連線。輕觸即可中斷</string>
+    <string name="tracking_connected_toast">已連線到 %1$s</string>
+    <string name="tracking_connect_title">連線 %1$s</string>
+    <string name="tracking_open_page">開啟頁面</string>
+    <string name="tracking_code_message">在任何裝置上開啟 %1$s 並輸入以下代碼：\n\n%2$s</string>
+    <string name="tracking_disconnect_question">要中斷 %1$s 嗎？</string>
+    <string name="tracking_disconnect" formatted="false">中斷連線</string>
+    <string name="tracking_unavailable" formatted="false">此版本無法使用</string>
+    <string name="tracking_failed">無法連線到 %1$s，請再試一次。</string>
+    <string name="tracking_send_question">要將你標為已看的 %1$d 部影片傳送到 %2$s 嗎？</string>
+    <string name="tracking_send" formatted="false">傳送</string>
+    <string name="watched_auto" formatted="false">看完時標為已看</string>
+    <string name="watched_auto_desc" formatted="false">連線後也會告訴 Simkl 你看到哪裡</string>
+    <string name="film_mark_watched" formatted="false">標為已看</string>
+    <string name="film_watched" formatted="false">已看</string>
+    <string name="film_watched_on">已在 %1$s 看過</string>
+    <string name="film_unwatch" formatted="false">標為未看</string>
+    <string name="watched_percent" formatted="false">看到多少算已看 (%)</string>
+    <string name="home_section_recent_online">最近播放 (線上)</string>
+    <string name="home_section_recent_here">最近播放 (本裝置)</string>
+    <string name="home_recent_playlist">播放清單</string>
+    <string name="home_time_left">剩餘 %1$s</string>
+    <string name="pref_recent_here">最近（本裝置）</string>
+    <string name="pref_recent_here_summary">在「最近」下方顯示本裝置最近播放的 10 部影片</string>
     <string name="home_section_pinned">我的最愛</string>
     <string name="home_section_folders">資料夾</string>
     <string name="home_section_results">搜尋結果</string>
@@ -525,7 +569,10 @@
     <string name="start_on_last">上次的影片</string>
     <string name="pref_home_layout">版面配置</string>
     <string name="home_layout_list">清單</string>
-    <string name="home_layout_wall">海報牆</string>
+    <string name="home_layout_wall">圖庫</string>
+    <string name="home_layout_cards">卡片</string>
+    <string name="home_layout_cards_desc">與最近相同的直向卡片</string>
+    <string name="home_view">檢視</string>
     <string name="home_wall_hint">按住資料夾即可加入我的最愛</string>
     <string name="set_audio">音訊</string>
     <string name="set_storage">儲存與備份</string>

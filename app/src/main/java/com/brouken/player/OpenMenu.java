@@ -146,6 +146,17 @@ final class OpenMenu {
                 .create();
 
         input.setOnEditorActionListener((view, actionId, event) -> {
+            // a TV remote's OK (IME_NULL) opens the keyboard; a hardware keyboard's Enter plays,
+            // once, as the key comes up
+            if (actionId == android.view.inputmethod.EditorInfo.IME_NULL) {
+                if (Utils.isTvBox(activity)) {
+                    Utils.showKeyboard(input);
+                    return true;
+                }
+                if (event != null && event.getAction() != android.view.KeyEvent.ACTION_UP) {
+                    return true;
+                }
+            }
             dialog.dismiss();
             play(activity, onPlay, input.getText().toString());
             return true;

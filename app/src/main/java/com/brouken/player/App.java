@@ -15,6 +15,7 @@ public final class App extends Application {
         ImageCache.init(this);
         Showcase.start(this);
         AppTheme.start(this);
+        HomeActivity.settleLayout(this);
 
         final Thread.UncaughtExceptionHandler existing =
                 Thread.getDefaultUncaughtExceptionHandler();

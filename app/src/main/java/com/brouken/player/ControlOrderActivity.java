@@ -82,6 +82,12 @@ public class ControlOrderActivity extends AppCompatActivity {
                 name.setAlpha(0.5f);
                 note.setAlpha(0.5f);
                 icon.setAlpha(0.5f);
+            } else if (ControlOrder.QUALITY.equals(key)) {
+                note.setText(R.string.controls_quality_note);
+                note.setVisibility(View.VISIBLE);
+            } else if (ControlOrder.QUEUE.equals(key)) {
+                note.setText(R.string.controls_queue_note);
+                note.setVisibility(View.VISIBLE);
             }
 
             final int index = i;

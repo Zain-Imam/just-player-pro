@@ -12,6 +12,11 @@ import dev.jdtech.mpv.MPVLib;
 
 public final class MpvOptions {
 
+    // a file's own stream-lavf-o replaces the whole list, so a website video repeats these
+    public static final String RECONNECT = "reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,"
+            + "reconnect_on_http_error=5xx,reconnect_delay_max=5,reconnect_max_retries=5,"
+            + "reconnect_delay_total_max=20";
+
     @Nullable
     private final Uri uri;
 
@@ -25,8 +30,16 @@ public final class MpvOptions {
         return com.brouken.player.Utils.isSupportedNetworkUri(uri);
     }
 
+    private boolean live;
+
     public boolean isLive() {
-        return BufferProfile.looksLive(uri);
+        return live || BufferProfile.looksLive(uri);
+    }
+
+    // a website's page link does not look live; yt-dlp knows
+    public MpvOptions withLive(final boolean live) {
+        this.live = live;
+        return this;
     }
 
     public MpvOptions withHeaders(final java.util.Map<String, String> extra) {
@@ -82,7 +95,9 @@ public final class MpvOptions {
         // hwdec-codecs stays at mpv's default so rare formats decode in software
         mpv.setOptionString("vd-lavc-threads", "0");
 
-        mpv.setOptionString("framedrop", "decoder");
+        // dropped at the screen: a hardware decoder can't skip, so "decoder" left 60 fps
+        // films unable to play faster than normal
+        mpv.setOptionString("framedrop", "vo");
 
         // both are GPU-expensive
         mpv.setOptionString("interpolation", "no");
@@ -137,13 +152,7 @@ public final class MpvOptions {
 
         // FFmpeg keeps the old position after a failed reconnect, so retry more errors
         mpv.setOptionString("network-timeout", "20");
-        mpv.setOptionString("stream-lavf-o-append", "reconnect=1");
-        mpv.setOptionString("stream-lavf-o-append", "reconnect_streamed=1");
-        mpv.setOptionString("stream-lavf-o-append", "reconnect_on_network_error=1");
-        mpv.setOptionString("stream-lavf-o-append", "reconnect_on_http_error=5xx");
-        mpv.setOptionString("stream-lavf-o-append", "reconnect_delay_max=5");
-        mpv.setOptionString("stream-lavf-o-append", "reconnect_max_retries=5");
-        mpv.setOptionString("stream-lavf-o-append", "reconnect_delay_total_max=20");
+        mpv.setOptionString("stream-lavf-o", RECONNECT);
 
         applyBuffering(mpv, context);
     }
@@ -165,7 +174,7 @@ public final class MpvOptions {
             return;
         }
 
-        final BufferProfile.Tier tier = BufferProfile.tierFor(context, uri);
+        final BufferProfile.Tier tier = BufferProfile.tierFor(context, isLive());
 
         final String forward;
         final String backward;

@@ -34,7 +34,8 @@ public final class Backup {
     }
 
     private static final String[] KEY_PREFIXES = {"apiKey", "subtitleAddon"};
-    private static final String[] HISTORY_KEYS = {"urlHistory", "onlineIdentities"};
+    private static final String[] HISTORY_KEYS = {"urlHistory", "onlineIdentities", "recentListPlace",
+            "watchedFilms", "onlineLeftPlain"};
     private static final String[] PER_FILE_KEYS = {"subtitleDelayMap", "audioDelayMap", "speedMap", "aspectMap"};
 
     // device-specific: folder grants and the current playback state
@@ -46,7 +47,10 @@ public final class Backup {
             "launchMemory", "subtitleLabels", "aspectStep", "aspectStepUri",
             // from Android 13 the phone keeps the app's language, not this setting
             AppLanguage.PREF_KEY, AppLanguage.PREF_OLD_WAY,
-            Showcase.PREF_FOLDERS, Showcase.PREF_HIDE_BARS, Showcase.PREF_TV
+            Showcase.PREF_FOLDERS, Showcase.PREF_HIDE_BARS, Showcase.PREF_TV,
+            // films on this device by their media store number, and yt-dlp's own update state
+            "recentHerePinned", "recentHereHidden", "recentHereFrames",
+            "ytdlpCheckedAt", "ytdlpLatest", "ytdlpToldAbout"
     };
 
     public static String export(final Context context, final Set<Part> parts) throws JSONException {

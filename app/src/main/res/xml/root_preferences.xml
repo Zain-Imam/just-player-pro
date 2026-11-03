@@ -92,20 +92,42 @@
             app:key="homeLayout"
             app:choiceDescriptions="@array/home_layout_descriptions"
             app:choicePictures="@array/home_layout_pictures"
-            app:defaultValue="list"
+            app:defaultValue="cards"
             app:entries="@array/home_layout_entries"
             app:entryValues="@array/home_layout_values"
             app:title="@string/pref_home_layout"
             app:useSimpleSummaryProvider="true" />
 
+        <com.brouken.player.PictureListPreference
+            app:key="folderLook"
+            app:choiceDescriptions="@array/folder_look_descriptions"
+            app:choicePictures="@array/folder_look_pictures"
+            app:defaultValue="centred"
+            app:entries="@array/folder_look_entries"
+            app:entryValues="@array/folder_look_values"
+            app:title="@string/pref_folder_look"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            app:key="homeBetterFrames"
+            app:defaultValue="false"
+            app:summary="@string/pref_better_frames_summary"
+            app:title="@string/pref_better_frames" />
+
         <SeekBarPreference
             app:key="recentCount"
             app:defaultValue="10"
-            android:max="15"
+            android:max="30"
             app:min="1"
             app:seekBarIncrement="1"
             app:showSeekBarValue="true"
             app:title="@string/set_recent_count" />
+
+        <SwitchPreferenceCompat
+            app:key="recentHere"
+            app:defaultValue="true"
+            app:summary="@string/pref_recent_here_summary"
+            app:title="@string/pref_recent_here" />
 
         <com.brouken.player.SketchSwitchPreference
             app:key="recentPosters"
@@ -513,6 +535,71 @@
                 app:dependency="mdblistEnabled"
                 app:summary="@string/pref_ratings_order_summary"
                 app:title="@string/pref_ratings_order" />
+
+        </PreferenceCategory>
+
+    </PreferenceScreen>
+
+    <PreferenceScreen
+        app:key="screen_websites"
+        app:title="@string/pref_integrations_header">
+
+        <PreferenceCategory
+            app:key="websites"
+            app:title="@string/pref_websites_header">
+
+        <Preference
+            app:key="ytdlpInstall"
+            app:persistent="false"
+            app:summary="@string/ytdlp_offer"
+            app:title="@string/ytdlp_title" />
+
+        <ListPreference
+            app:defaultValue="auto"
+            app:entries="@array/ytdlp_updates_entries"
+            app:entryValues="@array/ytdlp_updates_values"
+            app:key="ytdlpUpdates"
+            app:title="@string/ytdlp_updates"
+            app:useSimpleSummaryProvider="true" />
+
+        <Preference
+            app:key="ytdlpUpdateNow"
+            app:persistent="false"
+            app:title="@string/ytdlp_update_now" />
+
+        <ListPreference
+            app:defaultValue="screen"
+            app:entries="@array/ytdlp_quality_entries"
+            app:entryValues="@array/ytdlp_quality_values"
+            app:key="ytdlpQuality"
+            app:title="@string/ytdlp_quality"
+            app:useSimpleSummaryProvider="true" />
+
+        </PreferenceCategory>
+
+        <PreferenceCategory
+            app:key="tracking"
+            app:title="@string/pref_tracking_header">
+
+            <Preference
+                app:key="trackingSimkl"
+                app:persistent="false"
+                app:title="Simkl" />
+
+            <SwitchPreferenceCompat
+                app:defaultValue="true"
+                app:key="watchedAuto"
+                app:summary="@string/watched_auto_desc"
+                app:title="@string/watched_auto" />
+
+            <SeekBarPreference
+                android:max="100"
+                app:defaultValue="95"
+                app:dependency="watchedAuto"
+                app:key="watchedPercent"
+                app:min="50"
+                app:showSeekBarValue="true"
+                app:title="@string/watched_percent" />
 
         </PreferenceCategory>
 

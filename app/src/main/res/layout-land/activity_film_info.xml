@@ -172,6 +172,36 @@
                     android:layout_height="4dp"
                     android:layout_marginTop="18dp"
                     android:max="1000" />
+                <!-- watched here, or so says Simkl or Trakt; Unwatch only for what this app marked -->
+                <LinearLayout
+                    android:id="@+id/film_watched_row"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/film_watched"
+                        style="@style/FilmInfoButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:paddingStart="24dp"
+                        android:paddingEnd="24dp"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:id="@+id/film_unwatch"
+                        style="@style/FilmInfoButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:paddingStart="24dp"
+                        android:paddingEnd="24dp"
+                        android:layout_marginStart="10dp"
+                        android:text="@string/film_unwatch"
+                        android:visibility="gone"
+                        android:gravity="center" />
+                </LinearLayout>
+
 
                 <LinearLayout
                     android:layout_width="wrap_content"
@@ -227,6 +257,49 @@
                     android:text="@string/film_copy_link"
                     android:visibility="gone" />
 
+                <!-- films on this device: what their Recent card shows -->
+                <LinearLayout
+                    android:id="@+id/film_recent_picture"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/film_recent_picture"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:textSize="13sp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/film_recent_poster"
+                            style="@style/FilmInfoButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="44dp"
+                            android:paddingStart="24dp"
+                            android:paddingEnd="24dp"
+                            android:text="@string/film_recent_poster" />
+
+                        <TextView
+                            android:id="@+id/film_recent_frame"
+                            style="@style/FilmInfoButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="44dp"
+                            android:layout_marginStart="10dp"
+                            android:paddingStart="24dp"
+                            android:paddingEnd="24dp"
+                            android:text="@string/film_recent_frame" />
+                    </LinearLayout>
+                </LinearLayout>
+
                 <!-- its own line too: its words wrap in a row on a phone on its side -->
                 <TextView
                     android:id="@+id/film_change"
@@ -236,6 +309,17 @@
                     android:layout_marginTop="14dp"
                     android:paddingStart="24dp"
                     android:paddingEnd="24dp" />
+
+                <TextView
+                    android:id="@+id/film_forget"
+                    style="@style/FilmInfoButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="10dp"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="24dp"
+                    android:text="@string/film_forget"
+                    android:visibility="gone" />
 
             </LinearLayout>
         </LinearLayout>

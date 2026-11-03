@@ -74,6 +74,16 @@
 
     <com.brouken.player.SettingsHeaderPreference
         app:fragment="com.brouken.player.SettingsActivity$SettingsFragment"
+        app:icon="@drawable/ic_settings_integrations"
+        app:key="header_websites"
+        app:title="@string/pref_integrations_header">
+        <extra
+            android:name="androidx.preference.PreferenceFragmentCompat.PREFERENCE_ROOT"
+            android:value="screen_websites" />
+    </com.brouken.player.SettingsHeaderPreference>
+
+    <com.brouken.player.SettingsHeaderPreference
+        app:fragment="com.brouken.player.SettingsActivity$SettingsFragment"
         app:icon="@drawable/ic_settings_storage"
         app:key="header_storage"
         app:title="@string/set_storage">

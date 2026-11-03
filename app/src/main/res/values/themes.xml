@@ -66,14 +66,6 @@
         <item name="android:clickable">true</item>
     </style>
 
-    <style name="HomeTileQuarter" parent="">
-        <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">match_parent</item>
-        <item name="android:layout_weight">1</item>
-        <item name="android:contentDescription">@null</item>
-        <item name="android:scaleType">centerCrop</item>
-    </style>
-
     <style name="PanelAnimation" parent="">
         <item name="android:windowEnterAnimation">@anim/panel_in</item>
         <item name="android:windowExitAnimation">@anim/panel_out</item>

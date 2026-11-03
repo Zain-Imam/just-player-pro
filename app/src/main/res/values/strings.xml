@@ -19,18 +19,18 @@
     <string name="onboarding_key_title">Add a TMDB key</string>
     <string name="onboarding_key_description">Settings are here. A free TMDB key is what finds titles, posters, subtitles and intro markers.</string>
     <string name="open_subtitles">Load subtitles</string>
-    <string name="error_title">This would not play</string>
+    <string name="error_title">Can\'t play this</string>
     <string name="error_share">Share the details</string>
-    <string name="error_network">The player could not reach the file. Check the connection, and whether the link has expired.</string>
-    <string name="error_http">The server refused the request. A link from a debrid service may have expired.</string>
-    <string name="error_missing">The file is not there any more.</string>
-    <string name="error_permission">The player is not allowed to open that file.</string>
-    <string name="error_codec">Nothing here can decode this file. Try the other engine, or set the engine to Auto.</string>
-    <string name="error_damaged">The file looks damaged or incomplete.</string>
-    <string name="error_drm">This is copy-protected, which this player does not handle.</string>
-    <string name="error_unknown">Something went wrong while playing this.</string>
+    <string name="error_network">Can\'t reach the file. Check the connection or the link.</string>
+    <string name="error_http">The server refused it. The link may have expired.</string>
+    <string name="error_missing">This file is no longer there.</string>
+    <string name="error_permission">No permission to open this file.</string>
+    <string name="error_codec">Can\'t decode this file. Try the other engine.</string>
+    <string name="error_damaged">This file is damaged or incomplete.</string>
+    <string name="error_drm">This video is copy-protected.</string>
+    <string name="error_unknown">Can\'t play this right now. Try again.</string>
     <string name="error_details">Details</string>
-    <string name="error_files_missing">Files app is disabled or missing</string>
+    <string name="error_files_missing">The Files app is off or missing.</string>
     <string name="request_scope">To automatically load external subtitles or enable skipping to next file in a directory, grant %s access to the topmost folder containing your videos (e.g. Movies).</string>
     <string name="delete_query">Delete this file\?</string>
     <string name="delete_confirmation">Delete</string>
@@ -90,7 +90,7 @@ and enter this PIN when it asks:
 
 Nothing is shown on the phone until the PIN is entered. The page stops when you press the button below, or when you leave this screen.</string>
     <string name="pref_setup_phone_stop">Stop the page</string>
-    <string name="pref_setup_phone_failed">Could not start the page. This device may not allow it, or it is not on a network — enter the keys here instead.</string>
+    <string name="pref_setup_phone_failed">Can\'t start the page. Enter the keys here instead.</string>
     <string name="pref_online_note">The info card, skip markers and subtitle search all need a TMDB key.</string>
     <string name="pref_key_tmdb">TMDB key</string>
     <string name="pref_key_tmdb_dialog">Free from themoviedb.org → Settings → API.</string>
@@ -119,8 +119,8 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="online_search_subtitles">Search online subtitles…</string>
     <string name="subtitle_source_title">Subtitles</string>
     <string name="subtitle_source_file">Load a subtitle file…</string>
-    <string name="online_needs_tmdb">Add a TMDB key in Settings first — it is what turns a file name into something the subtitle sources can be asked about.</string>
-    <string name="online_needs_source">No subtitle source is set up. Add a Stremio addon, or a key for OpenSubtitles, SubDL or Wyzie, in Settings.</string>
+    <string name="online_needs_tmdb">Add a TMDB key in Settings first.</string>
+    <string name="online_needs_source">Set up a subtitle source in Settings first.</string>
     <string name="online_identify_title">Which is this?</string>
     <string name="online_searching">Searching…</string>
     <string name="online_identifying">Identifying…</string>
@@ -140,7 +140,7 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="recent_remove">Remove from Recent</string>
     <string name="recent_removed">Removed from Recent</string>
     <string name="recent_undo">Undo</string>
-    <string name="recent_pins_full">Up to 3 films can be pinned. Unpin one first.</string>
+    <string name="recent_pins_full">Up to %1$d films can be pinned. Unpin one first.</string>
     <string name="recent_pinned">Pinned</string>
     <string name="online_match_prompt_dismiss">Not now</string>
     <string name="online_no_matches">Nothing found for that title</string>
@@ -162,9 +162,9 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="subtitle_menu_search_detail">Find one online for this episode</string>
     <string name="subtitle_menu_settings_detail">Size, position, delay and style</string>
     <string name="audio_menu_delay_detail">Move the sound against the picture</string>
-    <string name="capability_title">This device may struggle with this</string>
-    <string name="capability_hard">No hardware decoder here covers it. The picture may stutter, or stop while the sound carries on.</string>
-    <string name="capability_impossible">Nothing on this device claims to decode it, so it may not play at all.</string>
+    <string name="capability_title">This may not play smoothly</string>
+    <string name="capability_hard">No hardware decoder for this. It may stutter.</string>
+    <string name="capability_impossible">Nothing here can decode this. It may not play.</string>
     <string name="capability_continue">Play it anyway</string>
     <string name="capability_quit">Close the file</string>
     <string name="capability_try_other">Try %1$s</string>
@@ -173,7 +173,7 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="online_season">Season</string>
     <string name="online_episode">Episode</string>
     <string name="online_downloading">Downloading…</string>
-    <string name="online_download_failed">That subtitle could not be downloaded</string>
+    <string name="online_download_failed">Can\'t download that subtitle. Try again.</string>
     <string name="online_download_limit">%1$s limit reached for today</string>
     <string name="online_download_limit_until">%1$s limit reached. More in %2$s</string>
     <string name="online_saved_to">Loaded, and saved to %1$s</string>
@@ -209,7 +209,7 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="controls_name_repeat">Loop</string>
     <string name="pref_licenses">Licences</string>
     <string name="pref_licenses_summary">The full text of every licence this app is built under</string>
-    <string name="licenses_unavailable">This licence text could not be read.</string>
+    <string name="licenses_unavailable">Can\'t read this licence.</string>
     <string name="intro_next">Next</string>
     <string name="intro_back">Back</string>
     <string name="intro_done">Done</string>
@@ -235,12 +235,13 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="pref_controls_timeout_summary">Seconds</string>
     <string name="unlocked">Unlocked</string>
     <string name="locked_hint">Locked — press the padlock, or hold the picture, to unlock</string>
+    <string name="locked_hint_remote">Locked. Hold OK to unlock.</string>
     <string name="pref_lock_hint">Lock the screen against accidental touches with the padlock in the controls. To unlock, press the padlock again, or hold your finger anywhere on the picture, or hold OK on a remote. A stray tap on the picture does nothing, so the lock cannot be lifted by accident. The volume keys keep working while locked.</string>
     <string name="pref_overlay_delay">Card appears after</string>
     <string name="pref_overlay_delay_summary">Seconds paused before it shows</string>
     <string name="pref_prefill">Fill search from the file name</string>
     <string name="button_lock">Lock screen</string>
-    <string name="engine_fallback_mpv">Media3 could not play this — switched to mpv</string>
+    <string name="engine_fallback_mpv">Media3 can\'t play this. Switched to mpv.</string>
     <string name="engine_switch_file_type">This file type isn\'t supported on Media3, switched to mpv</string>
     <string name="engine_switch_video_format">This video format isn\'t supported on Media3, switched to mpv</string>
     <string name="engine_switch_audio_format">This audio format isn\'t supported on Media3, switched to mpv</string>
@@ -251,14 +252,14 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="pref_engine_auto">Auto</string>
     <string name="pref_engine_mpv">mpv</string>
     <string name="pref_engine_mpv_unsupported">mpv needs Android 8.0 or newer</string>
-    <string name="engine_failed_title">This engine could not play the file</string>
-    <string name="engine_failed_message">%1$s could not play this. %2$s very likely can — that is why there are two.</string>
+    <string name="engine_failed_title">Can\'t play this file</string>
+    <string name="engine_failed_message">%1$s can\'t play this. Try %2$s.</string>
     <string name="engine_failed_try">Try %1$s</string>
     <string name="engine_failed_auto">Always use Auto</string>
     <string name="engine_no_picture_title">No picture</string>
-    <string name="engine_no_picture_message">%1$s is playing the sound but not the picture — usually Dolby Vision on a device without a Dolby Vision decoder. %2$s may show it.</string>
-    <string name="engine_no_picture_switched">No picture on Media3 — switched to mpv</string>
-    <string name="engine_no_picture_either">No picture on either engine — this device cannot show this video</string>
+    <string name="engine_no_picture_message">%1$s plays the sound but no picture (often Dolby Vision). Try %2$s.</string>
+    <string name="engine_no_picture_switched">No picture on Media3. Switched to mpv.</string>
+    <string name="engine_no_picture_either">This device can\'t show this video\'s picture.</string>
     <string name="pref_engine_note">Auto starts on Media3 and moves a file to mpv when Media3 cannot play it.</string>
     <string name="pref_media3_only">Media3 only — not used by mpv</string>
     <string name="pref_adaptive_buffering">Adaptive buffering</string>
@@ -267,7 +268,7 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="pref_subtitle_folder_default">Downloads / Just Player Pro</string>
     <string name="pref_subtitle_folder_choose">Choose a folder</string>
     <string name="pref_subtitle_folder_clear">Use the default folder</string>
-    <string name="pref_subtitle_folder_failed">That folder could not be used</string>
+    <string name="pref_subtitle_folder_failed">Can\'t use that folder.</string>
     <string name="resume_title">Play last video?</string>
     <string name="resume_accept">Play</string>
     <string name="resume_decline">Not now</string>
@@ -280,7 +281,7 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="open_url_title">Network URL</string>
     <string name="open_url_hint">https://example.com/video.mkv</string>
     <string name="open_url_play">Play</string>
-    <string name="open_url_invalid">That does not look like a URL a player can open</string>
+    <string name="open_url_invalid">That isn\'t a link the player can open.</string>
     <string name="pref_folders">Folders the player may read</string>
     <string name="pref_folders_note">Needed to find the next episode, and a subtitle saved beside the film. Add as many as you keep films in.</string>
     <string name="pref_folders_empty">None yet. Without one, the player only sees the single file you opened.</string>
@@ -288,7 +289,7 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="pref_folders_remove">Tap to stop reading this folder</string>
     <string name="pref_folders_remove_confirm">The player will no longer look here for the next episode or for subtitles.</string>
     <string name="pref_folders_remove_confirm_yes">Remove</string>
-    <string name="pref_folders_failed">Android would not keep that permission. Try choosing the folder again.</string>
+    <string name="pref_folders_failed">Android didn\'t keep the permission. Choose the folder again.</string>
     <string name="pref_folders_no_picker">This device has no folder picker.</string>
     <string name="pref_folders_summary_empty">No folders yet</string>
     <string name="error_code">Show a code</string>
@@ -321,7 +322,7 @@ Nothing is shown on the phone until the PIN is entered. The page stops when you 
     <string name="update_install">Download and install</string>
     <string name="update_open">Open the page</string>
     <string name="update_downloading">Downloading…</string>
-    <string name="update_failed">Could not check for an update.</string>
+    <string name="update_failed">Can\'t check for updates right now.</string>
     <string name="update_none_title">You are up to date</string>
     <string name="update_none">You have %1$s. The newest published is %2$s.</string>
     <string name="update_none_published">Nothing has been published yet. You have %1$s.</string>
@@ -368,7 +369,7 @@ URLs you open over the network are remembered so you can return to them without 
     <string name="pref_backup_exported">Exported %1$d things</string>
     <string name="pref_backup_imported">Imported %1$d things. Some of it needs the player reopened.</string>
     <string name="pref_backup_not_ours">That file is not a Just Player Pro backup</string>
-    <string name="pref_backup_failed">That file could not be read</string>
+    <string name="pref_backup_failed">Can\'t read that file.</string>
     <string name="pref_backup_nothing">Nothing was chosen</string>
     <string name="pref_dangerous_header">Advanced</string>
     <string name="pref_dangerous_warning">These can break playback of files that otherwise work.</string>
@@ -385,11 +386,12 @@ URLs you open over the network are remembered so you can return to them without 
     <string name="pref_custom_subtitle_font">Custom font</string>
     <string name="pref_choose_custom_font">Choose the font</string>
     <string name="pref_custom_subtitle_font_not_set">No custom font selected</string>
-    <string name="pref_custom_subtitle_font_failed">Unable to load font</string>
+    <string name="pref_custom_subtitle_font_failed">Can\'t load that font.</string>
     <string name="osd_item_integer_default">@string/pref_language_track_default</string>
     <string name="osd_item_boolean_true">On</string>
     <string name="osd_item_boolean_false">Off</string>
     <string name="osd_sleep_title">Sleep timer</string>
+    <string name="osd_brightness_title">Brightness</string>
     <string name="osd_sleep_off">Off</string>
     <string name="osd_sleep_end">End of file</string>
     <string name="osd_sleep_minutes">%1$d min</string>
@@ -443,7 +445,7 @@ Addon 1 comes set to the official OpenSubtitles addon, which works as-is. The ot
     <string name="pref_addon_no_subtitles_resource">That addon does not provide subtitles.</string>
     <string name="pref_addon_needs_configuration">That addon needs configuring first — use its configure page and paste the URL it gives you.</string>
     <string name="pref_addon_fetch_failed">The addon refused a subtitle request.</string>
-    <string name="pref_addon_no_subtitles">The addon returned nothing for a film that has subtitles everywhere, so it would return nothing for your files too.</string>
+    <string name="pref_addon_no_subtitles">This addon found nothing for a well-known film, so it won\'t find yours either.</string>
     <string name="pref_addon_no_usable_url">The addon returned subtitles with no usable links.</string>
     <string name="pref_addon_not_downloadable">The addon\'s links did not deliver a subtitle file.</string>
 
@@ -452,7 +454,7 @@ Addon 1 comes set to the official OpenSubtitles addon, which works as-is. The ot
     <string name="key_check_saved">Saved</string>
     <string name="key_check_accepted">%1$s accepted the key</string>
     <string name="key_check_rejected">%1$s rejected the key</string>
-    <string name="key_check_rate_limited">%1$s is rate limiting; try again shortly</string>
+    <string name="key_check_rate_limited">%1$s is busy. Try again in a few minutes.</string>
     <string name="key_check_no_answer">No answer from %1$s — check the connection</string>
     <string name="key_check_http">%1$s answered HTTP %2$d</string>
 
@@ -522,6 +524,48 @@ Addon 1 comes set to the official OpenSubtitles addon, which works as-is. The ot
     <string name="home_pinned">Added to favourites</string>
     <string name="home_unpinned">Removed from favourites</string>
     <string name="home_section_recent">Recent</string>
+    <string name="pref_folder_look">Folder pictures</string>
+    <string name="folder_look_mosaic">Mosaic</string>
+    <string name="folder_look_mosaic_desc">Fits the folder: one picture, two side by side, or a grid</string>
+    <string name="folder_look_folder">Plain folder</string>
+    <string name="folder_look_folder_desc">No pictures: a folder in your theme colour and how long its videos last</string>
+    <string name="folder_look_centred">Centred</string>
+    <string name="folder_look_centred_desc">The whole picture in the middle of a card the size of Recent\'s</string>
+    <string name="folder_look_square">Square</string>
+    <string name="folder_look_square_desc">A square picture, so more folders fit on the screen</string>
+    <string name="pref_better_frames">Better video pictures</string>
+    <string name="pref_better_frames_summary">Sharper pictures from a tenth of the way into each video instead of its opening. The first visit to a big folder is slower</string>
+    <string name="film_recent_picture">Picture in Recent</string>
+    <string name="film_recent_poster">Poster</string>
+    <string name="film_recent_frame">Video frame</string>
+    <string name="film_forget">Remove film details</string>
+    <string name="pref_integrations_header" formatted="false">Integrations</string>
+    <string name="pref_tracking_header" formatted="false">Watch tracking</string>
+    <string name="tracking_not_connected" formatted="false">Not connected. Tap to connect</string>
+    <string name="tracking_connected">Connected as %1$s. Tap to disconnect</string>
+    <string name="tracking_connected_toast">Connected to %1$s</string>
+    <string name="tracking_connect_title">Connect %1$s</string>
+    <string name="tracking_open_page">Open the page</string>
+    <string name="tracking_code_message">On any device, open %1$s and enter this code:\n\n%2$s</string>
+    <string name="tracking_disconnect_question">Disconnect %1$s?</string>
+    <string name="tracking_disconnect" formatted="false">Disconnect</string>
+    <string name="tracking_unavailable" formatted="false">Not available in this version</string>
+    <string name="tracking_failed">Couldn\'t connect to %1$s. Try again.</string>
+    <string name="tracking_send_question">Send the %1$d videos you marked as watched to %2$s?</string>
+    <string name="tracking_send" formatted="false">Send</string>
+    <string name="watched_auto" formatted="false">Mark as watched when I finish</string>
+    <string name="watched_auto_desc" formatted="false">Also tells Simkl how far you got, when connected</string>
+    <string name="film_mark_watched" formatted="false">Mark as watched</string>
+    <string name="film_watched" formatted="false">Watched</string>
+    <string name="film_watched_on">Watched on %1$s</string>
+    <string name="film_unwatch" formatted="false">Unwatch</string>
+    <string name="watched_percent" formatted="false">Counts as watched at (%)</string>
+    <string name="home_section_recent_online">Recents (Online)</string>
+    <string name="home_section_recent_here">Recents (On this device)</string>
+    <string name="home_recent_playlist">Playlist</string>
+    <string name="home_time_left">%1$s left</string>
+    <string name="pref_recent_here">Recent on this device</string>
+    <string name="pref_recent_here_summary">The last 10 videos you played from this device, under Recent</string>
     <string name="home_section_pinned">Favourites</string>
     <string name="home_section_folders">Folders</string>
     <string name="home_section_results">Results</string>
@@ -547,7 +591,10 @@ Addon 1 comes set to the official OpenSubtitles addon, which works as-is. The ot
     <string name="start_on_last">Last video</string>
     <string name="pref_home_layout">Layout</string>
     <string name="home_layout_list">List</string>
-    <string name="home_layout_wall">Frame wall</string>
+    <string name="home_layout_wall">Gallery</string>
+    <string name="home_layout_cards">Cards</string>
+    <string name="home_layout_cards_desc">Tall cards, like Recent</string>
+    <string name="home_view">View</string>
     <string name="home_wall_hint">Hold a folder to add it to your favourites</string>
 
 

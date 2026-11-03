@@ -79,6 +79,7 @@ public final class Media3EngineUi implements EngineUi {
         cueModifier.setSubtitleEdgeType(prefs.subtitleEdgeType);
         cueModifier.setShadowColor(edgeColor);
         cueModifier.setVerticalPosition(prefs.subtitleVerticalPosition);
+        cueModifier.setEmbeddedStyles(prefs.subtitleStyleEmbedded);
         refreshCues(subtitleView);
     }
 

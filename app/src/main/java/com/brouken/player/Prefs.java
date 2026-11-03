@@ -23,7 +23,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,6 +34,8 @@ public class Prefs {
     private static final String PREF_KEY_MEDIA_URI = "mediaUri";
     private static final String PREF_KEY_MEDIA_TYPE = "mediaType";
     private static final String PREF_KEY_BRIGHTNESS = "brightness";
+    // 0 to 100 from 5.1.0; the old key held 0 to 30 on a curve
+    private static final String PREF_KEY_BRIGHTNESS_PERCENT = "brightnessPercent";
     private static final String PREF_KEY_FIRST_RUN = "firstRun";
     private static final String PREF_KEY_SUBTITLE_URI = "subtitleUri";
     private static final String PREF_KEY_SUBTITLE_URIS = "subtitleUris";
@@ -168,7 +172,12 @@ public class Prefs {
             mediaUri = Uri.parse(mSharedPreferences.getString(PREF_KEY_MEDIA_URI, null));
         if (mSharedPreferences.contains(PREF_KEY_MEDIA_TYPE))
             mediaType = mSharedPreferences.getString(PREF_KEY_MEDIA_TYPE, null);
-        brightness = mSharedPreferences.getInt(PREF_KEY_BRIGHTNESS, brightness);
+        if (mSharedPreferences.contains(PREF_KEY_BRIGHTNESS_PERCENT)) {
+            brightness = mSharedPreferences.getInt(PREF_KEY_BRIGHTNESS_PERCENT, brightness);
+        } else {
+            final int old = mSharedPreferences.getInt(PREF_KEY_BRIGHTNESS, -1);
+            brightness = old < 0 ? -1 : BrightnessControl.fromOldLevel(old);
+        }
         firstRun = mSharedPreferences.getBoolean(PREF_KEY_FIRST_RUN, firstRun);
         if (mSharedPreferences.contains(PREF_KEY_SUBTITLE_URI))
             subtitleUri = Uri.parse(mSharedPreferences.getString(PREF_KEY_SUBTITLE_URI, null));
@@ -350,10 +359,21 @@ public class Prefs {
         updatePosition(position, 0L);
     }
 
+    // told when a film plays to its end, for Watched
+    public interface OnFinished {
+        void finished(Uri uri);
+    }
+
+    @Nullable
+    public OnFinished onFinished;
+
     // a film watched to the end is saved as 0; a duration of 0 means unknown
     public void updatePosition(final long position, final long duration) {
         if (mediaUri == null)
             return;
+        if (onFinished != null && watchedThrough(position, duration)) {
+            onFinished.finished(mediaUri);
+        }
 
         final String key = mediaUri.toString();
         // also kept in the player's own list so a launcher's film can be resumed here
@@ -398,7 +418,7 @@ public class Prefs {
         if (brightness >= -1) {
             this.brightness = brightness;
             final SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
-            sharedPreferencesEditor.putInt(PREF_KEY_BRIGHTNESS, brightness);
+            sharedPreferencesEditor.putInt(PREF_KEY_BRIGHTNESS_PERCENT, brightness);
             sharedPreferencesEditor.apply();
         }
     }
@@ -460,6 +480,125 @@ public class Prefs {
         return uri == null ? 0L : saved(context, "positions", uri.toString());
     }
 
+    static final class Played {
+        final String link;
+        final long position;
+        final long duration;
+
+        Played(final String link, final long position, final long duration) {
+            this.link = link;
+            this.position = position;
+            this.duration = duration;
+        }
+    }
+
+    // every save puts its film last, so the newest is at the end
+    static List<Played> playedNewestFirst(final Context context) {
+        final Map<?, ?> positions = savedMap(context, "positions");
+        final Map<?, ?> durations = savedMap(context, "durations");
+        final List<Played> played = new ArrayList<>();
+        for (final Map.Entry<?, ?> entry : positions.entrySet()) {
+            final String link = String.valueOf(entry.getKey());
+            final Object position = entry.getValue();
+            final Object duration = durations.get(link);
+            played.add(0, new Played(link, position instanceof Long ? (Long) position : 0L,
+                    duration instanceof Long ? (Long) duration : 0L));
+        }
+        return played;
+    }
+
+    private static Map<?, ?> savedMap(final Context context, final String file) {
+        try (FileInputStream fis = context.openFileInput(file);
+             ObjectInputStream is = new ObjectInputStream(fis)) {
+            final Object map = is.readObject();
+            if (map instanceof Map) {
+                return (Map<?, ?>) map;
+            }
+        } catch (Exception ignored) {
+            // nothing saved yet
+        }
+        return java.util.Collections.emptyMap();
+    }
+
+    // films on this device held first in Recent, up to half of its ten, in the order pinned
+    static final String PREF_KEY_PINNED_HERE = "recentHerePinned";
+    static final int MAX_PINS_HERE = 5;
+
+    static List<String> pinnedHere(final SharedPreferences preferences) {
+        String stored;
+        try {
+            stored = preferences.getString(PREF_KEY_PINNED_HERE, "");
+        } catch (ClassCastException e) {
+            stored = "";
+        }
+        final List<String> pins = new ArrayList<>();
+        for (final String link : stored.split("\n")) {
+            if (!link.isEmpty()) {
+                pins.add(link);
+            }
+        }
+        return pins;
+    }
+
+    // false when one more than MAX_PINS_HERE is asked for
+    static boolean setPinnedHere(final SharedPreferences preferences, final String link, final boolean pin) {
+        final List<String> pins = pinnedHere(preferences);
+        pins.remove(link);
+        if (pin) {
+            if (pins.size() >= MAX_PINS_HERE) {
+                return false;
+            }
+            pins.add(link);
+        }
+        preferences.edit().putString(PREF_KEY_PINNED_HERE, android.text.TextUtils.join("\n", pins)).apply();
+        return true;
+    }
+
+    // films whose Recent card keeps a frame of the video rather than the film's poster
+    static final String PREF_KEY_FRAME_HERE = "recentHereFrames";
+
+    static boolean frameHere(final SharedPreferences preferences, final String link) {
+        try {
+            return preferences.getStringSet(PREF_KEY_FRAME_HERE, java.util.Collections.<String>emptySet()).contains(link);
+        } catch (ClassCastException e) {
+            return false;
+        }
+    }
+
+    // the pins that no longer have a film here (deleted, or its place forgotten) go
+    static void keepPinsHere(final SharedPreferences preferences, final java.util.Collection<String> shown) {
+        final List<String> pins = pinnedHere(preferences);
+        if (pins.retainAll(shown)) {
+            preferences.edit().putString(PREF_KEY_PINNED_HERE, android.text.TextUtils.join("\n", pins)).apply();
+        }
+    }
+
+    static void setFrameHere(final SharedPreferences preferences, final String link, final boolean frame) {
+        final java.util.Set<String> links = new java.util.HashSet<>(preferences.getStringSet(PREF_KEY_FRAME_HERE,
+                java.util.Collections.<String>emptySet()));
+        if (frame) {
+            links.add(link);
+        } else {
+            links.remove(link);
+        }
+        preferences.edit().putStringSet(PREF_KEY_FRAME_HERE, links).apply();
+    }
+
+    // taken off Home's own recent list, keeping its place to resume; playing it again brings it back
+    static final String PREF_KEY_HIDDEN_HERE = "recentHereHidden";
+
+    static java.util.Set<String> hiddenHere(final SharedPreferences preferences) {
+        return new java.util.HashSet<>(preferences.getStringSet(PREF_KEY_HIDDEN_HERE,
+                java.util.Collections.<String>emptySet()));
+    }
+
+    static void setHiddenHere(final SharedPreferences preferences, final String link, final boolean hidden) {
+        final java.util.Set<String> set = hiddenHere(preferences);
+        if (hidden ? set.add(link) : set.remove(link)) {
+            preferences.edit().putStringSet(PREF_KEY_HIDDEN_HERE, set).apply();
+        }
+    }
+
     static long savedDuration(final Context context, @Nullable final Uri uri) {
         return uri == null ? 0L : saved(context, "durations", uri.toString());
     }
@@ -509,6 +648,12 @@ public class Prefs {
     }
 
     static String withoutQuery(final String link) {
+        // only YouTube needs parsing, and plain links stay pure string work
+        final String youTube = link.contains("youtu")
+                ? com.brouken.player.ytdlp.WebVideo.youTubePlace(Uri.parse(link)) : null;
+        if (youTube != null) {
+            return youTube;
+        }
         int end = link.length();
         final int query = link.indexOf('?');
         if (query >= 0) {

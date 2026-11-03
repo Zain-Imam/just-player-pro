@@ -1,12 +1,14 @@
 package com.brouken.player;
 
 import android.app.Activity;
+import android.provider.Settings;
 import android.view.WindowManager;
 
 class BrightnessControl {
 
     private final Activity activity;
 
+    // 0 to 100 like the volume; -1 leaves it to the system
     public int currentBrightnessLevel = -1;
 
     public BrightnessControl(Activity activity) {
@@ -23,22 +25,28 @@ class BrightnessControl {
         activity.getWindow().setAttributes(lp);
     }
 
-    public void changeBrightness(final CustomPlayerView playerView, final boolean increase, final boolean canSetAuto) {
-        int newBrightnessLevel = (increase ? currentBrightnessLevel + 1 : currentBrightnessLevel - 1);
-
-        if (canSetAuto && newBrightnessLevel < 0)
-            currentBrightnessLevel = -1;
-        else if (newBrightnessLevel >= 0 && newBrightnessLevel <= 30)
-            currentBrightnessLevel = newBrightnessLevel;
-
-        if (currentBrightnessLevel == -1 && canSetAuto)
-            setScreenBrightness(WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE);
-        else if (currentBrightnessLevel != -1)
-            setScreenBrightness(levelToBrightness(currentBrightnessLevel));
-
+    public void changeBrightness(final CustomPlayerView playerView, final boolean increase,
+                                 final boolean canSetAuto, final int steps) {
+        // from the system's own level: starting at 0 made the first swipe up go dark
+        final int from = currentBrightnessLevel < 0 ? systemLevel() : currentBrightnessLevel;
+        final int to = from + (increase ? steps : -steps);
+        if (to < 0 && canSetAuto) {
+            setLevel(-1);
+        } else {
+            setLevel(Math.max(0, Math.min(100, to)));
+        }
         playerView.setHighlight(false);
+        show(playerView);
+    }
 
-        if (currentBrightnessLevel == -1 && canSetAuto) {
+    void setLevel(final int level) {
+        currentBrightnessLevel = level;
+        setScreenBrightness(level < 0 ? WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                : levelToBrightness(level));
+    }
+
+    void show(final CustomPlayerView playerView) {
+        if (currentBrightnessLevel < 0) {
             playerView.setIconBrightnessAuto();
             playerView.setCustomErrorMessage("");
         } else {
@@ -47,8 +55,24 @@ class BrightnessControl {
         }
     }
 
-    float levelToBrightness(final int level) {
-        final double d = 0.064 + 0.936 / (double) 30 * (double) level;
-        return (float) (d * d);
+    // straight, as VLC does; the old curve kept the middle much darker than its number
+    static float levelToBrightness(final int level) {
+        return Math.max(0.01f, level / 100f);
+    }
+
+    // 1.x saved 0 to 30 on a curve; the same brightness on the new scale
+    static int fromOldLevel(final int oldLevel) {
+        final double d = 0.064 + 0.936 / 30d * oldLevel;
+        return (int) Math.round(d * d * 100);
+    }
+
+    private int systemLevel() {
+        try {
+            final int value = Settings.System.getInt(activity.getContentResolver(),
+                    Settings.System.SCREEN_BRIGHTNESS);
+            return Math.max(0, Math.min(100, Math.round(value * 100f / 255f)));
+        } catch (Settings.SettingNotFoundException e) {
+            return 50;
+        }
     }
 }

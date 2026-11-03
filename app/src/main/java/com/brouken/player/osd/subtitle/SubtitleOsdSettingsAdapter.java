@@ -137,18 +137,23 @@ public class SubtitleOsdSettingsAdapter extends OsdSettingsAdapter {
         String title = context.getString(R.string.osd_subtitle_typeface_title);
 
         ArrayList<ChoiceOsdSettingsItem.Element> elementList = new ArrayList<>(SubtitleTypeface.values().length);
+        // Medium is left out before Android 9, so a row's place isn't the typeface's own
+        final ArrayList<SubtitleTypeface> listed = new ArrayList<>();
         for (int i = 0; i < SubtitleTypeface.values().length; i++) {
             switch (SubtitleTypeface.values()[i]) {
                 case Regular:
                     elementList.add(new ChoiceOsdSettingsItem.Element(context.getString(R.string.osd_subtitle_typeface_regular)));
+                    listed.add(SubtitleTypeface.Regular);
                     break;
                 case Medium:
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         elementList.add(new ChoiceOsdSettingsItem.Element(context.getString(R.string.osd_subtitle_typeface_medium)));
+                        listed.add(SubtitleTypeface.Medium);
                     }
                     break;
                 case Bold:
                     elementList.add(new ChoiceOsdSettingsItem.Element(context.getString(R.string.osd_subtitle_typeface_bold)));
+                    listed.add(SubtitleTypeface.Bold);
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown SubtitleTypeface: " + SubtitleEdgeType.values()[i]);
@@ -157,8 +162,9 @@ public class SubtitleOsdSettingsAdapter extends OsdSettingsAdapter {
 
         ChoiceOsdSettingsItem.Element[] elements = new ChoiceOsdSettingsItem.Element[elementList.size()];
         elementList.toArray(elements);
-        ChoiceOsdSettingsItem.Listener itemListener = (position, newValueIndex) -> listener.onSubtitleTypefaceChange(SubtitleTypeface.values()[newValueIndex]);
-        return new ChoiceOsdSettingsItem(title, elements, typeface.ordinal(), itemListener, this);
+        ChoiceOsdSettingsItem.Listener itemListener = (position, newValueIndex) -> listener.onSubtitleTypefaceChange(listed.get(newValueIndex));
+        // a Medium saved on a newer phone shows as Regular, which is how it's drawn here
+        return new ChoiceOsdSettingsItem(title, elements, Math.max(0, listed.indexOf(typeface)), itemListener, this);
     }
 
     private OsdSettingsItem createColorItem(int colorIndex) {
