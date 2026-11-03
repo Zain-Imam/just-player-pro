@@ -36,7 +36,7 @@ public final class SubtitleNames {
     }
 
     @Nullable
-    static String withoutExtension(@Nullable final String name) {
+    public static String withoutExtension(@Nullable final String name) {
         if (name == null) {
             return null;
         }
@@ -53,12 +53,16 @@ public final class SubtitleNames {
     }
 
     @Nullable
-    static String languageName(@Nullable final String language) {
+    public static String languageName(@Nullable final String language) {
         if (language == null || language.trim().isEmpty()) {
             return null;
         }
         final String code = language.trim();
-        final String name = new Locale(code).getDisplayLanguage();
+        // a tag with a region, as TubeMate writes them (fr-FR, pt-BR), names the region too
+        final Locale tagged = Locale.forLanguageTag(code.replace('_', '-'));
+        final String name = tagged.getLanguage().isEmpty()
+                ? new Locale(code).getDisplayLanguage()
+                : tagged.getCountry().isEmpty() ? tagged.getDisplayLanguage() : tagged.getDisplayName();
         return name.isEmpty() || name.equalsIgnoreCase(code) ? null : name;
     }
 }

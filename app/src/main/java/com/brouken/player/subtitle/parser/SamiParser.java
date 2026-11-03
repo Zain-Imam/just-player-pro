@@ -8,8 +8,11 @@ import androidx.media3.extractor.text.CuesWithTiming;
 import androidx.media3.extractor.text.SubtitleParser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,6 +31,10 @@ public final class SamiParser implements SubtitleParser {
     private static final Pattern P_TAG = Pattern.compile("<p\\b([^>]*)>", Pattern.CASE_INSENSITIVE);
     private static final Pattern CLASS = Pattern.compile(
             "\\bclass\\s*=\\s*[\"']?([^\"'\\s>]+)", Pattern.CASE_INSENSITIVE);
+    // the style sits inside a comment: .ENCC { Name: English; lang: en-US; }
+    private static final Pattern STYLE_CLASS = Pattern.compile("\\.([A-Za-z0-9_-]+)\\s*\\{([^}]*)\\}");
+    private static final Pattern STYLE_LANG = Pattern.compile(
+            "\\blang\\s*:\\s*([A-Za-z0-9_-]+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern BR = Pattern.compile("<br\\s*/?>", Pattern.CASE_INSENSITIVE);
     private static final Pattern TAG = Pattern.compile("<[^>]*>");
     // the semicolon is often missing (&nbsp); unknown names are left as written
@@ -65,6 +72,35 @@ public final class SamiParser implements SubtitleParser {
 
     @NonNull
     static List<TextCues.Line> parse(@NonNull String source) {
+        return parse(source, null);
+    }
+
+    // the classes used in the body, in order, each with the lang its style gives (else the class)
+    @NonNull
+    static Map<String, String> languages(@NonNull String source) {
+        final Map<String, String> styled = new HashMap<>();
+        final Matcher style = STYLE_CLASS.matcher(source);
+        while (style.find()) {
+            final Matcher lang = STYLE_LANG.matcher(style.group(2));
+            if (lang.find()) {
+                styled.put(style.group(1).toLowerCase(Locale.ROOT), lang.group(1));
+            }
+        }
+        final Map<String, String> used = new LinkedHashMap<>();
+        final Matcher p = P_TAG.matcher(COMMENT.matcher(source).replaceAll(""));
+        while (p.find()) {
+            final String paragraphClass = classOf(p.group(1));
+            if (paragraphClass != null && !used.containsKey(paragraphClass)) {
+                final String lang = styled.get(paragraphClass.toLowerCase(Locale.ROOT));
+                used.put(paragraphClass, lang != null ? lang : paragraphClass);
+            }
+        }
+        return used;
+    }
+
+    // chosen: one of languages(); null takes the first class used in the body
+    @NonNull
+    static List<TextCues.Line> parse(@NonNull String source, @Nullable String chosenClass) {
         final String text = COMMENT.matcher(source).replaceAll("");
 
         final List<Long> starts = new ArrayList<>();
@@ -88,7 +124,7 @@ public final class SamiParser implements SubtitleParser {
         }
 
         // several languages: the first class used in the body wins
-        String chosen = null;
+        String chosen = chosenClass;
         for (String body : bodies) {
             final Matcher p = P_TAG.matcher(body);
             while (chosen == null && p.find()) {

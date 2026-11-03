@@ -186,6 +186,109 @@ public class SubtitleUtils {
         return null;
     }
 
+    // without folder access the media library still lists subtitle files (.srt, .vtt, .smi) beside
+    // videos, so one is found there by the same rule as findSubtitle
+    @Nullable
+    public static Uri findBeside(Context context, @Nullable Uri video) {
+        if (video == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return null;
+        }
+        final ContentResolver resolver = context.getContentResolver();
+        final Uri files = android.provider.MediaStore.Files.getContentUri("external");
+        final String[] place = {android.provider.MediaStore.MediaColumns.RELATIVE_PATH,
+                android.provider.MediaStore.MediaColumns.DISPLAY_NAME};
+        try {
+            String folder = null;
+            String name = null;
+            android.database.Cursor cursor;
+            if (android.provider.MediaStore.AUTHORITY.equals(video.getAuthority())) {
+                cursor = resolver.query(video, place, null, null, null);
+            } else if (ContentResolver.SCHEME_FILE.equals(video.getScheme())) {
+                // the library keeps /storage/emulated/0/..., a link may say /sdcard/...
+                String real = video.getPath();
+                try {
+                    real = new File(video.getPath()).getCanonicalPath();
+                } catch (Exception ignored) {
+                    // the path as given
+                }
+                cursor = resolver.query(files, place, android.provider.MediaStore.MediaColumns.DATA + " IN (?, ?)",
+                        new String[]{video.getPath(), real}, null);
+            } else {
+                // another app's own link: matched by name and size, as only one file is both
+                String shown = null;
+                long size = -1;
+                try (android.database.Cursor about = resolver.query(video, new String[]{
+                        android.provider.OpenableColumns.DISPLAY_NAME,
+                        android.provider.OpenableColumns.SIZE}, null, null, null)) {
+                    if (about != null && about.moveToFirst()) {
+                        shown = about.getString(0);
+                        size = about.isNull(1) ? -1 : about.getLong(1);
+                    }
+                }
+                if (shown == null || size <= 0) {
+                    return null;
+                }
+                cursor = resolver.query(files, place, android.provider.MediaStore.MediaColumns.DISPLAY_NAME
+                                + "=? AND " + android.provider.MediaStore.MediaColumns.SIZE + "=?",
+                        new String[]{shown, String.valueOf(size)}, null);
+            }
+            if (cursor == null) {
+                return null;
+            }
+            try {
+                if (cursor.getCount() == 1 && cursor.moveToFirst()) {
+                    folder = cursor.getString(0);
+                    name = cursor.getString(1);
+                }
+            } finally {
+                cursor.close();
+            }
+            if (folder == null || name == null) {
+                return null;
+            }
+
+            final String videoName = getFileBaseName(name);
+            long single = -1;
+            int subtitles = 0;
+            int videos = 0;
+            try (android.database.Cursor here = resolver.query(files, new String[]{
+                            android.provider.MediaStore.MediaColumns._ID,
+                            android.provider.MediaStore.MediaColumns.DISPLAY_NAME,
+                            android.provider.MediaStore.MediaColumns.MIME_TYPE},
+                    android.provider.MediaStore.MediaColumns.RELATIVE_PATH + "=?",
+                    new String[]{folder}, null)) {
+                if (here == null) {
+                    return null;
+                }
+                while (here.moveToNext()) {
+                    final String file = here.getString(1);
+                    final String mime = here.getString(2);
+                    if (file == null || file.startsWith(".")) {
+                        continue;
+                    }
+                    if (mime != null && mime.startsWith("video/")) {
+                        videos++;
+                        continue;
+                    }
+                    if (!SubtitleFiles.hasSubtitleExtension(file)) {
+                        continue;
+                    }
+                    if (file.startsWith(videoName + '.')) {
+                        return android.content.ContentUris.withAppendedId(files, here.getLong(0));
+                    }
+                    subtitles++;
+                    single = here.getLong(0);
+                }
+            }
+            if (videos == 1 && subtitles == 1) {
+                return android.content.ContentUris.withAppendedId(files, single);
+            }
+        } catch (Exception e) {
+            Log.d(Utils.TAG, "No subtitle found beside the video: " + e);
+        }
+        return null;
+    }
+
     public static DocumentFile findNext(DocumentFile video) {
         DocumentFile dir = video.getParentFile();
         return findNext(video, dir);

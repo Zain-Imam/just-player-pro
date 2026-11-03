@@ -38,6 +38,13 @@ public class CueModifier {
         bottomFraction = Math.max(0f, Math.min(0.9f, 0.08f + position * 0.01f));
     }
 
+    // off works like mpv's "strip": every line at the bottom middle, wherever the file put it
+    private boolean embeddedStyles = true;
+
+    public void setEmbeddedStyles(final boolean embedded) {
+        embeddedStyles = embedded;
+    }
+
     // extra room under the subtitles, as a share of the picture
     private float lift;
 
@@ -119,7 +126,7 @@ public class CueModifier {
             return;
         }
 
-        if (isSign(cue)) {
+        if (embeddedStyles && isSign(cue)) {
             return;
         }
 
@@ -127,7 +134,10 @@ public class CueModifier {
         builder.setLine(Math.max(pictureTop, Math.min(pictureBottom, line)),
                         Cue.LINE_TYPE_FRACTION)
                 .setLineAnchor(Cue.ANCHOR_TYPE_END);
-        if (cue.position == Cue.DIMEN_UNSET) {
+        if (!embeddedStyles) {
+            builder.setPosition(0.5f).setPositionAnchor(Cue.ANCHOR_TYPE_MIDDLE)
+                    .setTextAlignment(null).setSize(Cue.DIMEN_UNSET);
+        } else if (cue.position == Cue.DIMEN_UNSET) {
             builder.setPosition(0.5f).setPositionAnchor(Cue.ANCHOR_TYPE_MIDDLE);
         }
     }
