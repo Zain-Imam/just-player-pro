@@ -38,10 +38,10 @@ if [ -z "${ONLY_HOME:-}" ]; then
 echo "== Settings, every page"
 open_settings
 step settings-hub
-for page in "Appearance" "Home screen" "Playback" "Audio" "Gestures and controls" "Subtitles" "Online info" "Storage and backup" "Advanced" "About"; do
+for page in "Appearance" "Home screen" "Playback" "Audio" "Gestures and controls" "Subtitles" "Online info" "Integrations" "Storage and backup" "Advanced" "About"; do
   open_settings
   at="$(centre text "$page")"
-  [ -z "$at" ] && { set -- $(screen_now); swipe $(( $1 / 2 )) $(( $2 * 75 / 100 )) $(( $1 / 2 )) $(( $2 * 30 / 100 )) 600; sleep 1; at="$(centre text "$page")"; }
+  for try in 1 2 3; do [ -n "$at" ] && break; set -- $(screen_now); swipe $(( $1 / 2 )) $(( $2 * 75 / 100 )) $(( $1 / 2 )) $(( $2 * 30 / 100 )) 600; sleep 1; at="$(centre text "$page")"; done
   [ -n "$at" ] && { tap $at; sleep 2; } || fail "found $page"
   step "settings-$(echo "$page" | tr ' ' '-')"
 done

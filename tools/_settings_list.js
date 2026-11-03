@@ -5,7 +5,10 @@ const fs = require("fs");
 const path = require("path");
 const res = process.argv[2];
 const xml = fs.readFileSync(path.join(res, "xml", "root_preferences.xml"), "utf8");
-const stringsXml = fs.readFileSync(path.join(res, "values", "strings.xml"), "utf8");
+// every strings*.xml, since the Integrations rows live in strings_web.xml
+const stringsXml = fs.readdirSync(path.join(res, "values"))
+  .filter((f) => /^strings.*\.xml$/.test(f))
+  .map((f) => fs.readFileSync(path.join(res, "values", f), "utf8")).join("\n");
 
 const strings = {};
 for (const m of stringsXml.matchAll(/<string name="([^"]+)"[^>]*>([\s\S]*?)<\/string>/g)) {

@@ -160,7 +160,12 @@ sweep_settings() {
     case "$title" in
       "Set up from your phone")
         continue ;;
-      "Choose custom font"|"Subtitle download folder")
+      # pressing it signs in to a real account, which a browser already allowed may do at once;
+      # playing afterwards would then write to that account's history
+      "Simkl")
+        pass "left alone, it signs in to a real account: $title"
+        continue ;;
+      "Choose the font"|"Download folder"|"Export to a file…"|"Import from a file…"|"Folders the player may read")
         tap $at
         sleep 4
         back_anywhere; sleep 2
@@ -217,45 +222,80 @@ sweep_settings() {
 
     if [ -z "$(alive)" ]; then fail "still alive after: $title"; fi
   done 3<<'ROWS'
+ListPreference|Language
+ListPreference|Light or dark
 ListPreference|Theme colour
+PictureListPreference|Player style
+Preference|Buttons and their order
+PictureListPreference|Clock
+ListPreference|Time format
+PictureListPreference|Battery
+PictureListPreference|Start on
+PictureListPreference|Layout
+PictureListPreference|Folder pictures
+SwitchPreferenceCompat|Better video pictures
+SeekBarPreference|How many in Recent
+SwitchPreferenceCompat|Recent on this device
+SwitchPreferenceCompat|Film posters in Recent
+ListPreference|Name films in Recent after
+Preference|Clear image cache
 ListPreference|Playback engine
-ListPreference|Decoder priority
-ListPreference|Default audio track
-ListPreference|File access
-ListPreference|Identify files
-ListPreference|Subtitle language
-SeekBarPreference|Double-tap seek
-SeekBarPreference|Controls stay for
-SwitchPreferenceCompat|Timeline while locked
-SeekBarPreference|Card appears after
-SwitchPreferenceCompat|Adaptive buffering
+PictureListPreference|Preview while seeking
 SwitchPreferenceCompat|Ask before resuming
-SwitchPreferenceCompat|Auto picture-in-picture
-SwitchPreferenceCompat|Keep screen on
+SwitchPreferenceCompat|Play the next file in the folder
+SwitchPreferenceCompat|Picture-in-picture on Home
+SwitchPreferenceCompat|Sound with the screen off
+SwitchPreferenceCompat|Keep the screen on
+SwitchPreferenceCompat|Match the frame rate
+SwitchPreferenceCompat|Skip silent parts
 SwitchPreferenceCompat|Loop button
-SwitchPreferenceCompat|Match frame rate
-SwitchPreferenceCompat|Show the time
+SwitchPreferenceCompat|Warn about demanding files
+SwitchPreferenceCompat|Adaptive buffering
+ListPreference|Default audio track
+EditTextPreference|Audio language order
 SwitchPreferenceCompat|Volume boost
-SwitchPreferenceCompat|Volume keys change this app only
+SwitchPreferenceCompat|Volume keys change only this app
+SeekBarPreference|Double-tap seek
+SeekBarPreference|Controls hide after
+SwitchPreferenceCompat|Timeline while locked
+SwitchPreferenceCompat|Subtitles above the controls
+ListPreference|Search language
+EditTextPreference|Language order
+SwitchPreferenceCompat|Search automatically
+ListPreference|Text colour
+SwitchPreferenceCompat|Custom font
+Preference|Choose the font
+Preference|Download folder
+Preference|Stremio subtitle addons
+ListPreference|Identify films
+SwitchPreferenceCompat|More coverage for anime
 SwitchPreferenceCompat|Info card when paused
-SwitchPreferenceCompat|Skip intros and credits · experimental
-SwitchPreferenceCompat|Search subtitles automatically
-SwitchPreferenceCompat|Fill search from file name
-SwitchPreferenceCompat|Custom subtitle font
-SwitchPreferenceCompat|Skip silence
+SeekBarPreference|Card background
+SeekBarPreference|Card appears after
+SwitchPreferenceCompat|Skip intros and credits
+SwitchPreferenceCompat|Fill search from the file name
+SwitchPreferenceCompat|One title for both
+Preference|Test keys and addons
+SwitchPreferenceCompat|MDBList ratings
+SwitchPreferenceCompat|Show ratings on the info card
+ListPreference|Ratings on episodes
+Preference|Ratings and their order
+ListPreference|Updates
+ListPreference|Starting quality
+SwitchPreferenceCompat|Mark as watched when I finish
+SeekBarPreference|Counts as watched at (%)
+Preference|Folders the player may read
+Preference|Played links
+SwitchPreferenceCompat|Keep links that would not play
+Preference|Export to a file…
+Preference|Import from a file…
+ListPreference|File access
+ListPreference|Decoder priority
 SwitchPreferenceCompat|Tunneled playback
 SwitchPreferenceCompat|Dolby Vision profile 7 fallback
-Preference|Custom subtitle addons
-Preference|Recently played URLs
 Preference|Check for updates
 Preference|Built by
-EditTextPreference|Audio language order
-EditTextPreference|Subtitle language order
-Preference|Choose custom font
-Preference|Subtitle download folder
-Preference|Test keys and addons
 Preference|Show the introduction again
-Preference|Reorder the buttons
 Preference|Licences
 ROWS
 }
@@ -677,9 +717,10 @@ rotation_and_dead_links() {
   done
 
   local said="" i
-  for i in $(seq 1 12); do
+  # Auto tries mpv after Media3 gives up, so the message can take most of a minute
+  for i in $(seq 1 20); do
     sleep 3
-    said="$(dump | grep -oE 'text="[^"]*(would not play|could not reach|refused the request|not there any more|went wrong)[^"]*"' | head -1)"
+    said="$(dump | grep -oE 'text="[^"]*(would not play|could not reach|refused|not there any more|went wrong|Can(.|&apos;)t play)[^"]*"' | head -1)"
     [ -n "$said" ] && break
   done
   if [ -n "$said" ]; then

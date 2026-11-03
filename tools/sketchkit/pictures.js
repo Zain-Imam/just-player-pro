@@ -141,6 +141,82 @@ function homeWall(w, h) {
   return out;
 }
 
+// the poster wall's folders in each look: Camera with many videos, Download with two
+function homeFolders(w, h, look) {
+  const s = h * 0.085;
+  const out = [homeTop(w, h, s)];
+  out.push(text("FOLDERS", w * 0.05, s * 3.2, s * 0.62, { weight: 500, fill: A }));
+  // three across, the width of a Recent card; tall like it, or square
+  const tileW = w * 0.27;
+  const tileH = look === "square" ? tileW : tileW * 1.5;
+  [["Camera", 0, 50, "6:40:12"], ["Download", 4, 2, "14:02"], ["Movies", 2, 7, "1:18:59"]].forEach(([name, f, count, length], i) => {
+    const x = w * 0.05 + i * (tileW + w * 0.045);
+    const y = s * 4.3;
+    const r = s * 0.25;
+    if (look === "folder") {
+      // no picture: a folder in the theme colour, as the app draws it
+      const fw = tileW * 0.8;
+      const fh = fw / 1.45;
+      const fx = x + (tileW - fw) / 2;
+      const fy = y + (tileH - fh) / 2;
+      const tab = fh * 0.16;
+      const fr = Math.max(s * 0.2, fh * 0.08);
+      out.push(round(x, y, tileW, tileH, r, "#1E1E1E"));
+      out.push(round(fx, fy, fw * 0.42, tab + fr, fr, A, 0.6));
+      out.push(round(fx, fy + tab, fw, fh - tab, fr, A, 0.6));
+      out.push(round(fx, fy + tab * 1.9, fw, fh - tab * 1.9, fr, A));
+    } else if (look === "mosaic") {
+      out.push(round(x, y, tileW, tileH, r, "#1E1E1E"));
+      if (count >= 4) {
+        for (let j = 0; j < 4; j++) {
+          out.push(rect(x + (j % 2) * tileW / 2 + 0.4, y + Math.floor(j / 2) * tileH / 2 + 0.4,
+            tileW / 2 - 0.8, tileH / 2 - 0.8, FRAMES[f + j]));
+        }
+      } else {
+        for (let j = 0; j < 2; j++) {
+          out.push(rect(x + j * tileW / 2 + 0.4, y + 0.4, tileW / 2 - 0.8, tileH - 0.8, FRAMES[f + j]));
+        }
+      }
+    } else if (look === "centred") {
+      // the frame whole across the middle over a dim copy of itself
+      out.push(round(x, y, tileW, tileH, r, FRAMES[f], 0.4));
+      const band = tileW * 9 / 16;
+      out.push(rect(x, y + (tileH - band) / 2, tileW, band, FRAMES[f]));
+    } else {
+      out.push(round(x, y, tileW, tileH, r, FRAMES[f]));
+    }
+    // the count, or the plain folder's length, in a dark pill bottom right
+    const label = look === "folder" ? length : String(count);
+    const ps = s * 0.5;
+    const pw = textWidth(label, ps, 500) + s * 0.5;
+    out.push(round(x + tileW - pw - s * 0.2, y + tileH - s * 0.9, pw, s * 0.7, s * 0.35, "#000000", 0.6));
+    out.push(text(label, x + tileW - pw / 2 - s * 0.2, y + tileH - s * 0.38, ps, { weight: 500, anchor: "middle" }));
+    out.push(text(name, x, y + tileH + s * 1.0, s * 0.7, { weight: 500 }));
+    out.push(text(count + " videos", x, y + tileH + s * 1.75, s * 0.55, { fill: GREY }));
+  });
+  return out;
+}
+
+// inside a folder in the Cards view: its videos on tall cards like Recent, the frame whole
+// across the middle over a dim copy of itself
+function homeCards(w, h) {
+  const s = h * 0.085;
+  const out = [homeTop(w, h, s)];
+  out.push(text("MOVIES", w * 0.05, s * 3.2, s * 0.62, { weight: 500, fill: A }));
+  const tileW = w * 0.27;
+  const tileH = tileW * 1.5;
+  [["Sintel", 0, "14:48"], ["Big Buck Bunny", 4, "9:56"], ["Tears of Steel", 2, "12:14"]].forEach(([name, f, length], i) => {
+    const x = w * 0.05 + i * (tileW + w * 0.045);
+    const y = s * 4.3;
+    out.push(round(x, y, tileW, tileH, s * 0.25, FRAMES[f], 0.4));
+    const band = tileW * 9 / 16;
+    out.push(rect(x, y + (tileH - band) / 2, tileW, band, FRAMES[f]));
+    out.push(text(name, x, y + tileH + s * 1.0, s * 0.7, { weight: 500 }));
+    out.push(text(length, x, y + tileH + s * 1.75, s * 0.55, { fill: GREY }));
+  });
+  return out;
+}
+
 function homeRecent(w, h, s, opts = {}) {
   const out = [homeTop(w, h, s)];
   out.push(text("RECENT", w * 0.05, s * 3.2, s * 0.62, { weight: 500, fill: A }));
@@ -264,6 +340,11 @@ const pictures = {
   sketch_style_material: [CW, CH, player("material", CW, CH)],
   sketch_layout_list: [CW, CH, homeList(CW, CH)],
   sketch_layout_wall: [CW, CH, homeWall(CW, CH)],
+  sketch_layout_cards: [CW, CH, homeCards(CW, CH)],
+  sketch_folders_centred: [CW, CH, homeFolders(CW, CH, "centred")],
+  sketch_folders_square: [CW, CH, homeFolders(CW, CH, "square")],
+  sketch_folders_mosaic: [CW, CH, homeFolders(CW, CH, "mosaic")],
+  sketch_folders_folder: [CW, CH, homeFolders(CW, CH, "folder")],
   sketch_start_home: [CW, CH, homeList(CW, CH)],
   sketch_start_last: [CW, CH, player("classic", CW, CH, { playing: true, progress: 0.46 })],
   sketch_seek_off: [CW, CH, seekBubble(CW, CH, "off")],

@@ -94,8 +94,9 @@ fi
 
 echo
 echo "== asking for the info card always finishes"
-if tap_control Settings; then
-  CARD="$(centre text 'Show info card')"
+# the step before may have backed out of the player, so it is opened again if needed
+if tap_control Settings || { open_film; tap_control Settings; }; then
+  CARD="$(panel_row 'Show info card')"
   if [ -z "$CARD" ]; then
     fail "found Show info card"
   else
@@ -109,6 +110,8 @@ if tap_control Settings; then
     check "it stops saying Identifying" "$SETTLED" "still identifying after 28s"
     [ -n "$(alive)" ] && pass "the app survived asking" || fail "the app survived asking"
   fi
+else
+  fail "found the settings button for the info card"
 fi
 
 echo
@@ -177,7 +180,7 @@ fi
 echo
 echo "== every screen in settings opens and comes back"
 open_settings
-for row in "Theme colour" "Playback engine" "Subtitle addons" "Recently played URLs"; do
+for row in "Theme colour" "Playback engine" "Stremio subtitle addons" "Played links"; do
   open_settings
   AT="$(scroll_to "$row")"
   if [ -z "$AT" ]; then
@@ -215,7 +218,7 @@ adb shell "run-as $PKG cat shared_prefs/${PKG}_preferences.xml" 2>/dev/null > "$
 if [ -s "$WORK/prefs-before.xml" ]; then
   DRIFT="$(diff <(sort "$WORK/prefs-before.xml") <(sort "$WORK/prefs-after.xml") 2>/dev/null \
            | grep -E '^[<>]' | grep -oE 'name="[^"]+"' | sort -u \
-           | grep -vE 'mediaUri|mediaType|position|urlHistory|onlineIdentities|subtitleUri|subtitleTrackId|resizeMode|aspectStep|aspectMap|launchMemory|brightness|scale|speed' \
+           | grep -vE 'mediaUri|mediaType|position|urlHistory|onlineIdentities|subtitleUri|subtitleTrackId|resizeMode|aspectStep|aspectMap|launchMemory|trackMemory|watchedFilms|brightness|scale|speed' \
            | tr '\n' ' ')"
   if [ -z "$DRIFT" ]; then
     pass "no lasting setting was changed"

@@ -553,6 +553,94 @@ tv_off() {
   density_reset
 }
 
+# 5.1.0's screens: Home on Cards with both Recents, the three folder views, Watched in Film info,
+# the Integrations page, a website's Quality list and the media card from the shade
+here_plays() {   # films played from the device itself, for Recents (On this device)
+  local entry
+  for entry in Sintel.2010.1080p.mkv:420000 Big.Buck.Bunny.2008.1080p.mp4:200000 Spring.2019.mp4:120000 \
+               Tears.of.Steel.2012.1080p.mov:300000 Cosmos.Laundromat.2015.mp4:250000; do
+    film "${entry%%:*}" "${entry##*:}"
+    sleep 6
+    adb shell input keyevent KEYCODE_BACK; sleep 1
+    adb shell input keyevent KEYCODE_BACK; sleep 2
+    echo "  played here ${entry%%:*}"
+  done
+  adb shell "am force-stop $PKG"
+}
+
+film_info_of() {   # film_info_of <card text>: its page, from Home
+  local at
+  home_now
+  at="$(row_of "$1")"
+  [ -z "$at" ] && return 1
+  set -- $at
+  adb shell input swipe "$1" "$2" "$1" "$2" 900; sleep 2
+  at="$(centre resource-id "$PKG:id/recent_menu_info")"
+  [ -z "$at" ] && return 1
+  tap $at; sleep 4
+}
+
+release510() {
+  setpref string homeLayout cards
+  setpref string watchedFilms "{}"
+  here_plays
+  film_info_of 'Big Buck Bunny (2008)' && { tap $(centre text 'Mark as watched'); sleep 2; }
+  film_info_of 'Sintel (2010)' && { tap $(centre text 'Mark as watched'); sleep 2
+    set -- $(screen_now)
+    swipe $(( $1 / 2 )) $(( $2 * 60 / 100 )) $(( $1 / 2 )) $(( $2 * 45 / 100 )) 500; sleep 1
+    shot film-watched; }
+  home_now
+  shot home-cards
+  local layout at
+  for layout in cards list wall; do
+    setpref string homeLayout $layout
+    home_now
+    set -- $(screen_now)
+    swipe $(( $1 / 2 )) $(( $2 * 80 / 100 )) $(( $1 / 2 )) $(( $2 * 20 / 100 )) 600; sleep 1
+    swipe $(( $1 / 2 )) $(( $2 * 80 / 100 )) $(( $1 / 2 )) $(( $2 * 20 / 100 )) 600; sleep 1
+    at="$(row_of 'Movies')"
+    [ -n "$at" ] && { tap $at; sleep 4; shot "folder-$layout"; }
+  done
+  setpref string homeLayout cards
+  adb shell "am force-stop $PKG"
+  CURRENT_SCREEN="$PKG/com.brouken.player.SettingsActivity"
+  adb shell "am start -n $PKG/com.brouken.player.SettingsActivity --es com.brouken.player.SETTINGS_PAGE screen_websites" >/dev/null 2>&1
+  sleep 4
+  shot settings-integrations
+  set -- $(screen_now)
+  swipe $(( $1 / 2 )) $(( $2 * 80 / 100 )) $(( $1 / 2 )) $(( $2 * 30 / 100 )) 600; sleep 1
+  shot settings-tracking
+  adb shell "am force-stop $PKG"
+}
+
+web_quality() {   # web_quality <link>: a site's film, its Quality list open
+  local n at
+  adb shell "am force-stop $PKG" >/dev/null 2>&1
+  adb logcat -c >/dev/null 2>&1
+  CURRENT_SCREEN="$ACT"
+  adb shell "am start -a android.intent.action.VIEW -d '$1' -n $ACT" >/dev/null 2>&1
+  for n in $(seq 1 60); do adb logcat -d 2>/dev/null | grep -q "First frame on" && break; sleep 1; done
+  sleep 8
+  pause_player
+  show_controls
+  at="$(centre content-desc 'Quality')"
+  [ -n "$at" ] && { tap $at; sleep 2; shot web-quality; }
+  adb shell "am force-stop $PKG"
+}
+
+media_card() {   # the shade's media card while a film plays on behind Home; only the card is kept
+  setpref boolean backgroundAudio true
+  film Sintel.2010.1080p.mkv 300000
+  adb shell input keyevent KEYCODE_MEDIA_PLAY; sleep 3
+  adb shell input keyevent KEYCODE_HOME; sleep 4
+  adb shell cmd statusbar expand-notifications; sleep 3
+  adb exec-out screencap -p > "$WORK/showcase/shade.png"
+  adb shell cmd statusbar collapse
+  echo "  shade taken; crop it to the card before using it"
+  adb shell "am force-stop $PKG"
+  setpref boolean backgroundAudio false
+}
+
 undo() {
   adb shell "am force-stop $PKG"
   adb shell "run-as $PKG sed -i -e '/name=\"debugShowcase/d' $PREFS_FILE"

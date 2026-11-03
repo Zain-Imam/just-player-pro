@@ -1,5 +1,5 @@
 #!/bin/bash
-# _vnextsetting.sh [on|off]: reports or sets "Play the next file automatically".
+# _vnextsetting.sh [on|off]: reports or sets "Play the next file in the folder".
 . "$(dirname "$0")/lib.sh"
 trap cleanup EXIT
 WANT="${1:-report}"

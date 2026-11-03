@@ -374,7 +374,10 @@ panel_row() {   # panel_row <row text>
 
 settings_page_of() {
   local list="$WORK/settings-list.tsv"
-  [ -s "$list" ] || node "$(hostpath "$HERE/_settings_list.js")" "$(hostpath "$HERE/../app/src/main/res")" > "$list" 2>/dev/null
+  # rebuilt whenever a settings page changes, so new rows are found
+  if [ ! -s "$list" ] || [ -n "$(find "$HERE/../app/src/main/res/xml" -newer "$list" -print -quit)" ]; then
+    node "$(hostpath "$HERE/_settings_list.js")" "$(hostpath "$HERE/../app/src/main/res")" > "$list" 2>/dev/null
+  fi
   awk -F'\t' -v t="$1" '$4 == t {print $1; exit}' "$list"
 }
 
@@ -382,11 +385,13 @@ scroll_to() {
   local at n from to w h page
   at="$(centre text "$1")"
   [ -n "$at" ] && { echo "$at"; return 0; }
-  if [ "${CURRENT_SCREEN:-}" = "$SETTINGS" ] && onscreen text "Storage and backup"; then
+  # Appearance is the first section, so it is on screen however many sections follow
+  if [ "${CURRENT_SCREEN:-}" = "$SETTINGS" ] && onscreen text "Appearance"; then
     page="$(settings_page_of "$1")"
     if [ -n "$page" ]; then
-      adb shell "am start -n $SETTINGS --es com.brouken.player.SETTINGS_PAGE $page" >/dev/null 2>&1
-      sleep 2
+      # -S: a Settings already open takes the intent but ignores the page in it
+      adb shell "am start -S -n $SETTINGS --es com.brouken.player.SETTINGS_PAGE $page" >/dev/null 2>&1
+      sleep 3
       at="$(centre text "$1")"
       [ -n "$at" ] && { echo "$at"; return 0; }
     fi

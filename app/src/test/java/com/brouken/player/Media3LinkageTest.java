@@ -96,6 +96,7 @@ public class Media3LinkageTest {
             final String module = moduleOf(element);
             final boolean published = module.startsWith("media3-");
             final boolean bundled = module.equals("lib-exoplayer-release")
+                    || module.equals("lib-exoplayer-hls-release")
                     || module.equals("lib-ui-release")
                     || module.startsWith("lib-decoder-");
             if (!published && !bundled) {
