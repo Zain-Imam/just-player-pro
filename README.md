@@ -10,7 +10,7 @@ Media3/ExoPlayer and a full build of mpv ship inside one app, and the player mov
 its own — so a file one cannot decode is handled by the other instead of failing. The same build is
 driven by a finger on a phone or by a D-pad from across the room, and behaves the same either way.
 
-[![Release](https://img.shields.io/badge/release-v5.0.0-F4601E?style=flat-square)](https://github.com/Zain-Imam/just-player-pro/releases/latest)
+[![Release](https://img.shields.io/badge/release-v5.1.0-F4601E?style=flat-square)](https://github.com/Zain-Imam/just-player-pro/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/Zain-Imam/just-player-pro/total?style=flat-square&color=F4601E&label=downloads)](https://github.com/Zain-Imam/just-player-pro/releases)
 [![Android](https://img.shields.io/badge/Android-7.1%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](#building)
 [![Engines](https://img.shields.io/badge/engines-Media3%20%2B%20mpv-4C8BF5?style=flat-square)](#the-two-engines)
@@ -28,7 +28,7 @@ https://github.com/user-attachments/assets/d1f6a8dc-6e96-478b-a5c7-84876f8998a8
 
 <table>
 <tr>
-<td width="33%"><img src="docs/screenshots/02-library.jpg" alt="The home screen as a poster wall and as a list, and the sort choices"></td>
+<td width="33%"><img src="docs/screenshots/02-library.jpg" alt="Recent on the home screen as cards with posters and ticks, and a folder of films as cards"></td>
 <td width="33%"><img src="docs/screenshots/09-appearance.jpg" alt="One frame in the Classic, Glass and Material You styles"></td>
 <td width="33%"><img src="docs/screenshots/08-online-setup.jpg" alt="The setup page offered on a television, and the same page open on a phone"></td>
 </tr>
@@ -36,6 +36,11 @@ https://github.com/user-attachments/assets/d1f6a8dc-6e96-478b-a5c7-84876f8998a8
 <td width="33%"><img src="docs/screenshots/11-theme-and-colours.jpg" alt="The home screen in the dark and the light theme, the theme colour picker, and the home screen in green"></td>
 <td width="33%"><img src="docs/screenshots/12-film-info-and-ratings.jpg" alt="A film's page with its scores and cast, the info card with the same scores, and the screen that orders the rating sites"></td>
 <td width="33%"><img src="docs/screenshots/13-subtitle-style.jpg" alt="Subtitles in yellow over a film, with the subtitle panel open on its text colour"></td>
+</tr>
+<tr>
+<td width="33%"><img src="docs/screenshots/16-websites.jpg" alt="A YouTube video playing with its Quality list open, and the Integrations page with YouTube and other sites ready"></td>
+<td width="33%"><img src="docs/screenshots/17-watched.jpg" alt="Recent with green ticks on watched films, and a film's page marked Watched with an Unwatch button"></td>
+<td width="33%"><img src="docs/screenshots/18-screen-off.jpg" alt="The player's controls in the notification shade, with the film's picture, name and year"></td>
 </tr>
 </table>
 
@@ -62,15 +67,22 @@ player you already use.
 <img src="docs/screenshots/04-playback.jpg" alt="A film playing on a phone, with the details line under its title">
 <img src="docs/screenshots/05-quick-settings.jpg" alt="The quick settings panel beside the picture">
 <img src="docs/screenshots/14-controls.jpg" alt="Moving a button in Buttons and their order, the result, and a setting found by search">
+<img src="docs/screenshots/18-screen-off.jpg" alt="The player's controls in the notification shade, with the film's picture, name and year">
 
 ### Titles and subtitles
 
 <img src="docs/screenshots/06-info-and-subtitles.jpg" alt="An info card with the film's scores over a paused film, and subtitles found across several sources">
 <img src="docs/screenshots/07-identify.jpg" alt="Picking which film a file is from a grid of posters, and changing it from the film's page">
 
+### YouTube and other sites
+
+<img src="docs/screenshots/16-websites.jpg" alt="A YouTube video playing with its Quality list open, and the Integrations page with YouTube and other sites ready">
+
 ### Finding and keeping things
 
 <img src="docs/screenshots/03-search.jpg" alt="Searching by file name, a film's own page with its scores and cast, and the menu a held Recent film opens">
+<img src="docs/screenshots/15-folder-views.jpg" alt="One folder as a list, as a gallery and as cards">
+<img src="docs/screenshots/17-watched.jpg" alt="Recent with green ticks on watched films, and a film's page marked Watched with an Unwatch button">
 <img src="docs/screenshots/10-backup-and-history.jpg" alt="Settings in sections, the storage and backup page, and Settings in Arabic">
 
 </details>
@@ -80,30 +92,34 @@ player you already use.
 **Just Player Pro** plays the video files you already have — on a phone, a tablet or a
 television — with no library to build, no account to make and no advertising.
 
-It opens on what you played last and the folders that actually hold videos, as a list or a
-wall of posters, hands the bitstream straight to the device's decoders, and carries a second
+It opens on what you played last and the folders that actually hold videos, as a list, a
+gallery or cards, hands the bitstream straight to the device's decoders, and carries a second
 engine for the files the first one cannot manage.
 Where you want more than playback it will look a film up for its title, poster and
-synopsis, search several sources for subtitles, and skip past intros — each of those
-optional, each using a key you supply, and none of it touching the network until you ask.
+synopsis, search several sources for subtitles, skip past intros, play YouTube and other sites,
+and keep track of what you have watched, with Simkl if you like — each of those optional, and
+none of it touching the network until you ask.
 
 ## ✨ Key features
 
 | | Feature | What it does |
 |---|---|---|
 | ⚡ | **Two engines, one app** | Media3 hands the bitstream to the device's own decoders; a bundled mpv carries 501 of its own. On *Auto* the player starts on Media3 and moves to mpv for a file Media3 cannot take |
+| 🌐 | **YouTube and 1,800 other sites** *(optional)* | Share a link from YouTube or a browser, or paste one. yt-dlp finds the video and either engine plays it, with a Quality button, audio only, the site's captions and playlists. A download in Settings → Integrations (about 13 MB, so the app itself stays small), kept up to date from yt-dlp's own releases |
 | 📺 | **Touch and remote, one build** | The same APK on a phone, a tablet and an Android TV. Every control a finger reaches, a D-pad reaches |
-| 🏠 | **A home screen for your films** | Recent on top, then the folders that hold videos, as a list or a wall of posters. Hold a film to pin it, start it over or open its page, with the cast and its scores. Search by file name across the device, or sort four ways |
+| 🏠 | **A home screen for your films** | What you played online and on the device, then the folders that hold videos, as a list, a gallery or cards. Hold a film to pin it, start it over or open its page, with the cast and its scores. Search by file name across the device, or sort four ways |
+| ✅ | **What you have watched** | A green tick in Recent and Mark as watched in Film info, at 95% or wherever you set it. Connect Simkl and it follows your Simkl history both ways |
+| 🔒 | **Sound with the screen off** | Films and streams play on behind the lock screen, with the player's controls, poster and title in the notification shade and on the lock screen |
 | 🎨 | **Three looks, eleven colours** | Classic, Glass or Material You for the player, in any of eleven accent colours, and a dark or light home screen. Applied at once, no restart |
 | 🖼 | **Previews while seeking** | Drag the bar, or hold an arrow on a remote, and the frame you are heading for follows along. Files and streams alike |
 | 🎬 | **Info card while paused** | Poster, title, season and episode, date, rating and synopsis, centred on the picture and sized to it. With a free MDBList key, IMDb, Rotten Tomatoes, Metacritic and more as well |
 | 🔍 | **Identify what you are watching** | A release name becomes a title through TMDB, with AniList's help for anime. When it is unsure it asks; pick from a grid of posters, then jump straight to an episode |
 | 💬 | **Subtitles from several sources** | OpenSubtitles, SubDL, Wyzie and any Stremio addon you add, in over 100 languages. SRT, ASS, VTT, SAMI and more, inside the file or beside it, in eight colours or your own font. The one you pick is remembered for that film |
 | ⏩ | **Skip intros and credits** *(experimental)* | Chapter marks where the file carries them; where it does not, community timings from IntroDB, TheIntroDB, SkipDB and AniSkip |
-| ⚙️ | **Settings you can search** | Ten sections that show what they are set to, a search box on every page, two panes on a TV. Keys can be typed on your phone through a PIN-gated page |
+| ⚙️ | **Settings you can search** | Eleven sections that show what they are set to, a search box on every page, two panes on a TV. Keys can be typed on your phone through a PIN-gated page |
 | 🌍 | **Nineteen languages** | English plus Spanish, Portuguese, French, German, Russian, Ukrainian, Polish, Italian, Turkish, Arabic, Hindi, Indonesian, Chinese (both scripts), Japanese, Korean, Vietnamese and Persian, worded to fit the same screens |
 | 💾 | **Export and import** | Settings, keys, history and the per-file delays and speeds, in one file. The export asks what goes in it |
-| 🛡 | **Stays offline until you ask** | No ads, no tracking, no account, barely any permissions. Every online feature waits on a key of your own |
+| 🛡 | **Stays offline until you ask** | No ads, no tracking, no account needed, barely any permissions. Every online feature waits until you turn it on |
 
 ## Download
 
@@ -111,10 +127,10 @@ Grab the newest build from **[Releases](https://github.com/Zain-Imam/just-player
 
 | File | For |
 |---|---|
-| `just-player-pro-5.0.0-arm64-v8a.apk` | Almost every phone, tablet and TV box made since 2017 |
-| `just-player-pro-5.0.0-armeabi-v7a.apk` | Older 32-bit devices |
-| `just-player-pro-5.0.0-x86_64.apk` · `-x86.apk` | Emulators and the few x86 devices |
-| `just-player-pro-5.0.0-universal.apk` | All four at once — four times the mpv payload, so only if you are unsure |
+| `just-player-pro-5.1.0-arm64-v8a.apk` | Almost every phone, tablet and TV box made since 2017 |
+| `just-player-pro-5.1.0-armeabi-v7a.apk` | Older 32-bit devices |
+| `just-player-pro-5.1.0-x86_64.apk` · `-x86.apk` | Emulators and the few x86 devices |
+| `just-player-pro-5.1.0-universal.apk` | All four at once — four times the mpv payload, so only if you are unsure |
 
 Android 7.1 or newer. The mpv engine additionally needs Android 8.0 and is offered only there.
 
@@ -251,14 +267,69 @@ paused and opens the search already filled in.
   second video to a player already in memory used to leave the title, poster, synopsis and markers
   of the one before it on screen. Both ways in now do the same work.
 * **Recent, with real titles.** The home screen starts with what you played last, newest first, the
-  film's name rather than a UUID from the URL. Hold one, or hold OK on a remote, to pin it to the
-  top, play it from the start, open its page or remove it. A film gets its name there after 30
-  seconds of play (or whatever you set, from 10 seconds to 5 minutes), and until then its page asks
-  **Is this …?** so one tap names it straight away.
+  film's name rather than a UUID from the URL: up to 30 played online, then the last 10 played from
+  the device itself, each with how much is left. Hold one, or hold OK on a remote, to pin it to the
+  top (up to half of what the row shows), play it from the start, open its page or remove it. A
+  film gets its name there after 30 seconds of play (or whatever you set, from 10 seconds to 5
+  minutes), and until then its page asks **Is this …?** so one tap names it straight away. An
+  episode's card has its season and number on it, since every episode shares the show's poster.
 * **A page for every film.** Poster, synopsis, the cast (a show's own, not one episode's), its
   scores, where you stopped and the file it came from, with **Copy link** for a film from a link
   and **Change it** for when the match is wrong. The new title follows it back to Recent.
+  **Remove film details** takes a wrong match away altogether: the video goes back to its plain
+  name and picture, and is not matched again until you pick a film.
 
+
+</details>
+
+<details>
+<summary><b>YouTube and other sites, and what you have watched</b></summary>
+
+## YouTube and other sites
+
+<div align="center">
+  <img src="docs/screenshots/16-websites.jpg" alt="A YouTube video playing with its Quality list open, and the Integrations page with YouTube and other sites ready">
+</div>
+
+Share a link from YouTube, a browser or any app, or paste one with the link button, and
+[yt-dlp](https://github.com/yt-dlp/yt-dlp) works out the video, its qualities, captions and audio
+languages. Either engine then plays it like any other stream.
+
+* **An optional download, not part of the app.** Settings → Integrations → **YouTube and other
+  sites** fetches yt-dlp and a Python to run it, about 13 MB, so the app stays small for everyone
+  who never needs it. yt-dlp keeps up with the sites by updating itself (or tells you, or waits
+  for **Update now**), so a site changing does not wait for a new release of the player.
+* **Quality and sound.** A **Quality** button lists every quality the site offers and **Audio
+  only**; **Starting quality** picks one for you. Dubbed audio sits under the Audio button, each
+  by its language, and the site's captions under the subtitle button, the ones in your Settings
+  languages picked for you.
+* **Playlists.** A YouTube playlist or a YouTube Music list plays through in order, with a
+  **Queue** button to jump around; private and deleted videos are passed over. The whole list is
+  one card in Recent that carries on where you stopped.
+* **Sparing with YouTube.** A video's answer is kept as long as its links work, captions are
+  fetched once, and a "confirm you're not a bot" check pauses YouTube for five minutes instead of
+  asking again, so its limits rarely get in the way.
+* **What does not play.** A video protected by DRM says so, and sites that only show videos to a
+  signed-in account (Instagram, Reddit) fail with a short message.
+
+## Watched, with Simkl
+
+<div align="center">
+  <img src="docs/screenshots/17-watched.jpg" alt="Recent with green ticks on watched films, and a film's page marked Watched with an Unwatch button">
+</div>
+
+* **A tick for what you have watched.** A film counts as watched at 95%, or wherever you set it
+  between 50 and 100% in Settings → Integrations, where a switch also turns it off. Recent and the
+  folders show a green tick, and Film info has **Mark as watched** and **Unwatch**. A live stream
+  is never counted.
+* **[Simkl](https://simkl.com), if you use it.** Connect it in Settings → Integrations: on a phone
+  Simkl's own page opens in the browser, on a TV you type a code at simkl.com/pin. What you watch
+  is then reported as you watch it, and Simkl marks a film watched at your own percentage. What
+  Simkl has as watched gets the tick too, and a film only planned or dropped there does not.
+* **Unwatch takes back only what this app marked**, and puts a film back on the Simkl list it was
+  on before. Something watched elsewhere says *Watched on Simkl*, and is changed on Simkl itself.
+* **Your account stays on the device.** The sign-in is kept on the phone, never in a backup, and
+  nothing runs on a server of ours. Without an account all of it works on the phone alone.
 
 </details>
 
@@ -390,6 +461,7 @@ what is on screen at that moment.
 
 <div align="center">
   <img src="docs/screenshots/04-playback.jpg" alt="A film playing on a phone, with the details line under its title">
+  <img src="docs/screenshots/18-screen-off.jpg" alt="The player's controls in the notification shade, with the film's picture, name and year">
 </div>
 
 * **Adaptive buffering** — the same device-aware profiles applied to *both* engines, so they buffer
@@ -402,8 +474,11 @@ what is on screen at that moment.
 * **Playback speed per file** — a documentary watched at 1.25× opens at 1.25× next time, however
   many films at normal speed came in between. The last speed chosen is still what an unwatched file
   opens at.
-* **Keep playing the sound** *(off by default)* — the screen can go off, or the player be put away,
-  and the sound carries on. Picture-in-picture still wins on Home when it is enabled.
+* **Sound with the screen off** *(off by default)* — the screen can go off, or the player be put
+  away, and the sound carries on, streams too: a foreground service keeps the connection open,
+  which Android 15 otherwise cuts within seconds. The notification shade and the lock screen show
+  the player's controls with the film's poster and name; tapping them brings the player back.
+  Picture-in-picture still wins on Home when it is enabled.
 * **Preview while seeking** *(on by default)*. Dragging the bar, or holding an arrow on a remote,
   shows the frame you are heading for in a bubble that follows along, and the film only jumps when
   you let go. Streams too: it reads just the pictures it needs, not the film.
@@ -456,6 +531,7 @@ in: one that stopped answering last week still looked fine until the evening it 
 <div align="center">
   <img src="docs/screenshots/09-appearance.jpg" alt="One frame in the Classic, Glass and Material You styles">
   <img src="docs/screenshots/11-theme-and-colours.jpg" alt="The home screen in the dark and the light theme, the theme colour picker, and the home screen in green">
+  <img src="docs/screenshots/15-folder-views.jpg" alt="One folder as a list, as a gallery and as cards">
 </div>
 
 **Three player styles**: Classic, Glass (frosted bands over the picture) and Material You. **Eleven
@@ -464,6 +540,10 @@ bar and every highlight. The launcher icon stays orange. The first start asks fo
 picture changes as you choose. Home, Settings and the film pages are dark by default and can be
 light, or follow the phone; the player itself always stays dark, and a TV stays dark throughout.
 
+* **Folders as a list, a gallery or cards** — a button inside a folder switches between them, the
+  same choice as Settings → Home screen, and new installs start on cards. A folder's own picture
+  comes in four looks: the picture whole in the middle, square, a mosaic, or a plain folder in your
+  theme colour. Long names stop at two lines so the cards line up.
 * **Rebuilt bottom bar** — play/pause is the leftmost item in the time row, tapping the time
   toggles remaining-versus-total, and the button strip shares that line rather than sitting on top
   of it. In portrait, where eight buttons at a usable size are wider than the screen has left, the
@@ -530,6 +610,11 @@ that never happened.
   not press volume buttons.
 * Where a value could have been hard-coded for one input method it is not. The arrows seek by the
   step set in settings, the same step the double tap uses.
+* Things a finger does by holding have a remote way too: holding OK on the title shares the film's
+  link, Undo after removing from Recent takes focus, Quick settings has a Brightness row, and a
+  locked player tells you to hold OK.
+* Signing in to Simkl on a television shows a code to type at simkl.com/pin on any other device,
+  rather than a browser the television may not have.
 
 Layouts are in dp and sp throughout and reflow rather than clip, so the same build is used on
 phones in either orientation, on tablets, and on televisions.
@@ -634,6 +719,9 @@ own under **Custom subtitle addons**; each is tested against a known film before
 Scores from other sites need an **MDBList** key, also free: mdblist.com → Preferences → API. Turn
 on **MDBList ratings** in **Settings → Online**, paste the key, and it is tested as you save it.
 
+YouTube and other sites need the yt-dlp download in **Settings → Integrations**, and the same page
+connects **Simkl**. Neither needs a key of your own.
+
 Two switches worth knowing:
 
 * **Identify files** — automatic by default, which is what fills the info card, the skip markers
@@ -680,7 +768,8 @@ ExoPlayer and the player view do not come from Maven here. They come from
 `app/libs/lib-exoplayer-release.aar` and `lib-ui-release.aar`, patched builds — the player calls
 `DefaultRenderersFactory.setMapDV7ToHevc()`, `PlayerView.showProgress()` and
 `PlayerView.hideControllerImmediately()`, none of which exist upstream. The four decoder extensions
-beside them are not published to Maven at all.
+beside them are not published to Maven at all. HLS is a local aar too: 1.10.0 with one fix from
+1.10.1 (see `app/libs/README.md`).
 
 Everything else Media3 does come from Maven, at `media3_version` in `app/build.gradle`, and those
 modules are compiled against the ExoPlayer of their own version. **So that number and the version
@@ -715,6 +804,11 @@ and subtitle search — depends on that. The key is free. OpenSubtitles, SubDL, 
 keys are optional and only enable those sources. All of them are entered in Settings → Online; none are
 compiled into the app.
 
+Simkl is the exception: it signs in with an app id of the build's own, read from `SIMKL_CLIENT_ID`
+in a `.env` file beside `build.gradle` (`SIMKL_CLIENT_ID:your-id`), which is not in the repository.
+Register an app at simkl.com/settings/developer as a mobile app with the redirect
+`justplayerpro://auth/simkl`. A build without it simply leaves Simkl out of Settings.
+
 
 </details>
 
@@ -747,6 +841,11 @@ Smaller borrowings — a parser's shape, the way one app or another hands subtit
   a first run.
 * [zxing](https://github.com/zxing/zxing) core, Apache 2.0 — the encoder behind the error code, and
   nothing else.
+* [yt-dlp](https://github.com/yt-dlp/yt-dlp), Unlicense, and [Python](https://www.python.org)
+  (PSF licence), downloaded only when you ask for YouTube and other sites. The 64-bit Python is
+  python.org's own Android build; the 32-bit ones are built from the same source by
+  [just-player-pro-runtime](https://github.com/Zain-Imam/just-player-pro-runtime).
+* Watched history through the [Simkl](https://simkl.com) API.
 * Skip markers from IntroDB, TheIntroDB, SkipDB and AniSkip. Titles and artwork from TMDB.
   Subtitles from OpenSubtitles, SubDL, Wyzie and any Stremio addon you add. Scores from other
   sites through [MDBList](https://mdblist.com).
@@ -795,6 +894,6 @@ not come from this project, whatever it is called:
 SHA-256  6d:c1:c9:16:44:76:06:b1:ce:ba:13:3e:1c:50:6f:a8:
          8e:11:25:9b:08:2c:d3:16:61:d0:c6:6c:12:42:dc:a6
 
-apksigner verify --print-certs just-player-pro-5.0.0-arm64-v8a.apk
+apksigner verify --print-certs just-player-pro-5.1.0-arm64-v8a.apk
 ```
 </details>
